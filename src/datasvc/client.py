@@ -1186,6 +1186,18 @@ class DataClient:
                 self._espn = svc
         return _LeagueView(svc, code.lower())
 
+    def mlb_box(self, root=None):
+        """The read API for the MLB statsapi box-score layer (forward only from 2026-10-20; the sealed window
+        2026-01-01..2026-08-27 is refused by name): the same reads as `league(code)`. See src/datasvc/mlb/box_service.py."""
+        from src.datasvc.mlb import box_service
+        from src.datasvc.mlb.statsapi import MlbBoxStore
+        svc = getattr(self, "_mlb_box", None)
+        if svc is None or root is not None:
+            svc = box_service.MlbBoxService(MlbBoxStore(root) if root is not None else None)
+            if root is None:
+                self._mlb_box = svc
+        return _LeagueView(svc, "mlb")
+
     def _sport(self, sport: str) -> str:
         if sport not in SPORTS:
             raise _bad_param("sport", f"must be one of {', '.join(SPORTS)}")
@@ -1538,7 +1550,9 @@ class _LeagueView:
 
     def __getattr__(self, name: str):
         if name.startswith("_") or name not in ("teams", "players", "schedule", "game", "team_history",
-                                                "player_history", "standings", "injuries"):
+                                                "player_history", "standings", "injuries", "team_averages",
+                                                "team_splits", "player_averages", "player_splits",
+                                                "play_by_play"):
             raise AttributeError(name)
         fn = getattr(self._svc, name)
         return lambda *a, **kw: fn(self.code, *a, **kw)

@@ -76,6 +76,11 @@ def capture_config(config: Optional[Mapping] = None) -> dict:
         "dark_retry_hours": 24, "scores_poll_interval_hours": 8, "scores_days_from": 3,
         "void_after_hours": 72, "skip_key_prefixes": ["politics_", "golf_"],
         "skip_key_suffixes": ["_winner", "_winners", "_outright", "_outrights", "_futures"],
+        # Player props (src/pipeline/allsports_props.py): their own daily cap, in their own credit band.
+        "props_enabled": True, "props_daily_cap_credits": 1200, "props_max_calls_per_run": 40,
+        "props_regions": ["us"], "props_phases_minutes": {"t6h": 360, "t2h": 120, "t30m": 30},
+        "props_events_lookahead_hours": 7, "props_events_idle_recheck_hours": 3,
+        "props_dark_after_empty_calls": 2, "props_max_attempts_per_phase": 3,
     }
     base.update((config if config is not None else load()).get("capture") or {})
     return base
@@ -84,6 +89,24 @@ def capture_config(config: Optional[Mapping] = None) -> dict:
 def daily_cap_credits(config: Optional[Mapping] = None) -> int:
     """The all-sports daily credit cap (config value; the owner's ceiling is 1,500 a day)."""
     return int(capture_config(config)["daily_cap_credits"])
+
+
+def props_daily_cap_credits(config: Optional[Mapping] = None) -> int:
+    """The player-props daily credit cap (config value capture.props_daily_cap_credits; default 1,200)."""
+    return int(capture_config(config)["props_daily_cap_credits"])
+
+
+def props_families(config: Optional[Mapping] = None) -> dict:
+    """{family code: {"sport_key", "markets"}} for the families whose player props are captured.
+
+    A family is in when its catalog entry names both a ``props_sport_key`` (the Odds API key whose events carry
+    the props) and a non-empty ``props_markets`` list. Order is the catalog's."""
+    out = {}
+    for code, fam in _families(config).items():
+        key, markets = fam.get("props_sport_key"), fam.get("props_markets")
+        if key and isinstance(markets, list) and markets:
+            out[code] = {"sport_key": str(key), "markets": [str(m) for m in markets]}
+    return out
 
 
 def family_codes(config: Optional[Mapping] = None) -> tuple:

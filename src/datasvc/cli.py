@@ -15,6 +15,12 @@
     python -m src.datasvc.cli espn nba refresh | nhl schedule --date D | ncaab box --game-id ID | ...
     (ESPN-fed NBA/NHL/college/soccer: src/datasvc/espn/cli.py; also `python -m src.cli datasvc <league> <thing>`)
 
+    python -m src.datasvc.cli soccer import | fetch | match | odds | status
+    (football-data.co.uk open/closing odds, gated by its terms: src/datasvc/soccer/cli.py)
+
+    python -m src.datasvc.cli mlbbox refresh | schedule | box | history | averages | splits | status | check
+    (MLB statsapi box scores + player lines, forward only, sealed window enforced: src/datasvc/mlb/box_cli.py)
+
 Kept apart from src/cli.py so the data service can grow without touching
 LineHound's own command line.
 """
@@ -28,6 +34,8 @@ from datetime import date, datetime, timezone
 
 from src.datasvc.http import PoliteFetcher
 from src.datasvc.espn import cli as espn_cli
+from src.datasvc.mlb import box_cli as mlb_box_cli
+from src.datasvc.soccer import cli as soccer_cli
 from src.datasvc.nfl import cli as nfl_cli
 from src.datasvc.ufc import pipeline
 from src.datasvc.ufc.store import UfcStore
@@ -121,6 +129,8 @@ def build_parser() -> argparse.ArgumentParser:
     m.set_defaults(func=cmd_matchup)
     nfl_cli.register(sport)
     espn_cli.register(sport)
+    soccer_cli.register(sport)
+    mlb_box_cli.register(sport)
     return parser
 
 

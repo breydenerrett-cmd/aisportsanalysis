@@ -1,0 +1,379 @@
+{
+ "copyright": "Copyright 2026 MLB Advanced Media, L.P.  Use of any content on this page acknowledges agreement to the terms posted here http://gdx.mlb.com/components/copyright.txt",
+ "dates": [
+  {
+   "date": "2026-10-19",
+   "events": [],
+   "games": [
+    {
+     "calendarEventID": "14-849815-2026-10-19",
+     "content": {
+      "link": "/api/v1/game/849815/content"
+     },
+     "dayNight": "night",
+     "decisions": {
+      "loser": {
+       "fullName": "Shawn Armstrong",
+       "id": 542888,
+       "link": "/api/v1/people/542888"
+      },
+      "winner": {
+       "fullName": "Freddy Peralta",
+       "id": 642547,
+       "link": "/api/v1/people/642547"
+      }
+     },
+     "description": "ALCS Game 6",
+     "doubleHeader": "N",
+     "gameDate": "2026-10-20T00:08:00Z",
+     "gameGuid": "e165ab73-3918-48db-8d2e-c4ce9e1b58ae",
+     "gameNumber": 1,
+     "gamePk": 849815,
+     "gameType": "L",
+     "gamedayType": "P",
+     "gamesInSeries": 7,
+     "ifNecessary": "N",
+     "ifNecessaryDescription": "Normal Game",
+     "inningBreakLength": 175,
+     "isTie": false,
+     "linescore": {
+      "balls": 0,
+      "currentInning": 9,
+      "currentInningOrdinal": "9th",
+      "defense": {
+       "batter": {
+        "fullName": "Junior Caminero",
+        "id": 691406,
+        "link": "/api/v1/people/691406"
+       },
+       "battingOrder": 4,
+       "catcher": {
+        "fullName": "Liam Hicks",
+        "id": 689414,
+        "link": "/api/v1/people/689414"
+       },
+       "center": {
+        "fullName": "Jonny DeLuca",
+        "id": 676356,
+        "link": "/api/v1/people/676356"
+       },
+       "first": {
+        "fullName": "Jonathan Aranda",
+        "id": 666018,
+        "link": "/api/v1/people/666018"
+       },
+       "inHole": {
+        "fullName": "Victor Mesa Jr.",
+        "id": 683748,
+        "link": "/api/v1/people/683748"
+       },
+       "left": {
+        "fullName": "Chandler Simpson",
+        "id": 802415,
+        "link": "/api/v1/people/802415"
+       },
+       "onDeck": {
+        "fullName": "Chandler Simpson",
+        "id": 802415,
+        "link": "/api/v1/people/802415"
+       },
+       "pitcher": {
+        "fullName": "Bryan Baker",
+        "id": 641329,
+        "link": "/api/v1/people/641329"
+       },
+       "right": {
+        "fullName": "Victor Mesa Jr.",
+        "id": 683748,
+        "link": "/api/v1/people/683748"
+       },
+       "second": {
+        "fullName": "Richie Palacios",
+        "id": 680700,
+        "link": "/api/v1/people/680700"
+       },
+       "shortstop": {
+        "fullName": "Taylor Walls",
+        "id": 670764,
+        "link": "/api/v1/people/670764"
+       },
+       "team": {
+        "id": 139,
+        "link": "/api/v1/teams/139",
+        "name": "Tampa Bay Rays"
+       },
+       "third": {
+        "fullName": "Junior Caminero",
+        "id": 691406,
+        "link": "/api/v1/people/691406"
+       }
+      },
+      "inningHalf": "Top",
+      "inningState": "Top",
+      "innings": [
+       {
+        "away": {
+         "errors": 0,
+         "hits": 1,
+         "leftOnBase": 1,
+         "runs": 0
+        },
+        "home": {
+         "errors": 0,
+         "hits": 0,
+         "leftOnBase": 0,
+         "runs": 0
+        },
+        "num": 1,
+        "ordinalNum": "1st"
+       },
+       {
+        "away": {
+         "errors": 0,
+         "hits": 0,
+         "leftOnBase": 0,
+         "runs": 0
+        },
+        "home": {
+         "errors": 0,
+         "hits": 2,
+         "leftOnBase": 3,
+         "runs": 2
+        },
+        "num": 2,
+        "ordinalNum": "2nd"
+       },
+       {
+        "away": {
+         "errors": 0,
+         "hits": 1,
+         "leftOnBase": 2,
+         "runs": 0
+        },
+        "home": {
+         "errors": 0,
+         "hits": 2,
+         "leftOnBase": 2,
+         "runs": 1
+        },
+        "num": 3,
+        "ordinalNum": "3rd"
+       },
+       {
+        "away": {
+         "errors": 0,
+         "hits": 1,
+         "leftOnBase": 1,
+         "runs": 0
+        },
+        "home": {
+         "errors": 0,
+         "hits": 0,
+         "leftOnBase": 2,
+         "runs": 0
+        },
+        "num": 4,
+        "ordinalNum": "4th"
+       },
+       {
+        "away": {
+         "errors": 0,
+         "hits": 0,
+         "leftOnBase": 1,
+         "runs": 0
+        },
+        "home": {
+         "errors": 0,
+         "hits": 0,
+         "leftOnBase": 0,
+         "runs": 0
+        },
+        "num": 5,
+        "ordinalNum": "5th"
+       },
+       {
+        "away": {
+         "errors": 0,
+         "hits": 2,
+         "leftOnBase": 1,
+         "runs": 1
+        },
+        "home": {
+         "errors": 0,
+         "hits": 1,
+         "leftOnBase": 1,
+         "runs": 0
+        },
+        "num": 6,
+        "ordinalNum": "6th"
+       },
+       {
+        "away": {
+         "errors": 0,
+         "hits": 0,
+         "leftOnBase": 0,
+         "runs": 0
+        },
+        "home": {
+         "errors": 0,
+         "hits": 1,
+         "leftOnBase": 0,
+         "runs": 2
+        },
+        "num": 7,
+        "ordinalNum": "7th"
+       },
+       {
+        "away": {
+         "errors": 0,
+         "hits": 2,
+         "leftOnBase": 3,
+         "runs": 2
+        },
+        "home": {
+         "errors": 0,
+         "hits": 1,
+         "leftOnBase": 0,
+         "runs": 2
+        },
+        "num": 8,
+        "ordinalNum": "8th"
+       },
+       {
+        "away": {
+         "errors": 0,
+         "hits": 0,
+         "leftOnBase": 0,
+         "runs": 0
+        },
+        "home": {
+         "errors": 0,
+         "hits": 0,
+         "leftOnBase": 0
+        },
+        "num": 9,
+        "ordinalNum": "9th"
+       }
+      ],
+      "isTopInning": true,
+      "offense": {
+       "batter": {
+        "fullName": "Chase DeLauter",
+        "id": 800050,
+        "link": "/api/v1/people/800050"
+       },
+       "battingOrder": 3,
+       "inHole": {
+        "fullName": "Nathaniel Lowe",
+        "id": 663993,
+        "link": "/api/v1/people/663993"
+       },
+       "onDeck": {
+        "fullName": "Jo Adell",
+        "id": 666176,
+        "link": "/api/v1/people/666176"
+       },
+       "pitcher": {
+        "fullName": "Hunter Gaddis",
+        "id": 683769,
+        "link": "/api/v1/people/683769"
+       },
+       "team": {
+        "id": 114,
+        "link": "/api/v1/teams/114",
+        "name": "Cleveland Guardians"
+       }
+      },
+      "outs": 3,
+      "scheduledInnings": 9,
+      "strikes": 2,
+      "teams": {
+       "away": {
+        "errors": 0,
+        "hits": 7,
+        "isWinner": false,
+        "leftOnBase": 9,
+        "runs": 3
+       },
+       "home": {
+        "errors": 0,
+        "hits": 7,
+        "isWinner": true,
+        "leftOnBase": 8,
+        "runs": 7
+       }
+      }
+     },
+     "link": "/api/v1.1/game/849815/feed/live",
+     "officialDate": "2026-10-19",
+     "publicFacing": true,
+     "recordSource": "S",
+     "reverseHomeAwayStatus": false,
+     "scheduledInnings": 9,
+     "season": "2026",
+     "seasonDisplay": "2026",
+     "seriesDescription": "AL Championship Series",
+     "seriesGameNumber": 6,
+     "status": {
+      "abstractGameCode": "F",
+      "abstractGameState": "Final",
+      "codedGameState": "F",
+      "detailedState": "Final",
+      "startTimeTBD": false,
+      "statusCode": "F"
+     },
+     "teams": {
+      "away": {
+       "isWinner": false,
+       "leagueRecord": {
+        "losses": 4,
+        "pct": ".333",
+        "ties": 0,
+        "wins": 2
+       },
+       "score": 3,
+       "seriesNumber": 1,
+       "splitSquad": false,
+       "team": {
+        "id": 114,
+        "link": "/api/v1/teams/114",
+        "name": "Cleveland Guardians"
+       }
+      },
+      "home": {
+       "isWinner": true,
+       "leagueRecord": {
+        "losses": 2,
+        "pct": ".667",
+        "ties": 0,
+        "wins": 4
+       },
+       "score": 7,
+       "seriesNumber": 1,
+       "splitSquad": false,
+       "team": {
+        "id": 139,
+        "link": "/api/v1/teams/139",
+        "name": "Tampa Bay Rays"
+       }
+      }
+     },
+     "tiebreaker": "N",
+     "venue": {
+      "id": 12,
+      "link": "/api/v1/venues/12",
+      "name": "Tropicana Field"
+     }
+    }
+   ],
+   "totalEvents": 0,
+   "totalGames": 1,
+   "totalGamesInProgress": 0,
+   "totalItems": 1
+  }
+ ],
+ "totalEvents": 0,
+ "totalGames": 1,
+ "totalGamesInProgress": 0,
+ "totalItems": 1
+}

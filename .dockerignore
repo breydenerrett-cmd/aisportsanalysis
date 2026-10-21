@@ -51,6 +51,12 @@ data/app/*
 # hot-file-only regardless (its own docstring) -- that was never the reason
 # to exclude the archive, only a fact that happens to be true either way.
 # data/processed/archive/  -- INTENTIONALLY NOT EXCLUDED, see above.
+# Player props capture (2026-10-20, src/pipeline/allsports_props.py): forward research data that no served route reads
+# (tens of MB a week in season). data/processed/ is admitted wholesale above, so these re-exclude it; a later line
+# wins. If a route ever serves props, name the file in deploy/Dockerfile and drop its line here in the same commit.
+data/processed/allsports_props.jsonl
+data/processed/allsports_props_done.jsonl
+data/processed/archive/allsports_props/
 # Paper-account ledgers: read by the Performance surface (2026-09-07).
 !data/paper_accounts/
 # F-2 (2026-09-07): the historical stores the matchup page reads for team
@@ -98,6 +104,9 @@ data/datasvc/*
 !data/datasvc/nfl/
 # The ESPN-fed leagues (2026-10-20): DataClient.league(code) reads these.
 !data/datasvc/espn/
+# ...but not their play-by-play cache (pbp_<season>.jsonl.gz + index, ~40-50 MB a season, local and
+# rebuildable): no served route reads it, and a later line wins over the admission above.
+data/datasvc/espn/*/pbp_*
 
 design/
 docs/

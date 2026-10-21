@@ -47,8 +47,15 @@ def _content(row: dict) -> str:
 
 
 class EspnStore:
+    """The versioned store. Subclasses with other `datasets` / `default_dir` / `attribution` reuse it whole
+    (the MLB statsapi box-score store and the football-data.co.uk store do)."""
+
+    datasets: Dict[str, Tuple[Tuple[str, ...], bool]] = DATASETS
+    default_dir: Path = DEFAULT_DIR
+    attribution: str = ATTRIBUTION
+
     def __init__(self, root: Optional[Path] = None):
-        self.root = Path(root) if root is not None else DEFAULT_DIR
+        self.root = Path(root) if root is not None else self.default_dir
 
     # -- paths ---------------------------------------------------------------------------------------
 
@@ -56,13 +63,13 @@ class EspnStore:
         return self.root / league
 
     def path(self, league: str, dataset: str, season=None) -> Path:
-        if dataset not in DATASETS:
+        if dataset not in self.datasets:
             raise KeyError(f"unknown dataset {dataset!r}")
-        name = f"{dataset}_{season}" if DATASETS[dataset][1] else dataset
+        name = f"{dataset}_{season}" if self.datasets[dataset][1] else dataset
         return self.league_dir(league) / f"{name}.jsonl"
 
     def seasons(self, league: str, dataset: str) -> List[str]:
-        if not DATASETS[dataset][1]:
+        if not self.datasets[dataset][1]:
             return []
         prefix = dataset + "_"
         return sorted(p.stem[len(prefix):] for p in self.league_dir(league).glob(f"{prefix}*.jsonl"))
@@ -72,7 +79,7 @@ class EspnStore:
     def append(self, league: str, dataset: str, rows: Iterable[dict]) -> dict:
         """Append the rows whose content differs from their key's newest stored version. Returns
         {added, versioned, unchanged, total}; writes nothing when nothing changed."""
-        key, partitioned = DATASETS[dataset]
+        key, partitioned = self.datasets[dataset]
         by_season: Dict[str, List[dict]] = {}
         for row in rows:
             part = str(row.get("season", "unknown")) if partitioned else ""
@@ -111,7 +118,7 @@ class EspnStore:
 
     def versions(self, league: str, dataset: str, season=None) -> List[dict]:
         """Every stored version. Season-partitioned datasets: one season, or all when `season` is None."""
-        if DATASETS[dataset][1]:
+        if self.datasets[dataset][1]:
             seasons = [str(season)] if season is not None else self.seasons(league, dataset)
             out: List[dict] = []
             for s in seasons:
@@ -121,7 +128,7 @@ class EspnStore:
 
     def latest(self, league: str, dataset: str, season=None, as_of: Optional[str] = None) -> Dict[tuple, dict]:
         """key -> the newest version observed at or before `as_of` (default: newest of all)."""
-        key = DATASETS[dataset][0]
+        key = self.datasets[dataset][0]
         out: Dict[tuple, dict] = {}
         for r in self.versions(league, dataset, season):
             if as_of is not None and r["observed_utc"] > as_of:
@@ -137,10 +144,12 @@ class EspnStore:
         directory = self.league_dir(league)
         datasets = {}
         for p in sorted(directory.glob("*.jsonl")):
+            if p.name.startswith("pbp_"):     # the play-by-play cache is local and untracked (pbp.py): not in the manifest
+                continue
             rows = jsonl.read_jsonl(p)
             newest = max((r.get("observed_utc") or "" for r in rows), default="") or None
             datasets[p.name] = {"records": len(rows), "newest": newest}
-        info = {"league": league, "attribution": ATTRIBUTION}
+        info = {"league": league, "attribution": self.attribution}
         info.update(extra or {})
         return jsonl.write_manifest(directory, datasets, extra=info)
 

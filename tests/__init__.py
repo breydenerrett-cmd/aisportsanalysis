@@ -81,6 +81,9 @@ PROTECTED_STORES = frozenset({
     _REAL_DATA / "processed" / "allsports_capture_done.jsonl",
     _REAL_DATA / "processed" / "allsports_sports.jsonl",
     _REAL_DATA / "processed" / "allsports_scores.jsonl",
+    # The player-props capture (2026-10-20): its done store and the prop rows.
+    _REAL_DATA / "processed" / "allsports_props_done.jsonl",
+    _REAL_DATA / "processed" / "allsports_props.jsonl",
     _REAL_DATA / "watch" / "probables_watch.jsonl",
     _REAL_DATA / "watch" / "lineups_watch.jsonl",
     _REAL_DATA / "watch" / "transactions_watch.jsonl",

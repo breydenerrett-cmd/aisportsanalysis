@@ -212,6 +212,12 @@ evidence/tmp*.tmp
 !data/processed/allsports_capture_done.jsonl
 !data/processed/allsports_sports.jsonl
 !data/processed/allsports_scores.jsonl
+# Player props for NBA, NFL, NHL and NCAAF (2026-10-20, src/pipeline/allsports_props.py). The done store is that
+# capture's memory (phases bought or missed, one marker per billed call); left ignored, every fresh runner would
+# start empty and re-buy every window. The rows are forward data that cannot be bought back; the rotated segments
+# land under data/processed/archive/allsports_props/, already un-ignored above.
+!data/processed/allsports_props_done.jsonl
+!data/processed/allsports_props.jsonl
 # Added with packet W6 (InformationEvent free-environment layer,
 # src/board/events.py): a projected event is a deterministic re-derivation
 # of rows already tracked above, but the ids/dedup state it accumulates are
@@ -303,3 +309,18 @@ data/private/
 # never fetches it twice. Large and reproducible; the normalised files under data/datasvc/<sport>/
 # are what is tracked.
 data/datasvc/raw/
+
+# PLAY-BY-PLAY CACHE (src/datasvc/espn/pbp.py). ~40-50 MB per season for NBA + NHL + NCAAF, fully rebuildable
+# (ESPN and the NHL keep the plays: `datasvc <league> pbp-fill`), so it is a local cache, not tracked and not
+# in the web image. To track it, delete this line (and the matching one in .dockerignore if it should ship).
+data/datasvc/espn/*/pbp_*
+
+# FOOTBALL-DATA.CO.UK STORE (src/datasvc/soccer). The site's terms limit its data to private individuals and
+# forbid commercial/automated use; this repository is public, so the store stays on the machine that built it.
+data/datasvc/footballdata/
+
+# MLB STATSAPI BOX-SCORE CACHE (src/datasvc/mlb/statsapi.py). ~40 KB a game (~100 MB a season, player lines are
+# most of it), rebuildable from statsapi for any open date, and MLBAM's notice limits statsapi to individual,
+# non-commercial use; local cache, not tracked and not in the web image (data/datasvc/* is excluded there).
+# To track the small tables only, ignore data/datasvc/mlb/player_games_* instead.
+data/datasvc/mlb/

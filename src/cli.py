@@ -4148,7 +4148,9 @@ def cmd_allsports(args) -> int:
     `capture` is the scheduled step (capture_slot.sh): free discovery and event listing, then paid
     pre-game and in-play calls under the all-sports daily cap in config/sports_catalog.json, every call
     logged in the `allsports_capture` credit band. `scores` polls the keys whose captured games have
-    finished and appends the results the member-dog settlement reads. `--plan` on either spends nothing."""
+    finished and appends the results the member-dog settlement reads. `props` buys NBA, NFL, NHL and NCAAF
+    player props per game (src/pipeline/allsports_props.py) in its own `allsports_props` credit band.
+    `--plan` on any of them spends nothing."""
     sub = getattr(args, "allsports_command", None)
     plan = bool(getattr(args, "plan", False))
 
@@ -4194,6 +4196,24 @@ def cmd_allsports(args) -> int:
             return EXIT_ERROR
         for line in allsports_free_results.summary_lines(free):
             print(line)
+        return EXIT_OK
+
+    if sub == "props":
+        from src.pipeline import allsports_props
+
+        try:
+            result = allsports_props.run(plan_only=plan)
+        except Exception as exc:  # noqa: BLE001 -- the chain step is tolerant
+            print(f"ERROR: allsports props failed: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        for line in allsports_props.summary_lines(result):
+            print(line)
+        if plan:
+            for call in result.get("plan") or []:
+                print(f"    plan {call['sport_key']} {call['event_id']} {call['phase']} {call['markets']} "
+                      f"{call['regions']} ~{call['est_credits']} credit(s)")
+        if result.get("halt") and "credit floor" in str(result["halt"]):
+            print("ESCALATE: credit floor reached -- stop spending, tell Brey")
         return EXIT_OK
 
     print(f"unknown allsports subcommand: {sub}")
@@ -4897,6 +4917,10 @@ def build_parser() -> argparse.ArgumentParser:
         "results for tennis and MMA (settlement input)")
     allsports_scores_cmd.add_argument(
         "--plan", action="store_true", help="print the keys that would be polled; spend nothing")
+    allsports_props_cmd = allsports_sub.add_parser(
+        "props", help="player props for NBA, NFL, NHL and NCAAF (t6h, t2h, t30m) under the props daily cap")
+    allsports_props_cmd.add_argument(
+        "--plan", action="store_true", help="free event listing only; print the plan, spend and write nothing")
 
     tennis_cmd = sub.add_parser("tennis", help="tennis commands")
     tennis_sub = tennis_cmd.add_subparsers(dest="tennis_command", required=True)
@@ -5006,7 +5030,7 @@ def cmd_situation(args) -> int:
 
 def cmd_datasvc(args) -> int:
     rest = list(args.rest)
-    if rest and rest[0] in ("ufc", "nfl"):
+    if rest and rest[0] in ("ufc", "nfl", "soccer", "mlbbox"):
         from src.datasvc import cli as datasvc_cli
         return datasvc_cli.main(rest)
     from src.datasvc.espn import cli as espn_cli

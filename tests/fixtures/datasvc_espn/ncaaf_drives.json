@@ -1,0 +1,477 @@
+{
+ "drives": {
+  "previous": [
+   {
+    "description": "9 plays, 46 yards, 5:24",
+    "displayResult": "Field Goal",
+    "end": {
+     "clock": {
+      "displayValue": "9:30"
+     },
+     "period": {
+      "number": 1,
+      "type": "quarter"
+     },
+     "text": "ECU 23",
+     "yardLine": 77
+    },
+    "id": "4018566341",
+    "isScore": true,
+    "offensivePlays": 9,
+    "plays": [
+     {
+      "awayScore": 0,
+      "clock": {
+       "displayValue": "14:54"
+      },
+      "end": {
+       "distance": 10,
+       "down": -1,
+       "team": {
+        "id": "333"
+       },
+       "yardLine": 31,
+       "yardsToEndzone": 69
+      },
+      "homeScore": 0,
+      "id": "401856634101854501",
+      "isPenalty": false,
+      "isTurnover": false,
+      "modified": "2026-09-08T21:50Z",
+      "period": {
+       "number": 1
+      },
+      "priority": false,
+      "scoringPlay": false,
+      "sequenceNumber": "101854501",
+      "start": {
+       "distance": 10,
+       "down": 1,
+       "team": {
+        "id": "151"
+       },
+       "yardLine": 65,
+       "yardsToEndzone": 65
+      },
+      "statYardage": 28,
+      "teamParticipants": [
+       {
+        "id": "333",
+        "order": 1,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/college-football/seasons/2026/teams/333?lang=en&region=us"
+        },
+        "type": "offense"
+       },
+       {
+        "id": "151",
+        "order": 2,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/college-football/seasons/2026/teams/151?lang=en&region=us"
+        },
+        "type": "defense"
+       }
+      ],
+      "text": "Everett Scott kickoff for 62 yds , Dijon Lee Jr. return for 28 yds to the ALA 31",
+      "type": {
+       "id": "12",
+       "text": "Kickoff Return (Offense)"
+      },
+      "wallclock": "2026-09-05T16:08:43Z"
+     },
+     {
+      "awayScore": 0,
+      "clock": {
+       "displayValue": "14:41"
+      },
+      "end": {
+       "distance": 9,
+       "down": 2,
+       "downDistanceText": "2nd & 9 at ALA 32",
+       "possessionText": "ALA 32",
+       "shortDownDistanceText": "2nd & 9",
+       "team": {
+        "id": "333"
+       },
+       "yardLine": 32,
+       "yardsToEndzone": 68
+      },
+      "homeScore": 0,
+      "id": "401856634101855801",
+      "isPenalty": false,
+      "isTurnover": false,
+      "modified": "2026-09-08T21:50Z",
+      "period": {
+       "number": 1
+      },
+      "priority": false,
+      "scoringPlay": false,
+      "sequenceNumber": "101855801",
+      "start": {
+       "distance": 10,
+       "down": 1,
+       "downDistanceText": "1st & 10 at ALA 31",
+       "possessionText": "ALA 31",
+       "shortDownDistanceText": "1st & 10",
+       "team": {
+        "id": "333"
+       },
+       "yardLine": 31,
+       "yardsToEndzone": 69
+      },
+      "statYardage": 1,
+      "teamParticipants": [
+       {
+        "id": "333",
+        "order": 1,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/college-football/seasons/2026/teams/333?lang=en&region=us"
+        },
+        "type": "offense"
+       },
+       {
+        "id": "151",
+        "order": 2,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/college-football/seasons/2026/teams/151?lang=en&region=us"
+        },
+        "type": "defense"
+       }
+      ],
+      "text": "Keelon Russell run for 1 yd to the ALA 32",
+      "type": {
+       "abbreviation": "RUSH",
+       "id": "5",
+       "text": "Rush"
+      },
+      "wallclock": "2026-09-05T16:09:56Z"
+     },
+     {
+      "awayScore": 0,
+      "clock": {
+       "displayValue": "14:07"
+      },
+      "end": {
+       "distance": 6,
+       "down": 3,
+       "downDistanceText": "3rd & 6 at ALA 35",
+       "possessionText": "ALA 35",
+       "shortDownDistanceText": "3rd & 6",
+       "team": {
+        "id": "333"
+       },
+       "yardLine": 35,
+       "yardsToEndzone": 65
+      },
+      "homeScore": 0,
+      "id": "401856634101859201",
+      "isPenalty": false,
+      "isTurnover": false,
+      "modified": "2026-09-08T21:50Z",
+      "period": {
+       "number": 1
+      },
+      "priority": false,
+      "scoringPlay": false,
+      "sequenceNumber": "101859201",
+      "start": {
+       "distance": 9,
+       "down": 2,
+       "downDistanceText": "2nd & 9 at ALA 32",
+       "possessionText": "ALA 32",
+       "shortDownDistanceText": "2nd & 9",
+       "team": {
+        "id": "333"
+       },
+       "yardLine": 32,
+       "yardsToEndzone": 68
+      },
+      "statYardage": 3,
+      "teamParticipants": [
+       {
+        "id": "333",
+        "order": 1,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/college-football/seasons/2026/teams/333?lang=en&region=us"
+        },
+        "type": "offense"
+       },
+       {
+        "id": "151",
+        "order": 2,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/college-football/seasons/2026/teams/151?lang=en&region=us"
+        },
+        "type": "defense"
+       }
+      ],
+      "text": "Daniel Hill run for 3 yds to the ALA 35",
+      "type": {
+       "abbreviation": "RUSH",
+       "id": "5",
+       "text": "Rush"
+      },
+      "wallclock": "2026-09-05T16:10:32Z"
+     }
+    ],
+    "result": "FG",
+    "shortDisplayResult": "FG",
+    "start": {
+     "clock": {
+      "displayValue": "14:54"
+     },
+     "period": {
+      "number": 1,
+      "type": "quarter"
+     },
+     "text": "ALA 31",
+     "yardLine": 31
+    },
+    "team": {
+     "id": "333"
+    },
+    "timeElapsed": {
+     "displayValue": "5:24"
+    },
+    "yards": 46
+   },
+   {
+    "description": "3 plays, 9 yards, 1:16",
+    "displayResult": "Punt",
+    "end": {
+     "clock": {
+      "displayValue": "8:14"
+     },
+     "period": {
+      "number": 1,
+      "type": "quarter"
+     },
+     "text": "ECU 34",
+     "yardLine": 66
+    },
+    "id": "4018566342",
+    "isScore": false,
+    "offensivePlays": 3,
+    "plays": [
+     {
+      "awayScore": 0,
+      "clock": {
+       "displayValue": "9:30"
+      },
+      "end": {
+       "distance": 10,
+       "down": 1,
+       "downDistanceText": "1st & 10 at ECU 25",
+       "possessionText": "ECU 25",
+       "shortDownDistanceText": "1st & 10",
+       "team": {
+        "id": "151"
+       },
+       "yardLine": 75,
+       "yardsToEndzone": 75
+      },
+      "homeScore": 3,
+      "id": "401856634101906902",
+      "isPenalty": false,
+      "isTurnover": false,
+      "modified": "2026-09-08T21:50Z",
+      "period": {
+       "number": 1
+      },
+      "priority": false,
+      "scoringPlay": false,
+      "sequenceNumber": "101906902",
+      "start": {
+       "distance": 9,
+       "down": 4,
+       "team": {
+        "id": "333"
+       },
+       "yardLine": 35,
+       "yardsToEndzone": 65
+      },
+      "statYardage": 0,
+      "teamParticipants": [
+       {
+        "id": "151",
+        "order": 1,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/college-football/seasons/2026/teams/151?lang=en&region=us"
+        },
+        "type": "offense"
+       },
+       {
+        "id": "333",
+        "order": 2,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/college-football/seasons/2026/teams/333?lang=en&region=us"
+        },
+        "type": "defense"
+       }
+      ],
+      "text": "Lorcan Quinn kickoff for 65 yds for a touchback",
+      "type": {
+       "abbreviation": "K",
+       "id": "53",
+       "text": "Kickoff"
+      },
+      "wallclock": "2026-09-05T16:20:01Z"
+     },
+     {
+      "awayScore": 0,
+      "clock": {
+       "displayValue": "9:26"
+      },
+      "end": {
+       "distance": 10,
+       "down": 2,
+       "downDistanceText": "2nd & 10 at ECU 25",
+       "possessionText": "ECU 25",
+       "shortDownDistanceText": "2nd & 10",
+       "team": {
+        "id": "151"
+       },
+       "yardLine": 75,
+       "yardsToEndzone": 75
+      },
+      "homeScore": 3,
+      "id": "401856634101907301",
+      "isPenalty": false,
+      "isTurnover": false,
+      "modified": "2026-09-08T21:50Z",
+      "period": {
+       "number": 1
+      },
+      "priority": false,
+      "scoringPlay": false,
+      "sequenceNumber": "101907301",
+      "start": {
+       "distance": 10,
+       "down": 1,
+       "downDistanceText": "1st & 10 at ECU 25",
+       "possessionText": "ECU 25",
+       "shortDownDistanceText": "1st & 10",
+       "team": {
+        "id": "151"
+       },
+       "yardLine": 75,
+       "yardsToEndzone": 75
+      },
+      "statYardage": 0,
+      "teamParticipants": [
+       {
+        "id": "151",
+        "order": 1,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/college-football/seasons/2026/teams/151?lang=en&region=us"
+        },
+        "type": "offense"
+       },
+       {
+        "id": "333",
+        "order": 2,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/college-football/seasons/2026/teams/333?lang=en&region=us"
+        },
+        "type": "defense"
+       }
+      ],
+      "text": "Mitch Griffis pass incomplete",
+      "type": {
+       "id": "3",
+       "text": "Pass Incompletion"
+      },
+      "wallclock": "2026-09-05T16:20:23Z"
+     },
+     {
+      "awayScore": 0,
+      "clock": {
+       "displayValue": "9:15"
+      },
+      "end": {
+       "distance": 1,
+       "down": 3,
+       "downDistanceText": "3rd & 1 at ECU 34",
+       "possessionText": "ECU 34",
+       "shortDownDistanceText": "3rd & 1",
+       "team": {
+        "id": "151"
+       },
+       "yardLine": 66,
+       "yardsToEndzone": 66
+      },
+      "homeScore": 3,
+      "id": "401856634101908401",
+      "isPenalty": false,
+      "isTurnover": false,
+      "modified": "2026-09-08T21:50Z",
+      "period": {
+       "number": 1
+      },
+      "priority": false,
+      "scoringPlay": false,
+      "sequenceNumber": "101908401",
+      "start": {
+       "distance": 10,
+       "down": 2,
+       "downDistanceText": "2nd & 10 at ECU 25",
+       "possessionText": "ECU 25",
+       "shortDownDistanceText": "2nd & 10",
+       "team": {
+        "id": "151"
+       },
+       "yardLine": 75,
+       "yardsToEndzone": 75
+      },
+      "statYardage": 9,
+      "teamParticipants": [
+       {
+        "id": "151",
+        "order": 1,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/college-football/seasons/2026/teams/151?lang=en&region=us"
+        },
+        "type": "offense"
+       },
+       {
+        "id": "333",
+        "order": 2,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/college-football/seasons/2026/teams/333?lang=en&region=us"
+        },
+        "type": "defense"
+       }
+      ],
+      "text": "Ashton Gray run for 9 yds to the ECU 34",
+      "type": {
+       "abbreviation": "RUSH",
+       "id": "5",
+       "text": "Rush"
+      },
+      "wallclock": "2026-09-05T16:21:01Z"
+     }
+    ],
+    "result": "PUNT",
+    "shortDisplayResult": "PUNT",
+    "start": {
+     "clock": {
+      "displayValue": "9:30"
+     },
+     "period": {
+      "number": 1,
+      "type": "quarter"
+     },
+     "text": "ECU 25",
+     "yardLine": 75
+    },
+    "team": {
+     "id": "151"
+    },
+    "timeElapsed": {
+     "displayValue": "1:16"
+    },
+    "yards": 9
+   }
+  ]
+ }
+}

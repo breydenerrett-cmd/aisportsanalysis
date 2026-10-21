@@ -811,9 +811,22 @@ def _decisions_v2_stamp_of(row: dict):
     return None
 
 
+def _allsports_props_path() -> Path:
+    # Local import, same reasoning as `_odds_multibook_path` above.
+    from src.paths import processed_path
+
+    return processed_path("allsports_props.jsonl")
+
+
 ROTATABLE_STORES: dict[str, dict] = {
     "odds_multibook": {
         "path": _odds_multibook_path,
+        "stamp_field": "observed_utc",
+    },
+    # Player props for NBA, NFL, NHL and NCAAF (2026-10-20, src/pipeline/allsports_props.py): every snapshot is
+    # written whole, so the file grows by tens of MB a week in season. Rows are appended in observed_utc order.
+    "allsports_props": {
+        "path": _allsports_props_path,
         "stamp_field": "observed_utc",
     },
     "decisions_v2": {

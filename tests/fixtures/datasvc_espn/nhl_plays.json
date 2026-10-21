@@ -1,0 +1,681 @@
+{
+ "plays": [
+  {
+   "awayScore": 0,
+   "clock": {
+    "displayValue": "0:00"
+   },
+   "homeScore": 0,
+   "id": "401891776000000520",
+   "modified": "2026-10-03T23:08Z",
+   "period": {
+    "displayValue": "1st",
+    "number": 1
+   },
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "2",
+   "shootingPlay": true,
+   "strength": {
+    "abbreviation": "even-strength",
+    "id": "701",
+    "text": "Even Strength"
+   },
+   "text": "Start of 1st Period",
+   "type": {
+    "abbreviation": "period-start",
+    "id": "518",
+    "text": "Period Start"
+   },
+   "wallclock": "2026-10-03T23:08:15Z"
+  },
+  {
+   "awayScore": 0,
+   "clock": {
+    "displayValue": "0:00"
+   },
+   "homeScore": 0,
+   "id": "401891776000000510",
+   "modified": "2026-10-03T23:08Z",
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Ryan Greene",
+      "id": "5080227",
+      "shortName": "R. Greene"
+     },
+     "type": "face-off-winner",
+     "ytdGoals": 0
+    },
+    {
+     "athlete": {
+      "displayName": "Tage Thompson",
+      "id": "4024988",
+      "shortName": "T. Thompson"
+     },
+     "ytdAssists": 0
+    }
+   ],
+   "period": {
+    "displayValue": "1st",
+    "number": 1
+   },
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "3",
+   "shootingPlay": true,
+   "strength": {
+    "abbreviation": "even-strength",
+    "id": "701",
+    "text": "Even Strength"
+   },
+   "team": {
+    "id": "4"
+   },
+   "text": "Ryan Greene faceoff won against Tage Thompson",
+   "type": {
+    "abbreviation": "faceoff",
+    "id": "502",
+    "text": "Face Off"
+   },
+   "wallclock": "2026-10-03T23:08:15Z"
+  },
+  {
+   "awayScore": 0,
+   "clock": {
+    "displayValue": "0:09"
+   },
+   "coordinate": {
+    "x": -97,
+    "y": -19
+   },
+   "homeScore": 0,
+   "id": "401891776000000710",
+   "modified": "2026-10-03T23:10Z",
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Cole Smith",
+      "id": "4197130",
+      "shortName": "C. Smith"
+     },
+     "type": "hit-credited",
+     "ytdGoals": 0
+    },
+    {
+     "athlete": {
+      "displayName": "Owen Power",
+      "id": "4781556",
+      "shortName": "O. Power"
+     },
+     "type": "hitted",
+     "ytdAssists": 2
+    }
+   ],
+   "period": {
+    "displayValue": "1st",
+    "number": 1
+   },
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "4",
+   "shootingPlay": true,
+   "strength": {
+    "abbreviation": "even-strength",
+    "id": "701",
+    "text": "Even Strength"
+   },
+   "team": {
+    "id": "4"
+   },
+   "text": "Cole Smith hit Owen Power",
+   "type": {
+    "abbreviation": "hit",
+    "id": "503",
+    "text": "Hit"
+   },
+   "wallclock": "2026-10-03T23:08:24Z"
+  },
+  {
+   "awayScore": 0,
+   "clock": {
+    "displayValue": "0:15"
+   },
+   "coordinate": {
+    "x": -52,
+    "y": -19
+   },
+   "homeScore": 0,
+   "id": "401891776000000550",
+   "modified": "2026-10-03T23:11Z",
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Alex Vlasic",
+      "id": "4565266",
+      "shortName": "A. Vlasic"
+     },
+     "type": "shooter",
+     "ytdGoals": 0
+    },
+    {
+     "athlete": {
+      "displayName": "Josh Doan",
+      "id": "4874870",
+      "shortName": "J. Doan"
+     },
+     "type": "defender",
+     "ytdAssists": 0
+    }
+   ],
+   "period": {
+    "displayValue": "1st",
+    "number": 1
+   },
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "5",
+   "shootingPlay": true,
+   "strength": {
+    "abbreviation": "even-strength",
+    "id": "701",
+    "text": "Even Strength"
+   },
+   "team": {
+    "id": "2"
+   },
+   "text": "Alex Vlasic shot blocked by Josh Doan",
+   "type": {
+    "abbreviation": "shot-blocked",
+    "id": "508",
+    "text": "Blocked"
+   },
+   "wallclock": "2026-10-03T23:08:30Z"
+  },
+  {
+   "awayScore": 0,
+   "clock": {
+    "displayValue": "0:21"
+   },
+   "coordinate": {
+    "x": -62,
+    "y": -41
+   },
+   "homeScore": 0,
+   "id": "401891776000000700",
+   "modified": "2026-10-03T23:10Z",
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Alex Vlasic",
+      "id": "4565266",
+      "shortName": "A. Vlasic"
+     },
+     "type": "giver",
+     "ytdGoals": 0
+    }
+   ],
+   "period": {
+    "displayValue": "1st",
+    "number": 1
+   },
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "6",
+   "shootingPlay": true,
+   "strength": {
+    "abbreviation": "even-strength",
+    "id": "701",
+    "text": "Even Strength"
+   },
+   "team": {
+    "id": "4"
+   },
+   "text": "Giveaway by Alex Vlasic",
+   "type": {
+    "abbreviation": "giveaway",
+    "id": "1402",
+    "text": "Giveaway"
+   },
+   "wallclock": "2026-10-03T23:08:36Z"
+  },
+  {
+   "awayScore": 0,
+   "clock": {
+    "displayValue": "0:21"
+   },
+   "coordinate": {
+    "x": -74,
+    "y": -39
+   },
+   "homeScore": 0,
+   "id": "401891776000000750",
+   "modified": "2026-10-03T23:10Z",
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Josh Doan",
+      "id": "4874870",
+      "shortName": "J. Doan"
+     },
+     "type": "hit-credited",
+     "ytdGoals": 0
+    },
+    {
+     "athlete": {
+      "displayName": "Alex Vlasic",
+      "id": "4565266",
+      "shortName": "A. Vlasic"
+     },
+     "type": "hitted",
+     "ytdAssists": 0
+    }
+   ],
+   "period": {
+    "displayValue": "1st",
+    "number": 1
+   },
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "7",
+   "shootingPlay": true,
+   "strength": {
+    "abbreviation": "even-strength",
+    "id": "701",
+    "text": "Even Strength"
+   },
+   "team": {
+    "id": "2"
+   },
+   "text": "Josh Doan hit Alex Vlasic",
+   "type": {
+    "abbreviation": "hit",
+    "id": "503",
+    "text": "Hit"
+   },
+   "wallclock": "2026-10-03T23:08:36Z"
+  },
+  {
+   "awayScore": 0,
+   "clock": {
+    "displayValue": "0:31"
+   },
+   "coordinate": {
+    "x": -7,
+    "y": -38
+   },
+   "homeScore": 0,
+   "id": "401891776000000850",
+   "modified": "2026-10-03T23:11Z",
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Alex Vlasic",
+      "id": "4565266",
+      "shortName": "A. Vlasic"
+     },
+     "type": "hit-credited",
+     "ytdGoals": 0
+    },
+    {
+     "athlete": {
+      "displayName": "Josh Doan",
+      "id": "4874870",
+      "shortName": "J. Doan"
+     },
+     "type": "hitted",
+     "ytdAssists": 0
+    }
+   ],
+   "period": {
+    "displayValue": "1st",
+    "number": 1
+   },
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "8",
+   "shootingPlay": true,
+   "strength": {
+    "abbreviation": "even-strength",
+    "id": "701",
+    "text": "Even Strength"
+   },
+   "team": {
+    "id": "4"
+   },
+   "text": "Alex Vlasic hit Josh Doan",
+   "type": {
+    "abbreviation": "hit",
+    "id": "503",
+    "text": "Hit"
+   },
+   "wallclock": "2026-10-03T23:08:46Z"
+  },
+  {
+   "awayScore": 0,
+   "clock": {
+    "displayValue": "1:10"
+   },
+   "coordinate": {
+    "x": -63,
+    "y": 25
+   },
+   "homeScore": 0,
+   "id": "401891776000000660",
+   "modified": "2026-10-03T23:14Z",
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Patrick Kane",
+      "id": "3735",
+      "shortName": "P. Kane"
+     },
+     "type": "shooter",
+     "ytdGoals": 1
+    },
+    {
+     "athlete": {
+      "displayName": "Ukko-Pekka Luukkonen",
+      "id": "4233889",
+      "shortName": "U. Luukkonen"
+     },
+     "ytdAssists": 0
+    }
+   ],
+   "period": {
+    "displayValue": "1st",
+    "number": 1
+   },
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "9",
+   "shootingPlay": true,
+   "strength": {
+    "abbreviation": "even-strength",
+    "id": "701",
+    "text": "Even Strength"
+   },
+   "team": {
+    "id": "4"
+   },
+   "text": "Patrick Kane Slap Shot Wide Right",
+   "type": {
+    "abbreviation": "shot-missed",
+    "id": "507",
+    "text": "Missed"
+   },
+   "wallclock": "2026-10-03T23:09:25Z"
+  },
+  {
+   "awayScore": 0,
+   "clock": {
+    "displayValue": "1:12"
+   },
+   "coordinate": {
+    "x": -89,
+    "y": 4
+   },
+   "homeScore": 0,
+   "id": "401891776000000080",
+   "modified": "2026-10-03T23:12Z",
+   "period": {
+    "displayValue": "1st",
+    "number": 1
+   },
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "10",
+   "shootingPlay": true,
+   "strength": {
+    "abbreviation": "even-strength",
+    "id": "701",
+    "text": "Even Strength"
+   },
+   "text": "Goalie Stopped",
+   "type": {
+    "abbreviation": "stoppage",
+    "id": "516",
+    "text": "Stoppage"
+   },
+   "wallclock": "2026-10-03T23:09:27Z"
+  },
+  {
+   "awayScore": 0,
+   "clock": {
+    "displayValue": "1:12"
+   },
+   "coordinate": {
+    "x": -69,
+    "y": 22
+   },
+   "homeScore": 0,
+   "id": "401891776000000670",
+   "modified": "2026-10-03T23:12Z",
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Ryan McLeod",
+      "id": "4378669",
+      "shortName": "R. McLeod"
+     },
+     "type": "face-off-winner",
+     "ytdGoals": 0
+    },
+    {
+     "athlete": {
+      "displayName": "Frank Nazar",
+      "id": "5080157",
+      "shortName": "F. Nazar"
+     },
+     "ytdAssists": 0
+    }
+   ],
+   "period": {
+    "displayValue": "1st",
+    "number": 1
+   },
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "11",
+   "shootingPlay": true,
+   "strength": {
+    "abbreviation": "even-strength",
+    "id": "701",
+    "text": "Even Strength"
+   },
+   "team": {
+    "id": "2"
+   },
+   "text": "Ryan McLeod faceoff won against Frank Nazar",
+   "type": {
+    "abbreviation": "faceoff",
+    "id": "502",
+    "text": "Face Off"
+   },
+   "wallclock": "2026-10-03T23:10:00Z"
+  },
+  {
+   "awayScore": 1,
+   "clock": {
+    "displayValue": "7:59"
+   },
+   "coordinate": {
+    "x": -80,
+    "y": -6
+   },
+   "homeScore": 0,
+   "id": "401891776000002180",
+   "modified": "2026-10-03T23:57Z",
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Ryan Donato",
+      "id": "3115033",
+      "shortName": "R. Donato"
+     },
+     "type": "scorer",
+     "ytdGoals": 1
+    },
+    {
+     "athlete": {
+      "displayName": "Alex Vlasic",
+      "id": "4565266",
+      "shortName": "A. Vlasic"
+     },
+     "type": "assister",
+     "ytdAssists": 1
+    },
+    {
+     "athlete": {
+      "displayName": "Nick Lardis",
+      "id": "5173765",
+      "shortName": "N. Lardis"
+     },
+     "type": "assister",
+     "ytdAssists": 1
+    }
+   ],
+   "period": {
+    "displayValue": "1st",
+    "number": 1
+   },
+   "scoreValue": 1,
+   "scoringPlay": true,
+   "sequenceNumber": "54",
+   "shootingPlay": true,
+   "shotInfo": {
+    "abbreviation": "regular",
+    "id": "901",
+    "text": "None"
+   },
+   "strength": {
+    "abbreviation": "even-strength",
+    "id": "701",
+    "text": "Even Strength"
+   },
+   "team": {
+    "id": "4"
+   },
+   "text": "Ryan Donato Goal (1) Wrist Shot, assists: Alex Vlasic (1), Nick Lardis (1)",
+   "type": {
+    "abbreviation": "goal",
+    "id": "505",
+    "text": "Goal"
+   },
+   "wallclock": "2026-10-03T23:19:33Z"
+  },
+  {
+   "awayScore": 0,
+   "clock": {
+    "displayValue": "1:25"
+   },
+   "coordinate": {
+    "x": 66,
+    "y": -19
+   },
+   "homeScore": 0,
+   "id": "401891776000000720",
+   "modified": "2026-10-03T23:12Z",
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Ryan McLeod",
+      "id": "4378669",
+      "shortName": "R. McLeod"
+     },
+     "type": "shooter",
+     "ytdGoals": 0
+    },
+    {
+     "athlete": {
+      "displayName": "Spencer Knight",
+      "id": "4565234",
+      "shortName": "S. Knight"
+     },
+     "type": "saver",
+     "ytdAssists": 0
+    }
+   ],
+   "period": {
+    "displayValue": "1st",
+    "number": 1
+   },
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "13",
+   "shootingPlay": true,
+   "strength": {
+    "abbreviation": "even-strength",
+    "id": "701",
+    "text": "Even Strength"
+   },
+   "team": {
+    "id": "2"
+   },
+   "text": "Ryan McLeod Snap Shot saved by Spencer Knight",
+   "type": {
+    "abbreviation": "shot-on-goal",
+    "id": "506",
+    "text": "Shot"
+   },
+   "wallclock": "2026-10-03T23:10:13Z"
+  },
+  {
+   "awayScore": 3,
+   "clock": {
+    "displayValue": "20:00"
+   },
+   "homeScore": 4,
+   "id": "401891776000003680",
+   "modified": "2026-10-04T01:53Z",
+   "period": {
+    "displayValue": "3rd",
+    "number": 3
+   },
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "320",
+   "shootingPlay": true,
+   "strength": {
+    "abbreviation": "even-strength",
+    "id": "701",
+    "text": "Even Strength"
+   },
+   "text": "End of 3rd Period",
+   "type": {
+    "abbreviation": "period-end",
+    "id": "519",
+    "text": "Period End"
+   },
+   "wallclock": "2026-10-04T01:37:24Z"
+  },
+  {
+   "awayScore": 3,
+   "clock": {
+    "displayValue": "20:00"
+   },
+   "homeScore": 4,
+   "id": "401891776000003720",
+   "modified": "2026-10-04T01:53Z",
+   "period": {
+    "displayValue": "3rd",
+    "number": 3
+   },
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "322",
+   "shootingPlay": true,
+   "strength": {
+    "abbreviation": "even-strength",
+    "id": "701",
+    "text": "Even Strength"
+   },
+   "text": "Game End",
+   "type": {
+    "id": "522",
+    "text": "End of Game"
+   },
+   "wallclock": "2026-10-04T01:37:24Z"
+  }
+ ]
+}

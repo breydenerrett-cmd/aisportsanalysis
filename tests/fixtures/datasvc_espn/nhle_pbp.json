@@ -1,0 +1,378 @@
+{
+ "awayTeam": {
+  "abbrev": "MTL",
+  "commonName": {
+   "default": "Canadiens"
+  },
+  "id": 8,
+  "placeName": {
+   "default": "Montreal"
+  },
+  "score": 3,
+  "sog": 25
+ },
+ "clock": {
+  "inIntermission": false,
+  "running": false,
+  "secondsRemaining": 0,
+  "timeRemaining": "00:00"
+ },
+ "displayPeriod": 1,
+ "easternUTCOffset": "-04:00",
+ "gameDate": "2026-01-15",
+ "gameOutcome": {
+  "lastPeriodType": "REG"
+ },
+ "gameScheduleState": "OK",
+ "gameState": "OFF",
+ "gameType": 2,
+ "homeTeam": {
+  "abbrev": "BUF",
+  "commonName": {
+   "default": "Sabres"
+  },
+  "id": 7,
+  "placeName": {
+   "default": "Buffalo"
+  },
+  "score": 2,
+  "sog": 20
+ },
+ "id": 2025020700,
+ "limitedScoring": false,
+ "maxPeriods": 5,
+ "otInUse": true,
+ "periodDescriptor": {
+  "maxRegulationPeriods": 3,
+  "number": 3,
+  "periodType": "REG"
+ },
+ "plays": [
+  {
+   "eventId": 52,
+   "homeTeamDefendingSide": "left",
+   "periodDescriptor": {
+    "maxRegulationPeriods": 3,
+    "number": 1,
+    "periodType": "REG"
+   },
+   "situationCode": "1551",
+   "sortOrder": 8,
+   "timeInPeriod": "00:00",
+   "timeRemaining": "20:00",
+   "typeCode": 520,
+   "typeDescKey": "period-start"
+  },
+  {
+   "details": {
+    "eventOwnerTeamId": 16,
+    "losingPlayerId": 8479420,
+    "winningPlayerId": 8483450,
+    "xCoord": 0,
+    "yCoord": 0,
+    "zoneCode": "N"
+   },
+   "eventId": 51,
+   "homeTeamDefendingSide": "left",
+   "periodDescriptor": {
+    "maxRegulationPeriods": 3,
+    "number": 1,
+    "periodType": "REG"
+   },
+   "situationCode": "1551",
+   "sortOrder": 11,
+   "timeInPeriod": "00:00",
+   "timeRemaining": "20:00",
+   "typeCode": 502,
+   "typeDescKey": "faceoff"
+  },
+  {
+   "details": {
+    "eventOwnerTeamId": 16,
+    "hitteePlayerId": 8482671,
+    "hittingPlayerId": 8482062,
+    "xCoord": -97,
+    "yCoord": -19,
+    "zoneCode": "O"
+   },
+   "eventId": 71,
+   "homeTeamDefendingSide": "left",
+   "periodDescriptor": {
+    "maxRegulationPeriods": 3,
+    "number": 1,
+    "periodType": "REG"
+   },
+   "situationCode": "1551",
+   "sortOrder": 12,
+   "timeInPeriod": "00:09",
+   "timeRemaining": "19:51",
+   "typeCode": 503,
+   "typeDescKey": "hit"
+  },
+  {
+   "details": {
+    "blockingPlayerId": 8482659,
+    "eventOwnerTeamId": 16,
+    "reason": "blocked",
+    "shootingPlayerId": 8481568,
+    "xCoord": -52,
+    "yCoord": -19,
+    "zoneCode": "D"
+   },
+   "eventId": 55,
+   "homeTeamDefendingSide": "left",
+   "periodDescriptor": {
+    "maxRegulationPeriods": 3,
+    "number": 1,
+    "periodType": "REG"
+   },
+   "situationCode": "1551",
+   "sortOrder": 13,
+   "timeInPeriod": "00:15",
+   "timeRemaining": "19:45",
+   "typeCode": 508,
+   "typeDescKey": "blocked-shot"
+  },
+  {
+   "details": {
+    "eventOwnerTeamId": 16,
+    "playerId": 8481568,
+    "xCoord": -62,
+    "yCoord": -41,
+    "zoneCode": "O"
+   },
+   "eventId": 70,
+   "homeTeamDefendingSide": "left",
+   "periodDescriptor": {
+    "maxRegulationPeriods": 3,
+    "number": 1,
+    "periodType": "REG"
+   },
+   "situationCode": "1551",
+   "sortOrder": 14,
+   "timeInPeriod": "00:21",
+   "timeRemaining": "19:39",
+   "typeCode": 504,
+   "typeDescKey": "giveaway"
+  },
+  {
+   "details": {
+    "eventOwnerTeamId": 7,
+    "hitteePlayerId": 8481568,
+    "hittingPlayerId": 8482659,
+    "xCoord": -74,
+    "yCoord": -39,
+    "zoneCode": "D"
+   },
+   "eventId": 75,
+   "homeTeamDefendingSide": "left",
+   "periodDescriptor": {
+    "maxRegulationPeriods": 3,
+    "number": 1,
+    "periodType": "REG"
+   },
+   "situationCode": "1551",
+   "sortOrder": 15,
+   "timeInPeriod": "00:21",
+   "timeRemaining": "19:39",
+   "typeCode": 503,
+   "typeDescKey": "hit"
+  },
+  {
+   "details": {
+    "eventOwnerTeamId": 16,
+    "hitteePlayerId": 8482659,
+    "hittingPlayerId": 8481568,
+    "xCoord": -7,
+    "yCoord": -38,
+    "zoneCode": "N"
+   },
+   "eventId": 85,
+   "homeTeamDefendingSide": "left",
+   "periodDescriptor": {
+    "maxRegulationPeriods": 3,
+    "number": 1,
+    "periodType": "REG"
+   },
+   "situationCode": "1551",
+   "sortOrder": 17,
+   "timeInPeriod": "00:31",
+   "timeRemaining": "19:29",
+   "typeCode": 503,
+   "typeDescKey": "hit"
+  },
+  {
+   "details": {
+    "eventOwnerTeamId": 16,
+    "goalieInNetId": 8480045,
+    "reason": "wide-right",
+    "shootingPlayerId": 8474141,
+    "shotType": "slap",
+    "xCoord": -63,
+    "yCoord": 25,
+    "zoneCode": "O"
+   },
+   "eventId": 66,
+   "homeTeamDefendingSide": "left",
+   "periodDescriptor": {
+    "maxRegulationPeriods": 3,
+    "number": 1,
+    "periodType": "REG"
+   },
+   "situationCode": "1551",
+   "sortOrder": 27,
+   "timeInPeriod": "01:10",
+   "timeRemaining": "18:50",
+   "typeCode": 507,
+   "typeDescKey": "missed-shot"
+  },
+  {
+   "details": {
+    "reason": "goalie-stopped-after-sog"
+   },
+   "eventId": 8,
+   "homeTeamDefendingSide": "left",
+   "periodDescriptor": {
+    "maxRegulationPeriods": 3,
+    "number": 1,
+    "periodType": "REG"
+   },
+   "situationCode": "1551",
+   "sortOrder": 28,
+   "timeInPeriod": "01:12",
+   "timeRemaining": "18:48",
+   "typeCode": 516,
+   "typeDescKey": "stoppage"
+  },
+  {
+   "details": {
+    "eventOwnerTeamId": 7,
+    "losingPlayerId": 8483493,
+    "winningPlayerId": 8480802,
+    "xCoord": -69,
+    "yCoord": 22,
+    "zoneCode": "D"
+   },
+   "eventId": 67,
+   "homeTeamDefendingSide": "left",
+   "periodDescriptor": {
+    "maxRegulationPeriods": 3,
+    "number": 1,
+    "periodType": "REG"
+   },
+   "situationCode": "1551",
+   "sortOrder": 30,
+   "timeInPeriod": "01:12",
+   "timeRemaining": "18:48",
+   "typeCode": 502,
+   "typeDescKey": "faceoff"
+  },
+  {
+   "details": {
+    "assist1PlayerId": 8481568,
+    "assist1PlayerTotal": 1,
+    "assist2PlayerId": 8484185,
+    "assist2PlayerTotal": 1,
+    "awayScore": 1,
+    "discreteClip": 6406185949112,
+    "discreteClipFr": 6406187012112,
+    "eventOwnerTeamId": 16,
+    "goalieInNetId": 8480045,
+    "highlightClip": 6406186713112,
+    "highlightClipFr": 6406184748112,
+    "highlightClipSharingUrl": "https://nhl.com/video/chi-buf-donato-scores-goal-against-ukko-pekka-luukkonen-6406186713112",
+    "highlightClipSharingUrlFr": "https://nhl.com/fr/video/chi-buf-donato-marque-un-but-contre-ukko-pekka-luukkonen-6406184748112",
+    "homeScore": 0,
+    "scoringPlayerId": 8477987,
+    "scoringPlayerTotal": 1,
+    "shotType": "wrist",
+    "xCoord": -80,
+    "yCoord": -6,
+    "zoneCode": "O"
+   },
+   "eventId": 218,
+   "homeTeamDefendingSide": "left",
+   "periodDescriptor": {
+    "maxRegulationPeriods": 3,
+    "number": 1,
+    "periodType": "REG"
+   },
+   "pptReplayUrl": "https://wsr.nhle.com/sprites/20262027/2026020022/ev218.json",
+   "situationCode": "1551",
+   "sortOrder": 127,
+   "timeInPeriod": "07:59",
+   "timeRemaining": "12:01",
+   "typeCode": 505,
+   "typeDescKey": "goal"
+  }
+ ],
+ "regPeriods": 3,
+ "rosterSpots": [
+  {
+   "firstName": {
+    "default": "Ian"
+   },
+   "headshot": "https://assets.nhle.com/mugs/nhl/20262027/CHI/8474013.png",
+   "lastName": {
+    "default": "Cole"
+   },
+   "playerId": 8474013,
+   "positionCode": "D",
+   "sweaterNumber": 28,
+   "teamId": 16
+  },
+  {
+   "firstName": {
+    "default": "Patrick"
+   },
+   "headshot": "https://assets.nhle.com/mugs/nhl/20262027/CHI/8474141.png",
+   "lastName": {
+    "default": "Kane"
+   },
+   "playerId": 8474141,
+   "positionCode": "R",
+   "sweaterNumber": 88,
+   "teamId": 16
+  },
+  {
+   "firstName": {
+    "default": "Sam"
+   },
+   "headshot": "https://assets.nhle.com/mugs/nhl/20262027/BUF/8475842.png",
+   "lastName": {
+    "default": "Carrick"
+   },
+   "playerId": 8475842,
+   "positionCode": "C",
+   "sweaterNumber": 10,
+   "teamId": 7
+  },
+  {
+   "firstName": {
+    "default": "Teuvo"
+   },
+   "headshot": "https://assets.nhle.com/mugs/nhl/20262027/CHI/8476882.png",
+   "lastName": {
+    "cs": "Teräväinen",
+    "default": "Teravainen",
+    "fi": "Teräväinen",
+    "sk": "Teräväinen",
+    "sv": "Teräväinen"
+   },
+   "playerId": 8476882,
+   "positionCode": "C",
+   "sweaterNumber": 86,
+   "teamId": 16
+  }
+ ],
+ "season": 20262027,
+ "shootoutInUse": true,
+ "startTimeUTC": "2026-01-16T00:00:00Z",
+ "venue": {
+  "default": "KeyBank Center"
+ },
+ "venueLocation": {
+  "default": "Buffalo"
+ },
+ "venueUTCOffset": "-04:00"
+}

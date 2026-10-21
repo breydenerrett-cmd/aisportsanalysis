@@ -19,7 +19,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from src.datasvc import names
 from src.datasvc.client import unavailable
-from src.datasvc.espn import leagues as lg
+from src.datasvc.espn import aggregate as agg, leagues as lg, pbp as pbp_mod
 from src.datasvc.espn.store import ATTRIBUTION, EspnStore
 
 CAPABILITIES = {
@@ -31,6 +31,11 @@ CAPABILITIES = {
     "player_history": "a player's box-score lines, newest first (pro leagues)",
     "standings": "standings snapshots by season and group",
     "injuries": "the injury report; as_of reads it as it stood then",
+    "team_averages": "season averages per team (for and allowed), with splits; as_of uses only games final by then",
+    "team_splits": "one team's season averages split home/away, wins/losses and last N games",
+    "player_averages": "season averages per player (pro leagues), with splits; as_of uses only games final by then",
+    "player_splits": "one player's season averages split home/away, wins/losses, starter/bench, last N games",
+    "play_by_play": "every play of a completed game (NBA, NHL, NCAAF; NHL also from the league's own feed)",
 }
 
 
@@ -60,9 +65,16 @@ class EspnService:
         if not L.players:
             for k in ("players", "player_history"):
                 caps[k] = {"available": False, "reason": f"player lines are not stored for {L.title} "
-                                                         "(a season of them is ~100 MB); team totals are"}
+                                                         "(they are left out of the scheduled set to keep the repository and "
+                                                         "web image small); team totals are"}
         if not L.injuries:
             caps["injuries"] = {"available": False, "reason": f"ESPN publishes no injury report for {L.title}"}
+        if not L.players:
+            for k in ("player_averages", "player_splits"):
+                caps[k] = {"available": False, "reason": f"player lines are not stored for {L.title}"}
+        if not L.pbp:
+            caps["play_by_play"] = {"available": False, "reason": f"play-by-play is not stored for {L.title} "
+                                    "(stored for NBA, NHL and NCAAF; `pbp` backfill can add it)"}
         return caps
 
     def _ok(self, league: str, kind: str, data: Any, rows: Sequence[dict], as_of: Optional[str], **meta) -> dict:
@@ -235,3 +247,230 @@ class EspnService:
             rows = [r for r in rows if r["team_id"] == tid]
         rows.sort(key=lambda r: (r["team_id"], r.get("player_name") or ""))
         return self._ok(league, "injuries", rows, rows, as_of)
+
+    # -- season averages and splits (aggregated from the stored box scores) -------------------------------------
+
+    # Team identity (id, abbreviation, name) is resolved against the newest teams rows even under `as_of`: a
+    # backfill stamps teams with the backfill time, and a club's id and name are not an outcome.
+
+    def _season_for(self, league: str, season: Optional[int], as_of: Optional[str]) -> Optional[str]:
+        seasons = self.store.seasons(league, "games")
+        if season is not None:
+            return str(season) if str(season) in seasons else None
+        if not seasons:
+            return None
+        if as_of:
+            started = [s for s in seasons if any((r.get("date_utc") or "") <= as_of
+                                                  for r in self.store.versions(league, "games", s))]
+            return started[-1] if started else None
+        return seasons[-1]
+
+    def _basis_meta(self, games: Dict[str, "agg.Game"], counts: dict, season: str, season_type: Any,
+                    as_of: Optional[str], strict: bool, family: str) -> dict:
+        hours = agg.FINAL_AFTER.get(family, agg.DEFAULT_FINAL_AFTER).total_seconds() / 3600
+        return {"season": season, "season_type": season_type, "strict": strict,
+                "games_used": len(games), "game_basis": agg.basis_counts(counts),
+                "final_after_hours": round(hours, 2),
+                "point_in_time": ("as_of: only games final by then; `observed` = we saw it final by then, "
+                                  "`reconstructed` = backfilled game old enough to have finished (earliest box score)"
+                                  if as_of else "no as_of: every final game, newest box score versions")}
+
+    def _sample(self, league: str, season: Optional[int], as_of: Optional[str], season_type: Any, strict: bool):
+        """(family, season, games, counts, error) for an aggregate read."""
+        L = self._league(league)
+        pick = self._season_for(league, season, as_of)
+        if pick is None:
+            what = f"season {season}" if season is not None else (f"any season started by {as_of}" if as_of else "any season")
+            return L.family, None, {}, {}, unavailable(("games", f"the {league} games store holds no data for {what}"))
+        try:
+            games, counts = agg.eligible_games(self.store, league, L.family, season=pick, as_of=as_of,
+                                               season_type=season_type, strict=strict)
+        except agg.BadSplit as exc:
+            return L.family, pick, {}, {}, unavailable(("season_type", str(exc)))
+        if not games:
+            return L.family, pick, {}, counts, unavailable((
+                "games", f"no final {league} games in season {pick}" + (f" by {as_of}" if as_of else "")
+                + f" (season_type={season_type}; counts: {agg.basis_counts(counts)})"))
+        return L.family, pick, games, counts, None
+
+    @staticmethod
+    def _split_arg(split: str, last: Optional[int], player: bool = False):
+        if last is not None:
+            if split not in ("all", f"last{int(last)}"):
+                raise agg.BadSplit("pass either split or last, not both")
+            split = f"last{int(last)}"
+        return agg.validate_split(split, player=player)
+
+    def team_averages(self, league: str, team: Optional[str] = None, *, season: Optional[int] = None,
+                      split: str = "all", last: Optional[int] = None, as_of: Optional[str] = None,
+                      season_type: Any = "regular", strict: bool = False) -> dict:
+        """Season averages for one team (`team`) or every team (no `team`): record, points for/against and
+        every box-score stat, plus what the opponents did against it (`allowed`)."""
+        self._league(league)
+        try:
+            split = self._split_arg(split, last)
+        except agg.BadSplit as exc:
+            return unavailable(("split", str(exc)))
+        tid = None
+        if team:
+            tid, bad = self._team_id(league, team)
+            if bad:
+                return bad
+        family, pick, games, counts, err = self._sample(league, season, as_of, season_type, strict)
+        if err:
+            return err
+        meta = self._basis_meta(games, counts, pick, season_type, as_of, strict, family)
+        used = [g.row for g in games.values()]
+        if tid:
+            items, _ = agg.team_items(self.store, league, family, tid, season=pick, as_of=as_of, strict=strict,
+                                      games=games, counts=counts)
+            if not items:
+                return unavailable(("team_games", f"no final box scores for team {tid} in season {pick}"
+                                                  + (f" by {as_of}" if as_of else "")))
+            return self._ok(league, "team_averages", dict(agg.summarize_team(items, split), team_id=tid), used, as_of, **meta)
+        rows = []
+        teams = {k[0]: v for k, v in self.store.latest(league, "teams").items()}
+        ids = sorted({g.home_id for g in games.values()} | {g.away_id for g in games.values()})
+        grouped = agg.group_team_games(self.store, league, pick)
+        for t in ids:
+            items, _ = agg.team_items(self.store, league, family, t, season=pick, as_of=as_of, strict=strict,
+                                      games=games, counts=counts, grouped=grouped)
+            if items:
+                info = teams.get(t) or {}
+                rows.append(dict(agg.summarize_team(items, split), team_id=t,
+                                 team_abbr=info.get("abbreviation"), team_name=info.get("display_name")))
+        rows.sort(key=lambda r: (r.get("team_name") or "", r["team_id"]))
+        return self._ok(league, "team_averages", rows, used, as_of, **meta)
+
+    def team_splits(self, league: str, team: str, *, season: Optional[int] = None,
+                    splits: Sequence[str] = agg.DEFAULT_SPLITS, as_of: Optional[str] = None,
+                    season_type: Any = "regular", strict: bool = False) -> dict:
+        """One team's averages under several splits at once: {split: summary}."""
+        self._league(league)
+        try:
+            names_ = [agg.validate_split(s) for s in splits]
+        except agg.BadSplit as exc:
+            return unavailable(("split", str(exc)))
+        tid, bad = self._team_id(league, team)
+        if bad:
+            return bad
+        family, pick, games, counts, err = self._sample(league, season, as_of, season_type, strict)
+        if err:
+            return err
+        items, _ = agg.team_items(self.store, league, family, tid, season=pick, as_of=as_of, strict=strict,
+                                  games=games, counts=counts)
+        if not items:
+            return unavailable(("team_games", f"no final box scores for team {tid} in season {pick}"
+                                              + (f" by {as_of}" if as_of else "")))
+        data = {s: agg.summarize_team(items, s) for s in names_}
+        return self._ok(league, "team_splits", data, [g.row for g in games.values()], as_of, team_id=tid,
+                        **self._basis_meta(games, counts, pick, season_type, as_of, strict, family))
+
+    def _player_gate(self, league: str) -> Optional[dict]:
+        L = self._league(league)
+        if not L.players:
+            return unavailable(("player_games", self.capabilities(league)["player_averages"]["reason"]))
+        return None
+
+    def player_averages(self, league: str, player_id: Optional[str] = None, *, team: Optional[str] = None,
+                        season: Optional[int] = None, split: str = "all", last: Optional[int] = None,
+                        min_games: int = 1, as_of: Optional[str] = None, season_type: Any = "regular",
+                        strict: bool = False) -> dict:
+        """Season averages for one player (`player_id`) or every player (optionally of one `team`)."""
+        gate = self._player_gate(league)
+        if gate:
+            return gate
+        try:
+            split = self._split_arg(split, last, player=True)
+        except agg.BadSplit as exc:
+            return unavailable(("split", str(exc)))
+        tid = None
+        if team:
+            tid, bad = self._team_id(league, team)
+            if bad:
+                return bad
+        family, pick, games, counts, err = self._sample(league, season, as_of, season_type, strict)
+        if err:
+            return err
+        by_player, _ = agg.player_items(self.store, league, family, season=pick, as_of=as_of, strict=strict,
+                                        player_id=player_id, team_id=tid, games=games, counts=counts)
+        meta = self._basis_meta(games, counts, pick, season_type, as_of, strict, family)
+        used = [g.row for g in games.values()]
+        if player_id is not None:
+            items = by_player.get(str(player_id))
+            if not items:
+                return unavailable(("player_games", f"no appearances for player {player_id} in season {pick}"
+                                                    + (f" by {as_of}" if as_of else "")))
+            return self._ok(league, "player_averages", dict(agg.summarize_player(items, split), player_id=str(player_id)),
+                            used, as_of, **meta)
+        rows = []
+        for pid, items in by_player.items():
+            summary = agg.summarize_player(items, split)
+            if summary["games"] >= max(1, int(min_games)):
+                rows.append(dict(summary, player_id=pid))
+        rows.sort(key=lambda r: (r.get("team_id") or "", r.get("player_name") or "", r["player_id"]))
+        return self._ok(league, "player_averages", rows, used, as_of, min_games=int(min_games), **meta)
+
+    def player_splits(self, league: str, player_id: str, *, season: Optional[int] = None,
+                      splits: Sequence[str] = agg.DEFAULT_SPLITS + agg.PLAYER_ONLY_SPLITS,
+                      as_of: Optional[str] = None, season_type: Any = "regular", strict: bool = False) -> dict:
+        """One player's averages under several splits at once: {split: summary}."""
+        gate = self._player_gate(league)
+        if gate:
+            return gate
+        try:
+            names_ = [agg.validate_split(s, player=True) for s in splits]
+        except agg.BadSplit as exc:
+            return unavailable(("split", str(exc)))
+        family, pick, games, counts, err = self._sample(league, season, as_of, season_type, strict)
+        if err:
+            return err
+        by_player, _ = agg.player_items(self.store, league, family, season=pick, as_of=as_of, strict=strict,
+                                        player_id=player_id, games=games, counts=counts)
+        items = by_player.get(str(player_id))
+        if not items:
+            return unavailable(("player_games", f"no appearances for player {player_id} in season {pick}"
+                                                + (f" by {as_of}" if as_of else "")))
+        data = {s: agg.summarize_player(items, s) for s in names_}
+        return self._ok(league, "player_splits", data, [g.row for g in games.values()], as_of,
+                        player_id=str(player_id), **self._basis_meta(games, counts, pick, season_type, as_of, strict, family))
+
+    # -- play-by-play -----------------------------------------------------------------------------------------------
+
+    def play_by_play(self, league: str, game_id: str, *, source: Optional[str] = None, as_of: Optional[str] = None,
+                     period: Optional[int] = None, scoring_only: bool = False, strict: bool = False) -> dict:
+        """Every play of a completed game from a stored source (`espn` by default; NHL also `nhle`).
+        `as_of` returns the game only if it was final by then (same rule as the season averages) and the
+        version of the plays observed by then."""
+        L = self._league(league)
+        if not L.pbp:
+            return unavailable(("play_by_play", self.capabilities(league)["play_by_play"]["reason"]))
+        all_versions = [v for v in self.store.versions(league, "games") if str(v["game_id"]) == str(game_id)]
+        if not all_versions:
+            return unavailable(("game", f"no {league} game {game_id} observed"))
+        all_versions.sort(key=lambda r: r.get("observed_utc") or "")
+        row, basis = agg.classify_game(all_versions, as_of, agg.FINAL_AFTER.get(L.family, agg.DEFAULT_FINAL_AFTER), strict)
+        if row is None:
+            why = {"not_final": "the game is not final yet", "after_as_of": f"the game was not final by {as_of}"}[basis]
+            return unavailable(("play_by_play", f"{why}; play-by-play is stored for completed games only"))
+        season = row.get("season", "unknown")
+        pstore = pbp_mod.PbpStore(self.store.root)
+        have = sorted({s for (gid, s) in pstore.newest_by_game(league, season) if gid == str(game_id)})
+        if not have:
+            return unavailable(("play_by_play", f"no play-by-play stored for {league} game {game_id} "
+                                                "(`datasvc <league> pbp-fill` stores it)"))
+        pick = source or ("espn" if "espn" in have else have[0])
+        if pick not in have:
+            return unavailable(("source", f"{pick!r} play-by-play is not stored for this game; stored: {have}"))
+        got = pstore.read(league, season, str(game_id), pick, as_of=as_of, allow_reconstructed=(basis == "reconstructed"))
+        if got is None:
+            return unavailable(("play_by_play", f"no {pick} play-by-play observed by {as_of}"))
+        events = got["events"]
+        if period is not None:
+            events = [e for e in events if e.get("per") == int(period)]
+        if scoring_only:
+            events = [e for e in events if e.get("sc") or e.get("type") == "goal"]
+        data = {"game": row, "source": pick, "sources_available": have, "header": got["header"],
+                "events": events, "drives": got["drives"], "n_events": len(events)}
+        return self._ok(league, "play_by_play", data, [row, got["index"]], as_of, game_basis=basis,
+                        pbp_observed_utc=got["index"]["observed_utc"], strict=strict)

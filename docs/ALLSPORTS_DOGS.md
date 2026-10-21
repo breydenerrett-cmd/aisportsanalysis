@@ -153,3 +153,43 @@ are validation errors for any other sport.
 * The scores poll is driven by the capture done store, because the CI runner cannot see the hounds ledger. The
   free tennis and MMA results are driven by the multibook store for the same reason.
 * Tennis Challenger/ITF matches and non-UFC MMA bouts have no free result source and void at 72 hours.
+
+## Player props: NBA, NFL, NHL, NCAAF (2026-10-20)
+
+Code `src/pipeline/allsports_props.py`, grader `src/pipeline/allsports_props_grade.py`, command
+`python3 -m src.cli allsports props [--plan]`, step "allsports props" in `scripts/capture_slot.sh`.
+
+* **What it buys.** Each game's main prop markets in ONE per-event call (`/sports/{key}/events/{id}/odds`, billed
+  markets x regions per event, `us` region): NBA points, rebounds, assists, threes, PRA (5); NHL points, assists,
+  shots on goal, anytime goal, saves (5); NFL pass yards and TDs, rush yards, receptions, reception yards, anytime TD
+  (6); NCAAF pass, rush and reception yards, anytime TD (4). The market lists are `props_markets` on each family in
+  `config/sports_catalog.json`; **the keys follow the vendor's documented list but no paid call was made to confirm
+  them**: a wrong key is an HTTP 422 that bills nothing, and the summary prints an ESCALATE line naming it.
+* **When.** Three windows before the start: t6h (6h to 2h out), t2h (2h to 30m), t30m (30m to the start), one snapshot
+  per window, soonest game first. A window that closes with no purchase is written as `missed` and never filled. A
+  game whose calls return no props twice running is left alone (college games without a prop board).
+* **Credits.** Own band `allsports_props` (`budget.ALLSPORTS_PROPS`, a direct-sum band: every call logs the vendor's
+  `x-requests-last`), own daily cap `capture.props_daily_cap_credits` = 1,200 in the config's capture block; it does not
+  spend the 1,500 all-sports cap or the 900 pre-game envelope. The absolute 5,000-credit floor applies first and fails
+  closed (an unreadable quota stops the run). Estimate: a weeknight (8 NBA + 8 NHL) about 240 credits; a Sunday (13 NFL,
+  8 NBA, 6 NHL) about 440; a Saturday (30 college games with props, 10 NBA, 8 NHL) about 630; roughly 330 a day over a
+  week in season, 10,000 a month. Well inside the cap, so raising the cap alone buys nothing: more spend means more
+  markets (alternate lines), more windows (`props_phases_minutes`) or more leagues (WNBA, NCAAB, add a catalog entry).
+* **Rows.** `data/processed/allsports_props.jsonl`, the MLB prop store's shape (`batter_props._project`): `event_id,
+  game_date, commence_time, home_team, away_team, market, selection, player, side, line (string, null for anytime),
+  price, book, book_last_update, observed_utc, capture_phase` plus `sport` and `league`. Every snapshot is whole (no
+  de-duplication against an earlier window). Memory: `data/processed/allsports_props_done.jsonl` (phases bought or
+  missed, one `call` marker per billed fetch with credits, errors, quiet-league peeks). Both are un-ignored in
+  `.gitignore`, appended only, and the rows file is a registered rotatable store (`store rotate --all` in the slot), so it
+  cannot reach GitHub's 100 MB limit. Read it with `allsports_props.iter_rows` (archive segments plus hot file). Neither
+  file is copied into the web image (`.dockerignore`): nothing serves props. Size, unmeasured until a live run: about
+  200-400 KB per NBA game snapshot, so tens of MB a week in season.
+* **Kill switch.** `ALLSPORTS_PROPS=0` (also `ALLSPORTS_CAPTURE=0`, or `capture.props_enabled=false`).
+* **Grading.** `grade_prop(row, box)` -> `win | loss | push | void | unresolved`, against `DataClient().league(..).game(id)`
+  (NBA, NHL, NCAAF) or the nflverse player rows (NFL). A player who did not play is a void; a game not final, an
+  unmatched name, a stat the box lacks or a market it cannot answer is `unresolved`, never a guess. **NCAAF cannot be
+  graded from the stored data**: college leagues keep team totals only (`players=False`, about 100 MB a season to turn
+  on), so those rows grade `unresolved` until player lines are enabled. Joining an Odds API event to a data-service game
+  id is not built.
+* **Licence note.** The Odds API terms forbid selling the data as a feed: these rows back picks and research, not a
+  data product (docs/datasvc/LICENSING.md).

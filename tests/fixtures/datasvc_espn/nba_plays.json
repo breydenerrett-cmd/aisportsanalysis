@@ -1,0 +1,465 @@
+{
+ "plays": [
+  {
+   "awayScore": 0,
+   "clock": {
+    "displayValue": "12:00"
+   },
+   "coordinate": {
+    "x": -214748340,
+    "y": -214748365
+   },
+   "homeScore": 0,
+   "id": "4018983884",
+   "participants": [
+    {
+     "athlete": {
+      "id": "4593016"
+     }
+    },
+    {
+     "athlete": {
+      "id": "4431680"
+     }
+    },
+    {
+     "athlete": {
+      "id": "4065733"
+     }
+    }
+   ],
+   "period": {
+    "displayValue": "1st Quarter",
+    "number": 1
+   },
+   "pointsAttempted": 0,
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "4",
+   "shootingPlay": false,
+   "shortDescription": "Jump Ball",
+   "team": {
+    "id": "29"
+   },
+   "text": "Quinten Post vs. Onyeka Okongwu (Ty Jerome gains possession)",
+   "type": {
+    "id": "615",
+    "text": "Jumpball"
+   },
+   "wallclock": "2026-10-05T22:52:31Z"
+  },
+  {
+   "awayScore": 2,
+   "clock": {
+    "displayValue": "11:49"
+   },
+   "coordinate": {
+    "x": 24,
+    "y": 1
+   },
+   "homeScore": 0,
+   "id": "4018983887",
+   "participants": [
+    {
+     "athlete": {
+      "id": "4065733"
+     }
+    },
+    {
+     "athlete": {
+      "id": "5041935"
+     }
+    }
+   ],
+   "period": {
+    "displayValue": "1st Quarter",
+    "number": 1
+   },
+   "pointsAttempted": 2,
+   "scoreValue": 2,
+   "scoringPlay": true,
+   "sequenceNumber": "7",
+   "shootingPlay": true,
+   "shortDescription": "+2 Points",
+   "team": {
+    "id": "29"
+   },
+   "text": "Ty Jerome makes driving layup (Cameron Boozer assists)",
+   "type": {
+    "id": "110",
+    "text": "Driving Layup Shot"
+   },
+   "wallclock": "2026-10-05T23:11:12Z"
+  },
+  {
+   "awayScore": 2,
+   "clock": {
+    "displayValue": "11:30"
+   },
+   "coordinate": {
+    "x": 48,
+    "y": 12
+   },
+   "homeScore": 3,
+   "id": "4018983889",
+   "participants": [
+    {
+     "athlete": {
+      "id": "4278039"
+     }
+    },
+    {
+     "athlete": {
+      "id": "4869342"
+     }
+    }
+   ],
+   "period": {
+    "displayValue": "1st Quarter",
+    "number": 1
+   },
+   "pointsAttempted": 3,
+   "scoreValue": 3,
+   "scoringPlay": true,
+   "sequenceNumber": "9",
+   "shootingPlay": true,
+   "shortDescription": "+3 Points",
+   "team": {
+    "id": "1"
+   },
+   "text": "Nickeil Alexander-Walker makes 25-foot three point jumper (Dyson Daniels assists)",
+   "type": {
+    "id": "92",
+    "text": "Jump Shot"
+   },
+   "wallclock": "2026-10-05T23:11:31Z"
+  },
+  {
+   "awayScore": 2,
+   "clock": {
+    "displayValue": "11:18"
+   },
+   "coordinate": {
+    "x": 46,
+    "y": 17
+   },
+   "homeScore": 3,
+   "id": "40189838811",
+   "participants": [
+    {
+     "athlete": {
+      "id": "5041935"
+     }
+    }
+   ],
+   "period": {
+    "displayValue": "1st Quarter",
+    "number": 1
+   },
+   "pointsAttempted": 3,
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "11",
+   "shootingPlay": true,
+   "shortDescription": "Missed 3PT",
+   "team": {
+    "id": "29"
+   },
+   "text": "Cameron Boozer misses 26-foot three point pullup jump shot",
+   "type": {
+    "id": "131",
+    "text": "Pullup Jump Shot"
+   },
+   "wallclock": "2026-10-05T23:11:43Z"
+  },
+  {
+   "awayScore": 2,
+   "clock": {
+    "displayValue": "11:18"
+   },
+   "coordinate": {
+    "x": 46,
+    "y": 17
+   },
+   "homeScore": 3,
+   "id": "40189838812",
+   "participants": [
+    {
+     "athlete": {
+      "id": "4869342"
+     }
+    }
+   ],
+   "period": {
+    "displayValue": "1st Quarter",
+    "number": 1
+   },
+   "pointsAttempted": 0,
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "12",
+   "shootingPlay": false,
+   "shortDescription": "Rebound",
+   "team": {
+    "id": "1"
+   },
+   "text": "Dyson Daniels defensive rebound",
+   "type": {
+    "id": "155",
+    "text": "Defensive Rebound"
+   },
+   "wallclock": "2026-10-05T23:11:43Z"
+  },
+  {
+   "awayScore": 2,
+   "clock": {
+    "displayValue": "11:03"
+   },
+   "coordinate": {
+    "x": 20,
+    "y": 8
+   },
+   "homeScore": 5,
+   "id": "40189838813",
+   "participants": [
+    {
+     "athlete": {
+      "id": "4701230"
+     }
+    }
+   ],
+   "period": {
+    "displayValue": "1st Quarter",
+    "number": 1
+   },
+   "pointsAttempted": 2,
+   "scoreValue": 2,
+   "scoringPlay": true,
+   "sequenceNumber": "13",
+   "shootingPlay": true,
+   "shortDescription": "+2 Points",
+   "team": {
+    "id": "1"
+   },
+   "text": "Jalen Johnson makes 9-foot pullup jump shot",
+   "type": {
+    "id": "131",
+    "text": "Pullup Jump Shot"
+   },
+   "wallclock": "2026-10-05T23:11:58Z"
+  },
+  {
+   "awayScore": 5,
+   "clock": {
+    "displayValue": "10:50"
+   },
+   "coordinate": {
+    "x": 5,
+    "y": 16
+   },
+   "homeScore": 5,
+   "id": "40189838814",
+   "participants": [
+    {
+     "athlete": {
+      "id": "5112087"
+     }
+    },
+    {
+     "athlete": {
+      "id": "4903027"
+     }
+    }
+   ],
+   "period": {
+    "displayValue": "1st Quarter",
+    "number": 1
+   },
+   "pointsAttempted": 3,
+   "scoreValue": 3,
+   "scoringPlay": true,
+   "sequenceNumber": "14",
+   "shootingPlay": true,
+   "shortDescription": "+3 Points",
+   "team": {
+    "id": "29"
+   },
+   "text": "Jaylen Wells makes 25-foot three point jumper (Cedric Coward assists)",
+   "type": {
+    "id": "92",
+    "text": "Jump Shot"
+   },
+   "wallclock": "2026-10-05T23:12:11Z"
+  },
+  {
+   "awayScore": 5,
+   "clock": {
+    "displayValue": "10:37"
+   },
+   "coordinate": {
+    "x": 23,
+    "y": 12
+   },
+   "homeScore": 5,
+   "id": "40189838816",
+   "participants": [
+    {
+     "athlete": {
+      "id": "4701230"
+     }
+    }
+   ],
+   "period": {
+    "displayValue": "1st Quarter",
+    "number": 1
+   },
+   "pointsAttempted": 2,
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "16",
+   "shootingPlay": true,
+   "shortDescription": "Missed FG",
+   "team": {
+    "id": "1"
+   },
+   "text": "Jalen Johnson misses 11-foot fade away jump shot",
+   "type": {
+    "id": "121",
+    "text": "Fade Away Jump Shot"
+   },
+   "wallclock": "2026-10-05T23:12:23Z"
+  },
+  {
+   "awayScore": 5,
+   "clock": {
+    "displayValue": "10:37"
+   },
+   "coordinate": {
+    "x": 23,
+    "y": 12
+   },
+   "homeScore": 5,
+   "id": "40189838817",
+   "participants": [
+    {
+     "athlete": {
+      "id": "4593016"
+     }
+    }
+   ],
+   "period": {
+    "displayValue": "1st Quarter",
+    "number": 1
+   },
+   "pointsAttempted": 0,
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "17",
+   "shootingPlay": false,
+   "shortDescription": "Rebound",
+   "team": {
+    "id": "29"
+   },
+   "text": "Quinten Post defensive rebound",
+   "type": {
+    "id": "155",
+    "text": "Defensive Rebound"
+   },
+   "wallclock": "2026-10-05T23:12:23Z"
+  },
+  {
+   "awayScore": 5,
+   "clock": {
+    "displayValue": "10:26"
+   },
+   "coordinate": {
+    "x": 23,
+    "y": 26
+   },
+   "homeScore": 5,
+   "id": "40189838818",
+   "participants": [
+    {
+     "athlete": {
+      "id": "4593016"
+     }
+    }
+   ],
+   "period": {
+    "displayValue": "1st Quarter",
+    "number": 1
+   },
+   "pointsAttempted": 3,
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "18",
+   "shootingPlay": true,
+   "shortDescription": "Missed 3PT",
+   "team": {
+    "id": "29"
+   },
+   "text": "Quinten Post misses 25-foot three point jumper",
+   "type": {
+    "id": "92",
+    "text": "Jump Shot"
+   },
+   "wallclock": "2026-10-05T23:12:35Z"
+  },
+  {
+   "awayScore": 132,
+   "clock": {
+    "displayValue": "0.0"
+   },
+   "coordinate": {
+    "x": -214748340,
+    "y": -214748365
+   },
+   "homeScore": 123,
+   "id": "401898388764",
+   "period": {
+    "displayValue": "4th Quarter",
+    "number": 4
+   },
+   "pointsAttempted": 0,
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "764",
+   "shootingPlay": false,
+   "shortDescription": "End of 4th",
+   "text": "End of the 4th Quarter",
+   "type": {
+    "id": "412",
+    "text": "End Period"
+   },
+   "wallclock": "2026-10-06T01:38:27Z"
+  },
+  {
+   "awayScore": 132,
+   "clock": {
+    "displayValue": "0.0"
+   },
+   "coordinate": {
+    "x": -214748340,
+    "y": -214748365
+   },
+   "homeScore": 123,
+   "id": "401898388765",
+   "period": {
+    "displayValue": "4th Quarter",
+    "number": 4
+   },
+   "pointsAttempted": 0,
+   "scoreValue": 0,
+   "scoringPlay": false,
+   "sequenceNumber": "765",
+   "shootingPlay": false,
+   "shortDescription": "End of Game",
+   "text": "End of Game",
+   "type": {
+    "id": "402",
+    "text": "End Game"
+   },
+   "wallclock": "2026-10-06T01:38:27Z"
+  }
+ ]
+}

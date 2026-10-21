@@ -181,8 +181,14 @@ LIVE_ODDS = "live_odds"
 # every call logs its own cost (`credits_used_last`, the vendor's x-requests-last), and the day's total is
 # the sum of those, never a balance delta that another runner's spend could be mis-billed into.
 ALLSPORTS = "allsports_capture"
-VALID_BANDS = frozenset({LIVE_CAPTURE, HISTORICAL_BACKFILL, PROBE, TEST, LIVE_ODDS, ALLSPORTS})
-DIRECT_SUM_BANDS = frozenset({LIVE_ODDS, ALLSPORTS})
+# Player props for NBA, NFL, NHL and NCAAF (2026-10-20, src/pipeline/allsports_props.py): the per-event odds endpoint,
+# which bills markets x regions PER EVENT. Its own band and its own daily cap (config/sports_catalog.json
+# "capture.props_daily_cap_credits", default 1,200 a day), so it neither spends the all-sports cap nor the pre-game
+# envelope, and neither can starve it. A DIRECT-SUM band like the two above: each call logs its own cost, the vendor's
+# `x-requests-last`, and the day's total is the sum of those, never a balance delta.
+ALLSPORTS_PROPS = "allsports_props"
+VALID_BANDS = frozenset({LIVE_CAPTURE, HISTORICAL_BACKFILL, PROBE, TEST, LIVE_ODDS, ALLSPORTS, ALLSPORTS_PROPS})
+DIRECT_SUM_BANDS = frozenset({LIVE_ODDS, ALLSPORTS, ALLSPORTS_PROPS})
 
 # Every `caller` string the five paid-capture `run()` entry points log via
 # `pipeline.creditlog` (dense.py's own close-capture pass included -- it is
@@ -485,6 +491,42 @@ def can_spend_allsports(est_credits: int, now=None, store=None, remaining=None, 
             return Decision(False, f"refused: all-sports sub-cap {caller_prefix} (spent={sub_spent}, "
                                    f"requested={est_credits}, cap={sub_cap})")
     return Decision(True, f"ok: all-sports {spent}+{est_credits} of {cap} today")
+
+
+def allsports_props_spent_today(now=None, store=None) -> int:
+    """Credits the player-props capture has spent today (UTC): the sum of each call's own logged cost."""
+    today = _row_date({"utc": _utc_iso(_now(now))})
+    return sum(
+        (r.get("credits_used_last") or 0) for r in _rows(store)
+        if _row_date(r) == today and row_band(r) == ALLSPORTS_PROPS)
+
+
+def allsports_props_daily_cap(config=None) -> int:
+    """The player-props daily cap, a config value (config/sports_catalog.json capture.props_daily_cap_credits)."""
+    from src.sports import catalog
+    return catalog.props_daily_cap_credits(config)
+
+
+def can_spend_allsports_props(est_credits: int, now=None, store=None, remaining=None, config=None) -> Decision:
+    """May the player-props capture spend `est_credits` right now?
+
+    Checked in order: (1) a non-positive request is allowed; (2) the absolute credit floor, failing CLOSED when the
+    quota is unreadable; (3) the band's own daily cap. Never reads the pre-game DAILY_ENVELOPE or the all-sports cap:
+    this band has its own. "skipped: credit floor" means stop; nothing here works around it."""
+    if est_credits <= 0:
+        return Decision(True, "ok: props non-positive request")
+    if remaining is None:
+        remaining = remaining_today(now=now, store=store)
+    if remaining is None:
+        return Decision(False, "skipped: quota unreadable (no credit_log row for today)")
+    if remaining - est_credits <= CREDIT_FLOOR:
+        return Decision(False, f"skipped: credit floor (remaining={remaining}, "
+                               f"floor={CREDIT_FLOOR}, requested={est_credits})")
+    cap = allsports_props_daily_cap(config)
+    spent = allsports_props_spent_today(now=now, store=store)
+    if spent + est_credits > cap:
+        return Decision(False, f"refused: props daily cap (spent={spent}, requested={est_credits}, cap={cap})")
+    return Decision(True, f"ok: props {spent}+{est_credits} of {cap} today")
 
 
 def capture_spent_today(now=None, store=None) -> int:
@@ -904,6 +946,10 @@ def status(now=None, store=None, families_path=None) -> dict:
         "allsports": {
             "spent_today": allsports_spent_today(now=now, store=store),
             "cap": allsports_daily_cap(),
+        },
+        "allsports_props": {
+            "spent_today": allsports_props_spent_today(now=now, store=store),
+            "cap": allsports_props_daily_cap(),
         },
         "drop_order_version": DROP_ORDER_VERSION,
         "drop_order": [d["family"] for d in DROP_ORDER],
