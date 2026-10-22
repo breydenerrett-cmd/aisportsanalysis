@@ -86,7 +86,7 @@ class TheReviewComesBeforeAnyChange(unittest.TestCase):
         data = payloads()["proposal"]
         out = flow(reviewed(), [click(OPEN, "a"), click(hook("training-go"), "r", wait=300),
                                 click(hook("review-apply"), "done", wait=400, capture=[q("card", hook("training-card"), "count"), q("kind", ".rt-sheet", "attr", attr="data-hook")])])
-        self.assertEqual(sent(out["posts"][-1]), {"url": "/hounds/u-1/train", "body": {"confirm": True, "picks": data["picks"]}})
+        self.assertEqual(sent(out["posts"][-1]), {"url": "/hounds/u-1/train", "body": {"confirm": True, "picks": data["picks"], "basis": data["basis"]}})
         self.assertEqual(out["captures"]["done"]["card"], 1)
 
     def test_clearing_a_tick_leaves_that_change_out_of_the_apply(self):
@@ -161,6 +161,7 @@ class TweakingAProposal(unittest.TestCase):
         data["changes"] = data["changes"][:1]
         data["picks"] = data["picks"][:1]
         data["changes"][0]["cite"] = {"line": 0, "text": "look at more sports", "quote": "more sports"}
+        data["basis"] = "u-1:revisedcard00"                     # its own basis, so a test can see WHICH card Apply answered
         return data
 
     def test_the_box_opens_and_a_second_proposal_is_asked_for_with_the_words_and_the_round(self):
@@ -188,7 +189,8 @@ class TweakingAProposal(unittest.TestCase):
                             click(hook("review-apply"), "done", wait=300)],
                    switchAfter={"/hounds/u-1/train/propose": [1, [200, revised]]})
         self.assertEqual(out["captures"]["s"]["changes"], 1, "the revised card replaced the first list")
-        self.assertEqual(out["posts"][-1]["body"], {"confirm": True, "picks": revised["picks"]})
+        self.assertEqual(out["posts"][-1]["body"], {"confirm": True, "picks": revised["picks"], "basis": "u-1:revisedcard00"},
+                         "Apply answers the card on screen: its picks and its basis, so a stale card is refused by the server")
 
     def test_an_empty_tweak_asks_for_words_and_sends_nothing(self):
         out = flow(reviewed(), [click(OPEN, "a"), click(hook("training-go"), "r", wait=300), click(hook("review-tweak"), "o", wait=30),
@@ -286,7 +288,7 @@ class RetuneMe(unittest.TestCase):
         out = self.ask(self.routes(), [dict(do="click", sel=hook("ask-retune"), wait=300), dict(do="click", sel=hook("review-apply"), wait=400, capture=[
             q("lineage", hook("training-lineage")), q("label", hook("training-label")), q("honesty", hook("training-honesty")),
             q("card", hook("training-card"), "count")])])
-        self.assertEqual(sent(out["posts"][-1]), {"url": f"/hounds/{HID}/train", "body": {"confirm": True, "picks": data["picks"], "origin": "chat"}})
+        self.assertEqual(sent(out["posts"][-1]), {"url": f"/hounds/{HID}/train", "body": {"confirm": True, "picks": data["picks"], "basis": data["basis"], "origin": "chat"}})
         cap = out["captures"]["3"]
         self.assertEqual(cap["card"], 1)
         self.assertEqual(cap["label"], "Retuned")

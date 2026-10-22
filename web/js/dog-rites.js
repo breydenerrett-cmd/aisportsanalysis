@@ -336,7 +336,7 @@ function trainingFlow(dog, { opener = null, onTrained = null, backHref = null, r
       sheet.el.setAttribute("data-hook", retune ? "retune-running" : "training-running");
       if (titleEl) titleEl.textContent = `${dog.name} is in training`;
       if (layer && layer.setAttribute) layer.setAttribute("data-evolve", "1");
-      const request = post(base, Object.assign({ confirm: true, picks: decision.picks }, origin ? { origin } : {}), SLOW)
+      const request = post(base, Object.assign({ confirm: true, picks: decision.picks }, decision.basis ? { basis: decision.basis } : {}, origin ? { origin } : {}), SLOW)
         .then((r) => ({ ok: true, r }), (e) => ({ ok: false, e }));
       // "Back to My Kennel": on the kennel page it closes the sheet and the page redraws; elsewhere (the hound page) it goes to `backHref`
       const leave = (result) => () => {

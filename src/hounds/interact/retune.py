@@ -145,7 +145,7 @@ def clean_lines(raw: Any) -> list:
     for item in raw:
         if not isinstance(item, str):
             continue
-        text = " ".join(re.sub(r"[\x00-\x1f\x7f]", " ", item).split())[:LINE_MAX]
+        text = " ".join(re.sub(r"[\x00-\x1f\x7f]", " ", item[: LINE_MAX * 4]).split())[:LINE_MAX]    # cut before the pattern runs
         if text:
             out.append(text)
     return out[-MAX_CHAT_LINES:]
@@ -610,7 +610,7 @@ def compose_lines(diag: Mapping) -> list:
     else:
         lines.append("I cannot read today's board just now, so I cannot count what a change would do.")
     if diag.get("eligible"):
-        lines.append("Tap Retune me and I will show what I would change and why. Nothing changes until you confirm.")
+        lines.append("Tap Retune me and I will show what I would change and why. Nothing changes until you tap Apply.")
     else:
         lines.append(f"I cannot be retuned right now. {diag.get('gate') or ''}".strip())
     return lines

@@ -139,7 +139,9 @@ class NothingAboutTheAccountLeaves(KennelCase):
     def test_a_dog_entry_has_only_the_public_fields(self):
         dog = kennels.kennel_detail(self.jacob_handle)["dogs"][0]
         self.assertEqual(set(dog), {"id", "name", "tagline", "status", "version_no", "look", "sports", "record", "settled",
-                                    "open_bets", "new", "last_pick", "page_href", "bankroll", "trained_times", "coached_from", "root_id"})
+                                    "open_bets", "new", "last_pick", "page_href", "bankroll", "trained_times", "coached_from", "root_id",
+                                    # the lineage marker (Retune from chat): how the version came to be, never who or which account
+                                    "origin", "origin_label"})
 
     def test_every_dog_carries_its_paper_account_even_a_dog_with_no_bet(self):
         for dog in kennels.kennel_detail(self.jacob_handle)["dogs"]:

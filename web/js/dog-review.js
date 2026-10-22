@@ -57,7 +57,7 @@ export function reviewChange(c, i, onTick) {
 
 /**
  * Draw the proposal in `body` and resolve with what the owner decided:
- *   { action: "apply", picks: [cid...] }   the ids still ticked (at least one)
+ *   { action: "apply", picks: [cid...], basis }   the ids still ticked (at least one) and the card's basis (what rule it was drawn for)
  *   { action: "veto" }                     the owner said no (the server was told; if it could not be reached nothing had changed anyway)
  *
  * `first` is the server's proposal card. `propose(extra)` asks for a revised one (`extra` is { tweak, round }); `veto()` tells the
@@ -123,7 +123,7 @@ export function reviewProposal({ body, sheet, first, propose, veto, coachBlock =
         if (busy) return;
         const picks = items.filter((li) => li.tick.checked).map((li) => li.getAttribute("data-cid")).filter(Boolean);
         if (!picks.length) return;
-        resolve({ action: "apply", picks });
+        resolve(card.basis ? { action: "apply", picks, basis: card.basis } : { action: "apply", picks });  // the basis: a stale card is refused, never applied
       }
 
       async function onVeto() {

@@ -327,7 +327,7 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
         # every training is reviewed first: the diagnosis, the proposal (read only), and only then the apply with the ticked changes
         self.assertEqual([p["url"] for p in out["posts"]], ["/hounds/u-1/train/diagnose", "/hounds/u-1/train/propose", "/hounds/u-1/train"])
         self.assertEqual(out["posts"][1]["body"], {})
-        self.assertEqual(out["posts"][2]["body"], {"confirm": True, "picks": payloads()["proposal"]["picks"]})
+        self.assertEqual(out["posts"][2]["body"], {"confirm": True, "picks": payloads()["proposal"]["picks"], "basis": payloads()["proposal"]["basis"]})
         data = payloads()["trained"]
         self.assertEqual(got["kind"], "training-reveal")
         self.assertEqual((got["label"], got["version"]), ("Trained", "Version 2"))

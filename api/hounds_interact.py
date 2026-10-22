@@ -327,6 +327,27 @@ class TrainRequest(RiteRequest):
     chat, ``origin: "chat"``. Without ``picks`` the default proposal is applied. A pick that is not on the menu is a 422."""
     picks: Optional[List[str]] = None
     origin: Optional[str] = None
+    basis: Optional[str] = None           # the review card's proposal_basis: a card drawn for a rule that has changed is a 409
+
+
+# What a page can ever send (the Ask box and the tweak box stop at 300 characters, a card has at most 3 changes). Anything larger
+# is not a person typing, so it is refused before a word of it is read rather than trimmed and acted on.
+CHAT_LINES_MAX = 20
+TEXT_MAX = 2000
+PICKS_MAX = 10
+PICK_ID_MAX = 120
+
+
+def _too_big(body) -> Optional[HTTPException]:
+    chat = getattr(body, "chat", None) or []
+    if len(chat) > CHAT_LINES_MAX:
+        return _err(422, "too_many_lines", f"send at most {CHAT_LINES_MAX} chat lines")
+    if any(isinstance(x, str) and len(x) > TEXT_MAX for x in chat) or len(getattr(body, "tweak", None) or "") > TEXT_MAX:
+        return _err(422, "text_too_long", f"a line of the chat or a tweak is at most {TEXT_MAX} characters")
+    picks = getattr(body, "picks", None) or []
+    if len(picks) > PICKS_MAX or any(len(str(p)) > PICK_ID_MAX for p in picks) or len(getattr(body, "basis", None) or "") > PICK_ID_MAX:
+        return _err(422, "too_many_changes", "that is not a set of changes a review card offers")
+    return None
 
 
 class ProposeRequest(BaseModel):
@@ -363,10 +384,14 @@ def send_to_training(hound_id: str, response: Response, body: Optional[TrainRequ
     comes back as the next version, with its old record frozen and a new one starting now. The page reviews first
     (``train/propose``); this is the only call that writes."""
     response.headers["Cache-Control"] = _NO_STORE
+    refused = _too_big(body)
+    if refused is not None:
+        raise refused
     try:
         dog = common.resolve(hound_id)
         out = training.train(dog, current_user.id, confirmed=bool(body and body.confirm), coach=coach.live(),
                              picks=getattr(body, "picks", None), origin=getattr(body, "origin", None),
+                             basis=getattr(body, "basis", None),
                              board_fn=retune.live_board_fn(dog) if dog is not None and dog.kind == common.KIND_USER else None)
     except rites.RiteError as exc:
         raise _rite_error(exc)
@@ -382,8 +407,9 @@ def training_proposal(hound_id: str, response: Response, body: Optional[ProposeR
     rounds). Claude Haiku maps words to the fixed menu when it can (the $5 cap, then the rules engine). Nothing is written."""
     response.headers["Cache-Control"] = _NO_STORE
     body = body or ProposeRequest()
-    if len(body.chat) > 20:
-        raise _err(422, "too_many_lines", "send at most 20 chat lines")
+    refused = _too_big(body)
+    if refused is not None:
+        raise refused
     try:
         dog = common.resolve(hound_id)
         out = training.review(dog, current_user.id, coach.live(), origin=body.origin, chat=body.chat, tweak=body.tweak,

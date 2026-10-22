@@ -120,6 +120,31 @@ class Apply(Routes):
         self.assertEqual((exc.status_code, self.code(exc)), (409, "training_too_soon"))
 
 
+class Hardening(Routes):
+    def test_a_stale_card_is_a_409_that_says_so(self):
+        card = self.propose()
+        self.apply(picks=card["picks"][:1], basis=card["basis"])
+        exc = self.err(self.apply, picks=card["picks"][:1], basis=card["basis"])
+        self.assertEqual((exc.status_code, self.code(exc)), (409, "proposal_stale"))
+        self.assertIn("out of date", exc.detail["message"])
+        self.assertEqual(len(user_store.lineage(self.hound_row["id"])), 2)
+
+    def test_a_pasted_megabyte_is_refused_before_it_is_read(self):
+        big = "x" * (self.api.TEXT_MAX + 1)
+        for body in ({"tweak": big}, {"origin": "chat", "chat": [big]}):
+            exc = self.err(self.propose, **body)
+            self.assertEqual((exc.status_code, self.code(exc)), (422, "text_too_long"))
+        exc = self.err(self.propose, origin="chat", chat=["a"] * 21)
+        self.assertEqual(self.code(exc), "too_many_lines")
+        self.untouched()
+
+    def test_a_flood_of_picks_or_a_giant_id_is_refused_before_the_menu_is_built(self):
+        for body in ({"picks": ["lower_books"] * 11}, {"picks": ["x" * 500]}, {"picks": ["lower_books"], "basis": "b" * 500}):
+            exc = self.err(self.apply, **body)
+            self.assertEqual((exc.status_code, self.code(exc)), (422, "too_many_changes"), body)
+        self.untouched()
+
+
 class OnlyTheOwnerIsOfferedRetune(Routes):
     def ask_as(self, user_id):
         dog = self.api._dog(self.hound_row["id"])

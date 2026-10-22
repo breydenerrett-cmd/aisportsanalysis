@@ -976,6 +976,32 @@ def _clean_origin(origin) -> Optional[str]:
     raise RiteError("bad_origin", "That is not a kind of training this hound knows.", 422)
 
 
+STALE_PROPOSAL = "proposal_stale"
+
+
+def proposal_basis(hound_id: str, spec: Mapping) -> str:
+    """What a proposal was made against: the hound version's id and its rule's hash. The review card carries it and Apply sends it
+    back, so a card that was drawn for a rule that has since changed (an edit in another tab, a second Apply, a training that
+    finished elsewhere) is refused in words instead of applying cids to a rule the owner never saw them against. A version's spec
+    never changes in place (``user_store.create_version`` makes a new id), so the id alone would do today; the hash keeps the check
+    true if that ever stops being so."""
+    return f"{hound_id}:{user_spec.spec_hash(spec)[:16]}"
+
+
+def _stale(name: str, *, applied_elsewhere: bool = False) -> RiteError:
+    how = ("was changed by another request a moment ago (a second tab, or Apply tapped twice)" if applied_elsewhere
+           else "has changed since the proposal was made")
+    return RiteError(STALE_PROPOSAL, f"This proposal is out of date: {name} {how}. Nothing more was changed. Open its newest "
+                                     "version and look at a fresh proposal.", 409)
+
+
+def _clip(text, limit: int) -> str:
+    """One line of the owner's words, control characters gone, spacing collapsed, at most ``limit`` characters. The raw text is
+    cut BEFORE any pattern runs over it, so a megabyte pasted into the box costs what a few hundred characters cost."""
+    raw = str(text if text is not None else "")[: limit * 4]
+    return " ".join(re.sub(r"[\x00-\x1f\x7f]", " ", raw).split())[:limit]
+
+
 def _nothing_message(dog, mode: str) -> str:
     if mode == "loosen":
         return (f"{dog.name} has not bet yet, and none of the changes it is allowed to make would add a game to today's board, "
@@ -1003,7 +1029,7 @@ def review(dog: Optional[common.Dog], user_id: int, coach=None, *, origin=None, 
     used = tweaks_used(dog.id, spec)
     mapper, read, table, message = None, None, None, ""
     if tweak is not None:
-        line = " ".join(re.sub(r"[\x00-\x1f\x7f]", " ", str(tweak)).split())[:retune.LINE_MAX]
+        line = _clip(tweak, retune.LINE_MAX)
         if not line:
             raise RiteError("tweak_empty", "Say what you want changed, or why, and the hound will look again.", 422)
         used = max(used, min(max(int(round_no or 0), 0), retune.TWEAK_ROUNDS))
@@ -1035,6 +1061,7 @@ def review(dog: Optional[common.Dog], user_id: int, coach=None, *, origin=None, 
     return {
         "origin": origin or "training", "mode": mode, "note": note, "light": gate["light"], "settled": analysis["settled"],
         "version_no": hound["version_no"], "name": dog.name, "framing": framing, "message": message,
+        "basis": proposal_basis(dog.id, spec),
         "changes": [dict(c) for c in changes], "picks": [c["cid"] for c in changes], "nothing": not changes,
         "today": today, "mapper": None if mapper is None else {k: mapper[k] for k in ("source", "label", "status")},
         "coach": coach_view(read) if read is not None and origin is None else None,
@@ -1067,7 +1094,8 @@ def gate_for(dog: Optional[common.Dog], user_id: int, *, now: Optional[datetime]
 def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, now: Optional[datetime] = None,
           rows: Optional[Sequence] = None, ledger_path: Optional[str] = None, db=None,
           env: Optional[Mapping] = None, poster: Optional[Callable] = None, background: bool = True,
-          coach=None, picks: Optional[Sequence[str]] = None, origin=None, board_fn: Optional[Callable] = None) -> dict:
+          coach=None, picks: Optional[Sequence[str]] = None, origin=None, board_fn: Optional[Callable] = None,
+          basis: Optional[str] = None) -> dict:
     """APPLY a training for ``user_id``. Returns the "what changed and why" card or raises ``RiteError``.
 
     ``coach`` is the ``coach.Coach`` that reads the diagnosis (the live routes pass ``coach.live()``, whose read the page already
@@ -1076,10 +1104,27 @@ def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, n
     ``picks`` are the menu cids the owner left ticked on the review card; with them the changes are exactly those (rebuilt from
     the menu and re-validated). With none, the default proposal is applied (the caller said yes without choosing). ``origin``
     ``"chat"`` marks the new version "owner retune (from chat)" in its lineage. ``board_fn`` is only used to choose the default
-    changes for a hound that is not betting."""
+    changes for a hound that is not betting.
+
+    ``basis`` is the review card's ``proposal_basis``. An Apply of a reviewed proposal (``picks`` or ``basis`` given) on a version that
+    is no longer the live one, or whose rule is not the one the card was drawn for, is refused as ``proposal_stale`` (409) with a
+    sentence that says so, never applied to whatever the rule has become; the same refusal answers the second of two Applies that
+    race (the store's own transaction lets exactly one of them retire the old version)."""
     from src.hounds.interact import coach as coach_mod, retune
     origin = _clean_origin(origin)
-    dog = rites.guard(dog, user_id)
+    reviewed = picks is not None or basis is not None
+    try:
+        dog = rites.guard(dog, user_id)
+    except RiteError as exc:
+        if reviewed and exc.code == "not_active":
+            raise _stale(dog.name) from None
+        raise
+    if reviewed:
+        # checked BEFORE the training gate: a double-tapped Apply is "out of date", not "too soon to train again"
+        live = user_store.get_hound(dog.id, db=db)
+        if live is not None and (live["status"] == user_store.STATUS_RETIRED
+                                 or (basis is not None and str(basis) != proposal_basis(dog.id, live["spec"]))):
+            raise _stale(dog.name)
     dog, moment, rows, bets, hound, gate = _ready(dog, user_id, confirmed_required=True, confirmed=confirmed, now=now, rows=rows,
                                                     ledger_path=ledger_path, db=db)
     spec = hound["spec"]
@@ -1131,7 +1176,9 @@ def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, n
         raise RiteError("spec_invalid", "The trained rule did not pass the menu's checks, so nothing was changed.", 422,
                         fields=exc.errors)
     except user_store.StoreError as exc:
-        status = {"not_found": 404, "retired": 409, "buried": 409}.get(exc.code, 400)
+        if exc.code == "retired":
+            raise _stale(dog.name, applied_elsewhere=True) from None    # two Applies raced and the other one made the version
+        status = {"not_found": 404, "buried": 409}.get(exc.code, 400)
         raise RiteError(exc.code, str(exc), status)
     _tweaks_clear(dog.id)
     import logging
