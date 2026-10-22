@@ -669,7 +669,7 @@ class TheModelPage(unittest.TestCase):
         self.assertIn("profit per $ bet", f["yield"])
         self.assertIn(f"${b['max_drawdown_usd']:,.2f}", f["dd"])
         self.assertRegex(f["record"], r"Record \d+-\d+-1 wins-losses-pushes")
-        self.assertIn("Bets 41 2 open", f["bets"])
+        self.assertIn("Bets 43 2 open, 41 settled", f["bets"])
         self.assertIn("% beat", f["clv"])
         self.assertIn("measurable bets", f["clv"])
         self.assertRegex(f["streak"], r"Streak [WL]\d (wins|losses) in a row")
