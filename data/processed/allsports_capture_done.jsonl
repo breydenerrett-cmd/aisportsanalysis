@@ -1395,3 +1395,6 @@
 {"events": 4, "kind": "peek", "next_check_utc": "2026-10-22T12:33:11.173250Z", "observed_utc": "2026-10-22T06:33:11.173250Z", "sport_key": "soccer_finland_veikkausliiga"}
 {"commence_utc": "2026-10-22T07:00:00Z", "event_id": "b5289e209ec08b95cb68588ddfe407c8", "kind": "phase", "observed_utc": "2026-10-22T06:33:11.173250Z", "phase": "t30m", "rows": 3, "sport_key": "cricket_international_t20"}
 {"call_kind": "pregame", "credits": 1, "events": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T06:33:11.173250Z", "regions": ["us"], "rows": 3, "sport_key": "cricket_international_t20", "stored": 3}
+{"commence_utc": "2026-10-22T08:36:00Z", "event_id": "02afa2b2ca20df7fdad184de93d21aae", "kind": "phase", "observed_utc": "2026-10-22T06:48:34.623896Z", "phase": "t2h", "rows": 3, "sport_key": "basketball_nbl"}
+{"call_kind": "pregame", "credits": 3, "events": 4, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-22T06:48:34.623896Z", "regions": ["us"], "rows": 12, "sport_key": "basketball_nbl", "stored": 6}
+{"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T06:48:34.623896Z", "regions": ["us"], "rows": 34, "sport_key": "tennis_wta_ningbo_open", "stored": 34}
