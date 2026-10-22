@@ -32,7 +32,7 @@ from unittest import mock
 from src.appstate import users as users_store
 from src.hounds import live_scores as ls
 from src.hounds import live_settle as lv
-from src.hounds import unit_size, user_store
+from src.hounds import unit_size, user_settle, user_store
 from src.notify import alert_channels as ch
 from src.notify import alert_dispatch as dispatch
 from src.notify import alert_live
@@ -789,6 +789,427 @@ class RidesTheGradingPass(LiveCase):
         feed = Fake({})
         self.pass_at("2026-10-21T23:17:00Z", feed)          # starting-soon needs only the cache row, never the feed
         self.assertEqual(feed.urls, [])
+
+
+# ---------------------------------------------------------------------------
+# verification, 2026-10-22: the scan is bounded, cross-machine safe, and survives the odd cases
+# ---------------------------------------------------------------------------
+
+class _NoLock:
+    """Stands in for alerts._lock: a second MACHINE does not share this process's threading lock."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+class ScanIsBounded(LiveAlertBase):
+    def live_tickets(self, hound, n):
+        put_game(self.cache, state=ls.LIVE, home_score=50, away_score=48, progress=prog(3, "5:00"),
+                 updated=START + timedelta(minutes=5))
+        return [self.ticket(hound, i) for i in range(1, n + 1)]
+
+    def test_a_locked_alert_store_ends_the_scan_in_milliseconds_not_seconds(self):
+        import sqlite3
+        import time as _time
+        user, hound = self.member(event_toggles={"live": True})
+        tickets = self.live_tickets(hound, 30)
+        holder = sqlite3.connect(str(self.db), timeout=0)
+        holder.execute("BEGIN IMMEDIATE")                        # another process is mid-write on app.db
+        try:
+            t0 = _time.perf_counter()
+            report = self.scan(START + timedelta(minutes=6), tickets)
+            took = _time.perf_counter() - t0
+        finally:
+            holder.rollback()
+            holder.close()
+        self.assertTrue(report.get("busy"), report)
+        self.assertLess(took, 2.0, "a locked store must cost a pass well under the store's 5 s wait")
+        self.assertEqual(self.scan(START + timedelta(minutes=7), tickets)["live"], 30, "the next pass catches up")
+
+    def test_the_scan_stops_at_its_budget_and_takes_finals_first(self):
+        user, hound = self.member(event_toggles={"live": True})
+        put_game(self.cache, state=ls.LIVE, home_score=50, away_score=48, progress=prog(3), updated=START + timedelta(minutes=5))
+        put_game(self.cache, key="g-final", state=ls.FINAL, home_score=101, away_score=99, updated=START + timedelta(hours=2),
+                 final=START + timedelta(hours=2))
+        tickets = [self.ticket(hound, i) for i in range(1, 6)] + [self.ticket(hound, 99, event_id="g-final")]
+        ticks = iter([0.0] + [0.0] * 2 + [10.0] * 100)          # the deadline passes after the first ticket
+        report = alert_live.scan(self.cache, START + timedelta(hours=2, minutes=5), {}, tickets=tickets,
+                                 clock=lambda: next(ticks))
+        self.assertTrue(report.get("out_of_time"))
+        self.assertEqual(self.kinds(user), [("live", "final")], "the final (graded next) went first")
+
+    def test_one_bad_ticket_is_skipped_and_the_rest_still_alert(self):
+        user, hound = self.member(event_toggles={"live": True})
+        tickets = self.live_tickets(hound, 3)
+        real = alerts.emit_live
+
+        def flaky(row, *a, **k):
+            if row["bet_id"] == "t-2":
+                raise ValueError("bad row")
+            return real(row, *a, **k)
+
+        with mock.patch.object(alerts, "emit_live", side_effect=flaky):
+            with self.assertLogs("linehound.notify.alert_live", level="ERROR") as logs:
+                report = self.scan(START + timedelta(minutes=6), tickets)
+        self.assertEqual((report["live"], report["errors"]), (2, 1))
+        self.assertNotIn("bad row", " ".join(logs.output), "the log names the error type, never its content")
+
+    def test_a_steady_pass_does_no_write_and_opens_two_reads_per_member(self):
+        user, hound = self.member(event_toggles={"live": True})
+        tickets = self.live_tickets(hound, 40)
+        self.scan(START + timedelta(minutes=6), tickets)
+        with mock.patch.object(alerts, "emit_live") as emit, mock.patch.object(alerts, "set_live_side") as side, \
+                mock.patch.object(alerts, "starting_sent", wraps=alerts.starting_sent) as reads:
+            self.scan(START + timedelta(minutes=11), tickets)
+        emit.assert_not_called()
+        side.assert_not_called()
+        self.assertEqual(reads.call_count, 1, "one read per member, not one per ticket")
+
+
+class PassTiming(LiveCase):
+    """The real pass with 200 open tickets: the alert scan must not hold up the grade."""
+
+    def setUp(self):
+        super().setUp()
+        import tempfile
+        self._app = tempfile.TemporaryDirectory()
+        self.addCleanup(self._app.cleanup)
+        self.app_db = Path(self._app.name) / "app.db"
+        patch = mock.patch.object(users_store, "db_path", lambda: self.app_db)
+        patch.start()
+        self.addCleanup(patch.stop)
+        names = ["Alphadog", "Bravodog", "Charlie", "Deltadog", "Echodog"]
+        self.hounds = []
+        for i, name in enumerate(names):
+            user = users_store.create_user(f"m{i}@sample-mail.net", status="active", plan="free")
+            self.hounds.append(user_store.create_hound(user.id, spec_dict(name=name, sports=["NBA"])))
+            alerts.ensure_prefs(user.id)
+            alerts.update_prefs(user.id, {"channels": {"push": True}, "event_toggles": {"live": True}})
+        events, bets = [], []
+        for g in range(20):
+            home, away = f"Home Team{g}", f"Away Team{g}"
+            ev = espn_event(f"40{g}", home, away, state="in", name="STATUS_IN_PROGRESS", completed=False, hs=50, as_=48,
+                            date="2026-10-21T23:30Z", detail="5:00 - 3rd")
+            ev["competitions"][0]["status"].update({"period": 3, "displayClock": "5:00"})
+            events.append(ev)
+        for n in range(200):
+            g = n % 20
+            bets.append(user_bet(n, event=f"evt{g}", home=f"Home Team{g}", away=f"Away Team{g}",
+                                 hound=self.hounds[n % 5]["id"], side="home" if n % 2 else "away"))
+        self.write(*bets)
+        self.boards = {NBA_URL: {"events": events}}
+
+    def timed_passes(self, n=3):
+        import time as _time
+        out = []
+        for i in range(n):
+            feed = Fake(self.boards)
+            t0 = _time.perf_counter()
+            report = self.run_pass(utc("2026-10-21T23:40:00Z") + timedelta(minutes=5 * i), feed)
+            out.append((_time.perf_counter() - t0, list(feed.urls), report))
+        return out
+
+    def test_two_hundred_tickets_same_requests_and_a_bounded_scan(self):
+        with mock.patch.object(lv, "alerts_scan", lambda *a, **k: None):
+            before = self.timed_passes()
+        with alerts.connect() as conn:
+            conn.execute("DELETE FROM alert_events")
+        lv._OPEN_CACHE.clear()
+        self.conn.execute("DELETE FROM live_games")
+        after = self.timed_passes()
+        self.assertEqual([b[1] for b in before], [a[1] for a in after], "the alerts add no request")
+        first = after[0][2]["alerts"]
+        self.assertTrue(first["live"] > 0)
+        burst_limit = alert_live.SCAN_BUDGET_S + 1.5
+        self.assertLess(after[0][0], burst_limit, "a burst of new events is cut off at the scan's budget")
+        steady = after[-1][0] - before[-1][0]
+        self.assertLess(steady, 1.0, f"a pass with nothing new to say costs well under a second more (got {steady:.3f}s)")
+
+
+class TwoMachines(LiveAlertBase):
+    """Two servers on one app.db: neither machine's threading lock covers the other, the database must."""
+
+    def setUp(self):
+        super().setUp()
+        patch = mock.patch.object(alerts, "_lock", _NoLock())
+        patch.start()
+        self.addCleanup(patch.stop)
+
+    def test_a_stale_book_on_the_second_machine_cannot_spend_the_finals_slot(self):
+        user, hound = self.member(event_toggles={"live": True})
+        t = [self.ticket(hound)]
+        stale = alerts.live_book(user.id)                          # machine B read its book before A wrote
+        put_game(self.cache, state=ls.LIVE, home_score=50, away_score=54, progress=prog(2, "0:00", "STATUS_HALFTIME", "Halftime"),
+                 updated=START + timedelta(minutes=5))
+        self.scan(START + timedelta(minutes=6), t)                 # machine A: start + half
+        self.assertEqual(alerts.live_count(user.id, "t-1"), 2)
+        late_now = START + timedelta(hours=2)
+        put_game(self.cache, state=ls.LIVE, home_score=100, away_score=98, progress=prog(4), updated=late_now)
+        with mock.patch.object(alerts, "live_book", return_value=(dict(stale[0]), {"t-1": "winning"}, set(stale[2]))):
+            self.scan(late_now, t)                                 # machine B: thinks 0 raised and sees a late flip
+        self.assertEqual(alerts.live_count(user.id, "t-1"), 2, "the cap held in the insert itself")
+        put_game(self.cache, state=ls.FINAL, home_score=100, away_score=98, updated=late_now, final=late_now)
+        self.scan(late_now + timedelta(minutes=5), t)
+        self.assertEqual([m for _, m in self.kinds(user)], ["start", "half", "final"])
+
+    def test_concurrent_scans_write_each_event_once(self):
+        import threading
+        user, hound = self.member(event_toggles={"live": True})
+        tickets = [self.ticket(hound, i) for i in range(1, 9)]
+        put_game(self.cache)
+        path = self.dir / "live_settle.db"
+        barrier = threading.Barrier(4)
+        errors = []
+
+        def machine(now):
+            try:
+                cache = lv.connect(path)
+                barrier.wait()
+                alert_live.scan(cache, now, {}, tickets=tickets)
+                cache.close()
+            except Exception as exc:  # noqa: BLE001
+                errors.append(exc)
+
+        runs = [threading.Thread(target=machine, args=(START - timedelta(minutes=14),)) for _ in range(4)]
+        for r in runs:
+            r.start()
+        for r in runs:
+            r.join()
+        self.assertEqual(errors, [])
+        with alerts.connect() as conn:
+            got = conn.execute("SELECT kind, COUNT(*), COUNT(DISTINCT bet_id) FROM alert_events GROUP BY kind").fetchall()
+        self.assertEqual([tuple(r) for r in got], [("starting", 8, 8)])
+
+    def test_concurrent_live_scans_never_pass_three_per_ticket(self):
+        import threading
+        user, hound = self.member(event_toggles={"live": True})
+        tickets = [self.ticket(hound, i) for i in range(1, 6)]
+        path = self.dir / "live_settle.db"
+        moments = [
+            (START + timedelta(minutes=4), dict(state=ls.LIVE, home_score=2, away_score=0, progress=prog(1, "11:00"))),
+            (START + timedelta(minutes=70), dict(state=ls.LIVE, home_score=50, away_score=54,
+                                                 progress=prog(2, "0:00", "STATUS_HALFTIME", "Halftime"))),
+            (START + timedelta(minutes=140), dict(state=ls.LIVE, home_score=100, away_score=98, progress=prog(4, "4:00"))),
+            (START + timedelta(minutes=145), dict(state=ls.LIVE, home_score=100, away_score=104, progress=prog(4, "2:00"))),
+        ]
+        for now, game in moments + [(START + timedelta(minutes=160), dict(state=ls.FINAL, home_score=110, away_score=112))]:
+            put_game(self.cache, updated=now, final=now if game["state"] == ls.FINAL else None, **game)
+            barrier = threading.Barrier(3)
+
+            def machine():
+                cache = lv.connect(path)
+                barrier.wait()
+                alert_live.scan(cache, now, {}, tickets=tickets)
+                cache.close()
+
+            runs = [threading.Thread(target=machine) for _ in range(3)]
+            for r in runs:
+                r.start()
+            for r in runs:
+                r.join()
+        for i in range(1, 6):
+            self.assertLessEqual(alerts.live_count(user.id, f"t-{i}"), 3)
+            with alerts.connect() as conn:
+                keys = [r[0] for r in conn.execute("SELECT bet_id FROM alert_events WHERE user_id = ? AND kind = 'live' "
+                                                   "AND bet_id LIKE ?", (user.id, f"t-{i}#%")).fetchall()]
+            self.assertIn(alerts.live_key(f"t-{i}", "final"), keys, "the final kept its slot")
+
+
+class StaleAndSchedule(LiveAlertBase):
+    def row(self, hound, tip):
+        return {**self.ticket(hound), "kind": "hound_user_bet", "commence_time": ls.iso(tip)}
+
+    def test_starting_dropped_after_twenty_minutes_and_live_after_thirty(self):
+        cases = (("starting", 19, 1), ("starting", 21, 0), ("live", 29, 1), ("live", 31, 0))
+        for i, (kind, wait, sent) in enumerate(cases):
+            with self.subTest(kind=kind, wait=wait):
+                self.http = FakeHttp()
+                user, hound = self.member(email=f"stale{i}@sample-mail.net", name=f"Stale Dog{i}", channels={"push": False},
+                                          event_toggles={"live": True})
+                alerts.sms_opt_in(user.id, "(555) 234-5678", now=at(-60))
+                alerts.update_prefs(user.id, {"channels": {"sms": True}})
+                made = at(0)
+                row = self.row(hound, made + timedelta(hours=3))           # the tip is far off: only the age decides
+                if kind == "starting":
+                    alerts.emit_starting(row, minutes_out=14, now=made)
+                else:
+                    alerts.emit_live(row, "half", {"home_score": 1, "away_score": 2, "status": "winning"}, now=made)
+                self.drain(made + timedelta(minutes=wait), env={**ENV, **TWILIO})
+                self.assertEqual(len(self.texts()), sent)
+
+    def test_starting_soon_follows_the_scoreboards_start_not_the_odds_feeds(self):
+        user, hound = self.member()
+        real_tip = START + timedelta(minutes=85)                       # the odds feed is 85 minutes early
+        put_game(self.cache)
+        self.cache.execute("UPDATE live_games SET sched_utc=? WHERE game_key=?", (ls.iso(real_tip), GAME))
+        t = [self.ticket(hound)]
+        self.assertEqual(self.scan(START - timedelta(minutes=14), t)["starting"], 0, "not off the odds feed's time")
+        self.assertEqual(self.scan(real_tip - timedelta(minutes=13), t)["starting"], 1)
+        event = alerts.events_for(user.id)[0]
+        self.assertEqual((event["payload"]["minutes_out"], event["payload"]["start_utc"]), (13, ls.iso(real_tip)))
+
+    def test_a_scoreboard_time_a_day_away_is_not_trusted(self):
+        user, hound = self.member()
+        put_game(self.cache)
+        self.cache.execute("UPDATE live_games SET sched_utc=? WHERE game_key=?", (ls.iso(START + timedelta(days=1)), GAME))
+        self.assertEqual(self.scan(START - timedelta(minutes=14), [self.ticket(hound)])["starting"], 1)
+
+    def test_a_held_starting_alert_is_not_dropped_by_the_odds_feeds_earlier_time(self):
+        user, hound = self.sms_member()
+        real_tip = START + timedelta(minutes=85)
+        put_game(self.cache)
+        self.cache.execute("UPDATE live_games SET sched_utc=? WHERE game_key=?", (ls.iso(real_tip), GAME))
+        made = real_tip - timedelta(minutes=13)
+        self.scan(made, [self.ticket(hound)])
+        self.drain(made + timedelta(seconds=30), env={**ENV, **TWILIO})
+        self.assertEqual(len(self.texts()), 1, "the payload carries the real start, so the dispatcher keeps it")
+
+    def test_postponed_and_cancelled_games_send_nothing_with_every_toggle_on(self):
+        user, hound = self.member(event_toggles={"live": True})
+        t = [self.ticket(hound)]
+        for state in (ls.POSTPONED, ls.CANCELLED):
+            put_game(self.cache, state=state, updated=START + timedelta(minutes=5))
+            for minutes in (-14, -5, 5, 30, 120):
+                self.scan(START + timedelta(minutes=minutes), t)
+        self.assertEqual(alerts.events_for(user.id), [])
+
+
+class PositionFromTheTicket(unittest.TestCase):
+    def test_a_favourite_leading_by_less_than_the_spread_is_losing_the_ticket(self):
+        home_fav = {"market": "spread", "side": "home", "line": -6.5}
+        self.assertEqual(alert_live.ticket_status(home_fav, 70, 66), "losing")          # up 4, laying 6.5
+        self.assertEqual(alert_live.ticket_status(home_fav, 74, 66), "winning")
+        away_dog = {"market": "spread", "side": "away", "line": 6.5}
+        self.assertEqual(alert_live.ticket_status(away_dog, 70, 66), "winning", "the other side of the same score")
+        self.assertEqual(alert_live.ticket_status({"market": "spread", "side": "away", "line": -1.5}, 3, 4), "losing")
+
+    def test_totals_read_against_the_running_total(self):
+        over = {"market": "total", "side": "over", "line": 220.5}
+        self.assertEqual(alert_live.ticket_status(over, 100, 100), "losing")
+        self.assertEqual(alert_live.ticket_status(over, 111, 110), "winning")
+        self.assertEqual(alert_live.ticket_status({**over, "side": "under"}, 111, 110), "losing")
+        self.assertEqual(alert_live.ticket_status({**over, "line": 221.0}, 111, 110), "push")
+
+    def test_moneyline_follows_the_side(self):
+        self.assertEqual(alert_live.ticket_status({"market": "moneyline", "side": "away", "sport": "MLB"}, 3, 5), "winning")
+        self.assertEqual(alert_live.ticket_status({"market": "moneyline", "side": "home", "sport": "MLB"}, 3, 5), "losing")
+
+
+class GradedOrVoidedBeforeTheStart(RidesTheGradingPass):
+    def test_a_ticket_graded_or_voided_before_its_start_raises_nothing(self):
+        self.write(user_bet(1, hound=self.hound["id"], side="home"), user_bet(2, hound=self.hound["id"], side="away"))
+        self.write({"kind": user_settle.KIND_GRADED, "bet_id": "bet1", "result": "VOID", "hound_id": self.hound["id"]},
+                   {"kind": user_settle.KIND_GRADED, "bet_id": "bet2", "result": "LOSS", "hound_id": self.hound["id"]})
+        pre = self.pass_at("2026-10-21T23:17:00Z", Fake({}))
+        self.assertEqual(pre["alerts"]["starting"], 0)
+        self.assertEqual(self.moments(), [])
+
+    def test_the_pass_stores_the_scoreboards_own_start_for_the_next_pass(self):
+        self.write(user_bet(1, hound=self.hound["id"], side="home"))
+        late_tip = espn_event("401", "Brooklyn Nets", "Charlotte Hornets", state="pre", name="STATUS_SCHEDULED",
+                              completed=False, hs=0, as_=0, date="2026-10-22T00:55Z", detail="8:55 PM ET")
+        self.pass_at("2026-10-21T23:31:00Z", Fake({NBA_URL: self.board(late_tip)}))
+        row = self.conn.execute("SELECT state, sched_utc FROM live_games").fetchone()
+        self.assertEqual((row["state"], row["sched_utc"]), (ls.UPCOMING, "2026-10-22T00:55:00Z"))
+        nxt = self.pass_at("2026-10-22T00:42:00Z", Fake({NBA_URL: self.board(late_tip)}))
+        self.assertEqual(nxt["alerts"]["starting"], 1)
+
+
+class OddCases(LiveAlertBase):
+    def test_a_live_row_with_no_score_still_reads_cleanly_and_a_scoreless_final_is_skipped(self):
+        user, hound = self.member(event_toggles={"live": True})
+        put_game(self.cache, state=ls.LIVE, progress=prog(1, "11:00", label="11:00 - 1st"), updated=START + timedelta(minutes=2))
+        self.scan(START + timedelta(minutes=3), [self.ticket(hound)])
+        event = alerts.events_for(user.id)[0]
+        line = render.event_line(event, None)
+        self.assertNotIn("None", line)
+        self.assertNotIn("?", line)
+        put_game(self.cache, state=ls.FINAL, updated=START + timedelta(hours=2), final=START + timedelta(hours=2))
+        self.scan(START + timedelta(hours=2, minutes=1), [self.ticket(hound)])
+        self.assertEqual([m for _, m in self.kinds(user)], ["start"])
+
+    def test_a_hound_deleted_mid_pass_is_skipped_and_the_others_still_alert(self):
+        user, hound = self.member()
+        other_user, other = self.member(email="second@sample-mail.net", name="Second Dog")
+        put_game(self.cache)
+        tickets = [self.ticket(hound, 1), self.ticket(other, 2)]
+        real = user_store.get_hound
+        with mock.patch.object(user_store, "get_hound", lambda hid, **k: None if hid == hound["id"] else real(hid, **k)):
+            report = self.scan(START - timedelta(minutes=14), tickets)
+        self.assertEqual((report["starting"], report["errors"]), (1, 0))
+        self.assertEqual(alerts.events_for(user.id), [])
+        with mock.patch.object(user_store, "get_hound", side_effect=RuntimeError("row gone")):
+            with self.assertLogs("linehound.notify.alert_live", level="ERROR"):
+                report = self.scan(START - timedelta(minutes=13), tickets)
+        self.assertEqual(report["errors"], 2)
+
+    def test_a_score_stamped_by_a_machine_whose_clock_runs_ahead_is_still_fresh(self):
+        user, hound = self.member(event_toggles={"live": True})
+        now = START + timedelta(minutes=4)
+        put_game(self.cache, state=ls.LIVE, home_score=0, away_score=2, progress=prog(1), updated=now + timedelta(minutes=3))
+        self.assertEqual(self.scan(now, [self.ticket(hound)])["live"], 1)
+
+    def test_a_game_that_starts_after_midnight_utc(self):
+        user, hound = self.member()
+        tip = datetime(2026, 10, 22, 0, 5, tzinfo=timezone.utc)
+        put_game(self.cache, start=tip)
+        report = self.scan(datetime(2026, 10, 21, 23, 52, tzinfo=timezone.utc), [self.ticket(hound, start=ls.iso(tip))])
+        self.assertEqual(report["starting"], 1)
+        self.assertEqual(alerts.events_for(user.id)[0]["payload"]["minutes_out"], 13)
+
+    def test_quiet_hours_follow_the_clock_change(self):
+        prefs = {"quiet_start": 22, "quiet_end": 8, "tz": "America/New_York"}
+        # 2026-11-01: Eastern goes from EDT (-4) to EST (-5) at 06:00Z. 12:30Z is 07:30 EST: still quiet.
+        self.assertTrue(dispatch.in_quiet_hours(prefs, datetime(2026, 11, 1, 12, 30, tzinfo=timezone.utc)))
+        self.assertFalse(dispatch.in_quiet_hours(prefs, datetime(2026, 11, 1, 13, 5, tzinfo=timezone.utc)))
+        self.assertFalse(dispatch.in_quiet_hours(prefs, datetime(2026, 10, 31, 12, 30, tzinfo=timezone.utc)))  # 08:30 EDT
+
+    def test_a_unicode_team_name_keeps_the_text_to_one_plain_segment(self):
+        event = {"id": 1, "kind": "live", "created_utc": "2026-10-21T23:15:00Z", "payload": {
+            "hound_name": "DRAKEO", "hound_id": "u-abc", "sport": "SOCCER", "market": "moneyline",
+            "selection": "Beşiktaş to win", "price": 150, "stake_units": 2.0, "moment": "flip2",
+            "away_team": "ŁKS Łódź", "home_team": "Beşiktaş", "home_score": 2, "away_score": 1,
+            "status": "winning", "label": "78'", "start_utc": "2026-10-21T23:30:00Z"}}
+        text = render.sms_text([event], unit_size.fixed(25), "America/New_York", ENV)
+        self.assertTrue(text.isascii(), text)
+        self.assertLessEqual(len(text), 160)
+        self.assertIn("Besiktas", text)
+        self.assertTrue(text.endswith("Reply STOP to end."))
+        many = render.sms_text([dict(event, id=i) for i in range(5)], unit_size.fixed(25), "America/New_York", ENV)
+        self.assertTrue(many.isascii() and len(many) <= 160, many)
+
+
+class ChannelsAndPayloads(LiveAlertBase):
+    def test_all_channels_off_sends_nothing(self):
+        user, hound = self.member(channels={"email": False, "push": False, "sms": False, "native": False},
+                                  event_toggles={"live": True})
+        row = {**self.ticket(hound), "kind": "hound_user_bet", "commence_time": ls.iso(START)}
+        alerts.emit_placed(row, now=at(0))
+        alerts.emit_starting(row, minutes_out=14, now=at(1))
+        alerts.emit_live(row, "start", {"home_score": 0, "away_score": 0, "status": "winning"}, now=at(2))
+        alerts.emit_settled(row, {"result": "win", "profit_units": 2.2}, now=at(3))
+        self.drain(at(60), env={**ENV, **TWILIO})
+        self.assertEqual(self.http.calls, [])
+
+    def test_the_push_payload_carries_the_bet_and_nothing_about_the_member(self):
+        user, hound = self.sms_member(event_toggles={"live": True})
+        row = {**self.ticket(hound), "kind": "hound_user_bet", "commence_time": ls.iso(START)}
+        alerts.emit_live(row, "half", {"home_score": 50, "away_score": 54, "status": "winning", "label": "Halftime"}, now=at(0))
+        event = alerts.events_for(user.id)[0]
+        payload = render.push_payload([event], unit_size.fixed(25), "America/New_York", ENV)
+        self.assertEqual(set(payload), {"title", "body", "url", "tag", "paper"})
+        blob = json.dumps(payload)
+        for secret in (ADDRESS, "234-5678", "2345678", str(user.id) + "&", "user_id"):
+            self.assertNotIn(secret, blob)
+        self.assertIn(hound["id"], payload["url"])
+
+    def test_defaults_are_placed_starting_settled_on_and_live_off(self):
+        self.assertEqual(alerts.DEFAULT_TOGGLES, {"placed": True, "starting": True, "live": False, "settled": True})
+        user, _ = self.member()
+        self.assertEqual(alerts.get_prefs(user.id)["event_toggles"], alerts.DEFAULT_TOGGLES)
 
 
 if __name__ == "__main__":

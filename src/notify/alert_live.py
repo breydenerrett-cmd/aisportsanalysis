@@ -33,6 +33,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import sqlite3
 import time
 from datetime import datetime, timedelta
 from typing import Mapping, Optional, Sequence
@@ -179,9 +180,49 @@ def _snapshot(ticket: Mapping, game, progress: Optional[Mapping]) -> dict:
             "label": (progress or {}).get("label") or game["detail"]}
 
 
-def _live_moments(row: dict, owner: int, game, now: datetime, start: Optional[datetime], report: dict) -> None:
+def effective_start(ticket_start: Optional[datetime], game) -> Optional[datetime]:
+    """When the game really starts: the scoreboard's own scheduled time once the cache holds one (the odds feed's start
+    can be wrong by more than an hour: a tennis match on 2026-10-22 was 85 minutes off), else the ticket's. A scoreboard
+    time more than ``SCHED_TRUST`` away is not trusted over the ticket (a reschedule to another day, or a bad match)."""
+    try:
+        sched = ls.parse_utc(game["sched_utc"]) if "sched_utc" in game.keys() else None
+    except (KeyError, IndexError, AttributeError):
+        sched = None
+    if sched is None:
+        return ticket_start
+    if ticket_start is None or abs(sched - ticket_start) <= SCHED_TRUST:
+        return sched
+    return ticket_start
+
+
+class _Book:
+    """What one member already has on file, read once per scan: starting-soon bet ids, live event keys, live counts per
+    ticket and the last decided side per ticket. Kept current as the scan writes, so a pass over many tickets costs two
+    reads per member, not several connections per ticket."""
+
+    def __init__(self, owner: int):
+        self.starting = alerts.starting_sent(owner)
+        self.counts, self.sides, self.raised = alerts.live_book(owner)
+
+
+def _emit_live(row: dict, found: tuple, moment: str, snap: dict, now: datetime, book: _Book, report: dict) -> bool:
+    bet_id = str(row["bet_id"])
+    key = alerts.live_key(bet_id, moment)
+    if key in book.raised:
+        return False
+    wrote = alerts.emit_live(row, moment, snap, now=now, _owner=found)
+    book.raised.add(key)                                  # written, or refused by the key / the cap: either way, done
+    if wrote:
+        book.counts[bet_id] = book.counts.get(bet_id, 0) + 1
+        report["live"] += 1
+    return wrote
+
+
+def _live_moments(row: dict, found: tuple, game, now: datetime, start: Optional[datetime], report: dict,
+                  book: _Book) -> None:
     """Raise the live moments this ticket has reached in the cached game state (at most the ticket's cap)."""
     bet_id = str(row["bet_id"])
+    owner = found[1]
     progress = _progress(game)
     snap = _snapshot(row, game, progress)
     state = game["state"]
@@ -190,39 +231,61 @@ def _live_moments(row: dict, owner: int, game, now: datetime, start: Optional[da
         final_at = ls.parse_utc(game["final_utc"]) or updated
         if final_at is None or now - final_at > FINAL_FRESH:
             return
-        if alerts.live_count(owner, bet_id) < alerts.LIVE_CAP_PER_TICKET \
-                and alerts.emit_live(row, M_FINAL, snap, now=now):
-            report["live"] += 1
+        if game["home_score"] is None or game["away_score"] is None:
+            return                                         # a final with no score is not a line worth a message
+        if book.counts.get(bet_id, 0) < alerts.LIVE_CAP_PER_TICKET:
+            _emit_live(row, found, M_FINAL, snap, now, book, report)
         return
     if state != ls.LIVE or updated is None or now - updated > LIVE_FRESH:
         return
-    count = alerts.live_count(owner, bet_id)
-    room = count < alerts.LIVE_CAP_PER_TICKET - 1          # the last slot belongs to the final
-    prior, status = alerts.get_live_side(bet_id), snap["status"]
+    prior, status = book.sides.get(bet_id), snap["status"]
     flipped = (late(row["sport"], progress, row.get("league")) and status in (WINNING, LOSING)
                and prior in (WINNING, LOSING) and prior != status)
-    if status in (WINNING, LOSING):
+    if status in (WINNING, LOSING) and status != prior:
         alerts.set_live_side(owner, bet_id, status, now=now)      # BEFORE emitting: at most once beats twice for a message
-    if not room:
-        return
-    if start is not None and now - start <= WENT_LIVE_GRACE and alerts.emit_live(row, M_START, snap, now=now):
-        report["live"] += 1
-        count += 1
-        room = count < alerts.LIVE_CAP_PER_TICKET - 1
-    if room and at_break(row["sport"], progress) and alerts.emit_live(row, M_HALF, snap, now=now):
-        report["live"] += 1
-        count += 1
-        room = count < alerts.LIVE_CAP_PER_TICKET - 1
-    if room and flipped and alerts.emit_live(row, f"{M_FLIP}{count}", snap, now=now):
-        report["live"] += 1
+        book.sides[bet_id] = status
+
+    def room() -> bool:
+        return book.counts.get(bet_id, 0) < alerts.LIVE_CAP_PER_TICKET - 1     # the last slot belongs to the final
+
+    if room() and start is not None and now - start <= WENT_LIVE_GRACE:
+        _emit_live(row, found, M_START, snap, now, book, report)
+    if room() and at_break(row["sport"], progress):
+        _emit_live(row, found, M_HALF, snap, now, book, report)
+    if room() and flipped:
+        _emit_live(row, found, f"{M_FLIP}{book.counts.get(bet_id, 0)}", snap, now, book, report)
 
 
-def scan(conn, now: datetime, paths: Mapping, *, tickets: Optional[Sequence[Mapping]] = None) -> dict:
-    """Queue the starting-soon and live-update events the cache implies at ``now``. Returns {"tickets", "starting", "live"}.
+def _is_busy(exc: BaseException) -> bool:
+    return isinstance(exc, sqlite3.OperationalError) and ("locked" in str(exc) or "busy" in str(exc))
+
+
+def scan(conn, now: datetime, paths: Mapping, *, tickets: Optional[Sequence[Mapping]] = None,
+         budget_s: Optional[float] = None, clock=time.monotonic) -> dict:
+    """Queue the starting-soon and live-update events the cache implies at ``now``. Returns {"tickets", "starting", "live",
+    "errors"} plus "out_of_time" / "busy" when the scan stopped early (the next pass carries on: every emit is idempotent).
 
     ``conn`` is the live_settle cache connection (already open in the pass). ``tickets`` is for tests; the pass reads the
-    open tickets of the member and manual ledgers the way settlement does (parsed once per ledger change)."""
-    report = {"tickets": 0, "starting": 0, "live": 0}
+    open tickets of the member and manual ledgers the way settlement does (parsed once per ledger change).
+
+    BOUNDED: the scan runs on the grading thread, so every app.db connection it opens waits at most ``SCAN_BUSY_MS`` on a
+    lock, a locked store ends the scan at the first refusal, one bad ticket is skipped (logged by type, never by content),
+    and the whole scan stops after ``SCAN_BUDGET_S``. Finals and tickets about to start are taken first."""
+    report = {"tickets": 0, "starting": 0, "live": 0, "errors": 0}
+    deadline = clock() + (SCAN_BUDGET_S if budget_s is None else budget_s)
+    with alerts.short_waits(SCAN_BUSY_MS), alerts.held_open():
+        try:
+            _scan(conn, now, paths, tickets, report, deadline, clock)
+        except Exception as exc:  # noqa: BLE001 -- reading the ledgers or the cache failed: nothing more to do this pass
+            if _is_busy(exc):
+                report["busy"] = True
+            else:
+                report["errors"] += 1
+                logger.error("bet alert scan stopped: %s", type(exc).__name__)
+    return report
+
+
+def _scan(conn, now: datetime, paths: Mapping, tickets, report: dict, deadline: float, clock) -> None:
     if tickets is None:
         from src.hounds import live_settle
         tickets = []
@@ -230,12 +293,11 @@ def scan(conn, now: datetime, paths: Mapping, *, tickets: Optional[Sequence[Mapp
             if paths.get(label):
                 tickets.extend(live_settle.open_tickets_in(paths[label], label))
     games: dict = {}
+    members: dict = {}
+    work = []
     for t in tickets:
         row = _ticket_row(t)
         if not t.get("event_id") or not row["bet_id"] or not row["hound_id"] or not alerts.eligible_ticket(row):
-            continue
-        member = alerts.member_of(row["hound_id"])
-        if member is None or not (member[2].get(alerts.KIND_STARTING) or member[2].get(alerts.KIND_LIVE)):
             continue
         key = str(t["event_id"])
         if key not in games:
@@ -243,13 +305,52 @@ def scan(conn, now: datetime, paths: Mapping, *, tickets: Optional[Sequence[Mapp
         game = games[key]
         if game is None:
             continue
-        report["tickets"] += 1
-        start = ls.parse_utc(t.get("start"))
-        if member[2].get(alerts.KIND_STARTING) and game["state"] == ls.UPCOMING and start is not None \
-                and timedelta(0) < start - now <= STARTING_WINDOW:
-            minutes = max(1, round((start - now).total_seconds() / 60.0))
-            if alerts.emit_starting(row, minutes_out=minutes, now=now):
-                report["starting"] += 1
-        if member[2].get(alerts.KIND_LIVE):
-            _live_moments(row, member[1], game, now, start, report)
-    return report
+        start = effective_start(ls.parse_utc(t.get("start")), game)
+        state = game["state"]
+        if state == ls.FINAL:
+            rank = 0
+        elif state == ls.UPCOMING and start is not None and timedelta(0) < start - now <= STARTING_WINDOW:
+            rank = 1
+        elif state == ls.LIVE:
+            rank = 2
+        else:
+            continue                                       # postponed, cancelled, or not near its start: nothing to say
+        work.append((rank, row, game, start))
+    work.sort(key=lambda w: w[0])
+    books: dict = {}
+    for rank, row, game, start in work:
+        if clock() > deadline:
+            report["out_of_time"] = True
+            return
+        try:
+            hound_id = str(row["hound_id"])
+            if hound_id not in members:
+                members[hound_id] = alerts.member_of(hound_id)
+            member = members[hound_id]
+            if member is None:
+                continue
+            hound, owner, toggles = member
+            want_starting, want_live = bool(toggles.get(alerts.KIND_STARTING)), bool(toggles.get(alerts.KIND_LIVE))
+            if not (want_starting or want_live):
+                continue
+            report["tickets"] += 1
+            if owner not in books:
+                books[owner] = _Book(owner)
+            book = books[owner]
+            found = (hound, owner)
+            if rank == 1:
+                bet_id = str(row["bet_id"])
+                if want_starting and bet_id not in book.starting:
+                    minutes = max(1, round((start - now).total_seconds() / 60.0))
+                    if alerts.emit_starting(dict(row, commence_time=ls.iso(start)), minutes_out=minutes, now=now,
+                                            _owner=found):
+                        report["starting"] += 1
+                    book.starting.add(bet_id)
+            elif want_live:
+                _live_moments(row, found, game, now, start, report, book)
+        except Exception as exc:  # noqa: BLE001 -- one ticket must not cost the others their alerts (or the pass its grade)
+            if _is_busy(exc):
+                report["busy"] = True
+                return
+            report["errors"] += 1
+            logger.error("bet alert scan: a ticket was skipped: %s", type(exc).__name__)

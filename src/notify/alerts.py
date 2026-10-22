@@ -39,7 +39,6 @@ NO SECRETS IN LOGS: nothing here logs a phone number, an endpoint, a token or a 
 
 from __future__ import annotations
 
-import contextvars
 import hashlib
 import hmac
 import json
@@ -186,24 +185,41 @@ def _migrate_feed_hash(conn) -> None:
                      (_hash_token(row[1]), row[0]))
 
 
-#: How long a connection waits on a locked database. None = the store's own default (5 s). The grading loop's alert scan
-#: sets a short one (``short_waits``): a locked alert store must cost a pass milliseconds, never seconds.
-_BUSY_MS: contextvars.ContextVar = contextvars.ContextVar("alerts_busy_ms", default=None)
+def short_waits(ms: int):
+    """Scope a short lock wait over every app.db connection opened inside it (``users_store.short_waits``): the grading
+    loop's alert scan uses it, so a locked alert store costs a pass milliseconds, never the store's five seconds."""
+    return users_store.short_waits(ms)
 
 
 @contextmanager
-def short_waits(ms: int) -> Iterator[None]:
-    token = _BUSY_MS.set(int(ms))
+def held_open() -> Iterator[None]:
+    """Keep one idle connection to app.db open while a burst of short calls runs (the grading loop's alert scan).
+
+    Every store call opens and closes its own connection, and when the LAST connection to a WAL database closes, sqlite
+    checkpoints the log and deletes it: measured at ~6 ms per close on Windows, the larger half of a scan's cost. An idle
+    keeper (no transaction held, so it blocks nobody) makes each of those closes cheap. Best effort: a missing database
+    is not created here, and a keeper that cannot open changes nothing."""
+    import sqlite3
+    keeper = None
+    try:
+        path = users_store.db_path()
+        if path.exists():
+            keeper = sqlite3.connect(str(path), timeout=0)
+            keeper.execute("SELECT 1 FROM sqlite_master LIMIT 1").fetchall()
+    except Exception:  # noqa: BLE001 -- an optimisation only
+        if keeper is not None:
+            keeper.close()
+        keeper = None
     try:
         yield
     finally:
-        _BUSY_MS.reset(token)
+        if keeper is not None:
+            keeper.close()
 
 
 @contextmanager
 def connect() -> Iterator:
-    wait = _BUSY_MS.get()
-    with (users_store._connect() if wait is None else users_store._connect(busy_ms=wait)) as conn:
+    with users_store._connect() as conn:
         _ensure_schema(conn)
         yield conn
 
@@ -764,12 +780,15 @@ def set_live_side(user_id: int, bet_id: str, side: str, *, now: Optional[datetim
 
 
 def member_of(hound_id: Any) -> Optional[tuple]:
-    """(hound row, owner id, the owner's event toggles) for a member hound whose owner opened Alerts, else None."""
-    found = _owner_of(str(hound_id))
-    if found is None:
+    """(hound row, owner id, the owner's event toggles) for a member hound whose owner opened Alerts, else None.
+    Two reads (the hound, the owner's preferences)."""
+    from src.hounds import user_store
+    hound = user_store.get_hound(str(hound_id))
+    if hound is None or hound.get("owner_user_id") is None:
         return None
-    prefs = get_prefs(found[1])
-    return (found[0], found[1], prefs["event_toggles"]) if prefs else None
+    owner = int(hound["owner_user_id"])
+    prefs = get_prefs(owner)
+    return (hound, owner, prefs["event_toggles"]) if prefs else None
 
 
 def owner_if_wanted(row: Mapping, kind: str) -> Optional[tuple]:
@@ -791,16 +810,19 @@ def starting_sent(user_id: int) -> set:
 
 
 def live_book(user_id: int) -> tuple:
-    """({bet id: live updates raised}, {bet id: last decided side}) for one member, in two reads."""
+    """({bet id: live updates raised}, {bet id: last decided side}, {every live event key raised}) for one member, in
+    two reads, so a scan of many tickets learns "already raised" without a connection (or a write) per ticket."""
     counts: dict = {}
+    raised: set = set()
     with connect() as conn:
         for (key,) in conn.execute("SELECT bet_id FROM alert_events WHERE user_id = ? AND kind = ?",
                                    (int(user_id), KIND_LIVE)).fetchall():
+            raised.add(key)
             bet = key.split(LIVE_KEY_SEP, 1)[0]
             counts[bet] = counts.get(bet, 0) + 1
         sides = {r[0]: r[1] for r in conn.execute("SELECT bet_id, side FROM alert_live_state WHERE user_id = ?",
                                                   (int(user_id),)).fetchall()}
-    return counts, sides
+    return counts, sides, raised
 
 
 def emit_starting(row: Mapping, *, minutes_out: int, now: Optional[datetime] = None, _owner: Optional[tuple] = None) -> bool:

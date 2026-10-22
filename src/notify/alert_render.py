@@ -18,6 +18,7 @@ THE RULES (same hard lines as email_render.py, pinned by tests/test_bet_alerts.p
 
 from __future__ import annotations
 
+import unicodedata
 from datetime import timezone
 from html import escape
 from typing import Mapping, Optional, Sequence
@@ -238,9 +239,27 @@ def push_payload(events: Sequence[Mapping], sizing, tz: str, env=None) -> dict:
             "url": hound_link(first["hound_id"], env), "tag": tag, "paper": True}
 
 
+#: characters NFKD does not fold to ASCII on its own
+_ASCII_FOLD = {"\u2019": "'", "\u2018": "'", "\u201c": '"', "\u201d": '"', "\u2013": "-", "\u2014": "-", "\u00df": "ss",
+               "\u00e6": "ae", "\u00c6": "AE", "\u00f8": "o", "\u00d8": "O", "\u0142": "l", "\u0141": "L", "\u0111": "d",
+               "\u0110": "D", "\u0131": "i", "\u00a0": " "}
+
+
 def _gsm(text: str) -> str:
-    """The middle dot the lines use is not in the GSM-7 alphabet and would turn a text into 70-character segments."""
-    return text.replace(" · ", ", ").replace("·", "-")
+    """Plain ASCII for a text. The middle dot the lines use is not in the GSM-7 alphabet, and neither is a team or player
+    name like "Besiktas" spelled with its cedilla or "Lodz" with its stroke: ONE such character turns the whole text into
+    70-character UCS-2 segments, so a 160-character message would be billed and delivered as three. Accents fold to
+    their letter; anything with no ASCII form becomes "?"."""
+    text = text.replace(" \u00b7 ", ", ").replace("\u00b7", "-")
+    if text.isascii():
+        return text
+    out = []
+    for char in text:
+        char = _ASCII_FOLD.get(char, char)
+        if not char.isascii():
+            char = "".join(c for c in unicodedata.normalize("NFKD", char) if c.isascii()) or "?"
+        out.append(char)
+    return "".join(out)
 
 
 def _fit_one_segment(lines: Sequence[str], n_events: int, link: str) -> Optional[str]:
@@ -263,7 +282,7 @@ def _fit_one_segment(lines: Sequence[str], n_events: int, link: str) -> Optional
 def sms_text(events: Sequence[Mapping], sizing, tz: str, env=None) -> str:
     """One text. It keeps to a single 160-character segment whenever the wording allows (see ``_fit_one_segment``);
     a burst too long for that falls back to the older shape: up to three lines, a count and the link, within SMS_MAX."""
-    all_lines = [event_line(e, sizing, tz) for e in events]
+    all_lines = [_gsm(event_line(e, sizing, tz)) for e in events]      # folded BEFORE any length is measured or clipped
     link = hound_link(events[0]["payload"]["hound_id"], env).split("?")[0]
     full = _gsm(SMS_PREFIX + " | ".join(all_lines[:3]) + (f" | +{len(events) - 3} more" if len(events) > 3 else ""))
     tail = f" {link} {SMS_STOP}"
