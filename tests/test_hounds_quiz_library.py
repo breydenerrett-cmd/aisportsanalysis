@@ -204,5 +204,37 @@ class TheAnswerTablesAreOnTheMenu(unittest.TestCase):
         self.assertIn("12 mph", weather["english"])
 
 
+class TheRiskChoiceMapsToRealAnswers(unittest.TestCase):
+    """OWNER RULING 2026-10-21 (four-step quiz): the one risk question maps to a price band, a stake and a bets-a-day cap. The table lives in
+    the library (`risk_levels`), so the page owns no number; every level must be something the composer and the real validator accept."""
+
+    def test_the_library_serves_three_levels_and_validates(self):
+        self.assertEqual(L.validate_library(), [])
+        levels = L.public_library()["risk_levels"]
+        self.assertEqual([r["id"] for r in levels], ["steady", "balanced", "bold"])
+        for r in levels:
+            self.assertIn(r["stake"], R.STAKE_CHOICES)
+            self.assertIn(r["price_comfort"], {c["id"] for c in LIB["price_comforts"]})
+
+    def test_a_level_that_names_a_missing_comfort_or_a_stake_off_the_menu_is_a_library_problem(self):
+        bad = copy.deepcopy(LIB)
+        bad["risk_levels"][0]["price_comfort"] = "nowhere"
+        bad["risk_levels"][1]["stake"] = 0.7
+        problems = L.validate_library(bad)
+        self.assertTrue(any("unknown price comfort" in p for p in problems), problems)
+        self.assertTrue(any("not a builder stake" in p for p in problems), problems)
+
+    def test_every_personality_at_every_level_composes_a_valid_spec(self):
+        for p in LIB["personalities"]:
+            for r in LIB["risk_levels"]:
+                with self.subTest(personality=p["id"], risk=r["id"]):
+                    answers = {"sports": ["MLB"], "personality": p["id"], "markets": ["moneyline"], "bets_per_day": r["bets_per_day"], "stake": r["stake"]}
+                    if p.get("stance") not in ("chalk", "dog") and not p.get("style"):      # the page leaves the price band to a style that owns one
+                        answers["price_comfort"] = r["price_comfort"]
+                    res = compose.compose(answers)
+                    user_spec.validate_spec(res["spec"])
+                    self.assertEqual([w["code"] for w in res["warnings"] if w["level"] == "heads_up"], [])
+
+
 if __name__ == "__main__":
     unittest.main()

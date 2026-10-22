@@ -296,7 +296,9 @@ class StateTable(unittest.TestCase):
 
     def test_garbage_in_is_handled_without_a_crash_or_a_made_up_state(self):
         src = ('import { build } from "./room-adapter.js";\n'
-               "const out = [build(null), build({}), build({hounds: [null, 3, {}, {id: 'x'}, {id: 'x'}]}), build({hounds: [{id: 'y', name: 7, record: 'x', sports: 'mlb', open_bets: 'two'}], board: {counts: 5}})];\n"
+               # the viewer's local night turns "nap" into "asleep": pin a daytime hour (CI failed at 23:19Z and 00:15Z, 2026-10-21)
+               "const day = {localHour: 15};\n"
+               "const out = [build(null, day), build({}, day), build({hounds: [null, 3, {}, {id: 'x'}, {id: 'x'}]}, day), build({hounds: [{id: 'y', name: 7, record: 'x', sports: 'mlb', open_bets: 'two'}], board: {counts: 5}}, day)];\n"
                "console.log(JSON.stringify(out.map(m => m.characters.map(c => [c.id, c.state, c.name]))));\n")
         out = run_js(src)
         self.assertEqual(out[0], [])
@@ -540,10 +542,12 @@ class MyKennelFold(unittest.TestCase):
         stored = dict(SIGNED["stored"], **kw.pop("stored", {}))
         return run_page("kennel", routes=routes or self.routes(), tz="UTC", settleMs=350, stored=stored, **kw)
 
-    def test_the_fold_sits_above_the_cards_with_the_members_active_hounds(self):
+    def test_the_fold_sits_below_the_cards_with_the_members_active_hounds(self):
         out = self.go(queries=self.QS)
         html = read("kennel.html")
-        self.assertLess(html.index('data-hook="kennel-room"'), html.index('data-hook="kennel-grid"'))
+        # OWNER RULING 2026-10-21: the kennel and its hounds are the foundation, so the cards come first and the room (still open by
+        # default on a wide screen) sits below them. This pin used to say the opposite.
+        self.assertLess(html.index('data-hook="kennel-grid"'), html.index('data-hook="kennel-room"'))
         f = out["final"]
         self.assertEqual(f["title"], "Your kennel room")
         self.assertEqual(f["hounds"], ["u-1", "u-2"], "the retired hound has left the room")
@@ -1048,10 +1052,11 @@ class StaticChecks(unittest.TestCase):
         self.assertRegex(css, r"\.rm-frame \{[^}]*overflow-x: auto")
         self.assertRegex(css, r"\.rm-stage \{[^}]*width: max\(100%, 860px\)")
 
-    def test_the_landing_page_links_the_room_from_betting_right_now(self):
+    def test_the_landing_page_links_the_room_from_its_footer(self):
+        # owner ruling 2026-10-21 (kennel front): the landing page keeps one small proof element, so the room link moved from the strip to the footer
         html = read("landing.html")
-        strip = re.search(r'<section[^>]*data-hook="kh-strip".*?</section>', html, re.S).group(0)
-        self.assertIn('href="room.html" data-hook="kh-strip-room"', strip)
+        footer = html.split('data-hook="landing-footer"')[1]
+        self.assertIn('href="room.html" data-hook="footer-room"', footer)
 
     def test_my_kennel_mounts_the_room_with_one_hook_and_one_import(self):
         html, js = read("kennel.html"), read("js/kennel.js")

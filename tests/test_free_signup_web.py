@@ -403,7 +403,7 @@ class TheKennelWelcome(unittest.TestCase):
         self.assertEqual(f["empty"], 0)
 
     def test_the_welcome_button_opens_the_quiz(self):
-        # # owner ruling 2026-10-20 kennel-first: the one button is a link to the quiz (Find your hound), not the in-place builder
+        # # owner ruling 2026-10-20 kennel-first: the one button is a link to the quiz (Make your first hound), not the in-place builder
         out = run_hounds_page("kennel", routes={"/hounds/kennels/mine": self.EMPTY}, stored=self.SIGNED, search="?welcome=1",
                               queries=[dict(name="href", sel="[data-hook='kennel-welcome-build']", mode="attr", attr="href")])
         self.assertEqual(out["final"]["href"], "quiz.html")
@@ -430,7 +430,7 @@ class TheCallsToActionAreOneDecision(unittest.TestCase):
     def test_the_landing_nav_button_is_find_your_hound_and_moves_into_the_bar(self):
         # # owner ruling 2026-10-20 kennel-first: the bar's one primary button opens the quiz; the free account is made when a hound is kept
         html = (WEB / "landing.html").read_text(encoding="utf-8")
-        self.assertRegex(html, r'<a class="lh-btn lh-btn--solid" href="quiz.html" data-hook="cta-primary" data-nav-extra>Find your hound</a>')
+        self.assertRegex(html, r'<a class="lh-btn lh-btn--solid lh-btn--lg" href="quiz.html" data-hook="cta-primary" data-nav-extra>Make your first hound</a>')
 
     def test_the_old_paid_signup_page_is_still_routed_and_still_the_paid_boards_door(self):
         main = (JS / "main.js").read_text(encoding="utf-8")

@@ -52,15 +52,16 @@ class AccountRoutesAreKennelFirst(unittest.TestCase):
             with self.subTest(route=route):
                 out = self.run_index(route, **SIGNED)
                 f = out["final"]
-                self.assertEqual(f["links"], ["My Kennel", "Create", "Live", "Leaderboard"])
-                self.assertEqual(f["tabs"], ["My Kennel", "Create", "Live", "Leaderboard", "Account"])
+                # owner ruling 2026-10-21 (kennel front): My Kennel is the big button top-right and the filled centre tab, not one of the links
+                self.assertEqual(f["links"], ["Create", "Live", "Leaderboard"])
+                self.assertEqual(f["tabs"], ["Create", "Live", "My Kennel", "Leaderboard", "Account"])
                 self.assertEqual(f["bottom"], "on")                                   # the page's own data-bottom="off" is overridden here
                 self.assertEqual(out["bodyAttrs"].get("data-kennel-route"), "true")   # the stylesheet hides the picks shell on this flag
                 self.assertEqual(f["current"], ["Account"])                           # and Account is the place it names
 
     def test_a_visitor_on_billing_gets_the_visitor_bar_and_tab_bar_too(self):
         out = self.run_index("#/billing")
-        self.assertEqual(out["final"]["tabs"], ["Leaderboard", "Live", "Sign in", "Find your hound"])
+        self.assertEqual(out["final"]["tabs"], ["Leaderboard", "Live", "Sign in", "Make your first hound"])
         self.assertEqual(out["bodyAttrs"].get("data-kennel-route"), "true")
 
     def test_the_picks_routes_keep_the_member_apps_own_tab_bar(self):

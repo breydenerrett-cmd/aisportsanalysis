@@ -166,7 +166,7 @@ class TheEarlyAccessLabelIsOneDecision(unittest.TestCase):
             self.assertIsNotNone(m, hook)
             labels[hook] = (m.group(1), m.group(2).strip())
         # # owner ruling 2026-10-20 kennel-first: the bar's primary button (cta-primary) opens the quiz; the other three are still the free account
-        self.assertEqual(labels.pop("cta-primary"), ("quiz.html", "Find your hound"))
+        self.assertEqual(labels.pop("cta-primary"), ("quiz.html", "Make your first hound"))
         self.assertEqual(set(labels.values()), {("index.html#/signin?create=1", "Create free account")})
         self.assertNotIn("Get notified when checkout opens", MARKUP)
 
@@ -246,7 +246,7 @@ class TheLeaderboardIsTheFirstScreen(unittest.TestCase):
         self.assertEqual(enter.group(1).strip(), "Open the leaderboard")
         self.assertIn('href="hounds.html"', enter.group(0))
         self.assertIn("btn--primary", enter.group(0))
-        self.assertEqual(quiz.group(1).strip(), "Find your hound")
+        self.assertEqual(quiz.group(1).strip(), "Make your first hound")       # the desk page keeps its own secondary button
         self.assertIn('href="quiz.html?start=1"', quiz.group(0))
         self.assertNotIn("btn--primary", quiz.group(0))
         # data-hook starts with "cta", so landing.js's delegated listener counts both clicks

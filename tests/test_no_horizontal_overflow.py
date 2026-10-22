@@ -122,5 +122,82 @@ class EveryPageFitsAPhone(unittest.TestCase):
         self.assertEqual(short, [], "pages whose last content sits under the tab bar: (path, bar, body padding, clearance) " + json.dumps(short))
 
 
+def make_post_handler(api):
+    """The same static server, plus the quiz's POSTs answered by the REAL composer (so the reveal is on the page when it is measured)."""
+    base = make_handler(api)
+
+    class Handler(base):
+        def do_POST(self):
+            from src.hounds.quiz import compose as C
+            n = int(self.headers.get("Content-Length") or 0)
+            try:
+                body = json.loads(self.rfile.read(n) or b"{}")
+            except ValueError:
+                body = {}
+            path = self.path.split("?")[0]
+            if path == "/hounds/quiz/compose":
+                status, payload = 200, C.compose(body.get("answers") or {})
+            elif path == "/hounds/builder/preview":
+                picks = [{"event_id": f"e{i}", "selection": "Boston Red Sox to win", "away_team": "Boston Red Sox", "home_team": "New York Yankees",
+                          "price": 120, "would_bet": i < 2} for i in range(3)]
+                status, payload = 200, {"qualifying": 3, "would_bet": 2, "max_bets_per_day": 2, "picks": picks, "games_fit": 3, "board_size": 9,
+                                        "games_on_board": 9, "read_only": True, "paper_only": True, "not_advice": "Paper bets only. Not advice."}
+            else:
+                status, payload = 404, {"detail": "not in the fixture"}
+            data = json.dumps(payload, default=str).encode()
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+    return Handler
+
+
+@unittest.skipUnless(HAS_NODE and CHROME, "node and a Chrome/Chromium binary are needed")
+class TheKennelFrontFitsEveryWidth(unittest.TestCase):
+    """OWNER RULING 2026-10-21 (kennel front): the landing, the four quiz steps and the reveal, My Kennel and the nav (signed in and out) have no
+    horizontal overflow at 375 and 390 (phones) and 1440 (desktop)."""
+    WIDTHS = (375, 390, 1440)
+    PAGES = ["/web/landing.html", "/web/hounds.html", "/web/quiz.html?restart=1#quiz", "/web/kennel.html#signed", "/web/hounds.html#signed",
+             "/web/landing.html?stay=1#signed"]
+
+    @classmethod
+    def setUpClass(cls):
+        from src.hounds.quiz import library as quiz_library
+        from tests import test_kennel_page as K
+        api = {k: (s, b) for k, (s, b) in F.routes().items()}
+        api["/sports/now"] = (200, json.loads((HERE / "fixtures" / "sports_now.json").read_text(encoding="utf-8")))
+        api["/hounds/quiz/library"] = (200, json.loads(json.dumps(quiz_library.public_library())))
+        status, body = K.mine([K.dog("u-1", "Underdog Gus", wins=14, losses=9, bets=23, units=6.4), K.dog("u-2", "Totals Tina")])
+        body["kennel_name"] = "Gus and Company Kennel"
+        api["/hounds/kennels/mine"] = (status, body)
+        cls.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), make_post_handler(api))
+        threading.Thread(target=cls.server.serve_forever, daemon=True).start()
+        base = f"http://127.0.0.1:{cls.server.server_address[1]}"
+        proc = subprocess.run(["node", str(HERE / "overflow_widths.mjs"), CHROME, base, ",".join(str(w) for w in cls.WIDTHS)] + cls.PAGES,
+                              capture_output=True, text=True, encoding="utf-8", timeout=420)
+        lines = [ln for ln in proc.stdout.splitlines() if ln.startswith("[")]
+        if proc.returncode != 0 or not lines:
+            raise AssertionError(f"overflow script failed ({proc.returncode}): {proc.stderr[-1500:]}")
+        cls.results = json.loads(lines[-1])
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown()
+
+    def test_every_page_and_quiz_step_was_measured_at_every_width(self):
+        quiz_steps = ["sports", "personality", "risk", "finish", "reveal"]
+        self.assertEqual(len(self.results), len(self.WIDTHS) * (len(self.PAGES) - 1 + len(quiz_steps)))
+        self.assertEqual({r["iw"] for r in self.results}, set(self.WIDTHS))
+        self.assertEqual([r["step"] for r in self.results if r["step"] and r["width"] == 375], quiz_steps)     # the quiz has four steps and the reveal
+        for r in self.results:
+            self.assertGreater(r["h"], 300, f"{r['path']} {r['step']} rendered almost nothing")
+
+    def test_nothing_scrolls_sideways_at_375_390_or_1440(self):
+        bad = [r for r in self.results if r["sw"] > r["iw"] + 1]
+        self.assertEqual(bad, [], "wider than the screen: " + json.dumps(bad, indent=1))
+
+
 if __name__ == "__main__":
     unittest.main()

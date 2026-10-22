@@ -224,6 +224,22 @@ def validate_library(lib: Optional[Mapping] = None) -> list:
     for c in lib.get("price_comforts") or []:
         if c["price_min"] < user_spec.SHORTEST_ALLOWED_PRICE and c["price_min"] < 0:
             problems.append(f"price comfort {c['id']}: reaches {user_spec.MAX_FAVOURITE_PRICE}")
+    # OWNER RULING 2026-10-21 (4-step quiz): the one risk question maps to a price band, a stake and a bets-a-day cap. Each answer must
+    # name a real price comfort, a stake the builder allows and a cap in the allowed range, or the quiz would post something compose refuses.
+    risks = lib.get("risk_levels") or []
+    if len(risks) != 3 or len({r.get("id") for r in risks}) != 3:
+        problems.append("risk_levels: needs three unique levels")
+    comfort_ids = {c.get("id") for c in lib.get("price_comforts") or []}
+    for r in risks:
+        check_copy(f"risk_levels.{r.get('id')}.name", r.get("name"), 30)
+        check_copy(f"risk_levels.{r.get('id')}.pitch", r.get("pitch"), 130)
+        if r.get("price_comfort") not in comfort_ids:
+            problems.append(f"risk level {r.get('id')}: unknown price comfort")
+        if r.get("stake") not in R.STAKE_CHOICES:
+            problems.append(f"risk level {r.get('id')}: stake is not a builder stake")
+        lo, hi = user_spec.MAX_BETS_RANGE
+        if not (isinstance(r.get("bets_per_day"), int) and lo <= r["bets_per_day"] <= hi):
+            problems.append(f"risk level {r.get('id')}: bets_per_day out of range")
     for q in lib.get("quirks") or []:
         if not q.get("sports") or not set(q["sports"]) <= set(user_spec.SPORTS) | {fit.ANY}:
             problems.append(f"quirk {q.get('id')}: sports must be some of {user_spec.SPORTS}, or ANY")
@@ -368,6 +384,7 @@ def public_library(lib: Optional[Mapping] = None) -> dict:
         "personalities": [_plain(p, "recipes") for p in lib["personalities"]],
         "markets": [_plain(m, "markets") | {"markets": list(m["markets"])} for m in lib["markets"]],
         "price_comforts": [_plain(c) for c in lib["price_comforts"]],
+        "risk_levels": [dict(r) for r in lib["risk_levels"]],
         "quirks": [{**_plain(q, "condition"), "english": render_condition(q)} for q in lib["quirks"]],
         "timings": [_plain(t) for t in lib["timings"]],
         "looks": copy.deepcopy(lib["looks"]),

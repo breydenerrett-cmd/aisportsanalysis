@@ -15,16 +15,25 @@
  * attributes only (no classList, no dataset, no innerHTML) so the node test harness's small DOM can run it.
  */
 
-import { apiGet } from "./api.js";
+import { apiGet, getToken } from "./api.js";
 import { withEvents } from "./unitsize.js";
 import { h, clearNode, houndHref, isWarming, NOT_REPORTED } from "./hounds-core.js";
-import { dogFace, poseOfHound } from "./dog-avatar.js";
+import { dogFace, dogBadge, poseOfHound } from "./dog-avatar.js";
+import { MY_KENNEL_HREF } from "./home-route.js";
 import { boardModels } from "./landing-board.js";
 import { minRanked } from "./hounds-season.js";
 import { recordText, betsOf, returnPctOf, fmtPct, isSmallSample, smallSampleTitle } from "./hounds-board.js";
 import { loadFoundingOffer, foundingOfferLine } from "./pricing.js";
 
 export const STRIP_WARMING_RETRY_MS = 6000;
+/** OWNER RULING 2026-10-21: the landing page shows ONE small proof, the top three. */
+export const STRIP_SIZE = 3;
+/** The three step pictures: real hound art (the same coats, breeds and tiles as the quiz's personalities), cosmetic only. */
+export const HOW_ART = [
+  { look: { coat: "grey", bg: "maroon" }, breed: "husky", mood: "idle" },
+  { look: { coat: "brown", bg: "navy" }, breed: "bulldog", mood: "happy" },
+  { look: { coat: "golden", bg: "sand" }, breed: "retriever", mood: "celebrate" },
+];
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 let retried = false;
@@ -65,7 +74,7 @@ export async function fillStrip() {
     return;
   }
   const meta = data.season && typeof data.season === "object" ? data.season : null;
-  const models = boardModels(data.hounds, meta);
+  const models = boardModels(data.hounds, meta).slice(0, STRIP_SIZE);
   if (!models.length) {
     say(row, `No hound has ${minRanked(meta)} settled bets yet. The strip fills as the slate settles.`, "kh-strip-empty-board");
     return;
@@ -86,8 +95,31 @@ export async function fillOffer() {
   box.removeAttribute("hidden");
 }
 
+/** Draw the real hound art into the three steps. Art that fails to draw leaves the step as plain text. */
+export function fillHow() {
+  const slots = Array.from(document.querySelectorAll("[data-hook='how-art']"));
+  slots.forEach((slot, i) => {
+    const art = HOW_ART[i % HOW_ART.length];
+    try { slot.appendChild(dogBadge(art.look, { size: 88, mood: art.mood, breed: art.breed })); } catch (err) { /* text only */ }
+  });
+}
+
+/** A signed-in visitor who stayed on the page (?stay=1): the first choice opens the kennel instead of asking to sign in. */
+export function fillSignedIn() {
+  if (!getToken()) return;
+  const link = q("cta-kennel-signin");
+  if (!link) return;
+  link.setAttribute("href", MY_KENNEL_HREF);
+  const ask = link.querySelector ? link.querySelector(".kh-choice__ask") : null;
+  if (ask) ask.textContent = "Welcome back";
+  const go = q("kh-signin-label");
+  if (go) { clearNode(go); go.appendChild(document.createTextNode("Open My Kennel ")); go.appendChild(h("span", { "aria-hidden": "true", text: "→" })); }
+}
+
 /** Everything the landing page fills, fire-and-forget. */
 export function mountHome() {
+  fillHow();
+  fillSignedIn();
   fillStrip();
   fillOffer();
 }

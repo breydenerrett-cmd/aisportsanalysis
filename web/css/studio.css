@@ -572,3 +572,16 @@
 /* A member with no hound is asked to create one, not to name an empty kennel first: the name prompt (two buttons, one of
    them solid green) sat above "Create your first hound" (rebuild QA 2026-10-21). It comes back with the first hound. */
 .kn-main[data-empty="true"] [data-hook="kennel-name-slot"] { display: none; }
+
+/* ---- 2026-10-21 (owner: "My Kennel needs to feel like home"): the kennel's name big, the hounds big, "Create a hound" secondary. ---- */
+.kn-page .kn-eyebrow { margin: 0 0 var(--lh-s1); font-size: var(--lh-fs-sm); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--lh-accent, #2FD07A); }
+.hounds-page .kn-main .kn-head h1 { font-size: clamp(44px, 9vw, 76px); line-height: .98; overflow-wrap: anywhere; }
+.kn-page .kn-sub { font-size: var(--lh-fs-md); }
+.kn-page .kn-head { margin: var(--lh-s5) 0 var(--lh-s6); }
+.kn-page .kn-grid { grid-template-columns: repeat(auto-fill, minmax(min(460px, 100%), 1fr)); gap: var(--lh-s4); }
+.kn-page .kn-card { padding: var(--lh-s5); gap: var(--lh-s5); }
+.kn-page .kn-card__avatar { width: 112px; height: 112px; }
+.kn-page .kn-card__avatar svg, .kn-page .kn-card__avatar .dk-badge { width: 112px; height: 112px; }
+.kn-page .kn-card__name { font-size: 24px; font-family: var(--lh-font-display); letter-spacing: var(--lh-track-display); }
+.kn-page .kn-stat dd { font-size: 24px; }
+@media (max-width: 520px) { .kn-page .kn-card { flex-direction: column; } .kn-page .kn-card__avatar { width: 96px; height: 96px; } .kn-page .kn-card__avatar svg, .kn-page .kn-card__avatar .dk-badge { width: 96px; height: 96px; } }
