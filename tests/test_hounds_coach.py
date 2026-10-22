@@ -266,9 +266,10 @@ class TheFinalChangesComeOnlyFromTheMenu(Setup):
         menu_cids = {e["cid"] for e in self.entries}
         asks = [["drop_sport:NFL", "widen_price:all", "min_books:1", "venue:away"], ["fewer_bets"] * 5, ["x"] * 10,
                 list(menu_cids)[::-1]]
-        for ask in asks:
+        for i, ask in enumerate(asks):
             with self.subTest(ask=ask):
-                hound = self.dog(f"Pup {abs(hash(str(ask))) % 9999}", sports=["MLB", "NFL"])
+                # a fixed name: hash() is salted per process, and a random number can land on a banned one (CI 2026-10-22)
+                hound = self.dog(f"Menu Pup {chr(65 + i)}", sports=["MLB", "NFL"])
                 rows = rows_for(hound["id"], PLAN)
                 shown = coach.Coach(assess_fn=lambda table, entries, _ask=ask: {
                     **coach_ai.rules_read(table, status="ok"), "source": "ai", "label": "AI read", "picks": list(_ask), "model": "m"})
