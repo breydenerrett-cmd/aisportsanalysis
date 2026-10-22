@@ -12,8 +12,9 @@ and the Training camp's own data.
                                       (src/hounds/interact/unleash.py)
     POST /hounds/{id}/out-back        the owner of a member dog, {"confirm": true}: the dog is BURIED, its record frozen
                                       and public, a headstone in the graveyard (src/hounds/interact/outback.py)
-    POST /hounds/{id}/train           the owner of a member dog, {"confirm": true}: SEND TO TRAINING, the dog comes back
-                                      as a new version (src/hounds/interact/training.py)
+    POST /hounds/{id}/train           the owner of a member dog, {"confirm": true, "picks": [...], "basis": ...}: APPLY a reviewed
+                                      proposal, the dog comes back as a new version; without picks a 409 review_required
+                                      (src/hounds/interact/training.py)
     POST /hounds/{id}/train/propose   the owner, read only: the PROPOSAL card (each change old -> new with its reason, what today's board
                                       says); with {"origin": "chat", "chat": [...]} a Retune from the Ask chat, with {"tweak": "..."} a
                                       revised proposal (at most 3 rounds). Nothing is written (src/hounds/interact/training.review)
@@ -324,7 +325,7 @@ class RiteRequest(BaseModel):
 
 class TrainRequest(RiteRequest):
     """APPLY: ``confirm`` plus, from the review card, the menu ids the owner left ticked (``picks``) and, for a Retune from the Ask
-    chat, ``origin: "chat"``. Without ``picks`` the default proposal is applied. A pick that is not on the menu is a 422."""
+    chat, ``origin: "chat"``. Without ``picks`` it is a 409 ``review_required`` (nothing is applied unseen). A pick that is not on the menu is a 422."""
     picks: Optional[List[str]] = None
     origin: Optional[str] = None
     basis: Optional[str] = None           # the review card's proposal_basis: a card drawn for a rule that has changed is a 409
@@ -391,7 +392,7 @@ def send_to_training(hound_id: str, response: Response, body: Optional[TrainRequ
         dog = common.resolve(hound_id)
         out = training.train(dog, current_user.id, confirmed=bool(body and body.confirm), coach=coach.live(),
                              picks=getattr(body, "picks", None), origin=getattr(body, "origin", None),
-                             basis=getattr(body, "basis", None),
+                             basis=getattr(body, "basis", None), require_review=True,
                              board_fn=retune.live_board_fn(dog) if dog is not None and dog.kind == common.KIND_USER else None)
     except rites.RiteError as exc:
         raise _rite_error(exc)

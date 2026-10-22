@@ -106,9 +106,15 @@ class Apply(Routes):
         self.assertEqual((exc.status_code, self.code(exc)), (400, "no_changes_selected"))
         self.untouched()
 
-    def test_the_old_one_shot_post_still_applies_the_default_proposal(self):
-        out = self.api.send_to_training(self.hound_row["id"], Response(), body=self.api.RiteRequest(confirm=True),
-                                        current_user=self.owner, _rl=None)
+    def test_the_old_one_shot_post_is_refused_and_writes_nothing(self):
+        # a page cached from before the review (or any stray POST) sends only {"confirm": true}: never applied unseen
+        for body in (self.api.RiteRequest(confirm=True), self.api.TrainRequest(confirm=True), self.api.TrainRequest(confirm=True, origin="chat")):
+            exc = self.err(self.api.send_to_training, self.hound_row["id"], Response(), body=body, current_user=self.owner, _rl=None)
+            self.assertEqual((exc.status_code, self.code(exc)), (409, "review_required"))
+            self.assertIn("Nothing was changed", exc.detail["message"])
+        self.untouched()
+        card = self.propose()
+        out = self.apply(picks=card["picks"], basis=card["basis"])
         self.assertEqual(out["new"]["version_no"], 2)
         self.assertEqual(out["mode"], "loosen", "a hound with no settled bet is widened, never narrowed")
 

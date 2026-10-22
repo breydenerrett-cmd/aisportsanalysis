@@ -977,6 +977,7 @@ def _clean_origin(origin) -> Optional[str]:
 
 
 STALE_PROPOSAL = "proposal_stale"
+REVIEW_REQUIRED = "review_required"
 
 
 def proposal_basis(hound_id: str, spec: Mapping) -> str:
@@ -1095,8 +1096,12 @@ def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, n
           rows: Optional[Sequence] = None, ledger_path: Optional[str] = None, db=None,
           env: Optional[Mapping] = None, poster: Optional[Callable] = None, background: bool = True,
           coach=None, picks: Optional[Sequence[str]] = None, origin=None, board_fn: Optional[Callable] = None,
-          basis: Optional[str] = None) -> dict:
+          basis: Optional[str] = None, require_review: bool = False) -> dict:
     """APPLY a training for ``user_id``. Returns the "what changed and why" card or raises ``RiteError``.
+
+    ``require_review`` (the HTTP route always sets it): an Apply must carry the ``picks`` of a review card. A bare
+    ``{"confirm": true}`` (the old one-tap Send to training, e.g. a page cached from before the review existed) is refused as
+    ``review_required`` (409) and writes nothing, so no training is ever made without the owner seeing the proposal first.
 
     ``coach`` is the ``coach.Coach`` that reads the diagnosis (the live routes pass ``coach.live()``, whose read the page already
     waited for and which is cached, so it is not paid for twice). With none, the rules engine reads it: no router, no disk.
@@ -1127,6 +1132,9 @@ def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, n
             raise _stale(dog.name)
     dog, moment, rows, bets, hound, gate = _ready(dog, user_id, confirmed_required=True, confirmed=confirmed, now=now, rows=rows,
                                                     ledger_path=ledger_path, db=db)
+    if require_review and picks is None:
+        raise RiteError(REVIEW_REQUIRED, f"Look at {dog.name}'s proposal first: open Send to training again, check the changes, "
+                                         "then tap Apply. Nothing was changed.", 409)
     spec = hound["spec"]
     analysis = analyse(bets, spec, rule_index_of(rows, dog.id))
     the_coach = coach or coach_mod.Coach(rules_only=True)
