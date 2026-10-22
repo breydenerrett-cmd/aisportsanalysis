@@ -404,37 +404,49 @@ class TheDogPageNoGames(unittest.TestCase):
     """The dog page's "Out back" panel (web/js/dog-fire.js renderFireResult) with no pick: the server's own next-game and live-elsewhere
     words, and a link to the live board. The route and the page come from tests/test_hounds_interact_web.py."""
 
-    def fire(self, **over):
-        from tests.test_hounds_interact_web import Payloads, dog_routes, hook as dhook, page as dog_page
+    def fire(self, owner=False, **over):
+        """The panel with no pick, as the visitor's read-only preview (POST /fire) and as the owner's real Unleash (POST /unleash):
+        both carry the same ``next_game`` / ``live_elsewhere`` words, so the same expectations hold for both."""
+        from tests.test_hounds_interact_web import Payloads, dog_routes, hook as dhook, page as dog_page, unleash_day
         payload = Payloads.fire_payload()
         payload.update(picks=[], recorded=[], closest_misses=[], headline="No upcoming game on the stored boards for this dog's sports.")
         payload.update(over)
-        return dog_page(dog_routes(fire_payload=payload), actions=[dict(do="click", sel=dhook("fire-btn"), wait=100)], queries=[
+        if owner:
+            routes = dog_routes(unleash_payload=unleash_day(picks=[], placed_now=0, before=[], headline="Nothing on today's board fits yet.",
+                                                            **{k: v for k, v in over.items() if k in ("next_game", "live_elsewhere")}))
+        else:
+            routes = dog_routes(owner=False, fire_payload=payload)
+        return dog_page(routes, actions=[dict(do="click", sel=dhook("fire-btn"), wait=120)], queries=[
             q("block", "[data-hook='dog-fire'] [data-hook='fire-elsewhere']"), q("next", "[data-hook='dog-fire'] [data-hook='fire-next-game']"),
             q("elsewhere", "[data-hook='dog-fire'] [data-hook='fire-live-elsewhere']"),
             q("href", "[data-hook='dog-fire'] [data-hook='fire-live-link']", "attr", attr="href"), q("count", "[data-hook='dog-fire'] [data-hook='fire-live-link']", "count")])
 
     def test_no_pick_shows_the_servers_words_and_a_link_to_the_live_board(self):
-        f = self.fire(next_game={"line": "Next game it can bet: Thursday 7:00 PM ET."},
-                      live_elsewhere="Live now in other sports: Tennis 4, Soccer 3.")["final"]
-        self.assertEqual(f["next"], "Next game it can bet: Thursday 7:00 PM ET.")
-        self.assertEqual(f["elsewhere"], "Live now in other sports: Tennis 4, Soccer 3.")
-        self.assertEqual(f["href"], "live.html")
-        self.assertIn("See what's on in every sport", f["block"])
+        for owner in (False, True):
+            f = self.fire(owner=owner, next_game="Next game it can bet: Thursday 7:00 PM ET.",
+                          live_elsewhere="Live now in other sports: Tennis 4, Soccer 3.")["final"]
+            self.assertEqual(f["next"], "Next game it can bet: Thursday 7:00 PM ET.", owner)
+            self.assertEqual(f["elsewhere"], "Live now in other sports: Tennis 4, Soccer 3.", owner)
+            self.assertEqual(f["href"], "live.html", owner)
+            self.assertIn("See what's on in every sport", f["block"])
 
     def test_a_server_that_sends_neither_still_gets_the_link(self):
-        f = self.fire()["final"]
-        self.assertEqual(f["href"], "live.html")
-        self.assertIsNone(f["next"])
-        self.assertIsNone(f["elsewhere"])
+        for owner in (False, True):
+            f = self.fire(owner=owner)["final"]
+            self.assertEqual(f["href"], "live.html", owner)
+            self.assertIsNone(f["next"])
+            self.assertIsNone(f["elsewhere"])
 
     def test_a_dog_with_a_pick_does_not_get_the_block(self):
         from tests.test_hounds_interact_web import Payloads, dog_routes, hook as dhook, page as dog_page
         payload = Payloads.fire_payload()
         self.assertTrue(payload["picks"], "the standard fire fixture has a pick")
-        out = dog_page(dog_routes(fire_payload=payload), actions=[dict(do="click", sel=dhook("fire-btn"), wait=100)],
+        out = dog_page(dog_routes(owner=False, fire_payload=payload), actions=[dict(do="click", sel=dhook("fire-btn"), wait=100)],
                        queries=[q("count", "[data-hook='dog-fire'] [data-hook='fire-live-link']", "count")])
         self.assertEqual(out["final"]["count"], 0)
+        own = dog_page(dog_routes(), actions=[dict(do="click", sel=dhook("fire-btn"), wait=120)],
+                       queries=[q("count", "[data-hook='dog-fire'] [data-hook='fire-live-link']", "count")])
+        self.assertEqual(own["final"]["count"], 0, "the owner's day with a pick has no empty-day block either")
 
 
 if __name__ == "__main__":
