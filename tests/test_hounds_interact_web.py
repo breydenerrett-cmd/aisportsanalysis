@@ -72,7 +72,14 @@ UNLEASH_DAY = {"headline": "Closer is unleashed. It placed 1 pick on today's boa
                "no_board": [], "open_tickets": [], "other_picks": [], "before_label": "Before you unleashed. Not on its record.", "paper_only": True}
 
 
-def dog_routes(*, owner=True, signed_in=True, kind="user", kit=None, fire_payload=None, status=200):
+def unleash_day(**over):
+    """The owner's Unleash answer (a copy of UNLEASH_DAY) with ``over`` laid on it. The server adds ``slate``, ``next_game`` and
+    ``live_elsewhere`` to it (fire.day_lines) with the same words the read-only preview carries, so a page test can run one
+    expectation against both."""
+    return dict(UNLEASH_DAY, **over)
+
+
+def dog_routes(*, owner=True, signed_in=True, kind="user", kit=None, fire_payload=None, unleash_payload=None, status=200):
     r = {k: list(v) for k, v in F.routes(True, 12).items()}
     detail = F.detail(HID, True, 12)
     detail["kind"] = kind
@@ -84,7 +91,7 @@ def dog_routes(*, owner=True, signed_in=True, kind="user", kit=None, fire_payloa
     payload = fire_payload if fire_payload is not None else Payloads.fire_payload(owner=owner)
     r[f"POST /hounds/{HID}/fire"] = [200, payload]
     # the owner's Unleash (dog-fire.js `today`) starts the hound: the same route and answer shape the kennel studio draws
-    r[f"POST /hounds/{HID}/unleash"] = [200, UNLEASH_DAY]
+    r[f"POST /hounds/{HID}/unleash"] = [200, unleash_payload if unleash_payload is not None else UNLEASH_DAY]
     ctx = context(dog_id=HID, name="Closer")
     r[f"/hounds/{HID}/ask"] = [200, {"dog_id": HID, "dog_name": "Closer", "greeting": ask.answer("who are you", ctx)["lines"],
                                      "suggestions": ask.suggestions(ctx), "warming": False}]

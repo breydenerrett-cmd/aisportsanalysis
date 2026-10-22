@@ -104,6 +104,37 @@ class RawSportKeysAreMappedWhereTheReasonLeavesTheServer(unittest.TestCase):
         self.assertIsNone(RAW_KEY.search(seen), seen[max(0, RAW_KEY.search(seen).start() - 60):][:160] if RAW_KEY.search(seen) else "")
 
 
+class TheOwnersUnleashSaysWhatThePreviewSays(unittest.TestCase):
+    """Unleash became the hound page's only button for an owner, so the empty-day words the preview always carried (which games started,
+    the next game, what is live elsewhere; tests/test_live_board.py pins how the page draws them) must come from Unleash too."""
+
+    def test_day_lines_are_the_same_words_the_preview_builds(self):
+        import os
+        import tempfile
+        from unittest import mock
+        from src.hounds import user_engine as eng
+        from src.hounds.interact import fire
+        from tests.test_hounds_interact_fire import NOW, dog_of, rows_for
+        from tests._hounds_user_fixtures import standard_rows
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch.object(eng, "ledger_path", lambda p=None: p or os.path.join(tmp, "u.jsonl")):
+                dog = dog_of(price_min=150, price_max=250)          # nothing fits: the empty-day case
+                games = fire.load_games(dog.hound["spec"]["sports"], NOW, rows_for(standard_rows()))
+                preview = fire.fire_user(dog, now=NOW, games=games, ledger=os.path.join(tmp, "u.jsonl"))
+        lines = fire.day_lines(dog.hound["spec"], games, NOW)
+        self.assertEqual(lines["slate"], preview["slate"])
+        self.assertEqual(lines["next_game"], preview["next_game"])
+        self.assertEqual(lines["live_elsewhere"], preview["live_elsewhere"])
+
+    def test_a_hound_with_a_pick_gets_no_next_game_line(self):
+        from src.hounds.interact import fire
+        from tests.test_hounds_interact_fire import NOW, dog_of, rows_for
+        from tests._hounds_user_fixtures import standard_rows
+        dog = dog_of()
+        games = fire.load_games(dog.hound["spec"]["sports"], NOW, rows_for(standard_rows()))
+        self.assertIsNone(fire.day_lines(dog.hound["spec"], games, NOW, have_picks=True)["next_game"])
+
+
 class TheLiveStatusCopyIsTrue(unittest.TestCase):
     # "One unit is $25 at your unit size" (a definition, hounds.html) is true; "one-unit bets" and "one unit a bet" are the false claim
     CLAIM = re.compile(r"one-unit|1-unit|\bone unit a bet\b|\b1 unit a bet\b", re.I)

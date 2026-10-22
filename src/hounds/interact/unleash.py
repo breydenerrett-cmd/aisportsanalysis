@@ -262,7 +262,18 @@ def unleash(dog: common.Dog, owner_user_id: int, *, now: Optional[datetime] = No
                           facts=facts, index=index, prop_rows=prop_rows)
     ahead = sum(1 for g in games.values() if g.commence - timedelta(minutes=spec["lock_minutes"]) > now)
     placed = sum(1 for p in picks if p["placed_now"])
+    # The hound page's Unleash is this one now, so it says what the preview always said when nothing fits: which games started, the
+    # next game, what is live in other sports. Read AFTER the heavy gate is released (the gate is not re-entrant). Production only:
+    # a test that injects ``rows`` never reads the real store. Never fatal.
+    lines: dict = {}
+    if rows is None:
+        try:
+            lines = fire.day_lines(spec, fire.cached_games(spec["sports"], now), now, other_live=fire.default_other_live(),
+                                   have_picks=bool(picks))
+        except Exception:  # noqa: BLE001 -- the day is complete without them
+            lines = {}
     return {
+        **lines,
         "dog_id": dog.id, "dog_name": dog.name, "mode": "unleash", "as_of": common.iso(now), "date": date,
         "already_running": already_running, "started_now": placed > 0,
         "games_on_board": len(games), "games_ahead": ahead, "games_before": len(games) - ahead,

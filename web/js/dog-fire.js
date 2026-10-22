@@ -339,8 +339,13 @@ export function renderUnleashDay(box, data, { name, id } = {}) {
   const rise = (node) => { node.setAttribute("class", `${node.className} ul-in`); node.setAttribute("style", `--i:${Math.min(i++, 7)}`); return node; };
   box.appendChild(rise(stepsDone(data)));
   if (name) box.appendChild(h("h3", { class: "hd-h3", "data-hook": "unleash-title", text: `${name}'s day` }));
+  // the same slate sentence the preview opens with ("Tonight's games already started ... Next games I can bet: Thursday."), said first
+  const slate = slateLine(data.slate);
+  if (slate) box.appendChild(rise(h("p", { class: "dk-headline dk-slate", "data-hook": "fire-slate", text: slate })));
   box.appendChild(rise(h("p", { class: "dk-headline", "data-hook": "unleash-headline", role: "status", text: data.headline || "" })));
   const picks = Array.isArray(data.picks) ? data.picks : [];
+  // no pick today: the server's words on the next game and on what is live elsewhere, and the link to the live board (never a dead end)
+  if (!picks.length) box.appendChild(rise(elsewhereBlock(data)));
   if (picks.length) {
     box.appendChild(h("ul", { class: "dk-picks", "data-hook": "unleash-picks" }, picks.map((p) => rise(unleashPick(p)))));
   }

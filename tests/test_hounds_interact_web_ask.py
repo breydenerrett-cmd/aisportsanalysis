@@ -14,7 +14,7 @@ import unittest
 from src.hounds.interact import ask
 from tests.hounds_web_runner import HAS_NODE
 from tests.test_hounds_interact_ask import FIRE_WITH_PICK, context
-from tests.test_hounds_interact_web import HID, Payloads, dog_routes, hook, page, q
+from tests.test_hounds_interact_web import HID, Payloads, dog_routes, hook, page, q, unleash_day
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
@@ -30,7 +30,8 @@ class TheFirePanelSaysWhichGamesStarted(unittest.TestCase):
         return out
 
     def test_the_slate_sentence_comes_first_and_the_picks_sit_under_their_day(self):
-        out = page(dog_routes(fire_payload=self.payload()), actions=[dict(do="click", sel=hook("fire-btn"), wait=80, capture=[
+        # the visitor's read-only preview
+        out = page(dog_routes(owner=False, fire_payload=self.payload()), actions=[dict(do="click", sel=hook("fire-btn"), wait=80, capture=[
             q("slate", hook("fire-slate")), q("headline", hook("fire-headline")), q("day", hook("fire-day")),
             q("picks", hook("fire-pick"), "count"), q("order", ".dk-headline", "texts")])])
         c = out["captures"]["0"]
@@ -41,13 +42,28 @@ class TheFirePanelSaysWhichGamesStarted(unittest.TestCase):
         self.assertEqual(c["order"][0], c["slate"])                  # said first
         self.assertEqual(c["order"][1], c["headline"])
 
+    def test_the_owners_unleash_says_it_first_too(self):
+        # the owner's real Unleash (2026-10-22: the same button the studio has) opens on the same sentence
+        out = page(dog_routes(unleash_payload=unleash_day(slate=self.payload()["slate"])), actions=[dict(do="click", sel=hook("fire-btn"), wait=120, capture=[
+            q("slate", hook("fire-slate")), q("headline", hook("unleash-headline")), q("picks", hook("unleash-pick"), "count"),
+            q("order", ".dk-headline", "texts")])])
+        c = out["captures"]["0"]
+        self.assertIn("Tonight's games already started: Tampa Bay Rays @ Cleveland Guardians (", c["slate"])
+        self.assertIn("Next games I can bet: Thursday.", c["slate"])
+        self.assertEqual(c["picks"], 1)
+        self.assertEqual(c["order"][0], c["slate"])
+        self.assertEqual(c["order"][1], c["headline"])
+
     def test_with_nothing_to_say_there_is_no_slate_paragraph(self):
         quiet = Payloads.fire_payload()
         quiet["slate"] = dict(quiet["slate"], line="", started=[], in_window=[])
-        out = page(dog_routes(fire_payload=quiet), actions=[dict(do="click", sel=hook("fire-btn"), wait=80, capture=[
+        out = page(dog_routes(owner=False, fire_payload=quiet), actions=[dict(do="click", sel=hook("fire-btn"), wait=80, capture=[
             q("slate", hook("fire-slate"), "count"), q("picks", hook("fire-pick"), "count")])])
         self.assertEqual(out["captures"]["0"]["slate"], 0)
         self.assertEqual(out["captures"]["0"]["picks"], 1)
+        own = page(dog_routes(unleash_payload=unleash_day(slate=quiet["slate"])), actions=[dict(do="click", sel=hook("fire-btn"), wait=120, capture=[
+            q("slate", hook("fire-slate"), "count"), q("picks", hook("unleash-pick"), "count")])])
+        self.assertEqual((own["captures"]["0"]["slate"], own["captures"]["0"]["picks"]), (0, 1))
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")

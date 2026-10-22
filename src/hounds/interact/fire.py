@@ -229,6 +229,28 @@ def other_sports_live(other_live: Optional[Callable], own_sports, now: datetime,
         return None
 
 
+def day_lines(spec: dict, games: dict, now: datetime, *, other_live: Optional[Callable] = None, have_picks: bool = False) -> dict:
+    """The three fields a page reads when a hound has no pick: ``slate`` (the sentence that says which games started and what is
+    next), ``next_game`` and ``live_elsewhere`` (plain strings). The preview builds them inside ``fire_user``; Unleash (the owner's
+    real button, ``unleash.py``) calls this with the same boards so its day never ends on a bare "nothing fit"."""
+    started: list = []
+    upcoming: list = []
+    for _event_id, game in sorted(games.items(), key=lambda kv: (kv[1].commence, kv[0])):
+        if game.sport not in spec["sports"] or game.commence is None:
+            continue
+        if game.commence <= now:
+            started.append((_game_text(game), game.commence))
+        else:
+            upcoming.append((_game_text(game), game.commence, game.commence - timedelta(minutes=spec["lock_minutes"])))
+    elsewhere = other_sports_live(other_live, spec["sports"], now, started, upcoming, have_picks)
+    elsewhere_text = None
+    if not have_picks and elsewhere and elsewhere.get("games"):
+        elsewhere_text = str(elsewhere.get("text") or "").rstrip(".") or None
+    return {"slate": slate_view(now, started, upcoming, elsewhere),
+            "next_game": None if have_picks else next_game_line(now, upcoming),
+            "live_elsewhere": elsewhere_text}
+
+
 def next_game_line(now: datetime, upcoming: list) -> Optional[str]:
     """'Next game: Thu 5:15 PM — Yankees at Red Sox' for the earliest game still ahead (Eastern time), or None."""
     ahead = sorted([(s, g) for g, s, _k in upcoming if s > now], key=lambda t: t[0])
