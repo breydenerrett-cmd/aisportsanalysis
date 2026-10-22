@@ -5,6 +5,7 @@
  * page scroll sideways. Colour never carries meaning alone: a chip, a result or a check always says it in words.
  */
 @import url("evolve.css");   /* Send to training as an evolution (web/js/dog-evolve.js) */
+@import url("diagnose.css");   /* the coach's diagnosis before it (web/js/dog-diagnose.js) */
 
 /* ---- layout ------------------------------------------------------------------------------------------------ */
 .dk-top { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); margin: 0 0 18px; }

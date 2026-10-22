@@ -24,6 +24,7 @@ import { h, clearNode, isNum } from "./hounds-core.js";
 import { post, errorText, errorCode, nextId } from "./dog-common.js";
 import { headstoneCard, recordText, trainedBadge, FROZEN_NOTE } from "./dog-headstone.js";
 import { runEvolution } from "./dog-evolve.js";
+import { runDiagnosis } from "./dog-diagnose.js";
 
 const SLOW = 90000;
 
@@ -189,6 +190,26 @@ function changeItem(c, i = 0) {
     c.why ? h("p", { class: "hd-fine rt-change__why", text: c.why }) : null]);
 }
 
+/**
+ * The coach's read, as the upgrade card cites it: who read the table ("AI read" or "Coach's read (rules engine)"), the top reasons
+ * and the lines of the diagnosis each one cites. Facts about the past; the card says the new version's record starts now and
+ * nothing about how it will do. Returns null when the result has no read (an older server).
+ */
+export function coachBlock(coach) {
+  if (!coach || !Array.isArray(coach.reasons)) return null;
+  const ai = coach.source === "ai";
+  return h("div", { class: "rt-coach", "data-hook": "training-coach", "data-source": ai ? "ai" : "rules" }, [
+    h("p", { class: "rt-coach__label", "data-hook": "training-coach-label", text: coach.label || (ai ? "AI read" : "Coach's read (rules engine)") }),
+    coach.summary ? h("p", { class: "hd-muted", "data-hook": "training-coach-summary", text: coach.summary }) : null,
+    coach.reasons.length
+      ? h("ol", { class: "rt-coach__reasons", "data-hook": "training-reasons" }, coach.reasons.map((x, i) => h("li", { class: "rt-coach__reason", "data-hook": "training-reason", "data-rank": String(i + 1) }, [
+        h("p", { class: "rt-coach__text", text: String(x.text || "") }),
+        ai ? h("ul", { class: "rt-coach__cites" }, (x.cited || []).map((c) => h("li", { class: "hd-fine", "data-hook": "training-cite", text: String(c.line || "") }))) : null,   // a rules reason is the table's own line: not said twice
+        x.thin ? h("p", { class: "hd-fine", text: "Too few bets to say." }) : null])))
+      : h("p", { class: "hd-muted", "data-hook": "training-no-reason", text: "No single cut stood out enough to blame." }),
+    h("p", { class: "hd-fine", text: "These are facts about the past, not a forecast. The new version starts with a new record." })]);
+}
+
 /** The "what changed and why" card for a training result. */
 export function trainingCard(result) {
   const r = result || {};
@@ -202,6 +223,7 @@ export function trainingCard(result) {
       " ", trainedBadge(fresh.trained_times)]),
     h("p", { class: "rt-card__headline", "data-hook": "training-headline", text: r.headline || "" }),
     r.light_note ? h("p", { class: "hd-muted", "data-hook": "training-light-note", text: r.light_note }) : null,
+    coachBlock(r.coach),
     h("h3", { class: "hd-h3", text: "What changed and why" }),
     h("ul", { class: "rt-changes", "data-hook": "training-changes" }, (r.changes || []).map((c, i) => changeItem(c, i))),
     r.guidance && r.guidance.text ? h("p", { class: "rt-guidance", "data-hook": "training-guidance", text: r.guidance.text }) : null,
@@ -233,6 +255,18 @@ export function startTraining(dog, { opener = null, onTrained = null, backHref =
       focusIn(sheet.body, "training-cancel");
     };
 
+    // refused (too few new bets, an open ticket) or failed: the title stops saying it is in training, and the server's sentence is shown
+    const showTrainingRefusal = (e, layer, titleEl) => {
+      if (layer && layer.removeAttribute) { layer.removeAttribute("data-evolve"); layer.removeAttribute("data-phase"); layer.removeAttribute("data-diagnose"); }
+      sheet.el.setAttribute("data-hook", "training-refused-sheet");
+      if (titleEl) titleEl.textContent = `${dog.name} stays as it is`;
+      clearNode(sheet.body);
+      sheet.body.appendChild(h("p", { class: "rt-refused", role: "alert", "data-hook": "training-refused", "data-code": errorCode(e),
+        text: errorText(e, `${dog.name} could not be sent to training just now. Nothing was changed.`) }));
+      sheet.body.appendChild(actionsRow([button("Close", "rites-close", "primary", () => sheet.close())]));
+      focusIn(sheet.body, "rites-close");
+    };
+
     const go = async () => {
       sheet.setBusy(true);
       sheet.el.setAttribute("data-hook", "training-running");
@@ -240,9 +274,17 @@ export function startTraining(dog, { opener = null, onTrained = null, backHref =
       if (titleEl) titleEl.textContent = `${dog.name} is in training`;
       const layer = sheet.el.parentNode;
       if (layer && layer.setAttribute) layer.setAttribute("data-evolve", "1");
+      const base = `/hounds/${encodeURIComponent(dog.id)}/train`;
+      // The diagnosis comes first: the coach reads the whole record, line by line, and asks Claude Haiku for its read (dog-diagnose.js).
+      // Both steps are real requests and write nothing. A refusal the server means ends it here; a diagnosis that cannot be had is
+      // skipped and the training goes on without it.
+      const diag = await runDiagnosis({ body: sheet.body, dog, reduced: reducedMotion(), layer,
+        steps: { diagnose: () => post(`${base}/diagnose`, {}, SLOW), assess: () => post(`${base}/assess`, {}, SLOW) } });
+      if (diag && diag.refused) { sheet.setBusy(false); showTrainingRefusal(diag.e, layer, titleEl); return; }
+      if (layer && layer.removeAttribute) layer.removeAttribute("data-diagnose");
       // The evolution is the show, not the work: the request is the caller's, runs beside it, and nothing is drawn as an upgrade
       // until the server has answered. A refusal ends the show at once (no charge, no new hound).
-      const request = post(`/hounds/${encodeURIComponent(dog.id)}/train`, { confirm: true }, SLOW).then((r) => ({ ok: true, r }), (e) => ({ ok: false, e }));
+      const request = post(base, { confirm: true }, SLOW).then((r) => ({ ok: true, r }), (e) => ({ ok: false, e }));
       // "Back to My Kennel": on the kennel page it closes the sheet and the page redraws; elsewhere (the hound page) it goes to `backHref`
       const leave = (result) => () => {
         finish(result); sheet.close();
@@ -253,19 +295,11 @@ export function startTraining(dog, { opener = null, onTrained = null, backHref =
         body: sheet.body, dog, request, reduced: reducedMotion(), layer,
         onBack: () => { if (result) leave(result)(); }, renderWhy: trainingCard });
       sheet.setBusy(false);
-      if (!outcome.ok) {
-        if (layer && layer.removeAttribute) { layer.removeAttribute("data-evolve"); layer.removeAttribute("data-phase"); }
-        // refused (too few new bets, an open ticket): the title stops saying it is in training
-        sheet.el.setAttribute("data-hook", "training-refused-sheet");
-        if (titleEl) titleEl.textContent = `${dog.name} stays as it is`;
-        clearNode(sheet.body);
-        sheet.body.appendChild(h("p", { class: "rt-refused", role: "alert", "data-hook": "training-refused", "data-code": errorCode(outcome.e),
-          text: errorText(outcome.e, `${dog.name} could not be sent to training just now. Nothing was changed.`) }));
-        sheet.body.appendChild(actionsRow([button("Close", "rites-close", "primary", () => sheet.close())]));
-        focusIn(sheet.body, "rites-close");
-        return;
-      }
+      if (!outcome.ok) { showTrainingRefusal(outcome.e, layer, titleEl); return; }
       result = outcome.result;
+      // the card cites the coach's top reasons: open the fold that holds them when the server sent a read
+      const fold = sheet.body.querySelector ? sheet.body.querySelector("[data-hook='evolve-why']") : null;
+      if (fold && result.coach && Array.isArray(result.coach.reasons) && result.coach.reasons.length) fold.setAttribute("open", "");
       sheet.el.setAttribute("data-hook", "training-reveal");
       if (titleEl) titleEl.textContent = result.light_adjustment ? "A light adjustment" : `${dog.name} is back`;
       focusIn(sheet.body, "training-open-new");
