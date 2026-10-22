@@ -77,6 +77,13 @@ def voice_key(dog: common.Dog, persona: Optional[Mapping] = None) -> str:
             if cid == "role":
                 roles.append(cond.get("value"))
     rank = spec.get("rank_by")
+    side_rule = spec.get("side_rule")                    # a classic (version 1) hound names its side directly
+    if side_rule == "underdog":
+        roles.append("underdog")
+    elif side_rule == "favourite":
+        roles.append("favourite")
+    elif side_rule in ("market_moved_toward", "market_moved_away"):
+        ids.append("steam")
     if _MYSTIC_CONDITIONS & set(ids):
         return "mystic"
     if _CHAOS_CONDITIONS & set(ids):

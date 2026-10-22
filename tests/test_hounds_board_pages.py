@@ -639,7 +639,7 @@ class TheModelPage(unittest.TestCase):
             self.assertNotIn(line, out["text"])
         # the kit's panels sit above the tabs (hidden until the server's kit says so): a buried dog's headstone, the owner's
         # hound menu ("Your hound") and "Unleash"; then Overview: numbers, bankroll, status
-        self.assertEqual(f["order"][:7], ["Headstone", "Your hound", "Unleash", "Paper bankroll", "Its rule", "Key numbers", "Status"])
+        self.assertEqual(f["order"][:7], ["Headstone", "Your hound", "Unleash", "What I'd play right now", "What I've been up to", "Open tickets", "Graded tickets"])  # fun pass 2026-10-21: right-now, the feed, then the Tickets tab
         self.assertIn("Open tickets", f["order"])
         self.assertIn("Its rule", f["order"])
         self.assertEqual(out["title"], "Closer — LINEHOUND")

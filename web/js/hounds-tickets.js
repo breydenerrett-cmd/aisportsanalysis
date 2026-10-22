@@ -7,6 +7,7 @@
  */
 
 import { h, isNum, signed, fmtPrice, shortDate, houndHref, NOT_REPORTED } from "./hounds-core.js";
+import { signedMoney } from "./hound-money.js";
 import {
   ticketStatus, ticketState, RESULT_WORDS, recordedText, ticketPrice, pickOf, marketLabel, booksText, NA,
   isOldRule, OLD_RULE_TAG, OLD_RULE_TITLE,
@@ -88,6 +89,7 @@ export function ticketCard(ticket, { showModel = false, name = "", flip = false 
       h("span", { class: "hd-card__res", text: RESULT_WORDS[state] }),
       h("span", Object.assign({ class: `hd-num hd-tone--${tone}`, "data-hook": "card-units", text: units || NA },
         flip && units ? { "data-count": "1", "data-count-ms": "500" } : {})),
+      units ? h("span", { class: `hd-num hd-money hd-tone--${tone}`, "data-hook": "card-money", title: "Paper dollars at your unit size", text: signedMoney(t.units) }) : null,
       h("span", { class: "hd-num", "data-hook": "card-clv", text: `CLV ${clvText(t)}${isNum(t.clv_pts) ? " pts" : ""}` }),
     ]));
   }
@@ -190,7 +192,8 @@ export function ticketTable(tickets, { graded = false, hook = "tickets-table", c
       h("td", { class: "hd-num" }, [priceCell(t)]),
     ];
     if (graded) cells.push(h("td", { class: "hd-num", "data-hook": "ticket-clv", text: clv }));
-    cells.push(h("td", {}, [resultChip(t), rehearsal ? h("small", { class: "hd-aux", text: "Rehearsal" }) : null]));
+    cells.push(h("td", {}, [resultChip(t), rehearsal ? h("small", { class: "hd-aux", text: "Rehearsal" }) : null,
+      graded && units ? h("small", { class: "hd-aux hd-num", "data-hook": "ticket-money", title: "Paper dollars at your unit size", text: signedMoney(t.units) }) : null]));
     if (graded) {
       cells.push(h("td", Object.assign({ class: `hd-num hd-tone--${!units ? "none" : t.units > 0 ? "up" : t.units < 0 ? "down" : "flat"}`,
         "data-hook": "ticket-units", text: units || NA }, fresh && units ? { "data-count": "1", "data-count-ms": "500" } : {})));

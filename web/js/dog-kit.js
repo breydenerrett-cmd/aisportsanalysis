@@ -91,7 +91,11 @@ export async function bootDogKit(hound) {
   const jobs = [];
   if (kit.buried) jobs.push(mountHeadstone(sections.headstone, id));
   if (hound.kind === "user" && sections.manual) {
-    jobs.push(mountManual(sections.manual, { id, kit }).then((m) => { manual = m; }));
+    jobs.push(mountManual(sections.manual, { id, kit }).then((m) => {
+      manual = m;
+      // the right-now card (hound-rightnow.js) records through the same route; keep this panel current
+      if (m && typeof document !== "undefined" && document.addEventListener) document.addEventListener("hound:manual-recorded", () => m.refresh());
+    }));
   }
   if (kit.can_fire) {
     mountFire(sections.fire, { id, name, kit, onRecord: () => { if (manual) manual.refresh(); } });
