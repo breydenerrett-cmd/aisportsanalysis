@@ -1901,3 +1901,4 @@
 {"events": 1, "kind": "peek", "next_check_utc": "2026-10-23T02:25:27.913411Z", "observed_utc": "2026-10-22T20:25:27.913411Z", "sport_key": "cricket_test_match"}
 {"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 10, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T20:25:27.913411Z", "regions": ["us"], "rows": 55, "sport_key": "soccer_uefa_europa_league", "stored": 55}
 {"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 8, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T20:25:27.913411Z", "regions": ["us"], "rows": 31, "sport_key": "soccer_uefa_europa_conference_league", "stored": 31}
+{"call_kind": "inplay", "credits": 1, "events": 15, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T20:40:29.335919Z", "regions": ["us"], "rows": 58, "sport_key": "basketball_euroleague", "stored": 36}
