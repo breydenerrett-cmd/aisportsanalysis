@@ -428,7 +428,7 @@ export const COLUMNS = [
   { key: "d7", label: "7d", numeric: true, first: "desc", get hint() { return `Return on the ${startText()} start from bets settled in the last 7 days`; } },
   { key: "h24", label: "24h", numeric: true, first: "desc", get hint() { return `Return on the ${startText()} start from bets settled in the last 24 hours`; } },
   { key: "units", label: "Units", numeric: true, first: "desc", get hint() { return `Total units won or lost (${unitWords()}; member dogs bet the units they chose)`; } },
-  { key: "bets", label: "Bets", numeric: true, first: "desc", hint: "Graded bets" },
+  { key: "bets", label: "Bets", numeric: true, first: "desc", hint: "Graded (settled) bets. Open bets are not counted until they settle." },
   { key: "price", label: "Avg price", numeric: true, first: "desc", hint: "The typical price taken" },
   { key: "clv", label: "CLV", numeric: true, first: "desc", hint: "Share of bets that beat the close, and the average points" },
   { key: "last10", label: "Last 10", numeric: true, first: "desc", hint: "Wins in the last ten decided bets" },

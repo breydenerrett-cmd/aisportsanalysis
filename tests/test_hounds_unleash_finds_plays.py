@@ -110,6 +110,18 @@ class GamesAboutToStart(_Case):
         self.assertEqual({c["code"]: c["count"] for c in out["why"]["counts"]}, {"started": 1})
 
 
+class OneSidePerGame(_Case):
+    def test_a_moneyline_and_a_spread_on_the_same_team_are_one_ticket_not_two(self):
+        """DRAKEO held Hawks ML and Hawks +2.5 on one game (placed before the guard shipped; those rows stay, append-only).
+        On the current code the second is refused."""
+        rule = RF.rule(markets=["moneyline", "spread"], side="away", price_min=-199, price_max=250)
+        rows = board_rows("2026-10-20T17:00:00Z", event_id="g1", start=START, moneyline=[(b, -140, 120) for b in BOOKS],
+                          spread=(-1.5, [(b, -110, -110) for b in BOOKS]))
+        out = self.go(rows, "2026-10-20T18:00:00Z", dog=self.dog(rules=[rule]))
+        self.assertEqual(len(self.bets()), 1)
+        self.assertEqual(out["placed_now"], 1)
+
+
 class PerReasonCounts(_Case):
     def test_every_game_lands_in_exactly_one_bucket_and_the_next_check_is_named(self):
         rows = []
@@ -117,13 +129,14 @@ class PerReasonCounts(_Case):
         rows += game("band", "2026-10-20T19:00:00Z", 400, -600, "2026-10-20T23:40:00Z")
         rows += game("books", "2026-10-20T19:00:00Z", 120, -140, "2026-10-20T23:30:00Z", books=BOOKS[:2])
         rows += game("started", "2026-10-20T17:00:00Z", 120, -140, "2026-10-20T19:00:00Z")
-        rows += game("late", "2026-10-20T21:00:00Z", 120, -140, "2026-10-20T23:50:00Z")      # first capture is after now
+        rows += game("late", "2026-10-20T21:00:00Z", 120, -140, "2026-10-20T23:50:00Z")      # first capture is after now, lock is ahead
+        rows += game("stale", "2026-10-20T15:00:00Z", 120, -140, "2026-10-20T20:30:00Z")     # lock 18:30 passed; its board is 3.5 hours old
         out = self.go(rows, "2026-10-20T20:00:00Z")
         counts = {c["code"]: c["count"] for c in out["why"]["counts"]}
-        self.assertEqual(counts, {"on_record": 1, "started": 1, "no_board": 1, "too_few_books": 1, "price_band": 1})
+        self.assertEqual(counts, {"on_record": 1, "started": 1, "waits_lock": 1, "too_few_books": 1, "price_band": 1, "board_too_old": 1})
         self.assertEqual(sum(counts.values()), out["why"]["checked"], out["why"]["counts"])
         self.assertEqual(out["why"]["placed"], 1)
-        self.assertIn("Checked 5 games: ", out["why"]["text"])
+        self.assertIn("Checked 6 games: ", out["why"]["text"])
         self.assertIn("1 price outside +100 to +250", out["why"]["text"])
         self.assertTrue(out["why"]["text"].endswith("→ placed 1"))
         nxt = out["next_check"]

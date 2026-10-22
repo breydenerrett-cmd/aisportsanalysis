@@ -35,8 +35,9 @@ _TABLE = (
      r"after (?:the )?(?:first|second|third|fourth|fifth|sixth|seventh|\d+(?:st|nd|rd|th)) "
      r"(?:inning|quarter|period|half)|(?:top|bottom) of the \d+(?:st|nd|rd|th)|"
      r"(?:\d+(?:st|nd|rd|th)) (?:inning|quarter|period))\b",
-     "Live and in-game bets are not available. A hound locks 60 to 180 minutes before the start and uses only "
-     "what was known by then."),
+     "A rule that reads the game as it unfolds (an inning, a quarter, the score) is not available: a hound decides "
+     "60 to 180 minutes before the start. To also bet games already in play, turn on \"Also bet games in play\" in "
+     "the builder; it bets the live price under the same rules."),
     ("after_start_fact", AFTER_START,
      r"\b(?:final score|box score|after (?:the )?(?:game|first pitch|kickoff|tip[- ]?off) (?:starts|started|begins)|"
      r"once the game starts|when the game starts|team (?:is )?(?:down|up|trailing|leading) by)\b",

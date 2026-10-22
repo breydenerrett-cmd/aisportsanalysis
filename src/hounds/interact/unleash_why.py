@@ -43,7 +43,8 @@ BUCKETS = (
     ("on_record", "already on its record"),
     ("started", "already started"),
     ("not_in_sports", "not in its sports"),
-    ("no_board", "no board saved yet"),
+    ("waits_lock", "waiting for its check time (no fresh board yet)"),
+    ("no_board", "no board saved for it"),
     ("board_too_old", "board too old"),
     ("no_live_board", "no live price yet"),
     ("live_price_too_old", "live price too old"),
@@ -122,6 +123,11 @@ def summarise(spec: Mapping, games: Mapping, hound: Mapping, now: datetime, date
                 bucket = code
             else:
                 bucket = _BUCKET.get(code, "rule_not_met")
+                lock = game.commence - timedelta(minutes=spec["lock_minutes"])
+                if bucket in ("no_board", "board_too_old") and now < lock:
+                    # Far-off games are captured every few hours, so no board is fresh enough to bet on yet. The runner
+                    # checks them at their lock on the board standing then; this is waiting, not a rejection.
+                    bucket = "waits_lock"
         counts[bucket] += 1
         by_event[eid] = bucket
     labels = dict(_LABEL, price_band=band_text(spec))
