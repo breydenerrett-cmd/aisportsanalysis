@@ -247,7 +247,8 @@ def unleash(dog: common.Dog, owner_user_id: int, *, now: Optional[datetime] = No
                                     placed_events={p["event_id"] for p in picks if p["placed_now"]},
                                     per_day_taken=len(today))
         nxt = unleash_why.next_check(spec, games, now, held_today)
-        no_board = _no_board(games, spec, now, {b["event_id"] for b in before} | {p["event_id"] for p in picks},
+        evaluated = set((report.get("considered") or {}).get(hound["id"], ()))       # looked at on a current board just now
+        no_board = _no_board(games, spec, now, {b["event_id"] for b in before} | {p["event_id"] for p in picks} | evaluated,
                              created)
     if wrote and refresh_stats is None:
         try:
@@ -270,7 +271,7 @@ def unleash(dog: common.Dog, owner_user_id: int, *, now: Optional[datetime] = No
         "manual_remaining_today": manual.remaining_today(hound["id"], now, manual_ledger),
         "before": before, "before_label": BEFORE_LABEL, "no_board": no_board, "no_board_note": NO_BOARD_TEXT,
         "counted_in_record": False,
-        "headline": _headline(dog.name, already_running, placed, len(today), len(open_tickets)),
+        "headline": _headline(dog.name, already_running, placed, len(today), len(open_tickets), len(games)),
         "max_bets_per_day": spec["max_bets_per_day"],
         "paper_only": True, "not_advice": user_spec.NOT_ADVICE,
     }
@@ -376,11 +377,13 @@ def _open_tickets(bets: list, graded_ids: set, date: str, now: datetime) -> list
     return out
 
 
-def _headline(name: str, already_running: bool, placed: int, today: int = 0, open_count: int = 0) -> str:
+def _headline(name: str, already_running: bool, placed: int, today: int = 0, open_count: int = 0, on_board: int = 1) -> str:
     if placed:
         return f"{name} is betting today: {placed} {'pick' if placed == 1 else 'picks'} placed."
     if open_count:
         return f"{name} has {open_count} open {'ticket' if open_count == 1 else 'tickets'}. Nothing new fit just now; the reasons are below."
     if already_running or today:
         return f"{name} is running. Nothing new fit just now; the reasons are below."
+    if not on_board:
+        return f"{name} is unleashed. There are no games on today's board in its sports yet, so there is nothing to check."
     return f"{name} is unleashed. Nothing on today's board fits its rule yet; the reasons are below."

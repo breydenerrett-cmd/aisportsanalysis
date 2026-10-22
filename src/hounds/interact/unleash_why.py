@@ -66,7 +66,7 @@ def game_code(hound: Mapping, spec: Mapping, game, now: datetime, date: str, fac
         return "not_in_sports"
     if user_spec.is_gematria(spec):
         return "rule_not_met"             # the house engine's own verdict is not broken down per game
-    probe = {"id": hound["id"], "spec": spec, "created_at": None}
+    probe = {"id": hound["id"], "spec": spec, "created_at": hound.get("created_at")}
     skipped: Counter = Counter()
     if user_spec.is_v2(spec):
         from src.hounds import user_engine_v2 as v2
@@ -77,8 +77,10 @@ def game_code(hound: Mapping, spec: Mapping, game, now: datetime, date: str, fac
     else:
         commence = game.commence
         lock = commence - timedelta(minutes=spec["lock_minutes"])
+        born = E._utc(hound.get("created_at"))
         for market in spec["markets"]:
-            eval_game, as_of = game, (now if now < lock else lock)
+            # the engine's own rule: a hound that existed at the lock is priced at the lock, one born after it is priced now
+            eval_game, as_of = game, (now if now < lock or (born is not None and born > lock) else lock)
             if now >= commence:
                 eval_game, code = E.live_game(game, spec, now)
                 if eval_game is None:
@@ -135,8 +137,11 @@ def summarise(spec: Mapping, games: Mapping, hound: Mapping, now: datetime, date
     placed = len(placed_events)
     n = len(games)
     parts = " · ".join(f"{r['count']} {r['label']}" for r in rows)
-    text = f"Checked {n} {'game' if n == 1 else 'games'}" + (f": {parts}" if parts else "")
-    text += f" → placed {placed}"
+    if n == 0:
+        text = "No games on today's board in its sports yet → placed 0"
+    else:
+        text = f"Checked {n} {'game' if n == 1 else 'games'}" + (f": {parts}" if parts else "")
+        text += f" → placed {placed}"
     return {"checked": n, "placed": placed, "counts": rows, "text": text, "by_event": by_event}
 
 

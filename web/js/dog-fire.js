@@ -212,13 +212,14 @@ function stepsDone(data) {
     h("li", { class: "ul-step", "data-state": "done", "data-step": "2", text: third })]);
 }
 
-/** "Live bet · price at 20:14": the label on an in-play ticket. The time is the viewer's own zone; the server sends UTC. */
+/** "Live bet · price at 20:14 UTC": the label on an in-play ticket. UTC, like the "recorded" time beside it on every ticket
+ *  (a viewer-zone time read "price at 00:29" beside "recorded 07:30 UTC", seven hours apart for the same bet). */
 export function liveLabel(p) {
   if (!p || !p.live) return "";
   const at = p.live_price_at_utc ? new Date(p.live_price_at_utc) : null;
   if (!at || Number.isNaN(at.getTime())) return "Live bet";
   const pad = (v) => String(v).padStart(2, "0");
-  return `Live bet · price at ${pad(at.getHours())}:${pad(at.getMinutes())}`;
+  return `Live bet · price at ${pad(at.getUTCHours())}:${pad(at.getUTCMinutes())} UTC`;
 }
 
 /** Why each game was or was not taken: "Checked 60 games: 38 not in its sports · 14 price outside ... → placed 2", the game

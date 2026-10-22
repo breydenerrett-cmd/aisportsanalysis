@@ -42,7 +42,7 @@ import {
 } from "./hounds-core.js";
 import { wlText, unitsOf, causeText } from "./hounds-voice.js";
 import {
-  COLUMNS, DEFAULT_SORT, NA, betsOf, fmtUnitsPlain, avgPriceOf, clvOf, last10Of, openBetsOf, recordText, streakText,
+  COLUMNS, DEFAULT_SORT, NA, betsOf, betsShown, fmtUnitsPlain, avgPriceOf, clvOf, last10Of, openBetsOf, recordText, streakText,
   bankrollNow, returnPctOf, windowPct, totalUnitsOf, isSmallSample, smallSampleTitle, fmtUsd, fmtPct, bankrollRules,
   basisTagText, RECORDED_TITLE,
   statusOf, typeText, sportLabel, sportsOf, marketsText, presentSports, filterBySport, sortHounds, splitRanked,
@@ -312,14 +312,14 @@ function tableRow(hound, rank, qual) {
     h("td", { class: "hd-col-record hd-num", "data-hook": "row-record" }, [
       h("strong", { text: recordText(hound) }),
       // the sample beside the record, always (it is the compact view's only count); the streak belongs to "All stats"
-      h("small", { class: "hd-aux lb-bets", "data-hook": "row-bets-inline", text: `${bets} ${bets === 1 ? "bet" : "bets"}` }),
+      h("small", { class: "hd-aux lb-bets", "data-hook": "row-bets-inline", text: openBetsOf(hound) > 0 ? `${bets + openBetsOf(hound)} bets (${openBetsOf(hound)} open)` : `${bets} ${bets === 1 ? "bet" : "bets"}` }),
       streak ? h("small", { class: "hd-aux lb-streak", text: streak }) : null]),
     moneyCell(hound, "hd-col-bankroll", "row-bankroll", fmtUsd(bankrollNow(hound)), ret, small, true),
     moneyCell(hound, "hd-col-return", "row-return", fmtPct(ret), ret, small),
     moneyCell(hound, "hd-col-d7", "row-d7", fmtPct(d7), d7, small),
     moneyCell(hound, "hd-col-h24", "row-h24", fmtPct(h24), h24, small),
     moneyCell(hound, "hd-col-units", "row-units", fmtUnitsPlain(units), units, small),
-    h("td", { class: "hd-col-bets hd-num", "data-hook": "row-bets", text: String(bets) }),
+    h("td", { class: "hd-col-bets hd-num", "data-hook": "row-bets", text: betsShown(hound) }),
     h("td", { class: "hd-col-price hd-num", "data-hook": "row-price", text: price === null ? NA : fmtPrice(price) }),
     h("td", { class: "hd-col-clv" }, [clvCell(hound)]),
     h("td", { class: "hd-col-last10" }, [dots(hound)]),

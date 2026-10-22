@@ -555,6 +555,10 @@ def contract_fields(row: Mapping, spec: Mapping, mode: str) -> dict:
                   f"({row['selection']}) at the board average of {_fmt_price(row['price'])} across "
                   f"{row['n_books']} books; the best single price was {_fmt_price(row['best_price'])} "
                   f"at {row['best_book']}.")
+    if row.get("placed_after_lock"):
+        stamp = _utc(row.get("board_observed_utc"))
+        reason += (" Placed after its usual check time, so it took the newest board standing at placement (captured "
+                   f"{stamp.strftime('%H:%M') if stamp else '?'} UTC), not the lock-time board.")
     if row.get("live"):
         stamp = _utc(row.get("live_price_observed_utc"))
         reason += (" A live bet: the game was in play, priced on the live board captured at "
@@ -605,7 +609,7 @@ def evaluate(spec: Mapping, game: GameBoards, market: str, lock_utc: datetime,
         selection_line = None
     return {
         "side": side, "line": line, "price": avg, "best_price": best, "best_book": best_book,
-        "n_books": board["n_books"], "board_observed_utc": _iso(observed),
+        "n_books": board["n_books"], "board_observed_utc": _iso(observed), "as_of_utc": _iso(lock_utc),
         "board_age_minutes": round(age, 1),
         "selection": _selection_text(game, market, side, selection_line),
         **({"live": True} if live else {}),
@@ -787,8 +791,10 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                             if created is not None and created > lock_utc and not place_ahead:
                                 skipped["hound_created_after_lock"] += 1
                                 continue
-                            # Unleash on a game whose lock has passed and has not started: priced NOW on the newest board
-                            # (the lock-time board is only used when the hound existed at the lock)
+                            # Unleash on a game whose lock has passed and has not started: a hound that existed at the lock
+                            # is priced on the board AT the lock; one born after the lock never had a lock-time price, so it
+                            # is priced NOW on the newest board at or before now. That bet says so (``placed_after_lock``)
+                            # and is stamped with the instant of the board it read (never a later board, never the lock's).
                             as_of = t if t < lock_utc or (created is not None and created > lock_utc) else lock_utc
                     considered.setdefault(hound["id"], set()).add(event_id)
                     cand, reason = evaluate(spec, eval_game, market, as_of, commence)
@@ -823,6 +829,11 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                 skipped["price_cap"] += 1
                 continue
             pk = _game_pk(game, event_id, game_pk_index)
+            # The instant of the board this bet read. Normally the lock; a bet priced LATER (an in-play bet, or Unleash on a
+            # game whose lock has passed) is stamped with that later instant, so the ticket never claims lock-time pricing
+            # for a board observed after the lock, and the public checks (verified, CLV provenance) read the right moment.
+            decided = _utc(cand.get("as_of_utc"))
+            placed_late = mode == "live" and decided is not None and decided > lock_utc
             row = {
                 "kind": KIND_BET, "ledger_version": LEDGER_VERSION, "paper_only": True,
                 "bet_id": bet_id, "hound_id": hound["id"],
@@ -833,7 +844,7 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                 "line": cand["line"], "selection": cand["selection"], "price": cand["price"],
                 "best_price": cand["best_price"], "best_book": cand["best_book"],
                 "n_books": cand["n_books"], "lock_minutes": spec["lock_minutes"],
-                "lock_utc": _iso(lock_utc), "board_observed_utc": cand["board_observed_utc"],
+                "lock_utc": _iso(decided) if placed_late else _iso(lock_utc), "board_observed_utc": cand["board_observed_utc"],
                 "board_age_minutes": cand["board_age_minutes"], "units": 1,
                 "recorded_utc": _iso(t), "provenance": mode,
             }
@@ -851,6 +862,8 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                 # An in-play bet: flagged, and priced on the capture standing at the evaluation instant, which it names.
                 row["live"] = True
                 row["live_price_observed_utc"] = cand["board_observed_utc"]
+            elif placed_late:
+                row["placed_after_lock"] = True       # a pregame bet taken after its lock: priced on the board standing at placement
             row.update(contract_fields(row, spec, mode))
             if cand.get("row_extra"):               # the Gematria style's evidence block, rules stamp and own reason
                 row.update(cand["row_extra"])

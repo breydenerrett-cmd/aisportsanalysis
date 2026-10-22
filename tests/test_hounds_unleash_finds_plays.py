@@ -241,6 +241,86 @@ class InPlayBets(_Case):
         self.assertNotIn("live", self.bets()[0])
 
 
+class PostLockPregameIsTruthful(_Case):
+    """Checker round (2026-10-22): a hound born after a game's lock bets it on the board standing NOW, and the ticket says so.
+    Until then the row kept the nominal lock as its ``lock_utc`` beside a board observed after it, so the public "verified"
+    check (the board at ``lock_utc`` against the price taken) called a legitimate bet unverified."""
+
+    ROWS = (game("g1", "2026-10-20T21:05:00Z", 120, -140, START) + game("g1", "2026-10-20T21:55:00Z", 110, -130, START)
+            + game("g1", "2026-10-20T22:20:00Z", 300, -400, START))            # the 22:20 price is the future: ignored
+
+    def born_after_lock(self):
+        return self.dog(created="2026-10-20T21:30:00Z")
+
+    def test_the_row_is_stamped_with_the_instant_of_the_board_it_read_and_says_it_was_placed_after_the_lock(self):
+        self.go(self.ROWS, "2026-10-20T22:00:00Z", dog=self.born_after_lock())
+        row = self.bets()[0]
+        self.assertEqual((row["price"], row["board_observed_utc"]), (110, "2026-10-20T21:55:00Z"))
+        self.assertEqual(row["lock_utc"], "2026-10-20T22:00:00Z")            # not 21:10Z, which would claim a lock-time price
+        self.assertLessEqual(row["board_observed_utc"], row["lock_utc"])
+        self.assertTrue(row["placed_after_lock"])
+        self.assertIn("Placed after its usual check time", row["reason"])
+        self.assertIn("captured 21:55 UTC", row["reason"])
+
+    def test_a_hound_that_existed_at_the_lock_keeps_the_lock_stamp_and_no_flag(self):
+        self.go(self.ROWS, "2026-10-20T22:00:00Z")
+        row = self.bets()[0]
+        self.assertEqual((row["price"], row["lock_utc"]), (120, "2026-10-20T21:10:00Z"))
+        self.assertNotIn("placed_after_lock", row)
+
+    def test_the_public_verified_check_reads_the_right_moment_for_a_post_lock_and_an_in_play_bet(self):
+        from src.hounds import boards, ledgers
+        rows = self.ROWS + game("g1", "2026-10-20T23:27:00Z", 130, -150, START)
+        for label, created, now, dog_kw, want_live in (("post-lock", "2026-10-20T21:30:00Z", "2026-10-20T22:00:00Z", {}, False),
+                                                       ("in play", "2026-10-20T06:00:00Z", "2026-10-20T23:30:00Z", {"bet_in_play": True}, True)):
+            with self.subTest(label), tempfile.TemporaryDirectory() as tmp:
+                case = type("C", (_Case,), {"runTest": lambda self: None})()
+                case.setUp()
+                self.addCleanup(case._tmp.cleanup)
+                case.go(rows, now, dog=case.dog(created=created, **dog_kw))
+                path = os.path.join(tmp, "mb.jsonl")
+                with open(path, "w") as fh:
+                    fh.writelines(json.dumps(r) + chr(10) for r in rows)
+                bets, _ = ledgers.pack_rows(case.bets())
+                self.assertEqual(len(bets), 1)
+                boards.scan(bets, path)
+                self.assertIs(bets[0].verified, True, label)                 # the price taken IS on the board at the decision moment
+                self.assertEqual(bool(bets[0].live_price_at_utc), want_live)
+
+    def test_the_summary_agrees_with_the_bet_for_a_hound_born_after_the_lock(self):
+        """A game this hound would price NOW (board 10 minutes old) and refuse on the price band read 'no board saved for it'."""
+        rows = game("gB", "2026-10-20T21:50:00Z", 400, -600, START)         # the only board is after the 21:10Z lock
+        out = self.go(rows, "2026-10-20T22:00:00Z", dog=self.born_after_lock())
+        self.assertEqual(out["why"]["by_event"], {"gB": "price_band"})
+        self.assertEqual(out["no_board"], [])
+
+    def test_an_empty_day_reads_as_no_games_not_as_a_rule_that_did_not_fit(self):
+        out = self.go([], "2026-10-20T18:00:00Z")
+        self.assertEqual(out["why"]["text"], "No games on today's board in its sports yet → placed 0")
+        self.assertIn("no games on today's board", out["headline"])
+        self.assertNotIn("fits its rule", out["headline"])
+
+
+class InPlayIsNotCloseComparable(_Case):
+    def test_an_in_play_bet_is_stamped_with_its_evaluation_instant_and_gets_no_closing_line_value(self):
+        from src.hounds import user_settle
+        from tests._hounds_user_fixtures import result_row
+        rows = (game("g1", "2026-10-20T21:05:00Z", 120, -140, START) + game("g1", "2026-10-20T23:05:00Z", 100, -120, START)
+                + game("g1", "2026-10-20T23:27:00Z", 130, -150, START))
+        self.go(rows, "2026-10-20T23:30:00Z", dog=self.dog(bet_in_play=True))
+        row = self.bets()[0]
+        self.assertEqual((row["price"], row["lock_utc"], row["live"]), (130, "2026-10-20T23:30:00Z", True))
+        self.assertNotIn("placed_after_lock", row)
+        user_settle.settle(ledger=self.ledger, now=utc("2026-10-21T10:00:00Z"), lookback_days=3,
+                           mlb_results={"824000": result_row(824000, "2026-10-20", "BOS", "SEA", 5, 2)},
+                           nfl_results=lambda _d: {}, game_pk_index=RF.PK_INDEX, allsports_results={},
+                           close_fn=user_settle.make_close_fn(lambda date, sport: rows))
+        graded = [r for r in user_engine.read_ledger(self.ledger) if r.get("kind") == user_settle.KIND_GRADED]
+        self.assertEqual([(g["result"], g["units_average_price"]) for g in graded], [("WIN", 1.3)])      # graded like any bet
+        self.assertIsNone(graded[0]["close_price"])                          # the +100 pre-game close is not a line a live price can beat
+        self.assertIsNone(graded[0]["clv_pts"])
+
+
 @unittest.skipUnless(HAS_NODE, "node not installed")
 class TheUi(unittest.TestCase):
     def data(self, **over):
@@ -268,7 +348,30 @@ class TheUi(unittest.TestCase):
         self.assertTrue(c["why"].endswith("placed 0"))
         self.assertEqual(c["steps"][-1], "1 open ticket, none new")
         self.assertEqual((c["open"], c["status"]), (1, ["Not started yet"]))
-        self.assertRegex(c["live"][0], r"^Live bet · price at \d\d:\d\d$")
+        self.assertRegex(c["live"][0], r"^Live bet · price at 23:27 UTC$")
+
+    def test_the_leaderboard_never_says_0_bets_beside_open_tickets(self):
+        from tests.test_hounds_board_pages import routes as board_routes
+        r = board_routes()
+        payload = json.loads(json.dumps(r["/hounds"][1]))
+        base = next(h for h in payload["hounds"] if h["id"] == "closer")
+
+        def variant(hid, bets, open_bets):
+            h = json.loads(json.dumps(base))
+            h.update(id=hid, name=hid.title(), kind="user", owner_display="Handler 1234", open_bets=open_bets, ranked=bets >= 10, settled=bets)
+            h["record"].update(bets=bets, wins=bets // 2, losses=bets - bets // 2, pushes=0)
+            return h
+        payload["hounds"] = [variant("u-open", 0, 4), variant("u-mixed", 12, 2), json.loads(json.dumps(base))]       # fewer than 3 ranked: the qualifying round lists everyone
+        r["/hounds"] = [200, payload]
+        out = run_page("hounds", routes=r, queries=[
+            q("cols", "[data-hound='u-open'] [data-hook='row-bets']", "texts"), q("inline", "[data-hound='u-open'] [data-hook='row-bets-inline']", "texts"),
+            q("mixed", "[data-hound='u-mixed'] [data-hook='row-bets']", "texts"), q("plain", "[data-hound='closer'] [data-hook='row-bets']", "texts")])
+        f = out["final"]
+        self.assertEqual(f["cols"], ["4 (4 open)"])
+        self.assertEqual(f["inline"], ["4 bets (4 open)"])
+        self.assertEqual(f["mixed"], ["14 (2 open)"])
+        self.assertEqual(f["plain"], ["43 (2 open)"])                        # the fixture's own hound holds 2 open tickets: 41 settled + 2
+        self.assertNotIn("0", f["cols"] + f["mixed"])
 
     def test_the_card_never_says_bets_0_beside_open_tickets(self):
         d = kennel_dog("u-1", bets=0, open_bets=5)

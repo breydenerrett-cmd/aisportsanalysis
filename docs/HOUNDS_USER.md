@@ -227,3 +227,13 @@ is never read. A live capture older than `LIVE_MAX_AGE_MINUTES` (5; the runner p
 come from Unleash taps or a fresh capture) is skipped as `live_price_too_old`; no capture at all is `no_live_board`. Bets
 carry `live: true` and `live_price_observed_utc`; tickets read "Live bet - price at HH:MM". Props are never bet live. The
 Gematria style refuses the setting. In-play prices move fast: bet at your own risk, paper only.
+
+**What a ticket's `lock_utc` means (checker round, 2026-10-22).** It is the instant of the board the bet read. The runner and a
+hound that existed at the lock: the lock. A hound born after a game's lock that is unleashed before the game starts is priced on
+the newest board at or before the tap, never the lock-time board and never a later one: its row is stamped with that tap
+instant, carries `placed_after_lock: true`, and its "Why this bet" says so. An in-play bet is stamped with its evaluation
+instant. Without this the public "verified" check compared the price taken with a board from before the bet's own board.
+An in-play bet is graded like any other, but it has **no closing-line value** (`close_price`/`clv_pts` stay null): its price
+was taken after the pre-game close. The live label is in UTC, "Live bet - price at HH:MM UTC", like the recorded time beside it.
+The leaderboard's Bets figure counts open tickets beside the settled ones ("5 (5 open)"). There is no results lookup behind
+"already ended": a game is bet live only inside its sport's live window and on a capture under 5 minutes old.

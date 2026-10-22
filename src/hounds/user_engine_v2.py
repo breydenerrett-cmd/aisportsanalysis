@@ -317,7 +317,7 @@ def rule_candidates(rule: Mapping, index: int, spec: Mapping, game: "E.GameBoard
                 noun = R.PROP_NOUN[market]
                 out.append({
                     "side": side, "line": pb["line"], "price": avg, "best_price": best, "best_book": best_book,
-                    "n_books": len(prices), "board_observed_utc": E._iso(observed), "board_age_minutes": round(age, 1),
+                    "n_books": len(prices), "board_observed_utc": E._iso(observed), "as_of_utc": E._iso(as_of), "board_age_minutes": round(age, 1),
                     "selection": f"{player} {side.title()} {pb['line']:g} {noun}", "player": player,
                     "rule_index": index, "steam_pts": steam})
         return out
@@ -369,7 +369,7 @@ def rule_candidates(rule: Mapping, index: int, spec: Mapping, game: "E.GameBoard
         best, best_book = E.best_price(prices)
         out.append({
             "side": side, "line": line, "price": avg, "best_price": best, "best_book": best_book,
-            "n_books": board["n_books"], "board_observed_utc": E._iso(observed), "board_age_minutes": round(age, 1),
+            "n_books": board["n_books"], "board_observed_utc": E._iso(observed), "as_of_utc": E._iso(as_of), "board_age_minutes": round(age, 1),
             "selection": E._selection_text(game, market, side, selection_line), "player": None,
             "rule_index": index, "steam_pts": steam, **({"live": True} if live else {})})
     return out
@@ -442,7 +442,9 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, facts, date:
                     if not ahead:
                         skipped["hound_created_after_lock"] += 1
                         continue
-                    as_of = t            # Unleash: a hound born after the lock still bets a game that has not started
+                    # Unleash: a hound born after the lock never had a lock-time price; it is priced NOW on the newest
+                    # board at or before now (flagged and stamped in ``run``), never a later one.
+                    as_of = t
         considered.setdefault(hound["id"], set()).add(event_id)
         game_pk = None
         if game_pk_index:
