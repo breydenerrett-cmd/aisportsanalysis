@@ -1986,3 +1986,5 @@
 {"commence_utc": "2026-10-23T23:10:00Z", "event_id": "7763ba1c6e1e163be38cbe1b880d4cd9", "kind": "phase", "observed_utc": "2026-10-22T23:15:55.110271Z", "phase": "t24h", "rows": 33, "sport_key": "basketball_nba"}
 {"commence_utc": "2026-10-23T23:10:00Z", "event_id": "8540b2b24fe0b2042a07c8c20452aead", "kind": "phase", "observed_utc": "2026-10-22T23:15:55.110271Z", "phase": "t24h", "rows": 33, "sport_key": "basketball_nba"}
 {"call_kind": "pregame", "credits": 3, "events": 41, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-22T23:15:55.110271Z", "regions": ["us"], "rows": 556, "sport_key": "basketball_nba", "stored": 416}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-23T05:29:09.617321Z", "observed_utc": "2026-10-22T23:29:09.617321Z", "sport_key": "cricket_international_t20"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-10-23T00:00:00Z", "observed_utc": "2026-10-22T23:29:09.617321Z", "sport_key": "soccer_mexico_ligamx"}
