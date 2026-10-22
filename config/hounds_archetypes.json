@@ -3103,6 +3103,32 @@
    "Pup Pup"
   ]
  },
+ "risk_levels": [
+  {
+   "id": "steady",
+   "name": "Steady",
+   "pitch": "Short prices, small stakes, at most 2 bets a day.",
+   "price_comfort": "short",
+   "stake": 0.5,
+   "bets_per_day": 2
+  },
+  {
+   "id": "balanced",
+   "name": "Balanced",
+   "pitch": "Prices near even, one unit, at most 3 bets a day.",
+   "price_comfort": "even",
+   "stake": 1.0,
+   "bets_per_day": 3
+  },
+  {
+   "id": "bold",
+   "name": "Bold",
+   "pitch": "Plus-money prices, bigger stakes, at most 3 bets a day.",
+   "price_comfort": "plus",
+   "stake": 2.0,
+   "bets_per_day": 3
+  }
+ ],
  "defaults": {
   "max_bets_per_day": 2,
   "stake_units": 1.0,

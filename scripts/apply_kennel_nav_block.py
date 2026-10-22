@@ -3,8 +3,8 @@
     python scripts/apply_kennel_nav_block.py [--check]
 
 web/js/nav.js rebuilds the `<header class="lh-nav">` block when it runs, so the markup below is what a visitor sees with
-scripts off and what tests/test_kennel_page.py pins. It is the SIGNED-OUT shape: Leaderboard, Live, Sign in and one primary
-"Find your hound" button (docs/design/KENNEL_FIRST_BRIEF.md). Idempotent: running it twice changes nothing. A page keeps its
+scripts off and what tests/test_kennel_page.py pins. It is the SIGNED-OUT shape (owner ruling 2026-10-21: a Sign in text link and one big primary): Leaderboard, Live, Sign in and one primary
+"Make your first hound" button (docs/design/KENNEL_FIRST_BRIEF.md). Idempotent: running it twice changes nothing. A page keeps its
 own `data-hook`, `data-bottom` and (renamed) `data-current`; the landing page keeps its `data-nav-extra` button and funnel hook;
 the quiz, the builder and the strategy interview carry no button (that is where it leads, or the page has its own one action). Re-run it after merging a branch that added or edited a
 page's nav block. `--check` prints the pages that are not canonical and exits 1.
@@ -46,9 +46,9 @@ def block_for(name: str, old_opening: str, old_block: str) -> str:
     cta = ""
     if "data-nav-extra" in old_block:
         # the landing page's own button keeps its funnel hook and its place in the bar
-        cta = '\n      <a class="lh-btn lh-btn--solid" href="quiz.html" data-hook="cta-primary" data-nav-extra>Find your hound</a>'
+        cta = '\n      <a class="lh-btn lh-btn--solid lh-btn--lg" href="quiz.html" data-hook="cta-primary" data-nav-extra>Make your first hound</a>'
     elif name not in NO_CTA_PAGES:
-        cta = '\n      <a class="lh-btn lh-btn--solid" href="quiz.html" data-hook="nav-cta">Find your hound</a>'
+        cta = '\n      <a class="lh-btn lh-btn--solid lh-btn--lg" href="quiz.html" data-hook="nav-cta">Make your first hound</a>'
     return (
         f'{open_tag}\n'
         '  <div class="lh-nav__bar">\n'
@@ -63,7 +63,7 @@ def block_for(name: str, old_opening: str, old_block: str) -> str:
         f'{link("live.html", "live", "Live")}\n'
         '    </nav>\n'
         '    <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">\n'
-        '      <a class="lh-btn lh-btn--soft" href="index.html#/signin" data-hook="nav-signin">Sign in</a>'
+        '      <a class="lh-nav__signin" href="index.html#/signin" data-hook="nav-signin">Sign in</a>'
         f'{cta}\n'
         '    </div>\n'
         '  </div>\n'

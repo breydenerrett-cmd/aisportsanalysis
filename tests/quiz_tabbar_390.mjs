@@ -1,4 +1,4 @@
-// Drives a headless Chrome over the DevTools protocol at 390x844 (a phone) on the quiz's Q3 "Pick its personality." page 2 with the
+// Drives a headless Chrome over the DevTools protocol at 390x844 (a phone) on the quiz's step 2 "Pick its style." page 2 with the
 // Gematria card picked, and reports whether the fixed phone tab bar covers the "Show me others" pill or the Back / Skip / Next row.
 // Used by tests/test_quiz_tabbar_clear.py.   node quiz_tabbar_390.mjs <chromePath> <url>     prints one JSON object on the last line
 import { spawn } from "node:child_process";
@@ -31,10 +31,11 @@ await sleep(2500);
 const out = await ev(`(async () => { try {
   const w = (ms) => new Promise((r) => setTimeout(r, ms));
   const q = (h) => document.querySelector("[data-hook='" + h + "']");
-  q("quiz-skip").click(); await w(700); q("quiz-skip").click(); await w(1500);
+  // OWNER RULING 2026-10-21 (four-step quiz): no intro and no Skip. Pick a sport, Next, and the style step is open.
+  document.querySelector("[data-hook='quiz-card'][data-group='sports'][data-id='MLB']").click(); await w(300); q("quiz-next").click(); await w(1500);
   q("quiz-personality-more").click(); await w(900);
   document.querySelector("[data-hook='quiz-card'][data-group='personality'][data-id='gematria']").click(); await w(900);
-  const els = { more: q("quiz-personality-more"), back: q("quiz-back"), skip: q("quiz-skip"), next: q("quiz-next") };
+  const els = { more: q("quiz-personality-more"), back: q("quiz-back"), next: q("quiz-next") };
   const bar = document.querySelector(".lh-tabbar");
   const barH = bar && getComputedStyle(bar).display !== "none" ? bar.getBoundingClientRect().height : 0;
   const probe = () => { const row = {}; for (const [k, e] of Object.entries(els)) {

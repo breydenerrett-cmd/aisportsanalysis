@@ -1,4 +1,7 @@
-"""The member Gematria style on the pages: the quiz's "Pick its personality." step and the builder's base-style picker, run for real
+"""OWNER RULING 2026-10-21 (four-step quiz): the quiz's style step is step 2 of 4 and its risk step is one three-way choice, so the flows below were
+rewritten for it (sports, style, risk, name and look); nothing about Gematria was loosened.
+
+The member Gematria style on the pages: the quiz's "Pick its style." step and the builder's base-style picker, run for real
 under node against the fake DOM of tests/hounds_web_harness.mjs (the REAL quiz library, the REAL composer, the REAL builder menu and
 the REAL English parser as fixtures). The server half is tests/test_gematria_member_style.py. Skipped when node is not installed.
 """
@@ -13,12 +16,12 @@ from src.hounds.english import parser
 from tests import hounds_web_fixtures as F
 from tests.hounds_web_runner import HAS_NODE, WEB, run_page
 from tests.test_hounds_builder_web import MENU, SIGNED as BUILD_SIGNED, base_routes as build_routes, build, preview_posts, q as bq
-from tests.test_hounds_quiz_web import LIB, NEXT, SKIP, START, base_routes as quiz_routes, card, click, composed, hook, posts_to, q, quiz
+from tests.test_hounds_quiz_web import LIB, NEXT, SKIP, START, base_routes as quiz_routes, card, click, composed, derive, hook, posts_to, q, quiz
 
 QUIZ_JS = (WEB / "js" / "hound-quiz.js").read_text(encoding="utf-8")
 QUIZ_CSS = (WEB / "css" / "quiz.css").read_text(encoding="utf-8")
-GEM_ANSWERS = {"sports": ["NBA", "NHL"], "personality": "gematria", "bets_per_day": 3, "stake": 2.0}
-TO_Q3 = [START, SKIP, SKIP]
+GEM_ANSWERS = derive(["NBA", "NHL"], "gematria", "bold")           # Gematria has one fixed rule, so no price band is sent for it
+TO_Q3 = [click(card("sports", "MLB")), NEXT]                        # one sport picked, Next: the style step is open
 
 
 class QuizStaticFacts(unittest.TestCase):
@@ -74,24 +77,24 @@ class TheQuizCard(unittest.TestCase):
 
     def test_choosing_it_tells_the_steps_it_ignores_why(self):
         out = quiz(actions=TO_Q3 + [click(card("personality", "gematria")), NEXT], queries=[
-            q("note", hook("quiz-gematria-note")), q("step", hook("quiz-step"))])
+            q("note", hook("quiz-risk-note")), q("step", hook("quiz-step"))])
         self.assertIn("fixed rule", out["final"]["note"])
-        none = quiz(actions=TO_Q3 + [click(card("personality", "chalk_eater")), NEXT], queries=[q("note", hook("quiz-gematria-note"), "count")])
-        self.assertEqual(none["final"]["note"], 0)
+        self.assertIn("does not apply", out["final"]["note"])
+        other = quiz(actions=TO_Q3 + [click(card("personality", "stats_nerd")), NEXT], queries=[q("note", hook("quiz-risk-note"))])
+        self.assertEqual(other["final"]["note"], "")
 
     def test_the_answers_reach_compose_and_the_reveal_shows_the_gematria_rule(self):
         fixture = composed(GEM_ANSWERS)
-        actions = [START, click(card("sports", "NBA")), click(card("sports", "NHL")), NEXT, SKIP,
-                   click(card("personality", "gematria")), NEXT,
-                   click("[data-hook='quiz-seg'][data-group='bets_per_day'][data-id='3']"),
-                   click("[data-hook='quiz-seg'][data-group='stake'][data-id='2']"), NEXT, SKIP, SKIP, SKIP, SKIP]
+        actions = [click(card("sports", "NBA")), click(card("sports", "NHL")), NEXT,
+                   click(card("personality", "gematria")), NEXT, click(card("risk", "bold")), NEXT, NEXT]
         out = quiz(routes=quiz_routes(GEM_ANSWERS), actions=actions, queries=[
             q("labels", ".qz-rule__label", "texts"), q("breed", "[data-hook='reveal-dog'] svg.dk-badge", "attr", attr="data-breed"),
             q("number", "[data-hook='reveal-dog'] svg.dk-badge", "attr", attr="data-number"),
             q("rules", "[data-hook='reveal-rule']", "texts")])
         body = posts_to(out, "/hounds/quiz/compose")[0]["body"]
         self.assertEqual(body["answers"]["personality"], "gematria")
-        self.assertEqual(body["answers"]["sports"], ["NBA", "NHL"])
+        self.assertEqual(body["answers"], GEM_ANSWERS)
+        self.assertNotIn("price_comfort", body["answers"])
         self.assertEqual(out["final"]["labels"], ["Gematria"])
         self.assertEqual(out["final"]["breed"], "bloodhound")
         self.assertIn("house Gematria Hound", out["final"]["rules"][0])
@@ -102,10 +105,8 @@ class TheQuizCard(unittest.TestCase):
         saved = {"id": "u-gem1", "name": fixture["spec"]["name"], "status": "running", "version_no": 1}
         routes = quiz_routes(GEM_ANSWERS, **{"POST /hounds": [200, {"hound": saved}], "PUT /hounds/u-gem1/look": [200, {"look": fixture["look"]}],
                                              "/hounds/mine": [200, {"hounds": [], "limit_running": 5}]})
-        actions = [START, click(card("sports", "NBA")), click(card("sports", "NHL")), NEXT, SKIP,
-                   click(card("personality", "gematria")), NEXT,
-                   click("[data-hook='quiz-seg'][data-group='bets_per_day'][data-id='3']"),
-                   click("[data-hook='quiz-seg'][data-group='stake'][data-id='2']"), NEXT, SKIP, SKIP, SKIP, SKIP,
+        actions = [click(card("sports", "NBA")), click(card("sports", "NHL")), NEXT,
+                   click(card("personality", "gematria")), NEXT, click(card("risk", "bold")), NEXT, NEXT,
                    click(hook("reveal-save"), "keep")]
         out = quiz(routes=routes, actions=actions, **dict(stored={"aisportsanalysis.invite_token": "tok"}))
         posted = posts_to(out, "/hounds")
