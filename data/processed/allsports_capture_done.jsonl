@@ -1391,3 +1391,7 @@
 {"commence_utc": "2026-10-22T08:00:00Z", "event_id": "702cafd919aab57f47080d441ed5fbf7", "kind": "phase", "observed_utc": "2026-10-22T06:08:27.270823Z", "phase": "t2h", "rows": 1, "sport_key": "cricket_odi"}
 {"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T06:08:27.270823Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 2}
 {"events": 1, "kind": "peek", "next_check_utc": "2026-10-22T12:21:24.621063Z", "observed_utc": "2026-10-22T06:21:24.621063Z", "sport_key": "soccer_conmebol_copa_sudamericana"}
+{"events": 51, "kind": "peek", "next_check_utc": "2026-10-22T12:33:11.173250Z", "observed_utc": "2026-10-22T06:33:11.173250Z", "sport_key": "americanfootball_ncaaf_fcs"}
+{"events": 4, "kind": "peek", "next_check_utc": "2026-10-22T12:33:11.173250Z", "observed_utc": "2026-10-22T06:33:11.173250Z", "sport_key": "soccer_finland_veikkausliiga"}
+{"commence_utc": "2026-10-22T07:00:00Z", "event_id": "b5289e209ec08b95cb68588ddfe407c8", "kind": "phase", "observed_utc": "2026-10-22T06:33:11.173250Z", "phase": "t30m", "rows": 3, "sport_key": "cricket_international_t20"}
+{"call_kind": "pregame", "credits": 1, "events": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T06:33:11.173250Z", "regions": ["us"], "rows": 3, "sport_key": "cricket_international_t20", "stored": 3}
