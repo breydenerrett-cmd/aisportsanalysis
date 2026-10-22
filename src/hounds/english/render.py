@@ -111,13 +111,17 @@ def global_sentences(spec: Mapping) -> list:
     start = ("first pitch" if sports == ["MLB"] else "kickoff" if sports == ["NFL"]
              else "first pitch or kickoff" if set(sports) <= set(user_spec.LEGACY_SPORTS)
              else words.pop() if len(words) == 1 else "the start")
-    return [
+    out = [
         f"{spec['lock_minutes']} minutes before {start} it checks each rule against the board as it stood then "
         f"(nothing newer).",
         f"At most {bets} {'bet' if bets == 1 else 'bets'} a day; if more qualify it takes "
         f"{_RANK_PHRASE[spec['rank_by']]}.",
         f"Each bet is {_STAKE(spec['stake_units'])}, graded at the average price.",
     ]
+    if user_spec.bets_in_play(spec):
+        out.append("It also bets games already in play, at the price on the live board when it checks "
+                   f"(a live price under {user_spec.LIVE_MAX_AGE_MINUTES} minutes old). In-play prices move fast.")
+    return out
 
 
 def rule_sentences(spec: Mapping) -> list:
@@ -164,6 +168,7 @@ def diff_specs(old: Mapping, new: Mapping) -> list:
     change("Lock time", f"{a['lock_minutes']} minutes before the start", f"{b['lock_minutes']} minutes before the start")
     change("Most bets a day", str(a["max_bets_per_day"]), str(b["max_bets_per_day"]))
     change("Stake", _STAKE(a.get("stake_units", 1.0)), _STAKE(b.get("stake_units", 1.0)))
+    change("Bets games in play", "Yes" if user_spec.bets_in_play(a) else "No", "Yes" if user_spec.bets_in_play(b) else "No")
     change("If more qualify", _RANK_PHRASE[a.get("rank_by", "earliest_lock")], _RANK_PHRASE[b.get("rank_by", "earliest_lock")])
     ra, rb = a.get("rules") or [], b.get("rules") or []
     if user_spec.is_gematria(a) or user_spec.is_gematria(b):

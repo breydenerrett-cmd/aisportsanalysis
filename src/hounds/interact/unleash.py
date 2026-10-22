@@ -26,10 +26,17 @@ THREE THINGS COME BACK, AND ONLY THE FIRST IS EVER WRITTEN
 WHY THE TWO BUDGETS ARE SEPARATE. The "before" list is a hypothetical, so it takes up to ``max_bets_per_day`` of its
 own and does not draw on (or give back to) the real day's quota. The real quota is the real ledger's, as always.
 
-WHY A HOUND THAT HAS ALREADY BET IS ONLY SHOWN. It is already running; starting it again would be the early
-placement the normal runner does at the lock anyway. For it, "before" is limited to games that locked before the
-hound existed (this version's ``created_at``): a game the hound could have bet and passed on is not "before you
+A HOUND THAT HAS ALREADY BET IS STILL EVALUATED (fixed 2026-10-22). Until then "running" meant "any bet ever" and a
+running hound was only SHOWN: on a new day, or with room left under its daily limit, Unleash checked 60 games and
+placed nothing, which read as "your hound found nothing". Now every Unleash evaluates today's not-yet-started games
+(and, for a hound that opted in, games in play): the idempotent bet id, the daily limit and the one-side guard are
+what stop a repeat, not a flag. For a hound that was already running, "before" is limited to games that locked before
+the hound existed (this version's ``created_at``): a game the hound could have bet and passed on is not "before you
 unleashed".
+
+THE DAY VIEW LISTS EVERY OPEN TICKET (``open_tickets``): today's placed bets and any earlier one still waiting for its
+result, each with its status. On 2026-10-21 a hound with five open tickets showed an empty day because only the
+slate date's rows were listed. ``why`` says, game by game, why each game was or was not taken (unleash_why.py).
 
 CONCURRENCY. One writer at a time in this process (``_write_lock``) and the process-wide heavy gate (the one the engine
 pass takes), so a double tap, or a tap during the engine's own pass, cannot write a bet twice; the bet id makes a repeat
@@ -48,7 +55,7 @@ from datetime import datetime, timedelta
 from typing import Callable, Iterable, Optional
 
 from src.hounds import bankroll, one_side, user_engine, user_settle, user_spec
-from src.hounds.interact import common, drill, fire, manual
+from src.hounds.interact import common, drill, fire, manual, unleash_why
 from src.ledger.chain import HashChainLedger
 
 logger = logging.getLogger("linehound.hounds.unleash")
@@ -102,6 +109,8 @@ def _view(row: dict, now: datetime) -> dict:
         "n_books": row["n_books"], "stake_units": units,
         "start_utc": row["commence_time"], "lock_utc": row["lock_utc"], "reason": row.get("reason"),
         "started": bool(commence and now >= commence),
+        "live": bool(row.get("live")), "live_price_at_utc": row.get("live_price_observed_utc") if row.get("live") else None,
+        "placed_utc": row.get("recorded_utc"),
     }
 
 
@@ -199,13 +208,12 @@ def unleash(dog: common.Dog, owner_user_id: int, *, now: Optional[datetime] = No
                       if r.get("kind") == user_engine.KIND_BET and r.get("hound_id") == hound["id"]}
         already_running = bool(before_ids)
         wrote = 0
-        if not already_running:
-            engine_hound = {"id": hound["id"], "spec": spec,
-                            "spec_hash": hound.get("spec_hash") or user_spec.spec_hash(spec),
-                            "created_at": hound.get("created_at")}
-            report = user_engine.run(date, [engine_hound], slate_rows, ledger=ledger, now=now, mode="live",
-                                     game_pk_index=index, prop_rows=prop_rows, facts=facts, place_ahead=True)
-            wrote = int(report.get("bets_written") or 0)
+        engine_hound = {"id": hound["id"], "spec": spec,
+                        "spec_hash": hound.get("spec_hash") or user_spec.spec_hash(spec),
+                        "created_at": hound.get("created_at")}
+        report = user_engine.run(date, [engine_hound], slate_rows, ledger=ledger, now=now, mode="live",
+                                 game_pk_index=index, prop_rows=prop_rows, facts=facts, place_ahead=True)
+        wrote = int(report.get("bets_written") or 0)
         after = [r for r in user_engine.read_ledger(ledger)
                  if r.get("kind") == user_engine.KIND_BET and r.get("hound_id") == hound["id"]]
         record_ids = {r["bet_id"] for r in after}
@@ -230,7 +238,15 @@ def unleash(dog: common.Dog, owner_user_id: int, *, now: Optional[datetime] = No
             if created is not None and lock >= created:
                 continue
             before.append(_before_item(r, graded.get(r["bet_id"]), now))
-        games = _day_games(slate_rows, spec, date)
+        games = _day_games_live(slate_rows, spec, date)
+        ledger_all = user_engine.read_ledger(ledger)
+        graded_ids = {r["bet_id"] for r in ledger_all if r.get("kind") == user_settle.KIND_GRADED}
+        open_tickets = _open_tickets(after, graded_ids, date, now)
+        held_today = {r["event_id"] for r in today}
+        why = unleash_why.summarise(spec, games, hound, now, date, facts=facts, index=index, on_record=held_today,
+                                    placed_events={p["event_id"] for p in picks if p["placed_now"]},
+                                    per_day_taken=len(today))
+        nxt = unleash_why.next_check(spec, games, now, held_today)
         no_board = _no_board(games, spec, now, {b["event_id"] for b in before} | {p["event_id"] for p in picks},
                              created)
     if wrote and refresh_stats is None:
@@ -250,10 +266,11 @@ def unleash(dog: common.Dog, owner_user_id: int, *, now: Optional[datetime] = No
         "already_running": already_running, "started_now": placed > 0,
         "games_on_board": len(games), "games_ahead": ahead, "games_before": len(games) - ahead,
         "picks": picks, "placed_now": placed, "other_picks": others,
+        "open_tickets": open_tickets, "why": why, "next_check": nxt, "bets_in_play": user_spec.bets_in_play(spec),
         "manual_remaining_today": manual.remaining_today(hound["id"], now, manual_ledger),
         "before": before, "before_label": BEFORE_LABEL, "no_board": no_board, "no_board_note": NO_BOARD_TEXT,
         "counted_in_record": False,
-        "headline": _headline(dog.name, already_running, placed),
+        "headline": _headline(dog.name, already_running, placed, len(today), len(open_tickets)),
         "max_bets_per_day": spec["max_bets_per_day"],
         "paper_only": True, "not_advice": user_spec.NOT_ADVICE,
     }
@@ -331,9 +348,39 @@ def _other_picks(dog: common.Dog, now: datetime, injected_rows: Optional[list], 
     return out
 
 
-def _headline(name: str, already_running: bool, placed: int) -> str:
-    if already_running:
-        return f"{name} is already running. Here is today."
+def _day_games_live(rows: list, spec: dict, date: str) -> dict:
+    """``_day_games`` that also keeps the in-play captures for a hound that bets games in play."""
+    games = user_engine.build_games(rows, near_date=date, keep_live=user_spec.bets_in_play(spec))
+    wanted = _sports_of(spec)
+    return {eid: g for eid, g in games.items()
+            if g.sport in wanted and g.commence is not None and user_engine.slate_date_of(g.commence) == date}
+
+
+OPEN_LOOKBACK_DAYS = 2        # an open ticket older than this is a grading problem, not a ticket to list on the day view
+
+
+def _open_tickets(bets: list, graded_ids: set, date: str, now: datetime) -> list:
+    """Every ticket of the hound still waiting for its result: today's slate and any earlier day within
+    ``OPEN_LOOKBACK_DAYS``, oldest first, with a plain status."""
+    from datetime import date as _date
+    floor = (_date.fromisoformat(date) - timedelta(days=OPEN_LOOKBACK_DAYS)).isoformat()
+    out = []
+    for r in sorted(bets, key=lambda r: (r["commence_time"], r["event_id"], user_engine.MARKET_ORDER.get(r["market"], 9))):
+        if r["bet_id"] in graded_ids or r.get("slate_date", "") < floor:
+            continue
+        view = _view(r, now)
+        view["slate_date"] = r.get("slate_date")
+        view["status"] = "in_play" if view["started"] else "not_started"
+        view["status_text"] = ("In play or waiting for the result" if view["started"] else "Not started yet")
+        out.append(view)
+    return out
+
+
+def _headline(name: str, already_running: bool, placed: int, today: int = 0, open_count: int = 0) -> str:
     if placed:
         return f"{name} is betting today: {placed} {'pick' if placed == 1 else 'picks'} placed."
-    return f"{name} is unleashed. Nothing on today's board fits its rule yet; it keeps watching and bets when a game does."
+    if open_count:
+        return f"{name} has {open_count} open {'ticket' if open_count == 1 else 'tickets'}. Nothing new fit just now; the reasons are below."
+    if already_running or today:
+        return f"{name} is running. Nothing new fit just now; the reasons are below."
+    return f"{name} is unleashed. Nothing on today's board fits its rule yet; the reasons are below."

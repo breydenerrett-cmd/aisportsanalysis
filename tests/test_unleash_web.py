@@ -116,7 +116,7 @@ class TheRevealInTheStudio(unittest.TestCase):
         c = out["captures"]["open"]
         self.assertEqual(c["picks"], 0)
         self.assertIn("Nothing on today's board fits its rule yet", c["headline"])
-        self.assertEqual(c["steps"][-1], "Nothing to lock yet")
+        self.assertEqual(c["steps"][-1], "Nothing new fit")
         self.assertEqual(c["before"], 2)
 
     def test_a_refusal_shows_the_servers_words_and_no_half_drawn_day(self):

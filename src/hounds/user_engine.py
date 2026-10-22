@@ -73,6 +73,11 @@ LEDGER_VERSION = 1
 # The cadence of the capture slot near a start is 45 to 60 minutes; 75 leaves one missed capture of
 # headroom. A lock with no capture this recent is skipped and counted, never guessed.
 MAX_BOARD_AGE_MINUTES = 75
+# An in-play price moves in seconds, so a game already under way is bet only on a live capture no older than this many
+# minutes at the moment of evaluation (2026-10-22, owner request). The Live page calls a snapshot live for up to 90
+# minutes; that is too loose to BET on, so the bet path is stricter than the page. Older than this: skip, with the
+# reason ``live_price_too_old``.
+LIVE_MAX_AGE_MINUTES = user_spec.LIVE_MAX_AGE_MINUTES
 # A moneyline (or an unchanged line) must move by this much de-vigged win probability to count.
 MOVE_PROBABILITY = 0.005
 
@@ -293,6 +298,8 @@ class GameBoards:
         self.commence: Optional[datetime] = None
         self.captures: dict = defaultdict(lambda: defaultdict(list))   # market -> observed -> rows
         self.props: dict = defaultdict(lambda: defaultdict(list))      # prop market -> observed -> rows
+        self.live: dict = defaultdict(lambda: defaultdict(list))       # market -> observed -> rows, captured AFTER the start
+        self.board_floor: Optional[datetime] = None                    # set on a live view: boards older than this are not used
         self._commence_by_obs: dict = {}
 
     def add_prop(self, market: str, observed: datetime, row: Mapping) -> None:
@@ -320,9 +327,46 @@ class GameBoards:
             return None
         return self._commence_by_obs[max(known)]
 
+    def add_live(self, market: str, observed: datetime, row: Mapping) -> None:
+        """An in-play capture (observed at or after the start). Kept apart from ``captures`` so no pre-game code path can
+        ever read one; only ``live_view`` merges them, and only up to the evaluation instant."""
+        self.live[market][observed].append(row)
+        self.home_team = row.get("home_team") or self.home_team
+        self.away_team = row.get("away_team") or self.away_team
+        self.league = row.get("league") or self.league
+        self.league_title = row.get("league_title") or self.league_title
+
+    def board_max_age(self) -> float:
+        """The oldest board (minutes before the evaluation instant) a rule may use: the pre-game limit, or the stricter
+        in-play one on a live view."""
+        return LIVE_MAX_AGE_MINUTES if self.board_floor is not None else MAX_BOARD_AGE_MINUTES
+
+    def has_live(self, as_of: datetime) -> bool:
+        return any(t <= as_of for market in self.live.values() for t in market)
+
+    def live_view(self, as_of: datetime) -> "GameBoards":
+        """This game as it stands at ``as_of`` for an in-play bet: the pre-game captures (so "the market moved toward the
+        pick since the first capture" still reads the first one) plus the in-play captures observed AT OR BEFORE
+        ``as_of`` and never one after it (no hindsight). ``board_at`` on the view returns only in-play boards."""
+        view = GameBoards(self.event_id, self.sport)
+        view.home_team, view.away_team = self.home_team, self.away_team
+        view.league, view.league_title, view.commence = self.league, self.league_title, self.commence
+        view._commence_by_obs = dict(self._commence_by_obs)
+        for market, stamps in self.captures.items():
+            for t, rows in stamps.items():
+                view.captures[market][t] = list(rows)
+        for market, stamps in self.live.items():
+            for t, rows in stamps.items():
+                if t <= as_of:
+                    view.captures[market][t] = list(rows)
+        view.props = self.props
+        view.board_floor = self.commence
+        return view
+
     def board_at(self, market: str, as_of: datetime) -> Optional[tuple]:
         """(observed, board) for the newest capture of `market` at or before `as_of`."""
-        stamps = [t for t in self.captures.get(market, {}) if t <= as_of]
+        stamps = [t for t in self.captures.get(market, {}) if t <= as_of
+                  and (self.board_floor is None or t >= self.board_floor)]
         for t in sorted(stamps, reverse=True):
             board = build_board(market, self.captures[market][t])
             if board is not None:
@@ -361,7 +405,7 @@ def _slim(row: Mapping) -> dict:
     return {k: row[k] for k in _KEEP_FIELDS if k in row}
 
 
-def build_games(rows: Iterable[Mapping], near_date: Optional[str] = None) -> dict:
+def build_games(rows: Iterable[Mapping], near_date: Optional[str] = None, keep_live: bool = False) -> dict:
     """{event_id: GameBoards} from raw multibook rows, consumed ONE AT A TIME (a generator is
     fine, and is what production passes). Rows observed at or after their own start (in-play) are
     dropped here, once, so nothing downstream can use one.
@@ -369,7 +413,10 @@ def build_games(rows: Iterable[Mapping], near_date: Optional[str] = None) -> dic
     ``near_date`` (an Eastern slate date) keeps only rows of games starting within a day of that
     date, so a pass for today does not hold the other weeks' games in memory. The day either side
     is kept because a rescheduled game's earlier rows carry its old start; the exact slate filter
-    (the game's latest start) still happens in ``run``."""
+    (the game's latest start) still happens in ``run``.
+
+    ``keep_live``: rows observed at or after the start are kept apart on ``GameBoards.live`` instead of dropped, for a
+    hound that bets games in play (``user_spec.bets_in_play``). Off by default, so every pre-game path is unchanged."""
     games: dict = {}
     near: dict = {}
     for row in rows:
@@ -379,7 +426,8 @@ def build_games(rows: Iterable[Mapping], near_date: Optional[str] = None) -> dic
         start = _utc(raw_start)
         if market is None or not event_id or observed is None or start is None:
             continue
-        if observed >= start:
+        in_play = observed >= start
+        if in_play and not keep_live:
             continue
         if near_date is not None:
             keep = near.get(raw_start)
@@ -395,7 +443,10 @@ def build_games(rows: Iterable[Mapping], near_date: Optional[str] = None) -> dic
         game = games.get(event_id)
         if game is None:
             game = games[event_id] = GameBoards(event_id, sport)
-        game.add(market, observed, _slim(row))
+        if in_play:
+            game.add_live(market, observed, _slim(row))
+        else:
+            game.add(market, observed, _slim(row))
     for game in games.values():
         game.commence = game.commence_at(datetime.max.replace(tzinfo=timezone.utc))
     return games
@@ -504,6 +555,10 @@ def contract_fields(row: Mapping, spec: Mapping, mode: str) -> dict:
                   f"({row['selection']}) at the board average of {_fmt_price(row['price'])} across "
                   f"{row['n_books']} books; the best single price was {_fmt_price(row['best_price'])} "
                   f"at {row['best_book']}.")
+    if row.get("live"):
+        stamp = _utc(row.get("live_price_observed_utc"))
+        reason += (" A live bet: the game was in play, priced on the live board captured at "
+                   f"{stamp.strftime('%H:%M') if stamp else '?'} UTC, the board standing when the bet was made.")
     return {
         "date": row["slate_date"], "price_average": row["price"], "price_best": row["best_price"],
         "book": row["best_book"], "book_count": row["n_books"], "start_utc": row["commence_time"],
@@ -516,12 +571,13 @@ def evaluate(spec: Mapping, game: GameBoards, market: str, lock_utc: datetime,
              commence: datetime) -> tuple:
     """(candidate_dict | None, reason). The reason is a stable code when there is no candidate."""
     found = game.board_at(market, lock_utc)
+    live = game.board_floor is not None
     if found is None:
-        return None, "no_board_at_lock"
+        return None, "no_live_board" if live else "no_board_at_lock"
     observed, board = found
     age = (lock_utc - observed).total_seconds() / 60.0
-    if age > MAX_BOARD_AGE_MINUTES:
-        return None, "board_too_old"
+    if age > game.board_max_age():
+        return None, "live_price_too_old" if live else "board_too_old"
     if board["n_books"] < spec["min_books"]:
         return None, "too_few_books"
     open_board = None
@@ -552,6 +608,7 @@ def evaluate(spec: Mapping, game: GameBoards, market: str, lock_utc: datetime,
         "n_books": board["n_books"], "board_observed_utc": _iso(observed),
         "board_age_minutes": round(age, 1),
         "selection": _selection_text(game, market, side, selection_line),
+        **({"live": True} if live else {}),
     }, "ok"
 
 
@@ -619,6 +676,24 @@ def manual_rows(rule_ledger: Optional[str] = None) -> list:
     return [r for r in HashChainLedger(manual_ledger_path(rule_ledger)).read() if r.get("kind") == KIND_BET]
 
 
+def live_game(game: "GameBoards", spec: Mapping, now: datetime) -> tuple:
+    """(live view | None, code) for a game that has STARTED, for a hound that opted in to in-play bets.
+
+    The view holds only captures observed at or before ``now`` (no hindsight). The code is why there is no view:
+    ``game_started`` (the hound did not opt in, or the game is outside its family's live window, so it is over or
+    never began) or ``no_live_board`` (no in-play capture exists yet). Whether the capture is fresh enough is the
+    evaluator's ``live_price_too_old`` check, against ``LIVE_MAX_AGE_MINUTES``."""
+    if not user_spec.bets_in_play(spec) or game.commence is None or now < game.commence:
+        return None, "game_started"
+    from src.sports import catalog
+    code = catalog.code_of_row_sport((game.sport or "mlb").lower())
+    if code is None or now >= game.commence + timedelta(hours=catalog.live_window_hours(code)):
+        return None, "game_started"
+    if not game.has_live(now):
+        return None, "no_live_board"
+    return game.live_view(now), "ok"
+
+
 def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
         ledger: Optional[str] = None, now: Optional[datetime] = None, mode: str = "live",
         game_pk_index: Optional[Mapping] = None,
@@ -652,7 +727,7 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
     # What each hound already holds on each game, from the ledger itself (src/hounds/one_side.py): a later
     # run, or a different engine, cannot add the other side of a game an earlier ticket already took.
     positions = one_side.Book.from_rows(list(existing) + manual_rows(ledger))
-    all_games = build_games(rows, near_date=date)
+    all_games = build_games(rows, near_date=date, keep_live=any(user_spec.bets_in_play(h["spec"]) for h in hounds))
     v2_hounds = [h for h in hounds if user_spec.is_v2(h["spec"]) and not user_spec.is_gematria(h["spec"])]
     gem_weigher = None            # the Gematria style's per-pass view of the games (src/hounds/user_gematria.py), built on first use
     if v2_hounds:
@@ -695,20 +770,28 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                     bet_id = bet_id_for(hound["id"], event_id, market)
                     if bet_id in seen_ids:
                         continue
+                    eval_game = game
+                    as_of = lock_utc
                     if mode == "live":
                         t = clock()
                         if t >= commence:
-                            skipped["game_started"] += 1
-                            continue
-                        if t < lock_utc and not place_ahead:
-                            skipped["not_locked_yet"] += 1
-                            continue
-                        if created is not None and created > lock_utc:
-                            skipped["hound_created_after_lock"] += 1
-                            continue
+                            eval_game, code = live_game(game, spec, t)
+                            if eval_game is None:
+                                skipped[code] += 1
+                                continue
+                            as_of = t
+                        else:
+                            if t < lock_utc and not place_ahead:
+                                skipped["not_locked_yet"] += 1
+                                continue
+                            if created is not None and created > lock_utc and not place_ahead:
+                                skipped["hound_created_after_lock"] += 1
+                                continue
+                            # Unleash on a game whose lock has passed and has not started: priced NOW on the newest board
+                            # (the lock-time board is only used when the hound existed at the lock)
+                            as_of = t if t < lock_utc or (created is not None and created > lock_utc) else lock_utc
                     considered.setdefault(hound["id"], set()).add(event_id)
-                    as_of = min(lock_utc, clock()) if (place_ahead and mode == "live") else lock_utc
-                    cand, reason = evaluate(spec, game, market, as_of, commence)
+                    cand, reason = evaluate(spec, eval_game, market, as_of, commence)
                     if cand is None:
                         skipped[reason] += 1
                         continue
@@ -733,8 +816,8 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                             one_side.reason_text(refused))
                 continue
             t = clock()
-            if mode == "live" and t >= commence:        # the last guard: never at or after the start
-                skipped["game_started"] += 1
+            if mode == "live" and t >= commence and not cand.get("live"):    # the last guard: never at or after the start
+                skipped["game_started"] += 1       # (an in-play bet is the opted-in exception, priced on a live capture)
                 continue
             if user_spec.beyond_cap(cand["price"]):     # belt and braces: the cap is not a setting
                 skipped["price_cap"] += 1
@@ -764,6 +847,10 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                 row.update({"player": cand.get("player"), "rule_index": cand["rule_index"],
                             "stake_units": spec["stake_units"], "units": spec["stake_units"],
                             "spec_version": user_spec.SPEC_VERSION_V2})
+            if cand.get("live"):
+                # An in-play bet: flagged, and priced on the capture standing at the evaluation instant, which it names.
+                row["live"] = True
+                row["live_price_observed_utc"] = cand["board_observed_utc"]
             row.update(contract_fields(row, spec, mode))
             if cand.get("row_extra"):               # the Gematria style's evidence block, rules stamp and own reason
                 row.update(cand["row_extra"])

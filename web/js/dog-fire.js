@@ -203,11 +203,51 @@ export function unleashWorking({ name, look = null, id = "", vibe } = {}) {
 
 function stepsDone(data) {
   const n = isNum(data.games_on_board) ? data.games_on_board : 0;
-  const placed = Array.isArray(data.picks) ? data.picks.length : 0;
+  const placed = isNum(data.placed_now) ? data.placed_now : 0;
+  const open = Array.isArray(data.open_tickets) ? data.open_tickets.length : 0;
+  const third = placed ? `Locked ${plural(placed, "pick", "picks")}` : (open ? `${plural(open, "open ticket", "open tickets")}, none new` : "Nothing new fit");
   return h("ol", { class: "ul-steps ul-steps--done", "data-hook": "unleash-steps" }, [
     h("li", { class: "ul-step", "data-state": "done", "data-step": "0", text: "Read today's board" }),
     h("li", { class: "ul-step", "data-state": "done", "data-step": "1", text: `Checked ${plural(n, "game", "games")}` }),
-    h("li", { class: "ul-step", "data-state": "done", "data-step": "2", text: placed ? `Locked ${plural(placed, "pick", "picks")}` : "Nothing to lock yet" })]);
+    h("li", { class: "ul-step", "data-state": "done", "data-step": "2", text: third })]);
+}
+
+/** "Live bet · price at 20:14": the label on an in-play ticket. The time is the viewer's own zone; the server sends UTC. */
+export function liveLabel(p) {
+  if (!p || !p.live) return "";
+  const at = p.live_price_at_utc ? new Date(p.live_price_at_utc) : null;
+  if (!at || Number.isNaN(at.getTime())) return "Live bet";
+  const pad = (v) => String(v).padStart(2, "0");
+  return `Live bet · price at ${pad(at.getHours())}:${pad(at.getMinutes())}`;
+}
+
+/** Why each game was or was not taken: "Checked 60 games: 38 not in its sports · 14 price outside ... → placed 2", the game
+ *  checked next, and when. Every string goes in as text. */
+function whyBlock(data) {
+  const why = data.why;
+  if (!why || !why.text) return null;
+  const kids = [h("p", { class: "dk-why", "data-hook": "unleash-why", text: why.text })];
+  if (Array.isArray(why.counts) && why.counts.length) {
+    kids.push(h("ul", { class: "dk-misses", "data-hook": "unleash-why-list" }, why.counts.map((c) =>
+      h("li", { class: "dk-miss", "data-code": c.code, text: `${c.count} ${c.label}` }))));
+  }
+  const nx = data.next_check;
+  if (nx) kids.push(h("p", { class: "hd-fine", "data-hook": "unleash-next", text: `Next game it checks: ${nx.game}, ${whenText(nx.when_utc)} (${nx.what}).` }));
+  else kids.push(h("p", { class: "hd-fine", "data-hook": "unleash-next", text: "No more games left to check today in its sports." }));
+  if (data.bets_in_play) kids.push(h("p", { class: "hd-fine", text: "It also bets games in play, on a live price under 5 minutes old. In-play prices move fast." }));
+  return h("div", { class: "dk-block ul-why" }, kids);
+}
+
+function openTicket(t) {
+  const li = h("li", { class: "dk-pick ul-card", "data-hook": "unleash-open-ticket", "data-event": t.event_id, "data-state": t.status });
+  li.appendChild(h("div", { class: "dk-pick__head" }, [
+    h("strong", { class: "dk-pick__sel", text: t.selection }),
+    h("span", { class: "dk-chip", text: t.market_label || t.market }),
+    h("span", { class: "dk-chip", "data-hook": "unleash-ticket-status", text: t.status_text || "Open" }),
+    t.live ? h("span", { class: "dk-chip dk-chip--warn", "data-hook": "unleash-live-chip", text: liveLabel(t) }) : null]));
+  li.appendChild(h("p", { class: "dk-pick__game", text: t.game }));
+  li.appendChild(h("p", { class: "dk-pick__price hd-num", text: `${fmtPrice(t.price_average)} · Stake ${stakeText(t)}` }));
+  return li;
 }
 
 function unleashPick(p) {
@@ -215,7 +255,8 @@ function unleashPick(p) {
   li.appendChild(h("div", { class: "dk-pick__head" }, [
     h("strong", { class: "dk-pick__sel", text: p.selection }),
     h("span", { class: "dk-chip", text: p.market_label || p.market }),
-    h("span", { class: `dk-chip ${p.placed_now ? "dk-chip--good" : ""}`, text: p.placed_now ? "Placed now" : "On its record" })]));
+    h("span", { class: `dk-chip ${p.placed_now ? "dk-chip--good" : ""}`, text: p.placed_now ? "Placed now" : "On its record" }),
+    p.live ? h("span", { class: "dk-chip dk-chip--warn", "data-hook": "unleash-live-chip", text: liveLabel(p) }) : null]));
   li.appendChild(h("p", { class: "dk-pick__game", text: p.game }));
   li.appendChild(h("p", { class: "dk-pick__price hd-num", "data-hook": "unleash-pick-price", text: `${fmtPrice(p.price_average)} · Stake ${stakeText(p)}` }));
   const when = p.start_utc ? whenText(p.start_utc) : "";
@@ -295,6 +336,14 @@ export function renderUnleashDay(box, data, { name, id } = {}) {
   if (picks.length) {
     box.appendChild(h("ul", { class: "dk-picks", "data-hook": "unleash-picks" }, picks.map((p) => rise(unleashPick(p)))));
   }
+  const openTickets = Array.isArray(data.open_tickets) ? data.open_tickets : [];
+  if (openTickets.length) {
+    box.appendChild(rise(h("div", { class: "dk-block ul-open" }, [
+      h("h3", { class: "hd-h3", text: "Open tickets" }),
+      h("ul", { class: "dk-picks", "data-hook": "unleash-open-tickets" }, openTickets.map((t) => openTicket(t)))])));
+  }
+  const why = whyBlock(data);
+  if (why) box.appendChild(rise(why));
   const others = Array.isArray(data.other_picks) ? data.other_picks : [];
   if (others.length && id) box.appendChild(rise(otherPicksBlock(others, id, rise)));
   const before = Array.isArray(data.before) ? data.before : [];
