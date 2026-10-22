@@ -1390,3 +1390,4 @@
 {"commence_utc": "2026-10-22T08:00:00Z", "event_id": "33bc7ae2f79ff11c4d2a98b5d15812a9", "kind": "phase", "observed_utc": "2026-10-22T06:08:27.270823Z", "phase": "t2h", "rows": 1, "sport_key": "cricket_odi"}
 {"commence_utc": "2026-10-22T08:00:00Z", "event_id": "702cafd919aab57f47080d441ed5fbf7", "kind": "phase", "observed_utc": "2026-10-22T06:08:27.270823Z", "phase": "t2h", "rows": 1, "sport_key": "cricket_odi"}
 {"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T06:08:27.270823Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 2}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-22T12:21:24.621063Z", "observed_utc": "2026-10-22T06:21:24.621063Z", "sport_key": "soccer_conmebol_copa_sudamericana"}
