@@ -1929,3 +1929,6 @@
 {"call_kind": "pregame", "credits": 2, "events": 30, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-22T21:31:45.542053Z", "regions": ["us"], "rows": 240, "sport_key": "soccer_argentina_primera_division", "stored": 39}
 {"commence_utc": "2026-10-22T23:40:00Z", "event_id": "bfe0cd1ca4d32c4946e6ee28e21f0619", "kind": "phase", "observed_utc": "2026-10-22T21:44:53.686042Z", "phase": "t2h", "rows": 32, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 14, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-22T21:44:53.686042Z", "regions": ["us"], "rows": 440, "sport_key": "icehockey_nhl", "stored": 440}
+{"commence_utc": "2026-10-23T00:10:00Z", "event_id": "64c943b2b0c51d39a312874b925590f7", "kind": "phase", "observed_utc": "2026-10-22T22:10:48.965520Z", "phase": "t2h", "rows": 32, "sport_key": "icehockey_nhl"}
+{"commence_utc": "2026-10-23T00:10:00Z", "event_id": "58afd2b5779b2e4f163314436900d379", "kind": "phase", "observed_utc": "2026-10-22T22:10:48.965520Z", "phase": "t2h", "rows": 32, "sport_key": "icehockey_nhl"}
+{"call_kind": "pregame", "credits": 3, "events": 14, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-22T22:10:48.965520Z", "regions": ["us"], "rows": 440, "sport_key": "icehockey_nhl", "stored": 440}
