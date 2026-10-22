@@ -182,14 +182,27 @@ def _state_of(row: Mapping, league_code: str) -> str:
     return UPCOMING
 
 
+def progress_of(status: Mapping) -> dict:
+    """Where an ESPN game is, from the status block the scoreboard request ALREADY returned: {period, clock, name, label}.
+    Read only by the bet alerts ("halftime", "late in the game"); it adds no request and changes no answer."""
+    stype = status.get("type") or {}
+    period = status.get("period")
+    return {"period": period if isinstance(period, int) else None,
+            "clock": str(status.get("displayClock") or "") or None,
+            "name": str(stype.get("name") or "").upper() or None,
+            "label": stype.get("shortDetail") or stype.get("detail")}
+
+
 def espn_answers(payload: Mapping, league_code: str, wanted: Iterable[Mapping], observed: str) -> dict:
     """{game key: answer} for the wanted games found in ONE scoreboard payload. ``wanted`` items carry ``key``,
     ``home_team``, ``away_team`` and ``start`` (datetime). A game with no unambiguous match is simply absent."""
     rows = espn_parse.games(payload, league_code, observed, None)
-    details = {}
+    details, progress = {}, {}
     for event in payload.get("events") or []:
-        stype = (((event.get("competitions") or [{}])[0].get("status") or event.get("status") or {}).get("type") or {})
+        status = (event.get("competitions") or [{}])[0].get("status") or event.get("status") or {}
+        stype = status.get("type") or {}
         details[str(event.get("id"))] = stype.get("shortDetail") or stype.get("detail")
+        progress[str(event.get("id"))] = progress_of(status)
     out: dict = {}
     for want in wanted:
         hits = []
@@ -210,7 +223,7 @@ def espn_answers(payload: Mapping, league_code: str, wanted: Iterable[Mapping], 
             state = LIVE                              # a final with no readable score is not a score
         out[want["key"]] = {"state": state, "home_score": home, "away_score": away,
                             "detail": details.get(row["game_id"]), "source": "espn", "source_id": row["game_id"],
-                            "start_utc": row.get("date_utc")}
+                            "start_utc": row.get("date_utc"), "progress": progress.get(row["game_id"])}
     return out
 
 
@@ -218,13 +231,19 @@ def espn_answers(payload: Mapping, league_code: str, wanted: Iterable[Mapping], 
 # MLB (one game at a time, by gamePk)
 # ---------------------------------------------------------------------------
 
+def _ordinal(n: int) -> str:
+    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+
 def mlb_answer(game_pk, fetch_instances: Optional[Callable] = None) -> Optional[dict]:
     """The state of one MLB game from the Stats API's schedule entry for its gamePk, or None when it cannot be
     asked. A game postponed and made up under the same pk is final when ANY entry is final (the existing settle
     contract settles it from that final)."""
     if fetch_instances is None:
         from src.providers import mlb
-        fetch_instances = mlb.fetch_game_instances
+
+        def fetch_instances(pk):                      # the same one request; the linescore is already in it
+            return mlb.fetch_game_instances(pk, with_progress=True)
     instances = list(fetch_instances(game_pk) or [])
     if not instances:
         return None
@@ -246,8 +265,14 @@ def mlb_answer(game_pk, fetch_instances: Optional[Callable] = None) -> Optional[
         state = UPCOMING
     else:
         state = LIVE
+    inning, half = g.get("current_inning"), g.get("inning_state")
+    progress = None
+    if state == LIVE and isinstance(inning, int):
+        progress = {"period": inning, "clock": None, "name": str(half or "").upper() or None,
+                    "label": f"{half} {_ordinal(inning)}" if half else _ordinal(inning)}
     return {"state": state, "home_score": g.get("home_score"), "away_score": g.get("away_score"), "detail": detailed,
-            "source": "mlb_statsapi", "source_id": str(game_pk), "start_utc": g.get("start_time_utc")}
+            "source": "mlb_statsapi", "source_id": str(game_pk), "start_utc": g.get("start_time_utc"),
+            "progress": progress}
 
 
 def days_to_ask(slate_date: Optional[str], start: Optional[datetime]) -> list:

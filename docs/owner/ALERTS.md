@@ -71,7 +71,10 @@ Zapier's **SMS by Zapier** texts a number you verify yourself. Each of you has a
 - Bets within 60 seconds are ONE message; the first alert is held at most about 10 seconds to catch a burst.
 - Per member per hour: email 12, push 30, texts 6. Over the cap, alerts wait and go out together as one message.
 - Failed sends retry at 30 seconds, 2 minutes, 8 minutes, then stop. The same alert is never sent twice on a channel. Alerts older than 12 hours are dropped.
-- Members can set quiet hours and choose placed, settled or both.
+- Members can set quiet hours and switch four alert types on or off in Account, Alerts: Bet placed (on), Starting soon (on), Live updates (OFF until they opt in), Bet settled (on).
+- "Starting soon" ("DRAKEO's Hawks ML +110 tips off in 15 min") goes out once per ticket, 10 to 15 minutes before the game; tickets starting together are one message. "Live updates" are: game went live, halftime, a late lead change that flips the ticket between winning and losing (a tie or push is not a flip), and the final just before grading; at most 3 per ticket. Both read the score cache the grading loop already fills, so they cost no extra request, and they are dropped (not sent late) if quiet hours or the rate cap hold them past 20 or 30 minutes.
+- Starting-soon and live updates go to push and text only, never email. A message made only of those keeps a quarter of the hour's cap free for placed and settled.
+- A text tries to stay inside one 160-character segment (it drops the link first, then extra lines); STOP and the paper mark always stay.
 - Dollars use the member's sizing (a fixed unit is exact; a percent sizing shows `~` against the starting bankroll).
 - Each alert email has a one-click "turn off" link (`/alerts/off`).
 - Settings that switch things off: `ALERTS_JOBS=off` stops the sender loop.

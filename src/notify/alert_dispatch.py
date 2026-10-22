@@ -3,7 +3,8 @@
 
 WHAT ONE PASS DOES, per member and per channel the member switched on (and that the server has available):
   1. quiet hours: inside the member's quiet window nothing is sent; the events wait (and batch together afterwards);
-  2. pick the events the member wants (placed / settled / both) that this channel has not finished;
+  2. pick the events the member wants (their four toggles: placed, starting soon, live updates, settled) that THIS
+     CHANNEL may carry (``alerts.CHANNEL_KINDS``: email carries placed and settled only) and has not finished;
   3. BATCH: events within ``BATCH_WINDOW_S`` (60s) of the first one are ONE message. A group is sent once it has been
      quiet for ``SETTLE_S`` (so a burst from one engine pass collapses into a single message), or once its window is
      a full minute old, so the first alert is never held longer than that;
@@ -14,14 +15,17 @@ WHAT ONE PASS DOES, per member and per channel the member switched on (and that 
      beats at least once for a message nobody can recall);
   6. RETRY with backoff on a transient failure (30s, 2m, 8m, then dead after ``MAX_ATTEMPTS``); a refusal is final.
 
-Events older than ``EXPIRE_S`` are never sent (a "just bet" about last night is noise). Rows are pruned after
-``KEEP_DAYS``. Nothing here logs an address, a number, an endpoint or a message body.
+Events older than ``EXPIRE_S`` are never sent (a "just bet" about last night is noise); a "starting soon" is dropped
+once its game has started and a "live update" after ``MAX_AGE_S`` (a held score is a wrong score). A message made only of
+those short-lived kinds waits for a rate-cap room larger than ``SHORT_LIVED_RESERVE`` of the hour's cap, so a busy night of
+live updates can never use up the sends a "bet settled" needs. Rows are pruned after ``KEEP_DAYS``. Nothing here logs an address, a number, an endpoint or a message body.
 """
 
 from __future__ import annotations
 
 import hashlib
 import logging
+import math
 import os
 import threading
 from datetime import datetime, timedelta, timezone
@@ -39,6 +43,10 @@ TICK_S = 10.0
 BATCH_WINDOW_S = 60
 SETTLE_S = 10
 EXPIRE_S = 12 * 3600
+#: how long a short-lived kind may wait in the outbox (quiet hours, a held rate cap, a retry) before it is dropped unsent
+MAX_AGE_S = {alerts.KIND_STARTING: 20 * 60, alerts.KIND_LIVE: 30 * 60}
+#: share of the hourly cap kept free for placed / settled: a group of only starting / live events needs more room than this
+SHORT_LIVED_RESERVE = 0.25
 KEEP_DAYS = 14
 MAX_ATTEMPTS = 3                       # equals email.MAX_ATTEMPTS: the email send log gives up at the same count
 BACKOFF_S = (30, 120, 480)
@@ -100,9 +108,25 @@ def _candidates(conn, user_id: int, channel: str, kinds, now: datetime) -> list:
             payload = json.loads(r["payload_json"])
         except ValueError:
             continue
+        if _too_old(r["kind"], r["created_utc"], payload, now):
+            continue
         out.append({"id": r["id"], "kind": r["kind"], "created_utc": r["created_utc"], "payload": payload,
                     "attempts": r["attempts"] or 0})
     return out
+
+
+def _too_old(kind: str, created_utc: str, payload: Mapping, now: datetime) -> bool:
+    """A starting / live event that waited past its useful life: "tips off in 15 min" after the tip is false."""
+    limit = MAX_AGE_S.get(kind)
+    if limit is None:
+        return False
+    made = alerts.parse_iso(created_utc)
+    if made is not None and (now - made).total_seconds() > limit:
+        return True
+    if kind == alerts.KIND_STARTING:
+        start = alerts.parse_iso(payload.get("start_utc"))
+        return start is not None and start <= now
+    return False
 
 
 def _groups(events: list):
@@ -174,7 +198,10 @@ def off_url(user_id: int, env=None) -> str:
 
 
 def _process(user, prefs, channel: str, *, http, env, now, paid_check, sleep, counts: dict) -> None:
-    kinds = alerts.KINDS if prefs["events"] == "both" else (prefs["events"],)
+    toggles = prefs.get("event_toggles") or alerts.DEFAULT_TOGGLES
+    kinds = tuple(k for k in alerts.CHANNEL_KINDS.get(channel, alerts.KINDS) if toggles.get(k))
+    if not kinds:
+        return
     cap = RATE_CAP_PER_HOUR.get(channel, 12)
     channel_obj = ch.CHANNELS[channel]
     while True:
@@ -188,7 +215,8 @@ def _process(user, prefs, channel: str, *, http, env, now, paid_check, sleep, co
                 counts["held_settling"] = counts.get("held_settling", 0) + 1
                 return
             room = cap - _sent_last_hour(conn, user.id, channel, now)
-            if room <= 0:
+            reserve = math.ceil(cap * SHORT_LIVED_RESERVE)
+            if room <= 0 or (all(e["kind"] in alerts.SHORT_LIVED_KINDS for e in group) and room <= reserve):
                 counts["held_rate_cap"] = counts.get("held_rate_cap", 0) + 1
                 return
             # More waiting windows than messages left this hour: send them all as ONE message instead of
@@ -222,6 +250,7 @@ def prune(now: datetime) -> None:
                      (cutoff,))
         conn.execute("DELETE FROM alert_events WHERE created_utc < ?", (cutoff,))
         conn.execute("DELETE FROM alert_sends WHERE sent_utc < ?", (cutoff,))
+        conn.execute("DELETE FROM alert_live_state WHERE updated_utc < ?", (cutoff,))
 
 
 def drain(*, now: Optional[datetime] = None, http=None, env: Optional[Mapping] = None,
