@@ -39,6 +39,7 @@ NO SECRETS IN LOGS: nothing here logs a phone number, an endpoint, a token or a 
 
 from __future__ import annotations
 
+import contextvars
 import hashlib
 import hmac
 import json
@@ -185,9 +186,24 @@ def _migrate_feed_hash(conn) -> None:
                      (_hash_token(row[1]), row[0]))
 
 
+#: How long a connection waits on a locked database. None = the store's own default (5 s). The grading loop's alert scan
+#: sets a short one (``short_waits``): a locked alert store must cost a pass milliseconds, never seconds.
+_BUSY_MS: contextvars.ContextVar = contextvars.ContextVar("alerts_busy_ms", default=None)
+
+
+@contextmanager
+def short_waits(ms: int) -> Iterator[None]:
+    token = _BUSY_MS.set(int(ms))
+    try:
+        yield
+    finally:
+        _BUSY_MS.reset(token)
+
+
 @contextmanager
 def connect() -> Iterator:
-    with users_store._connect() as conn:
+    wait = _BUSY_MS.get()
+    with (users_store._connect() if wait is None else users_store._connect(busy_ms=wait)) as conn:
         _ensure_schema(conn)
         yield conn
 
@@ -766,9 +782,31 @@ def owner_if_wanted(row: Mapping, kind: str) -> Optional[tuple]:
     return found if wants(found[1], kind) else None
 
 
-def emit_starting(row: Mapping, *, minutes_out: int, now: Optional[datetime] = None) -> bool:
-    """One 'starting soon' event for an open ticket whose game starts in ``minutes_out`` minutes. Once per ticket."""
-    found = owner_if_wanted(row, KIND_STARTING)
+def starting_sent(user_id: int) -> set:
+    """Every bet id this member already has a 'starting soon' event for: one read, so a scan of many tickets does not
+    open a connection (and, once, write) per ticket just to learn the answer is 'already raised'."""
+    with connect() as conn:
+        return {r[0] for r in conn.execute("SELECT bet_id FROM alert_events WHERE user_id = ? AND kind = ?",
+                                           (int(user_id), KIND_STARTING)).fetchall()}
+
+
+def live_book(user_id: int) -> tuple:
+    """({bet id: live updates raised}, {bet id: last decided side}) for one member, in two reads."""
+    counts: dict = {}
+    with connect() as conn:
+        for (key,) in conn.execute("SELECT bet_id FROM alert_events WHERE user_id = ? AND kind = ?",
+                                   (int(user_id), KIND_LIVE)).fetchall():
+            bet = key.split(LIVE_KEY_SEP, 1)[0]
+            counts[bet] = counts.get(bet, 0) + 1
+        sides = {r[0]: r[1] for r in conn.execute("SELECT bet_id, side FROM alert_live_state WHERE user_id = ?",
+                                                  (int(user_id),)).fetchall()}
+    return counts, sides
+
+
+def emit_starting(row: Mapping, *, minutes_out: int, now: Optional[datetime] = None, _owner: Optional[tuple] = None) -> bool:
+    """One 'starting soon' event for an open ticket whose game starts in ``minutes_out`` minutes. Once per ticket.
+    ``_owner`` is (hound, owner id) when the caller has already checked the ticket and the member's toggle."""
+    found = _owner or owner_if_wanted(row, KIND_STARTING)
     if found is None:
         return False
     hound, owner = found
@@ -777,18 +815,32 @@ def emit_starting(row: Mapping, *, minutes_out: int, now: Optional[datetime] = N
     return _insert_event(owner, KIND_STARTING, str(row["hound_id"]), str(row["bet_id"]), payload, now or utcnow())
 
 
-def emit_live(row: Mapping, moment: str, snapshot: Mapping, *, now: Optional[datetime] = None) -> bool:
+def emit_live(row: Mapping, moment: str, snapshot: Mapping, *, now: Optional[datetime] = None,
+              _owner: Optional[tuple] = None) -> bool:
     """One 'live update' event. ``moment`` is start / half / flip<n> / final; ``snapshot`` carries the score, the
-    ticket's position and where the game is. The event key is per moment, so a moment is raised once per ticket."""
-    found = owner_if_wanted(row, KIND_LIVE)
+    ticket's position and where the game is. The event key is per moment, so a moment is raised once per ticket.
+
+    The cap is enforced IN the insert (one statement, one write transaction), so two machines scanning the same ticket
+    at once cannot both spend the slot the final needs: an earlier moment is written only while fewer than
+    LIVE_CAP_PER_TICKET - 1 are on file, the final while fewer than LIVE_CAP_PER_TICKET are."""
+    found = _owner or owner_if_wanted(row, KIND_LIVE)
     if found is None:
         return False
     hound, owner = found
     payload = _payload_placed(row, hound)
     payload.update({"moment": moment, "home_score": snapshot.get("home_score"), "away_score": snapshot.get("away_score"),
                     "status": snapshot.get("status"), "label": snapshot.get("label")})
-    return _insert_event(owner, KIND_LIVE, str(row["hound_id"]), live_key(str(row["bet_id"]), moment), payload,
-                         now or utcnow())
+    bet = str(row["bet_id"])
+    prefix = f"{bet}{LIVE_KEY_SEP}"
+    room = LIVE_CAP_PER_TICKET if moment == "final" else LIVE_CAP_PER_TICKET - 1
+    with _lock, connect() as conn:
+        cur = conn.execute(
+            "INSERT OR IGNORE INTO alert_events (user_id, kind, hound_id, bet_id, payload_json, created_utc) "
+            "SELECT ?, ?, ?, ?, ?, ? WHERE (SELECT COUNT(*) FROM alert_events WHERE user_id = ? AND kind = ? "
+            "AND bet_id >= ? AND bet_id < ?) < ?",
+            (int(owner), KIND_LIVE, str(row["hound_id"]), live_key(bet, moment), json.dumps(dict(payload), sort_keys=True),
+             iso(now or utcnow()), int(owner), KIND_LIVE, prefix, prefix + "􏿿", room))
+        return cur.rowcount > 0
 
 
 def events_for(user_id: int, *, limit: int = 50) -> List[dict]:

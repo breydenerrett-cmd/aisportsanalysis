@@ -33,6 +33,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 from datetime import datetime, timedelta
 from typing import Mapping, Optional, Sequence
 
@@ -50,6 +51,14 @@ FINAL_FRESH = timedelta(minutes=45)
 #: a live answer older than this is the feed gone quiet, not the score now (live_settle.STALE_LIVE_MINUTES is 90; an
 #: alert wants a much fresher score than a page does)
 LIVE_FRESH = timedelta(minutes=20)
+#: The scan shares the grading pass's thread, so it is bounded: it stops after this many seconds (the next pass, five minutes on,
+#: picks up what is left: every emit is idempotent), and its database waits are short (a locked alert store costs a pass
+#: this many milliseconds per wait, never the store's five seconds).
+SCAN_BUDGET_S = 3.0
+SCAN_BUSY_MS = 250
+#: the scoreboard's scheduled start replaces the ticket's (odds-feed) start only when it is this close: a wildly different
+#: time is a wrong match, not a reschedule
+SCHED_TRUST = timedelta(hours=12)
 
 WINNING, LOSING, PUSH = "winning", "losing", "push"
 

@@ -167,7 +167,7 @@ def _set_wal_mode(conn: sqlite3.Connection) -> None:
 
 
 @contextmanager
-def _connect(path: Optional[Path] = None) -> Iterator[sqlite3.Connection]:
+def _connect(path: Optional[Path] = None, busy_ms: int = 5000) -> Iterator[sqlite3.Connection]:
     """One connection per call, schema ensured, closed on exit. sqlite3's
     per-call connect is cheap enough at this scale (invite-only alpha) and
     sidesteps holding a long-lived handle open across process lifetimes."""
@@ -184,7 +184,7 @@ def _connect(path: Optional[Path] = None) -> Iterator[sqlite3.Connection]:
     # is here), busy_timeout is in effect for every later statement this
     # connection runs. (_set_wal_mode below covers the one lock conflict
     # busy_timeout can't -- see its own docstring.)
-    conn.execute("PRAGMA busy_timeout=5000")
+    conn.execute(f"PRAGMA busy_timeout={int(busy_ms)}")
     # WAL (write-ahead log) journal mode lets readers run concurrently with
     # a writer instead of sqlite's default rollback journal, which locks
     # the whole db file for every writer and blocks every reader until it

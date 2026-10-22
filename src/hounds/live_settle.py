@@ -130,7 +130,8 @@ CREATE TABLE IF NOT EXISTS live_games (
   fails INTEGER NOT NULL DEFAULT 0, next_try_utc TEXT, last_error TEXT,
   settle_tries INTEGER NOT NULL DEFAULT 0, settle_next_utc TEXT,
   payload TEXT,                         -- tennis / MMA: the free reader's whole result row (a winner or a named void), as JSON
-  progress TEXT                         -- a live game's {period, clock, name, label} as JSON: the bet alerts' "halftime" and "late in the game"
+  progress TEXT,                        -- a live game's {period, clock, name, label} as JSON: the bet alerts' "halftime" and "late in the game"
+  sched_utc TEXT                        -- the start time the scoreboard itself last gave (the odds feed's start can be hours off): "starting soon" prefers it
 );
 CREATE TABLE IF NOT EXISTS live_lock (name TEXT PRIMARY KEY, holder TEXT NOT NULL, expires_utc TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS live_meta (key TEXT PRIMARY KEY, value TEXT);
@@ -160,6 +161,8 @@ def connect(path: Optional[Path] = None) -> sqlite3.Connection:
         conn.execute("ALTER TABLE live_games ADD COLUMN payload TEXT")       # a cache file made before tennis and MMA
     if "progress" not in columns:
         conn.execute("ALTER TABLE live_games ADD COLUMN progress TEXT")      # a cache file made before the bet alerts
+    if "sched_utc" not in columns:
+        conn.execute("ALTER TABLE live_games ADD COLUMN sched_utc TEXT")     # a cache file made before the scheduled-time fix
     return conn
 
 
@@ -361,12 +364,20 @@ def _store_answer(conn: sqlite3.Connection, game: Game, answer: Mapping, now: da
                  (ls.iso(now) if answer["state"] == ls.FINAL else None))
     conn.execute(
         "UPDATE live_games SET state=?, home_score=?, away_score=?, detail=?, source=?, source_id=?, updated_utc=?,"
-        " final_utc=?, fails=0, next_try_utc=NULL, last_error=NULL, payload=COALESCE(?, payload), progress=?"
-        " WHERE game_key=?",
+        " final_utc=?, fails=0, next_try_utc=NULL, last_error=NULL, payload=COALESCE(?, payload), progress=?,"
+        " sched_utc=COALESCE(?, sched_utc) WHERE game_key=?",
         (answer["state"], answer.get("home_score"), answer.get("away_score"), answer.get("detail"),
          answer.get("source"), answer.get("source_id"), ls.iso(now), final_utc,
          json.dumps(answer["payload"], sort_keys=True) if answer.get("payload") else None,
-         json.dumps(answer["progress"], sort_keys=True) if answer.get("progress") else None, game.key))
+         json.dumps(answer["progress"], sort_keys=True) if answer.get("progress") else None,
+         _sched_of(answer), game.key))
+
+
+def _sched_of(answer: Mapping) -> Optional[str]:
+    """The scoreboard's own scheduled start from an answer, normalised, or None (kept apart from ``start_utc``, which is the
+    ticket's odds-feed start and drives when the loop asks)."""
+    parsed = ls.parse_utc(answer.get("start_utc"))
+    return ls.iso(parsed) if parsed is not None else None
 
 
 def _store_failure(conn: sqlite3.Connection, game: Game, error: str, now: datetime) -> None:
