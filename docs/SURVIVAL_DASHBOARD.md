@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-22 20:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-22 20:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,7 +151,7 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-22 (1:30 pm PT run): Thursday night Patriots at Bears brief published at 20:45Z, three passes (moneyline, spread, total); attempt 2 after a checker rejection.
+- 2026-10-22 (1:30 pm PT run): Thursday night Patriots at Bears brief published at 20:43Z, three passes (moneyline, spread, total); attempt 2 after a checker rejection.
 - Next brief: World Series Game 1, Rays at Brewers, Fri Oct 23 5:00 pm PT.
 - Production is up; deploys through 20:13Z succeeded; newest finished CI run green.
 - Billing is live in production (founding $14.99, standard $19.99).
