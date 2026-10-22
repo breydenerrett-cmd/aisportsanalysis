@@ -24,9 +24,10 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Any, Mapping, Optional
 
+from src.hounds import one_side
 from src.hounds import user_rules as R
 from src.hounds import user_spec
-from src.hounds.interact import camp, common, fire
+from src.hounds.interact import camp, common, fire, manual
 
 MAX_CANDIDATES = 6
 CAP = -200                                   # the public cap: -200 or worse is never shown as a pick
@@ -58,10 +59,15 @@ def _conditions(node: Any) -> list:
 
 def voice_key(dog: common.Dog, persona: Optional[Mapping] = None) -> str:
     """The hound's voice, read off its persona (a house hound) or its own rule (a builder's hound). Deterministic."""
+    return voice_for(dog.kind, dog.spec if dog.kind == common.KIND_USER else None, persona)
+
+
+def voice_for(kind: str, spec: Optional[Mapping], persona: Optional[Mapping] = None) -> str:
+    """``voice_key`` from the parts (Ask has a kind, a spec and a persona, not a ``Dog``)."""
     vibe = (persona or {}).get("vibe") if isinstance(persona, Mapping) else None
-    if vibe in _VIBE_TO_VOICE and dog.kind != common.KIND_USER:
+    if vibe in _VIBE_TO_VOICE and kind != common.KIND_USER:
         return _VIBE_TO_VOICE[vibe]
-    spec = dog.spec if dog.kind == common.KIND_USER else None
+    spec = spec if kind == common.KIND_USER else None
     if not isinstance(spec, Mapping):
         return _VIBE_TO_VOICE.get(vibe, "generic")
     try:
@@ -178,35 +184,78 @@ def _next_look(payload: Mapping, spec: Optional[Mapping], now: datetime) -> Opti
             "starts_in_minutes": fire._minutes(start - now)}
 
 
-def build(dog: common.Dog, viewer_id: Optional[int] = None, *, now: Optional[datetime] = None,
-          payload: Optional[dict] = None) -> dict:
-    """The "what I'd play right now" answer for one hound. ``payload`` is the Fire-now answer (injected by tests);
-    otherwise it is ``fire.fire(dog)`` decorated for this viewer. Raises ``fire.NotFirable`` for a hound that has no rule to run."""
-    now = now or common.now_utc()
-    if payload is None:
-        payload = camp.decorate_fire(dog, fire.fire(dog, now=now), viewer_id, now=now)
-    spec = dog.spec if dog.kind == common.KIND_USER else None
-    in_play_on = bets_in_play(spec)
-    rank_by = (spec or {}).get("rank_by") if isinstance(spec, Mapping) else None
-    rank_by = rank_by if rank_by in RANK_WORDS else "earliest_lock"
-    stake = spec.get("stake_units") if isinstance(spec, Mapping) else None
-    stake = float(stake) if isinstance(stake, (int, float)) and not isinstance(stake, bool) and stake > 0 else 1.0
+def held_positions(recorded: Optional[list], manual_tickets: Optional[list] = None) -> list:
+    """What the hound already holds, as plain positions: its own rule's recorded tickets (the Fire answer's ``recorded``)
+    and the owner's manual tickets. A "right now" pick is never one of these and never the other side of one."""
+    out = []
+    for t in list(recorded or []) + list(manual_tickets or []):
+        if isinstance(t, Mapping) and t.get("event_id") is not None:
+            out.append({k: t.get(k) for k in ("event_id", "market", "side", "line", "player", "game", "sport", "start_utc")})
+    return out
+
+
+def _game_row(game_text: Any, sport: Any, start: Any) -> dict:
+    """The fields ``one_side.game_aliases`` reads, from the 'Away @ Home' text a pick carries, so a re-issued event id of one
+    game still finds the positions held under the first."""
+    away, _sep, home = str(game_text or "").partition(" @ ")
+    return {"sport": sport, "away_team": away.strip(), "home_team": home.strip(), "commence_time": start}
+
+
+def _clashes(book: "one_side.Book", pos: Mapping) -> bool:
+    """True when the hound already holds this position, or the other side of the game (the engine's own one-side rule)."""
+    code = book.refusal("-", pos.get("event_id"), pos.get("market"), pos.get("side"), pos.get("player"), pos.get("line"),
+                        game=_game_row(pos.get("game"), pos.get("sport"), pos.get("start_utc")))
+    return code is not None
+
+
+def fresh_picks(picks: list, held: list, now: datetime, *, in_play_on: bool = False) -> list:
+    """THE ONE PLACE "what would you play right now" is decided: both the hound page's card and the Ask answer call this.
+
+    From the Fire answer's picks keep only a FRESH one: a price (never -200 or worse), a game that has not started (or, with the
+    "Also bet games in play" setting on, one the engine marked in play), NOT a position the hound already holds (its own rule's
+    ticket or the owner's manual pick on that game and market) and not the other side of a game it already holds. Best first by
+    the hound's own order, and ONE per game, so cycling through them never shows a game twice."""
+    book = one_side.Book()
+    for pos in held or []:
+        book.take(dict(pos, hound_id="-", **_game_row(pos.get("game"), pos.get("sport"), pos.get("start_utc"))))
+    taken = {(pos.get("event_id"), pos.get("market")) for pos in held or []}
     kept = []
-    for pick in payload.get("picks") or []:
+    for pick in picks or []:
         price = _price(pick)
         start = _start(pick)
         if price is None or price <= CAP or start is None:
             continue                                            # no price, or -200 or worse: never a "right now" pick
         if start <= now and not (in_play_on and pick.get("in_play") is True):
             continue                                            # a game that has started is not a "not yet started" pick
+        if (pick.get("event_id"), pick.get("market")) in taken or _clashes(book, pick):
+            continue                                            # already placed, or the other side of a ticket it holds
         kept.append(pick)
-    ordered = _order(kept)[:MAX_CANDIDATES]
+    seen_games: set = set()
+    out = []
+    for pick in _order(kept):
+        game_key = pick.get("event_id")
+        if game_key in seen_games:
+            continue                                            # one card per game: "show me another" is another GAME
+        seen_games.add(game_key)
+        out.append(pick)
+    return out[:MAX_CANDIDATES]
+
+
+def view_from_payload(payload: Mapping, *, dog_id: str, dog_name: str, kind: str, spec: Optional[Mapping],
+                      persona: Optional[Mapping], held: Optional[list], now: datetime) -> dict:
+    """The answer for one hound from a Fire-now payload. Pure: no disk, no clock but ``now``."""
+    in_play_on = bets_in_play(spec)
+    rank_by = (spec or {}).get("rank_by") if isinstance(spec, Mapping) else None
+    rank_by = rank_by if rank_by in RANK_WORDS else "earliest_lock"
+    stake = spec.get("stake_units") if isinstance(spec, Mapping) else None
+    stake = float(stake) if isinstance(stake, (int, float)) and not isinstance(stake, bool) and stake > 0 else 1.0
+    ordered = fresh_picks(payload.get("picks") or [], held or [], now, in_play_on=in_play_on)
     total = len(ordered)
     candidates = []
     for index, pick in enumerate(ordered):
         nxt = ordered[index + 1] if index + 1 < total else None
         fit = round(100 * (total - index) / total)
-        manual = pick.get("manual") if isinstance(pick.get("manual"), dict) else {"can_record": False, "blocked": None}
+        manual_info = pick.get("manual") if isinstance(pick.get("manual"), dict) else {"can_record": False, "blocked": None}
         candidates.append({
             "event_id": pick.get("event_id"), "market": pick.get("market"), "market_label": pick.get("market_label"),
             "player": pick.get("player"), "game": pick.get("game"), "sport": pick.get("sport"), "side": pick.get("side"),
@@ -218,12 +267,11 @@ def build(dog: common.Dog, viewer_id: Optional[int] = None, *, now: Optional[dat
             "stake_units": stake, "rank": index + 1, "of": total, "fit": fit,
             "fit_text": "The top of the board" if index == 0 else f"Number {index + 1} of {total} on its board",
             "lead": _lead(rank_by, pick, nxt) if index == 0 else "", "reason": pick.get("reason") or "",
-            "manual": {"can_record": bool(manual.get("can_record")), "blocked": manual.get("blocked")},
+            "manual": {"can_record": bool(manual_info.get("can_record")), "blocked": manual_info.get("blocked")},
         })
-    persona = _persona(dog)
-    key = voice_key(dog, persona)
-    out = {
-        "dog_id": dog.id, "dog_name": dog.name, "kind": dog.kind, "as_of": common.iso(now),
+    key = voice_for(kind, spec, persona)
+    return {
+        "dog_id": dog_id, "dog_name": dog_name, "kind": kind, "as_of": common.iso(now),
         "voice": key, "voice_label": VOICE_LABELS[key],
         "rank_by": rank_by, "rank_words": RANK_WORDS[rank_by],
         "fit_definition": ("How strongly the game fits this hound's own rule, by its place among the games that fit tonight, "
@@ -237,4 +285,26 @@ def build(dog: common.Dog, viewer_id: Optional[int] = None, *, now: Optional[dat
         "paper_only": True,
         "not_advice": "Paper pick, not advice. 21+.",
     }
-    return out
+
+
+def build(dog: common.Dog, viewer_id: Optional[int] = None, *, now: Optional[datetime] = None,
+          payload: Optional[dict] = None, held: Optional[list] = None) -> dict:
+    """The "what I'd play right now" answer for one hound. ``payload`` is the Fire-now answer (injected by tests);
+    otherwise it is ``fire.fire(dog)`` decorated for this viewer. ``held`` (positions the hound already has) is read from the
+    payload's recorded tickets and the owner's manual tickets unless a test injects it. Raises ``fire.NotFirable`` for a hound
+    that has no rule to run."""
+    now = now or common.now_utc()
+    live = payload is None
+    if live:
+        payload = camp.decorate_fire(dog, fire.fire(dog, now=now), viewer_id, now=now)
+    if held is None:
+        manual_rows = []
+        if live and dog.kind == common.KIND_USER:
+            try:
+                manual_rows = manual.tickets(dog.id, now=now)
+            except Exception:  # noqa: BLE001 -- the held list is a filter; it never takes the card down
+                manual_rows = []
+        held = held_positions(payload.get("recorded"), manual_rows)
+    spec = dog.spec if dog.kind == common.KIND_USER else None
+    return view_from_payload(payload, dog_id=dog.id, dog_name=dog.name, kind=dog.kind, spec=spec, persona=_persona(dog),
+                             held=held, now=now)

@@ -18,7 +18,7 @@ import {
   get, post, errorText, signedIn, signInPrompt, builderHref, changeText, FIELD_WORDS, ticketKey, statusLine, nextId, SIGNIN_HREF,
 } from "./dog-common.js";
 
-export const NEVER_CHANGES = "Feedback is counted and the owner reads it. It never changes a dog by itself.";
+export const NEVER_CHANGES = "Feedback is counted and the owner reads it. It never changes a hound by itself.";
 const SMALL = 10;
 
 /**
@@ -166,7 +166,7 @@ function suggestionsList(id, items) {
 
 function countsLine(c) {
   const total = (c.good || 0) + (c.bad || 0);
-  if (!total) return "Nobody has rated this dog yet. A Good call or Bad call under any ticket counts.";
+  if (!total) return "Nobody has rated this hound yet. A Good call or Bad call under any ticket counts.";
   return `${total} ${total === 1 ? "rating" : "ratings"}: ${c.good || 0} Good call, ${c.bad || 0} Bad call.`;
 }
 

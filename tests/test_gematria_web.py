@@ -61,12 +61,12 @@ class EvidenceFoldTests(unittest.TestCase):
                        queries=[q("hidden", "[data-hook='hound-evidence']", "hidden")])
         self.assertTrue(out["final"]["hidden"])
 
-    def test_the_html_has_the_fold_hidden_and_is_inside_the_overview(self):
+    def test_the_html_has_the_fold_hidden_and_is_inside_the_rules_tab(self):
         html = (WEB / "hound.html").read_text(encoding="utf-8")
         i = html.index('data-hook="hound-evidence"')
         self.assertIn("hidden", html[i:i + 160])
-        self.assertLess(html.index('data-tabpanel="overview"'), i)
-        self.assertLess(i, html.index('data-tabpanel="tickets"'))
+        self.assertLess(html.index('data-tabpanel="rules"'), i)          # six tabs (2026-10-21): the evidence sits under Rules
+        self.assertLess(i, html.index('data-tabpanel="ask"'))
 
 
 if __name__ == "__main__":

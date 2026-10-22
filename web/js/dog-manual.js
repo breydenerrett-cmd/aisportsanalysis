@@ -27,10 +27,10 @@ export async function mountManual(section, { id, kit }) {
     clearNode(body);
     const rec = data.record || {};
     body.appendChild(h("p", { class: "hd-muted", "data-hook": "manual-note",
-      text: "Tickets the owner chose to record by hand, kept apart. They are never counted in this dog's rule record, its status or the leaderboard." }));
+      text: "Tickets the owner chose to record by hand, kept apart. They are never counted in this hound's rule record, its status or the leaderboard." }));
     if (!items.length) {
       body.appendChild(h("p", { class: "hd-muted", "data-hook": "manual-empty",
-        text: `None yet. Unleash the dog and use Record as a manual pick on a pick you like. Up to ${data.limit_per_day || 5} a day.` }));
+        text: `None yet. Unleash the hound and use Record as a manual pick on a pick you like. Up to ${data.limit_per_day || 5} a day.` }));
     } else {
       body.appendChild(h("p", { "data-hook": "manual-record", class: "hd-num",
         text: `${rec.graded || 0} graded (${rec.wins || 0}-${rec.losses || 0}${rec.pushes ? `-${rec.pushes}` : ""}), ${unitsText(rec.units_average_price) || "0.00u"} at the average price, ${rec.open || 0} open.` }));

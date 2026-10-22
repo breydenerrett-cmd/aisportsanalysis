@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 from src.hounds.interact import ask
@@ -45,11 +46,16 @@ SUMMARY = {
     "verdict": {"label": "TOO EARLY", "sentence": "Not enough bets with a measurable closing price to say anything yet."},
 }
 
+NOW = datetime(2026, 10, 19, 21, 0, tzinfo=timezone.utc)
+RULE_REASON = "Rule 2: Stats Nerd: average price between +100 and +250 across at least 3 books. It backed the away side at +131."
+
 FIRE_WITH_PICK = {
-    "picks": [{"selection": "Cleveland Guardians to win", "game": "Tampa Bay Rays @ Cleveland Guardians",
+    "picks": [{"event_id": "e-cle", "market": "moneyline", "market_label": "Moneyline", "side": "away",
+               "selection": "Cleveland Guardians to win", "game": "Tampa Bay Rays @ Cleveland Guardians", "sport": "MLB",
                "price_average": 131, "price_best": 136, "best_book": "betonlineag", "before_lock": True,
-               "reason": "Rule: the underdog. It backed the away side at +131 across 11 books."}],
-    "closest_misses": [], "games": [], "headline": "1 pick qualifies on the latest stored boards."}
+               "start_utc": "2026-10-19T23:10:00Z", "day_label": "Today", "n_books": 11, "stale": False,
+               "board_age_minutes": 5, "over_daily_limit": False, "reason": RULE_REASON}],
+    "recorded": [], "closest_misses": [], "games": [], "headline": "1 pick qualifies on the latest stored boards."}
 
 FIRE_NOTHING = {
     "picks": [], "headline": "Nothing qualifies right now.",
@@ -69,7 +75,7 @@ def context(**over) -> ask.AskContext:
                 rule_english="I back the underdog on MLB moneylines when the price is +100 to +250.",
                 spec={"lock_minutes": 120, "max_bets_per_day": 2, "min_books": 3}, summary=SUMMARY,
                 tickets=list(TICKETS), feedback={"good": 7, "bad": 2, "notes": 3, "suggestions": 1},
-                tips=[], is_owner=False, today="2026-10-19", fire_fn=lambda: FIRE_WITH_PICK)
+                tips=[], is_owner=False, today="2026-10-19", fire_fn=lambda: FIRE_WITH_PICK, now=NOW)
     base.update(over)
     return ask.AskContext(**base)
 
@@ -220,24 +226,76 @@ class TheAnswers(unittest.TestCase):
         self.assertIn("My best bet", out["answer"])
         self.assertNotIn("worst beat", out["answer"])
 
-    def test_what_would_you_bet_now_uses_the_fire_preview(self):
+    def test_what_would_you_bet_now_is_one_short_line_then_the_pick_card(self):
         out = self.say("What would you bet right now?")
-        self.assertIn("Cleveland Guardians to win", out["answer"])
-        self.assertIn("+131", out["answer"])
-        self.assertIn("best +136 at betonlineag", out["answer"])
-        self.assertIn("usual time before the start", out["answer"])
-        self.assertEqual(out["cards"][0]["selection"], "Cleveland Guardians to win")
+        self.assertLessEqual(len(out["lines"]), 2)
+        self.assertIn("Cleveland Guardians to win", out["lines"][0])
+        self.assertIn("+131", out["lines"][0])
+        card = out["cards"][0]
+        self.assertEqual((card["selection"], card["price_text"], card["game"]), ("Cleveland Guardians to win", "+131", "Tampa Bay Rays @ Cleveland Guardians"))
+        self.assertEqual(card["when"], "Today 7:10 pm ET")
+        self.assertEqual(card["stake"], "$10")                            # the reference account's unit, when the asker sent no sizing
+        # the rule text is NEVER inline: not in a line, not on the card; it sits behind "How I checked it"
+        self.assertNotIn("Rule 2", out["answer"])
+        self.assertEqual(card["reason"], "")
+        self.assertEqual(out["details"]["title"], "How I checked it")
+        self.assertTrue(any("Rule 2: Stats Nerd" in line for line in out["details"]["lines"]))
+        self.assertIn("My rule: I back the underdog", " ".join(out["details"]["lines"]))
+        self.assertIn("21+", out["fine"])
 
-    def test_nothing_qualifying_names_the_closest_miss(self):
-        out = self.say("What would you bet right now?", fire_fn=lambda: FIRE_NOTHING)
-        self.assertIn("Nothing qualifies on the boards stored right now.", out["answer"])
-        self.assertIn("Closest: Washington Commanders @ San Francisco 49ers", out["answer"])
-        self.assertIn("2.6 points", out["answer"])
+    def test_the_stake_on_the_card_is_the_askers_sizing(self):
+        from src.hounds import unit_size
+        fixed = ask.answer("What would you bet right now?", context(sizing=unit_size.Sizing("fixed", 50.0, None, 1000.0)))
+        self.assertEqual(fixed["cards"][0]["stake"], "$50")
+        pct = ask.answer("What would you bet right now?", context(sizing=unit_size.Sizing("percent", None, 2.0, 1000.0)))
+        self.assertEqual(pct["cards"][0]["stake"], "2% of bankroll")
 
-    def test_a_dog_that_cannot_be_fired_says_so(self):
+    def test_nothing_fresh_says_so_in_its_voice_and_names_the_next_game_without_listing_started_ones(self):
+        nothing = dict(FIRE_NOTHING, recorded=[], slate={"line": "Tonight's games already started: Mets @ Braves (7:10 pm ET). Next games I can bet: Thursday."},
+                       games_considered=0)
+        out = self.say("What would you bet right now?", fire_fn=lambda: nothing)
+        self.assertEqual(out["cards"], [])
+        self.assertEqual(len(out["lines"]), 1)
+        self.assertNotIn("Mets @ Braves", out["answer"])                  # a started game is never filler
+        self.assertNotIn("already started", out["answer"])
+        self.assertNotIn("Closest", out["answer"])                        # the near misses sit behind "How I checked it"
+        self.assertTrue(any("Closest: Washington Commanders" in line for line in out["details"]["lines"]))
+
+    def test_nothing_fresh_names_the_next_game_it_will_check(self):
+        nothing = dict(FIRE_NOTHING, recorded=[], games_considered=0,
+                       games=[{"event_id": "e-later", "game": "New England Patriots @ Chicago Bears", "start_utc": "2026-10-23T00:15:00Z"}])
+        out = self.say("What would you bet right now?", fire_fn=lambda: nothing)
+        self.assertIn("Next game I'll check: New England Patriots @ Chicago Bears", out["lines"][0])
+
+    def test_a_ticket_it_already_holds_is_never_the_answer(self):
+        held = dict(FIRE_WITH_PICK, recorded=[{"event_id": "e-cle", "market": "moneyline", "side": "away", "game": "Tampa Bay Rays @ Cleveland Guardians",
+                                              "selection": "Cleveland Guardians to win", "price_average": 131, "start_utc": "2026-10-19T23:10:00Z"}])
+        out = self.say("What would you bet right now?", fire_fn=lambda: held)
+        self.assertEqual(out["cards"], [])
+        self.assertNotIn("Cleveland Guardians to win", out["answer"])
+        self.assertNotIn("Already on my record", out["answer"])
+
+    def test_the_owners_manual_pick_is_held_too(self):
+        manual = [{"event_id": "e-cle", "market": "moneyline", "side": "away", "game": "Tampa Bay Rays @ Cleveland Guardians",
+                   "selection": "Cleveland Guardians to win", "start_utc": "2026-10-19T23:10:00Z", "kind": "manual"}]
+        out = self.say("What would you bet right now?", manual=manual)
+        self.assertEqual(out["cards"], [])
+
+    def test_the_other_side_of_a_game_it_holds_is_never_offered(self):
+        held = dict(FIRE_WITH_PICK, recorded=[{"event_id": "e-cle", "market": "spread", "side": "home", "line": -1.5,
+                                              "game": "Tampa Bay Rays @ Cleveland Guardians", "start_utc": "2026-10-19T23:10:00Z"}])
+        out = self.say("What would you bet right now?", fire_fn=lambda: held)
+        self.assertEqual(out["cards"], [])
+
+    def test_a_game_that_has_started_is_not_offered(self):
+        started = dict(FIRE_WITH_PICK, picks=[dict(FIRE_WITH_PICK["picks"][0], start_utc="2026-10-19T20:00:00Z")])
+        self.assertEqual(self.say("What would you bet right now?", fire_fn=lambda: started)["cards"], [])
+
+    def test_a_dog_that_cannot_be_fired_says_so_and_does_not_fall_back_to_a_ticket(self):
         out = self.say("What would you bet right now?", fire_fn=None)
-        self.assertIn("cannot run a rule on demand", out["answer"])
-        self.assertIn("Cleveland Guardians to win", out["answer"])          # what it does have: its open ticket
+        self.assertIn("can't run my rule on demand", out["answer"])
+        self.assertNotIn("Cleveland Guardians to win", out["answer"])        # its open ticket is not an answer to "right now"
+        self.assertEqual(out["cards"], [])
 
     def test_a_board_that_cannot_be_read_is_said_not_hidden(self):
         def broken():
@@ -298,8 +356,10 @@ class TheAnswers(unittest.TestCase):
 
     def test_the_intro_names_the_dog_and_its_rule(self):
         out = self.say("who are you")
-        self.assertIn("I am Dog Days.", out["answer"])
-        self.assertIn("I back the underdog", out["answer"])
+        self.assertEqual(out["lines"], ["Dog Days \u00b7 Fetch the plus money."])      # one line; the rules live on the Rules tab
+        self.assertNotIn("What I do", out["answer"])
+        self.assertNotIn("I back the underdog", out["answer"])
+        self.assertNotIn("MLB", out["answer"])
 
     def test_an_unknown_question_lists_what_the_dog_can_answer(self):
         out = self.say("banana smoothie recipe")
@@ -328,7 +388,7 @@ class TheVoice(unittest.TestCase):
 
     def test_answers_are_first_person(self):
         for text in ("What did you bet today?", "How are you doing?", "What are your rules?",
-                     "Why did you bet Boston?", "what's your best bet", "who are you"):
+                     "Why did you bet Boston?", "what's your best bet"):
             a = ask.answer(text, context())["answer"]
             self.assertRegex(a, r"\b(I|My|my|I'm)\b", text)
 
@@ -343,7 +403,7 @@ class TheVoice(unittest.TestCase):
                       rule_english="", rule_text="Moneyline. Bet the favourite between -199 and -101.",
                       trigger="a favourite is priced between -101 and -199", spec=None)
         hello = ask.answer("who are you", ctx)["answer"]
-        self.assertIn("I am Chalk Chihuahua. Short legs, short prices.", hello)
+        self.assertEqual(hello, "Chalk Chihuahua \u00b7 Short legs, short prices.")
         why = ask.answer("why did you bet Boston", ctx)["answer"]
         self.assertIn("I bet when a favourite is priced between -101 and -199.", why)
 

@@ -262,7 +262,8 @@ def _recorded_ticket(r: dict) -> dict:
     return {"event_id": r.get("event_id"), "game": f"{r.get('away_team')} @ {r.get('home_team')}",
             "market": r.get("market"), "market_label": _market_label(str(r.get("market")), str(r.get("sport"))),
             "selection": r.get("selection"), "price_average": r.get("price"), "recorded_utc": r.get("recorded_utc"),
-            "start_utc": r.get("commence_time"), "kind": "rule"}
+            "start_utc": r.get("commence_time"), "kind": "rule", "side": r.get("side"),
+            "line": r.get("line"), "player": r.get("player"), "sport": r.get("sport")}
 
 
 def _dates(spec: dict, now: datetime) -> list:

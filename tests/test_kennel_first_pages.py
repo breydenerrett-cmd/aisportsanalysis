@@ -76,10 +76,11 @@ class EveryPageSaysItsCompliancePartsOnce(unittest.TestCase):
 class TheHoundPageMarkup(unittest.TestCase):
     SRC = html("hound.html")
 
-    def test_four_tabs_in_this_order(self):
+    def test_six_tabs_in_this_order(self):
+        # owner request 2026-10-21 (hound page fun pass): Tickets, Rules, Ask, Backtest, Record, Look (was four tabs)
         tabs = re.findall(r'role="tab" data-tab="(\w+)"', self.SRC)
-        self.assertEqual(tabs, ["overview", "tickets", "ask", "locker"])
-        self.assertEqual(re.findall(r'data-tabpanel="(\w+)"', self.SRC), ["overview", "tickets", "ask", "locker"])
+        self.assertEqual(tabs, ["tickets", "rules", "ask", "backtest", "record", "look"])
+        self.assertEqual(re.findall(r'data-tabpanel="(\w+)"', self.SRC), ["tickets", "rules", "ask", "backtest", "record", "look"])
 
     def test_the_jargon_sits_behind_how_its_graded(self):
         graded = re.search(r'<details[^>]*data-hook="hound-graded".*?</details>', self.SRC, flags=re.S).group(0)
@@ -139,14 +140,12 @@ class TheHoundPageHero(unittest.TestCase):
         self.assertIs(out["cta_hidden"], True)
         self.assertTrue(out["menu"])
         self.assertEqual(out["buttons"], ["Unleash", "Send to training", "Take them out back"])
-        self.assertIn("Locker", out["tabs"])
+        self.assertIn("Look", out["tabs"])          # the locker is the Look tab now
 
-    def test_the_tabs_a_visitor_sees_are_overview_and_tickets_plus_ask_when_real(self):
+    def test_the_tabs_a_visitor_meets_are_tickets_then_rules(self):
         routes = IW.dog_routes(owner=False, signed_in=False, kind="user")
         tabs = self.go(routes, stored={})["final"]["tabs"]
-        self.assertEqual(tabs[:2], ["Overview", "Tickets"])
-        self.assertNotIn("Backtest", tabs)
-        self.assertNotIn("Rules", tabs)
+        self.assertEqual(tabs[:2], ["Tickets", "Rules"])
 
 
 class TheLeaderboardMarkup(unittest.TestCase):

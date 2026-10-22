@@ -347,6 +347,7 @@ def ticket_view(bet: dict, graded: Optional[dict], *, now: Optional[datetime] = 
     word = {"WIN": "WON", "LOSS": "LOST", "PUSH": "PUSH", "VOID": "VOID"}.get(result or "", None)
     return {
         "kind": "manual", "bet_id": bet["bet_id"], "hound_id": bet["hound_id"], "date": bet["slate_date"],
+        "event_id": bet.get("event_id"), "side": bet.get("side"), "player": bet.get("player"), "sport": bet.get("sport"),
         "game": f"{bet['away_team']} @ {bet['home_team']}", "market": bet["market"], "selection": bet["selection"],
         "line": bet.get("line"), "price_average": bet["price"], "price_best": bet["best_price"],
         "book": bet.get("best_book"), "book_count": bet.get("n_books"), "start_utc": bet["commence_time"],

@@ -322,6 +322,16 @@ class TheRightNowCardOnThePage(unittest.TestCase):
         visitor = page(with_now(now_route(self.CANDS, viewer_is_owner=False)), queries=[q("add", hook("now-add"), "count")])
         self.assertEqual(visitor["final"]["add"], 0)
 
+    def test_a_double_tap_on_add_posts_once(self):
+        # the button is disabled synchronously, before the request is awaited, and removed once it succeeds: a second tap has nothing to hit.
+        src = (WEB / "js" / "hound-rightnow.js").read_text(encoding="utf-8")
+        handler = src[src.index('add.addEventListener("click"'):]
+        self.assertLess(handler.index('add.setAttribute("disabled"'), handler.index("await post("))
+        self.assertIn("clearNode(actions)", handler[:handler.index("} catch")])
+        # and the server holds the line if two taps still arrive together: one manual ticket per hound, game and market
+        from src.hounds.interact import manual
+        self.assertEqual(manual.manual_bet_id("h", "e", "moneyline"), manual.manual_bet_id("h", "e", "moneyline"))
+
     def test_a_blocked_pick_says_why_and_a_second_side_is_left_to_the_server_guard(self):
         blocked = [cand(1, "X", 120, manual={"can_record": False, "blocked": "this hound already has the other side of this game"})]
         out = page(with_now(now_route(blocked)), queries=[q("add", hook("now-add"), "count"), q("why", hook("now-blocked"))])
@@ -453,6 +463,158 @@ class TheHoundPageFitsEveryWidth(unittest.TestCase):
             self.assertGreater(r["h"], 300, f"{r['path']} rendered almost nothing")
         bad = [r for r in self.results if r["sw"] > r["iw"] + 1]
         self.assertEqual(bad, [], "wider than the screen: " + json.dumps(bad, indent=1))
+
+
+
+def _held(event, market, side, game, start_min=60, line=None, player=None):
+    start = NOW + timedelta(minutes=start_min)
+    return {"event_id": event, "market": market, "side": side, "line": line, "player": player, "game": game, "sport": "MLB",
+            "start_utc": start.strftime("%Y-%m-%dT%H:%M:%SZ")}
+
+
+class TheAnswerIsAlwaysFresh(unittest.TestCase):
+    """Owner, 2026-10-22: "What would you bet right now?" must never answer with a bet the hound already holds."""
+
+    def test_a_ticket_the_rule_already_placed_is_never_a_candidate(self):
+        picks = [pick("a", "Placed already", +150, 60, rank=0, market="moneyline", side="away"),
+                 pick("b", "Fresh", +120, 90, rank=1)]
+        held = [_held("a", "moneyline", "away", "Team a @ Other a")]
+        out = right_now.build(dog_of(hid=HID), 1, now=NOW, payload=payload(picks), held=held)
+        self.assertEqual([c["selection"] for c in out["candidates"]], ["Fresh"])
+
+    def test_the_owners_manual_pick_is_held_too(self):
+        picks = [pick("a", "Manual already", +150, 60, rank=0), pick("b", "Fresh", +120, 90, rank=1)]
+        held = right_now.held_positions([], [{"event_id": "a", "market": "moneyline", "side": "away", "game": "Team a @ Other a",
+                                              "start_utc": picks[0]["start_utc"], "kind": "manual"}])
+        out = right_now.build(dog_of(hid=HID), 1, now=NOW, payload=payload(picks), held=held)
+        self.assertEqual([c["selection"] for c in out["candidates"]], ["Fresh"])
+
+    def test_the_other_side_of_a_game_it_holds_is_never_offered_in_any_market(self):
+        # holds the away moneyline; the home run line, the home moneyline and the away run line are all on that same game
+        held = [_held("a", "moneyline", "away", "Team a @ Other a")]
+        picks = [pick("a", "Home ML", +110, 60, rank=0, side="home"),
+                 pick("a", "Home run line", +140, 60, rank=1, side="home", market="spread", line=-1.5),
+                 pick("a", "Away run line", +160, 60, rank=2, side="away", market="spread", line=1.5),
+                 pick("b", "Other game", +120, 90, rank=3)]
+        out = right_now.build(dog_of(hid=HID), 1, now=NOW, payload=payload(picks), held=held)
+        self.assertEqual([c["selection"] for c in out["candidates"]], ["Other game"])
+
+    def test_a_total_on_a_game_it_holds_a_side_on_is_still_a_different_slot_but_one_card_per_game(self):
+        picks = [pick("a", "Away ML", +130, 60, rank=0), pick("a", "Over 8.5", +105, 60, rank=1, market="total", side="over", line=8.5),
+                 pick("b", "Next game", +120, 90, rank=2)]
+        out = build(picks)
+        # two markets on one game are two picks, but "Show me another" never lands on the same game twice
+        self.assertEqual([c["selection"] for c in out["candidates"]], ["Away ML", "Next game"])
+        self.assertEqual(len({c["event_id"] for c in out["candidates"]}), len(out["candidates"]))
+        self.assertEqual([c["of"] for c in out["candidates"]], [2, 2])
+
+    def test_with_nothing_fresh_it_says_nothing_and_names_the_next_game(self):
+        picks = [pick("a", "Placed already", +150, 60)]
+        game = {"event_id": "z", "game": "Mets @ Braves", "start_utc": (NOW + timedelta(hours=26)).strftime("%Y-%m-%dT%H:%M:%SZ")}
+        out = right_now.build(dog_of(hid=HID), 1, now=NOW, payload=payload(picks, games=[game]),
+                              held=[_held("a", "moneyline", "away", "Team a @ Other a")])
+        self.assertTrue(out["nothing"])
+        self.assertEqual(out["next_look"]["game"], "Mets @ Braves")
+
+    def test_the_hound_page_and_the_ask_answer_choose_the_same_pick(self):
+        """One code path: the card and the chat can never disagree."""
+        from src.hounds.interact import ask
+        picks = [pick("a", "Placed already", +150, 60, rank=0), pick("b", "Fresh one", +120, 90, rank=1), pick("c", "Third", +125, 120, rank=2)]
+        pay = payload(picks)
+        pay["recorded"] = [_held("a", "moneyline", "away", "Team a @ Other a")]
+        card = right_now.build(dog_of(hid=HID), 1, now=NOW, payload=pay)
+        ctx = ask.AskContext(dog_id=HID, name="Closer", kind="user", spec=dog_of(hid=HID).spec, fire_fn=lambda: pay, now=NOW, is_owner=True)
+        said = ask.answer("what would you bet right now", ctx)
+        self.assertEqual(said["intent"], "picks_now")
+        self.assertEqual(said["cards"][0]["selection"], card["candidates"][0]["selection"])
+        self.assertEqual(said["cards"][0]["selection"], "Fresh one")
+        self.assertNotIn("Placed already", said["answer"])
+
+    def test_the_answer_never_lists_a_started_game_as_filler(self):
+        from src.hounds.interact import ask
+        started = pick("s", "Already underway", +150, -20, rank=0)
+        pay = dict(payload([started]), slate={"line": "Tonight's games already started: Team s @ Other s (7:10 pm ET)."})
+        ctx = ask.AskContext(dog_id=HID, name="Closer", kind="user", spec=dog_of(hid=HID).spec, fire_fn=lambda: pay, now=NOW)
+        said = ask.answer("what would you bet right now", ctx)
+        self.assertEqual(said["cards"], [])
+        self.assertNotIn("Already underway", said["answer"])
+        self.assertNotIn("Team s", said["answer"])
+        self.assertNotIn("already started", said["answer"])
+
+
+RAW_SPORT_KEYS = ("GRIDIRON", "BASKETBALL", "HOCKEY", "BASEBALL", "SOCCER", "TENNIS", "CRICKET", "RUGBY", "NCAAF", "NCAAB")
+RAW_KEY = re.compile(r"\b(" + "|".join(RAW_SPORT_KEYS) + r")\b")        # case-sensitive: an ALL-CAPS internal key, never a word
+
+
+class NoInternalSportKeyIsUserCopy(unittest.TestCase):
+    """Owner, 2026-10-22: Ask said "GRIDIRON, NBA, WNBA and 4 more". Every sport reads through the label map."""
+
+    def test_the_sport_phrase_uses_the_label_not_the_key(self):
+        from src.hounds import user_spec
+        text = user_spec.sports_phrase(["GRIDIRON", "NBA", "WNBA", "NHL", "MLB"])
+        self.assertEqual(text, "CFL and UFL, NBA, WNBA and 2 more sports")
+        self.assertEqual(user_spec.sports_phrase(["SOCCER"]), "Soccer")
+        self.assertEqual(user_spec.sports_phrase(["MLB", "NFL"]), "MLB and NFL")
+        for key in user_spec.SPORTS:
+            self.assertIsNone(RAW_KEY.search(user_spec.sports_phrase([key])), key)
+            self.assertIsNone(RAW_KEY.search(user_spec.sport_words(key)), key)
+
+    def test_the_rule_text_and_every_ask_answer_for_a_hound_on_many_sports(self):
+        from src.hounds import user_spec
+        from src.hounds.interact import ask
+        dog = dog_of(hid=HID, sports=["NFL", "GRIDIRON", "NBA", "WNBA", "NCAAB", "BASKETBALL", "NHL", "HOCKEY", "TENNIS", "CRICKET", "RUGBY", "SOCCER"])
+        rule = user_spec.rule_text(dog.spec)
+        self.assertIsNone(RAW_KEY.search(rule), rule)
+        ctx = ask.AskContext(dog_id=HID, name="Closer", kind="user", spec=dog.spec, rule_text=rule, rule_english=rule,
+                             summary={"sports": [s.lower() for s in dog.spec["sports"]]}, fire_fn=lambda: payload([]), now=NOW)
+        for question in ("who are you", "what are your rules", "what would you bet right now", "how are you doing", "help"):
+            said = ask.answer(question, ctx)
+            blob = " ".join(said["lines"] + (said["details"] or {}).get("lines", []))
+            self.assertIsNone(RAW_KEY.search(blob), (question, blob))
+
+    @unittest.skipUnless(HAS_NODE, "node not installed")
+    def test_no_all_caps_sport_key_in_the_rendered_hound_page(self):
+        from src.hounds import user_spec
+        from src.hounds.interact import ask
+        everything = list(user_spec.SPORTS)
+        dog = dog_of(hid=HID, sports=everything)
+        rule = user_spec.rule_text(dog.spec)
+        routes = dog_routes()
+        detail = routes[f"/hounds/{HID}"][1]
+        detail["sports"] = [s.lower() for s in everything]
+        detail["rule_text"] = rule
+        ctx = ask.AskContext(dog_id=HID, name="Closer", kind="user", spec=dog.spec, rule_text=rule, rule_english=rule,
+                             summary={"sports": [s.lower() for s in everything]}, fire_fn=lambda: payload([]), now=NOW)
+        routes[f"/hounds/{HID}/ask"] = [200, {"dog_id": HID, "dog_name": "Closer", "greeting": ask.answer("who are you", ctx)["lines"],
+                                              "suggestions": ask.suggestions(ctx), "warming": False}]
+        routes[f"POST /hounds/{HID}/ask"] = [200, ask.answer("what are your rules", ctx)]
+        out = page(routes, actions=[dict(do="set", sel=hook("ask-input"), value="what are your rules", wait=10),
+                                    dict(do="click", sel=hook("ask-send"), wait=100)],
+                   queries=[q("main", "main"), q("ask", hook("dog-ask")), q("header", hook("hound-header")), q("rule", hook("rule-text"))])
+        f = out["final"]
+        seen = " ".join(str(f.get(k) or "") for k in ("main", "ask", "header", "rule"))
+        self.assertGreater(len(seen), 200)
+        self.assertIsNone(RAW_KEY.search(seen), RAW_KEY.search(seen) and seen[max(0, RAW_KEY.search(seen).start() - 80):RAW_KEY.search(seen).end() + 40])
+        # the same rendered text never says the canine word or "lock" (the hound page says hound, and "placing time")
+        for rx in (DOG, re.compile(r"\block(ed|s)?\b", re.I)):
+            m = rx.search(seen)
+            self.assertIsNone(m, m and seen[max(0, m.start() - 80):m.end() + 40])
+
+
+class EveryAskAnswerSaysHoundAndMakesNoClaim(unittest.TestCase):
+    def test_no_answer_says_the_canine_word_or_a_banned_claim(self):
+        from tests.test_hounds_interact_ask import PHRASINGS, context
+        from src.hounds.interact import ask
+        banned = re.compile(r"lock(ed|s)?|guarantee|edge|win(ning)? (probability|chance)|bet check", re.I)
+        questions = [text for text, _intent in PHRASINGS] + ["help", "who are you", "what are your rules", "any tips", "banana"]
+        for kind in ("user", "house"):
+            for owner in (True, False):
+                for text in questions:
+                    said = ask.answer(text, context(name="Closer", kind=kind, is_owner=owner))
+                    blob = " ".join(said["lines"] + (said.get("details") or {}).get("lines", []))
+                    for rx in (DOG, banned):
+                        m = rx.search(blob)
+                        self.assertIsNone(m, (text, kind, m and blob[max(0, m.start() - 60):m.end() + 40]))
 
 
 if __name__ == "__main__":
