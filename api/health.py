@@ -106,6 +106,9 @@ def get_health(response: Response) -> dict:
     # Informational, like the warm-up: a failing pass is shown here, it never fails /health.
     from src.hounds import user_runner
     data["hounds_engine"] = user_runner.status()
+    # The live settlement loop (src/hounds/live_settle.py), on by default; informational like the two above.
+    from src.hounds import live_settle
+    data["live_settle"] = dict(live_settle.STATUS)
     try:
         data["runtime"] = runtime()
     except Exception:  # noqa: BLE001 -- informational; never the reason /health fails

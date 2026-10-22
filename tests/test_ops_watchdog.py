@@ -140,7 +140,7 @@ class Rig:
         self.store = W.StateStore(self.tmp / "state.json")
         self.env = {"WATCHDOG": "on"}
         self.env.update(env or {})
-        self.health, self.ai = [], None
+        self.health, self.ai, self.grading = [], None, []
         self.version = {"sha": HEAD, "source": "test"} if version == "head" else version
         self.started = iso(ago(minutes=50))
         self.gh.deploy_runs = [run(900 - i, started=ago(minutes=70 + 60 * i), updated=ago(minutes=64 + 60 * i))
@@ -153,7 +153,13 @@ class Rig:
     def make(self):
         return W.Watchdog(env=self.env, http=self.gh, now=self.clock, store=self.store,
                           version=lambda: self.version, started_utc=lambda: self.started,
-                          health=lambda now: list(self.health), ai_spend=lambda now: self.ai)
+                          health=lambda now: list(self.health), ai_spend=lambda now: self.ai,
+                          grading=lambda now: self._grade(now))
+
+    def _grade(self, now):
+        if isinstance(self.grading, Exception):
+            raise self.grading
+        return list(self.grading)
 
     def restart(self):
         self.dog = self.make()
@@ -808,6 +814,60 @@ class AiSpend(unittest.TestCase):
 NO_METER = Path(tempfile.gettempdir()) / "linehound-watchdog-no-such-meter" / "ai_usage_v1.jsonl"
 
 
+def overdue(game="Charlotte Hornets @ Brooklyn Nets", sport="NBA", start="2026-10-21T23:30:00Z", tickets=2, hours=6.5,
+            key="47cc511bb5ce"):
+    return {"key": key, "game": game, "sport": sport, "start_utc": start, "tickets": tickets, "hours_overdue": hours,
+            "state": "live", "sources": ["user"]}
+
+
+class GradingOverdue(unittest.TestCase):
+    """A ticket open more than four hours after its game's scheduled start raises an owner alert (2026-10-22)."""
+
+    def test_an_overdue_ticket_opens_one_incident_that_reaches_the_feed_and_names_the_game(self):
+        rig = Rig(self)
+        rig.grading = [overdue(), overdue("Atlanta Hawks @ Orlando Magic", tickets=3, start="2026-10-21T23:10:00Z",
+                                          key="85e6e4e2")]
+        rig.tick()
+        (inc,) = rig.incidents()
+        self.assertEqual(inc["kind"], "grading_overdue")
+        self.assertIn("5 tickets on 2 games are still open more than 4 hours", inc["what"])
+        self.assertIn("Charlotte Hornets @ Brooklyn Nets (NBA, started 23:30 UTC)", inc["what"])
+        self.assertIn("/hounds/live/status", inc["fix"])
+        self.assertEqual(rig.check("grading"), "alert")
+        self.assertEqual(len(rig.feed()), 1)
+
+    def test_ten_ticks_open_one_incident_and_clearing_it_sends_one_all_clear(self):
+        rig = Rig(self)
+        rig.grading = [overdue()]
+        for _ in range(3):
+            rig.tick(minutes=10)
+        self.assertEqual(len(rig.incidents()), 1)
+        rig.grading = []
+        rig.tick(minutes=10)
+        self.assertEqual(rig.incidents(), [])
+        (done,) = rig.incidents("resolved")
+        self.assertIn("All clear", done["resolved_text"])
+
+    def test_nothing_overdue_is_ok_and_opens_nothing(self):
+        rig = Rig(self)
+        rig.tick()
+        self.assertEqual((rig.check("grading"), rig.incidents()), ("ok", []))
+
+    def test_a_reader_that_cannot_look_is_unknown_and_never_an_all_clear(self):
+        rig = Rig(self)
+        rig.grading = [overdue()]
+        rig.tick()
+        rig.grading = RuntimeError("db locked")
+        rig.tick(minutes=10)
+        self.assertEqual(rig.check("grading"), "unknown")
+        self.assertEqual(len(rig.incidents()), 1, "an unreadable source leaves the open incident open")
+
+    def test_the_limit_is_four_hours_and_the_real_reader_applies_it(self):
+        self.assertEqual(W.GRADING_OVERDUE_HOURS, 4.0)
+        import inspect
+        self.assertIn("GRADING_OVERDUE_HOURS", inspect.getsource(W.grading_source))
+
+
 class RouterSpendTests(unittest.TestCase):
     """The AI hounds' paid spend lives in the router's meter beside the app database, not in evidence/."""
 
@@ -1317,7 +1377,8 @@ class Routes(unittest.TestCase):
         self.assertTrue(body["enabled"])
         self.assertEqual(body["last_check_utc"], iso(NOW))
         self.assertEqual(set(body["checks"]), {"deploy_stuck", "tests_stuck", "capture_run", "slate_stuck", "ci_tests",
-                                               "prod_behind", "capture", "health", "ai_spend", "github_reach"})
+                                               "prod_behind", "capture", "health", "ai_spend", "grading",
+                                               "github_reach"})
         self.assertEqual(body["checks"]["deploy_stuck"]["state"], "alert")
         self.assertEqual(body["open_incidents"][0]["kind"], "deploy_stuck")
         self.assertIn("click Cancel workflow", body["open_incidents"][0]["fix"])

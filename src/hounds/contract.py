@@ -261,6 +261,12 @@ class BetRow:
     # An in-play ticket (a hound that opted in to bets in play): the capture time of the live price it took. None on every
     # ordinary ticket. The lists label it "Live bet · price at HH:MM".
     live_price_at_utc: Optional[str] = None
+    # The live-state keys (added 2026-10-22, additive, src/hounds/live_settle.py): ``event_id`` is the id the page asks
+    # GET /hounds/live about (upcoming / live score / final), ``sport`` the family code, ``graded_utc`` when the grade was
+    # written (the "Last graded" stamp). None when the source row carried none; the page then says less.
+    event_id: Optional[str] = None
+    sport: Optional[str] = None
+    graded_utc: Optional[str] = None
 
 
 @dataclass

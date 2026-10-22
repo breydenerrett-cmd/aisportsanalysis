@@ -53,6 +53,7 @@ import { mountBacktest, money } from "./dog-backtest.js";
 import { bootAsk } from "./dog-ask.js";
 import { mountManual } from "./dog-manual.js";
 import { ticketList } from "./hounds-tickets.js";
+import { gradingBadge } from "./ticket-live.js";
 import { bankrollNow, bankrollOf, returnPctOf, fmtUsd, fmtPct, isSmallSample, smallSampleTitle, onlyTickets, ticketState } from "./hounds-board.js";
 import { getSizing, startText, unitSentence, sizingTag } from "./unitsize.js";
 import { unitChip } from "./unitchip.js";
@@ -684,6 +685,8 @@ async function buildRecord(host, dog, kit) {
   host.appendChild(h("p", { class: "hd-fine", text: `${state.data.season && state.data.season.label ? state.data.season.label : "This season"}, a paper account that started with ${startText()} (${unitSentence()}), bets settled at the average price.` }));
   const tickets = h("div", { "data-hook": "studio-tickets" });
   host.appendChild(h("h3", { class: "hd-h3", text: "Last tickets" }));
+  // "Last graded 02:14" and a "Grading" pill while games wait on a final; a new grade reloads the kennel's numbers at once
+  host.appendChild(gradingBadge({ onGraded: () => { state.loaded.record = null; load({ quiet: true }); } }));
   host.appendChild(tickets);
   try {
     const out = await apiGet(`/hounds/${encodeURIComponent(dog.id)}/bets?page=1&page_size=5&segment=forward`);

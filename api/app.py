@@ -44,6 +44,7 @@ from api.hounds_breeding import router as hounds_breeding_router
 from api.hounds_share import router as hounds_share_router
 from api.hounds_tips import router as hounds_tips_router
 from api.hounds_kennels import router as hounds_kennels_router
+from api.hounds_live import router as hounds_live_router
 from api.feeds import router as feeds_router
 from api.support import router as support_router
 from api.betcheck import free_router as free_betcheck_router, router as betcheck_router
@@ -113,6 +114,9 @@ app.include_router(hounds_tips_router)
 # fire now / ask / feedback / locker room / drill / camp (api/hounds_interact.py): /hounds/looks, /hounds/camp/mine
 # and POST /hounds/drill are literal paths next to /hounds/{id}, so this is mounted before api.hounds too.
 app.include_router(hounds_interact_router)
+# where a ticket's game stands right now, and the "Grading" indicator (api/hounds_live.py): /hounds/live is a literal path
+# under /hounds/{id}, so it is mounted before api.hounds too (tests/test_live_settle_api.py pins the order).
+app.include_router(hounds_live_router)
 # the Zapier feeds and the coach brief (api/feeds.py). /hounds/coach-brief is a literal path under
 # /hounds/{id}, so this is mounted after the two routers above and BEFORE api.hounds (tests pin the order).
 app.include_router(feeds_router)
@@ -358,6 +362,24 @@ def _start_ai_hounds() -> None:
         return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
 
     ai_runner.start_loop(ready=_warm_up_done)
+
+
+# -- live settlement (src/hounds/live_settle.py) -----------------------------------------------------------------
+#
+# Every five minutes, in ONE daemon thread (the same single-writer pattern as the loops above), the app asks the free ESPN
+# and MLB feeds about ONLY the games behind open tickets and hands the finals to the existing settle functions, so a ticket
+# grades within minutes of its game going final instead of waiting for the capture slot, a commit and an image rebuild
+# (2026-10-22: NBA tickets sat PENDING five hours after the games ended). ON by default in code; LIVE_SETTLE=off stops it;
+# it never starts under pytest. Waits for the first cache warm-up pass like the loops above.
+@app.on_event("startup")
+def _start_live_settle() -> None:
+    from src.hounds import live_settle
+
+    def _warm_up_done() -> bool:
+        status = warmup.status()
+        return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
+
+    live_settle.start_loop(ready=_warm_up_done)
 
 
 # -- transactional email (src/notify/email_jobs.py) ----------------------------------------------------------
