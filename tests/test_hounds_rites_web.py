@@ -123,8 +123,8 @@ class NothingLabelsThePreviewTakeThemOutBack(unittest.TestCase):
     def test_the_words_a_person_reads_are_unleash(self):
         fire = (WEB / "js" / "dog-fire.js").read_text(encoding="utf-8")
         self.assertIn('text: "Unleash"', fire)
-        self.assertIn('"Unleash again"', fire)
-        self.assertIn("Unleashing", fire)
+        self.assertIn("See what it would pick", fire)          # the visitor's read-only preview has its own name (2026-10-22)
+        self.assertIn("Unleashing", (WEB / "js" / "dog-camp.js").read_text(encoding="utf-8"))
         self.assertIn('text: "Unleash"', (WEB / "js" / "dog-camp.js").read_text(encoding="utf-8").replace('"data-hook": "camp-dog-fire", ', ""))
         self.assertIn(">Unleash<", (WEB / "hound.html").read_text(encoding="utf-8"))
         self.assertIn('role="tab" data-tab="fire" aria-selected="false">Unleash<', (WEB / "kennel.html").read_text(encoding="utf-8"))
@@ -495,10 +495,12 @@ class TheOwnersHoundMenuOnTheDogPage(unittest.TestCase):
             out = page(dog_routes(kit=kit_), queries=[q("section", hook("dog-rites-section"), "hidden"), q("menu", hook("dog-menu"), "count")])
             self.assertEqual((out["final"]["section"], out["final"]["menu"]), (True, 0))
 
-    def test_the_menus_unleash_runs_the_preview(self):
-        out = page(dog_routes(kit=owner_kit()), actions=[click(hook("menu-unleash"), "go", wait=300, capture=[q("headline", hook("fire-headline")), q("btn", hook("fire-btn"))])])
-        self.assertEqual([p["url"] for p in out["posts"]], [f"/hounds/{HID}/fire"])
-        self.assertEqual(out["captures"]["go"]["btn"], "Unleash again")
+    def test_the_menus_unleash_is_the_real_one_that_starts_the_hound_today(self):
+        # 2026-10-22: the owner's Unleash on the hound page is the studio's (POST /unleash), not the read-only preview (POST /fire)
+        out = page(dog_routes(kit=owner_kit()), actions=[click(hook("menu-unleash"), "go", wait=300, capture=[q("headline", hook("unleash-headline")), q("btn", hook("fire-btn"))])])
+        self.assertEqual([p["url"] for p in out["posts"]], [f"/hounds/{HID}/unleash"])
+        self.assertIn("unleashed", out["captures"]["go"]["headline"])
+        self.assertEqual(out["captures"]["go"]["btn"], "Unleash")
 
     def test_burying_from_the_dog_page_goes_back_to_its_page_for_the_headstone(self):
         routes = dog_routes(kit=owner_kit())

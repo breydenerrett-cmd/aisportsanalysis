@@ -30,6 +30,13 @@ import { stakeWords } from "./unitsize.js";
 
 const SLOW = 90000;
 
+/**
+ * What the read-only preview is called. "Unleash" is the real thing (the owner's button: it starts the hound betting today), so a
+ * visitor's run-the-rule-and-look button must not borrow the word (found on live 2026-10-22: the same word meant "nothing is
+ * recorded" on the hound page and "bets today" in the studio).
+ */
+export const PREVIEW_LABEL = "See what it would pick";
+
 /** The call behind the button, shared with the studio, the camp and the live board. */
 export const unleash = (id, eventId) => post(`/hounds/${encodeURIComponent(id)}/fire`, eventId ? { event_id: eventId } : {}, SLOW);
 
@@ -365,7 +372,7 @@ export function renderUnleashDay(box, data, { name, id } = {}) {
 
 /** The owner's Unleash panel: one button, the working state while the request runs, then the day. */
 function mountUnleashToday(section, body, { id, name, avatar, onDone }) {
-  body.appendChild(h("p", { class: "hd-muted" }, `Unleash starts ${name || "this hound"} betting today. It checks every game on today's board that has not locked, places the bets that fit its rule, and from then on it keeps going on its own. It also shows what it would have taken earlier today, kept apart from its record. Paper only.`));
+  body.appendChild(h("p", { class: "hd-muted" }, `Unleash starts ${name || "this hound"} betting today. It checks every game on today's board that is still open for its placing time, places the bets that fit its rule, and from then on it keeps going on its own. It also shows what it would have taken earlier today, kept apart from its record. Paper only.`));
   const result = h("div", { class: "dk-result", "data-hook": "fire-result", "aria-live": "polite" });
   const btn = h("button", { type: "button", class: "btn btn--primary", "data-hook": "fire-btn", text: "Unleash" });
   const status = statusLine("fire-status");
@@ -375,7 +382,7 @@ function mountUnleashToday(section, body, { id, name, avatar, onDone }) {
     clearNode(result).appendChild(unleashWorking(Object.assign({ name }, avatar || {})));
     try {
       const data = await unleashToday(id);
-      renderUnleashDay(result, data, { name: name || "This dog", id });
+      renderUnleashDay(result, data, { name: name || "This hound", id });
       if (onDone) onDone(data);
     } catch (err) {
       clearNode(result);
@@ -401,21 +408,21 @@ export function mountFire(section, { id, name, kit, onRecord, today = false, ava
   const canRecord = !!(kit && kit.can_record_manual);
   body.appendChild(h("p", { class: "hd-muted" }, `Run ${name || "this model"}'s current rule on the latest stored boards and see what it would pick. Nothing is recorded${canRecord ? " unless you choose to" : ""}.`));
   const result = h("div", { class: "dk-result", "data-hook": "fire-result", "aria-live": "polite" });
-  const btn = h("button", { type: "button", class: "btn btn--primary", "data-hook": "fire-btn", text: "Unleash" });
+  const btn = h("button", { type: "button", class: "btn btn--primary", "data-hook": "fire-btn", text: PREVIEW_LABEL });
   const status = statusLine("fire-status");
   btn.addEventListener("click", async () => {
     btn.setAttribute("disabled", "");
-    status.textContent = `Unleashing ${name || "this dog"}...`;
+    status.textContent = `Looking at the boards for ${name || "this hound"}...`;
     try {
       const data = await unleash(id);
       status.textContent = "";
-      renderFireResult(result, data, { id, name: name || "This dog", canRecord: canRecord && data.viewer_is_owner !== false, onRecord });
+      renderFireResult(result, data, { id, name: name || "This hound", canRecord: canRecord && data.viewer_is_owner !== false, onRecord });
     } catch (err) {
       clearNode(result);
       status.textContent = errorText(err, "The boards could not be read just now. Try again in a minute.");
     } finally {
       btn.removeAttribute("disabled");
-      btn.textContent = "Unleash again";
+      btn.textContent = `${PREVIEW_LABEL} again`;
     }
   });
   body.appendChild(h("div", { class: "dk-actions" }, [btn, status]));

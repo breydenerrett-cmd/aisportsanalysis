@@ -96,9 +96,9 @@ TENNIS_NOW = utc("2026-10-21T09:30:00Z")
 EALA, SHNAIDER = "Alexandra Eala", "Diana Shnaider"
 
 
-def tennis_bet(n=1, *, side="home", event="evt-eala", home=EALA, away=SHNAIDER, start=TENNIS_START):
+def tennis_bet(n=1, *, side="home", event="evt-eala", home=EALA, away=SHNAIDER, start=TENNIS_START, slate="2026-10-21"):
     return user_bet(n, event=event, sport="TENNIS", league="tennis_wta_ningbo_open", away=away, home=home, start=start,
-                    slate="2026-10-21", side=side, price=138 if side == "home" else -169)
+                    slate=slate, side=side, price=138 if side == "home" else -169)
 
 
 class TennisFeed:
@@ -163,6 +163,23 @@ class TennisFromTheFreeReader(LiveCase):
         feed.docs["wta"] = self.match()
         report = self.run_pass(TENNIS_NOW + timedelta(minutes=11), feed)
         self.assertEqual(report["graded"], 1)
+
+    def test_a_match_that_began_85_minutes_after_the_odds_feeds_start_waits_then_grades(self):
+        """Live 2026-10-22: "Alexandra Eala to win" (Shnaider at Eala) sat PENDING with "Grading 1 game" at 09:35 UTC. Not a stall: the
+        odds feed listed 07:20Z, the order of play ran the match at 08:45Z, and ESPN had it IN PROGRESS (5-5 in the first set). The free
+        reader matched it by name inside its 48 hour window, answered "not settled yet", and the loop asked again ten minutes on;
+        the moment ESPN says final the ticket grades. Pinned so nobody 'fixes' the wait by guessing a winner."""
+        self.write(tennis_bet(1, side="home", start="2026-10-22T07:20:00Z", slate="2026-10-22"))
+        feed = TennisFeed(wta=espn_doc(("m1", "2026-10-22T08:45Z", "STATUS_IN_PROGRESS", (EALA, SHNAIDER), None, ((5, 5),))))
+        now = utc("2026-10-22T09:35:00Z")
+        self.run_pass(now, feed)
+        self.assertEqual(self.graded(), [])
+        row = self.conn.execute("SELECT state, fails, next_try_utc FROM live_games").fetchone()
+        self.assertEqual(row["fails"], 0, "matched and waiting, not a failure")
+        self.assertIsNotNone(row["next_try_utc"], "asked again later")
+        feed.docs["wta"] = espn_doc(("m1", "2026-10-22T08:45Z", "STATUS_FINAL", (EALA, SHNAIDER), "a", ((7, 6), (3, 6), (6, 4))))
+        self.run_pass(now + timedelta(minutes=11), feed)
+        self.assertEqual([r["result"] for r in self.graded()], ["WIN"])
 
     def test_names_that_do_not_agree_are_never_graded(self):
         self.write(tennis_bet(1, home="Alexandra Eala", away="Diana Shnaider"))

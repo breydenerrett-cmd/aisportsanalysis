@@ -105,7 +105,7 @@ def build_request(month: str, *, book, scope_map: Mapping, tests: Optional[dict]
     lesson_rows.sort(key=lambda r: r.get("utc") or "")
     parts = [
         f"# Director review request: {month}\n",
-        "Paper only. LineHound Hounds are simulated one-unit bets by written rules; nothing here is betting "
+        "Paper only. LineHound Hounds are simulated paper bets by written rules; nothing here is betting "
         "advice, and no hound claims an edge.\n",
         "## Your role\n\n"
         "You are the director of a paper-betting research program. For the month above, review the WHOLE "

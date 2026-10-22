@@ -8,7 +8,7 @@
  */
 
 import { h, clearNode, fmtPrice, isNum, shortDate } from "./hounds-core.js";
-import { ticketState, ticketPrice, pickOf } from "./hounds-board.js";
+import { ticketState, ticketPrice, pickOf, startWord } from "./hounds-board.js";
 import { settledLine, openLine, streakLine, voiceOf } from "./hound-lines.js";
 import { signedMoney } from "./hound-money.js";
 
@@ -39,7 +39,7 @@ export function buildFeed({ voice = "generic", open = [], graded = [], streak = 
     const price = ticketPrice(t);
     const clock = clockOf(t.start_utc);
     items.push({ kind: "open", when: "On the card",
-      text: openLine(v, { selection: pickOf(t), priceText: price === null ? "" : fmtPrice(price), game: t.game || "", whenText: clock ? `First pitch or kickoff ${clock}.` : "" }, `${seed}|${t.selection}|${t.date}`) });
+      text: openLine(v, { selection: pickOf(t), priceText: price === null ? "" : fmtPrice(price), game: t.game || "", whenText: clock ? `${startWord(t.sport)} ${clock}.` : "" }, `${seed}|${t.selection}|${t.date}`) });
   }
   if (streak && isNum(streak.length) && streak.length >= 2 && (streak.kind === "W" || streak.kind === "L")) {
     items.push({ kind: "streak", when: "Form", text: streakLine(v, streak.kind, streak.length) });

@@ -10,15 +10,15 @@
  * The header's monogram is swapped for the dog's badge when its owner has dressed it (builder dogs only); every
  * other model keeps its initials badge.
  *
- * THE OWNER'S HOUND MENU (dog-rites.js): for the owner of a live member dog, a "Your hound" panel with Unleash (runs the preview
- * panel below it), Send to training and Take them out back. A dog that has been sent to training wears "Trained xN" in its
+ * THE OWNER'S HOUND MENU (dog-rites.js): for the owner of a live member dog, a "Your hound" panel with Unleash (the real one, the studio's: it starts the hound betting today;
+ * the panel below it), Send to training and Take them out back. A dog that has been sent to training wears "Trained xN" in its
  * header; a dog its owner buried shows its headstone (GET /hounds/{id}/headstone) instead of any of the above.
  */
 
 import { get } from "./dog-common.js";
 import { dogBadge, DEFAULT_LOOK, lookFor } from "./dog-avatar.js";
 import { poseOfHound } from "./dog-avatar.js";
-import { mountFire } from "./dog-fire.js";
+import { mountFire, PREVIEW_LABEL } from "./dog-fire.js";
 import { mountBacktest } from "./dog-backtest.js";
 import { bootAsk } from "./dog-ask.js";
 import { mountFans } from "./dog-feedback.js";
@@ -66,7 +66,7 @@ async function mountHeadstone(section, id) {
   return true;
 }
 
-export async function bootDogKit(hound) {
+export async function bootDogKit(hound, { onUnleashed = null } = {}) {
   const id = hound && hound.id;
   if (!id) return null;
   const sections = {
@@ -98,7 +98,14 @@ export async function bootDogKit(hound) {
     }));
   }
   if (kit.can_fire) {
-    mountFire(sections.fire, { id, name, kit, onRecord: () => { if (manual) manual.refresh(); } });
+    // THE OWNER'S UNLEASH IS THE STUDIO'S (dog-fire.js `today`, POST /hounds/{id}/unleash): it starts the hound betting today and
+    // shows the day and the before-list. A visitor gets the read-only preview under its own name ("See what it would pick").
+    const owner = !!kit.is_owner;
+    const heading = sections.fire.querySelector("h2");
+    if (heading) heading.textContent = owner ? "Unleash" : PREVIEW_LABEL;
+    mountFire(sections.fire, { id, name, kit, onRecord: () => { if (manual) manual.refresh(); }, today: owner,
+      avatar: owner ? { look: kit.look || lookFor(kit.root_id || id), id, vibe } : null,
+      onDone: (out) => { if (onUnleashed && out && out.placed_now) onUnleashed(out); } });
     // the owner's hound menu: Unleash runs the preview panel just below it; the two rites are dog-rites.js
     if (sections.rites) {
       mountRites(sections.rites, { id, name, kit, unleash: () => {

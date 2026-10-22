@@ -107,7 +107,7 @@ def _view(row: dict, now: datetime) -> dict:
         "selection": row["selection"], "player": row.get("player"), "line": row.get("line"),
         "price_average": row["price"], "price_best": row["best_price"], "book": row.get("best_book"),
         "n_books": row["n_books"], "stake_units": units,
-        "start_utc": row["commence_time"], "lock_utc": row["lock_utc"], "reason": row.get("reason"),
+        "start_utc": row["commence_time"], "lock_utc": row["lock_utc"], "reason": user_spec.plain_sport_keys(row.get("reason")) or row.get("reason"),
         "started": bool(commence and now >= commence),
         "live": bool(row.get("live")), "live_price_at_utc": row.get("live_price_observed_utc") if row.get("live") else None,
         "placed_utc": row.get("recorded_utc"),

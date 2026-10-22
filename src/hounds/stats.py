@@ -50,6 +50,7 @@ from src.hounds.contract import (
     TICKET_UNGRADED, VerdictBlock, WARMING_RETRY_SECONDS, graveyard_payload, leaderboard_payload,
     paginate, series_payload, stream_payload, ticket_status)
 from src.hounds.ledgers import Bet, Sources
+from src.hounds.user_spec import plain_sport_keys
 from src.report import clv
 
 PROVENANCE_PRE = clv.PROVENANCE_PRE_COMMITMENT
@@ -270,7 +271,7 @@ def bet_row(bet: Bet, teams: Optional[tuple]) -> BetRow:
         line=bet.line, price=bet.price, price_average=avg, book=bet.book,
         consensus_fair=_round(bet.consensus_fair), result=bet.result, beyond_cap=beyond_cap(bet),
         units=_round(recorded_units(bet)) if bet.graded else None,
-        clv_pts=bet.clv_pts, who_decided=bet.who_decided, reason=bet.reason,
+        clv_pts=bet.clv_pts, who_decided=bet.who_decided, reason=plain_sport_keys(bet.reason),
         segment=bet.segment, verified=bet.verified, start_utc=bet.start_utc, recorded_utc=bet.recorded_utc,
         book_count=bet.book_count, live_price_at_utc=bet.live_price_at_utc, event_id=bet.event_id, sport=bet.sport,
         graded_utc=bet.graded_utc if bet.graded else None)
@@ -572,7 +573,7 @@ def _stream(defs_by_id: dict, all_bets: dict, teams_of: dict, refusals: list) ->
             hound_id=r.hound_id, date=r.date,
             game=" at ".join(teams) if teams and all(teams) else "",
             market=r.market_key, selection="(no bet)", line=r.line,
-            who_decided="code", reason=r.reason, segment="forward",
+            who_decided="code", reason=plain_sport_keys(r.reason), segment="forward",
             hound_name=d["name"], verdict=r.verdict, refused=True,
             decided_utc=r.decided_utc))
     items.sort(key=lambda i: (i.decided_utc or "", i.hound_id), reverse=True)

@@ -113,12 +113,13 @@ MAX_PAGE_SIZE = 100
 SPARK_POINTS = 30
 
 BASIS = (
-    "Every hound makes simulated one-unit bets by a written rule, recorded "
-    "before the game and graded afterwards. Units are the scoreboard. The "
-    "badge asks something else: did the price the dog grabbed beat where the "
-    "market closed? A dog stays a ROOKIE until it has 150 bets we can check "
-    "against the close. Replay bets (old boards, rule written later) are "
-    "shown apart and never count toward a badge. Paper only, not advice."
+    "Every hound makes simulated bets by a written rule, recorded "
+    "before the game and graded afterwards. Units are the scoreboard, and "
+    "each hound sets its own stake. The badge asks something else: did the "
+    "price the hound grabbed beat where the market closed? A hound stays a "
+    "ROOKIE until it has 150 bets we can check against the close. Replay "
+    "bets (old boards, rule written later) are shown apart and never count "
+    "toward a badge. Paper only, not advice."
 )
 
 

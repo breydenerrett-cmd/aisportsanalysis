@@ -889,7 +889,7 @@ export async function boot() {
   renderActions(hound);
   startRulebook(hound);           // loads on its own: the dials and the coach never hold the page up
   // fire now, ask, manual picks, ratings and (owner) the locker room: its own request, hidden until real
-  bootDogKit(hound).then(settleOwnerView).catch(() => null);
+  bootDogKit(hound, { onUnleashed: () => refreshAfterGrade() }).then(settleOwnerView).catch(() => null);
   // the headline: what this hound would play right now (hidden for a hound with no rule to run)
   mountRightNow(q("right-now"), { id: state.id, onData: (data) => { state.voice = voiceOf(data && data.voice); paintMood(state.hound); paintFeed(); },
     onRecorded: () => { try { document.dispatchEvent(new CustomEvent("hound:manual-recorded")); } catch (err) { /* no CustomEvent */ } } }).catch(() => null);

@@ -393,6 +393,19 @@ export function sportLabel(sport) {
   return SPORT_LABELS[key] || key.toUpperCase();
 }
 
+// What a game's start is called, per sport: the feed said "First pitch or kickoff 12:20 AM" for a tennis match (live QA 2026-10-22).
+const START_WORDS = {
+  tennis: "Match starts", mma: "Fight starts", ufc: "Fight starts", mlb: "First pitch", baseball: "First pitch",
+  nfl: "Kickoff", ncaaf: "Kickoff", gridiron: "Kickoff", soccer: "Kickoff", rugby: "Kickoff",
+  nba: "Tip-off", wnba: "Tip-off", ncaab: "Tip-off", basketball: "Tip-off",
+  nhl: "Puck drop", hockey: "Puck drop",
+};
+
+/** The word for when this sport's game starts ("First pitch", "Tip-off", "Match starts"). A sport it does not know is "Starts". */
+export function startWord(sport) {
+  return START_WORDS[String(sport || "").toLowerCase()] || "Starts";
+}
+
 export function sportsOf(hound) {
   return Array.isArray(hound && hound.sports) ? hound.sports.map((x) => String(x).toLowerCase()) : [];
 }
