@@ -49,13 +49,21 @@ WAIT_FOR_WARMUP_SECONDS = 300.0
 STATUS: dict = {"enabled": False, "last_tick_utc": None, "last_counts": {}}
 
 
+_PAID_CHECK: Callable = lambda user: False       # noqa: E731 -- until the API layer registers the real one
+
+
+def set_paid_check(fn: Callable) -> None:
+    """The API layer registers the one question the dog tools ask (api/auth.py is_free_member, owner decision
+    2026-10-21) at startup: src/ never imports api/ (tests/test_api_boundary.py). Until then nobody is paid, so SMS
+    stays off on a machine without the API (the no-FastAPI harness, a script)."""
+    global _PAID_CHECK
+    _PAID_CHECK = fn
+
+
 def default_paid_check(user) -> bool:
-    """True for a PAID member (comp, subscriber, open tester window, invited beta): NOT a free account. Asks the one
-    function the dog tools ask (api/auth.py is_free_member, owner decision 2026-10-21). Where the API layer cannot be
-    imported (the no-FastAPI harness) nobody is paid, so SMS stays off."""
+    """True for a PAID member (comp, subscriber, open tester window, invited beta): NOT a free account."""
     try:
-        from api import auth as auth_mod
-        return not auth_mod.is_free_member(user)
+        return bool(_PAID_CHECK(user))
     except Exception:  # noqa: BLE001
         return False
 

@@ -194,7 +194,8 @@ export function alertsPanel() {
 
   function render() {
     clear(body);
-    if (!state) return;
+    // Anything that is not the server's alerts payload (a failed load, an unexpected answer) shows nothing rather than a half page.
+    if (!state || !Array.isArray(state.channels)) return;
     for (const c of state.channels) body.appendChild(channelRow(c));
     const events = el("select", { "aria-label": "Which alerts", "data-hook": "alerts-events" });
     for (const [v, t] of [["both", "Bets placed and settled"], ["placed", "Only when a hound bets"], ["settled", "Only when a bet settles"]]) {

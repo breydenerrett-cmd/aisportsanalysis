@@ -392,6 +392,8 @@ def _start_alert_dispatch() -> None:
         status = warmup.status()
         return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
 
+    from api import auth as auth_mod
+    alert_dispatch.set_paid_check(lambda user: not auth_mod.is_free_member(user))
     alert_dispatch.start_loop(ready=_warm_up_done)
 
 

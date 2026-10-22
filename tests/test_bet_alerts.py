@@ -503,6 +503,13 @@ class Sms(Base):
         self.assertEqual(dispatch.send_test(user, "sms", http=self.http, env={**ENV, **TWILIO},
                                             paid_check=FREE)["status"], "paid_only")
 
+    def test_nobody_is_paid_until_the_api_layer_registers_the_check(self):
+        user, _ = self.member()
+        self.assertFalse(dispatch.default_paid_check(user))
+        dispatch.set_paid_check(lambda u: True)
+        self.addCleanup(dispatch.set_paid_check, lambda u: False)
+        self.assertTrue(dispatch.default_paid_check(user))
+
     def test_stop_switches_the_number_off_until_the_member_opts_in_again(self):
         user, hound = self.opted_in()
         self.assertEqual(alerts.sms_stop("+1 555 234 5678"), 1)
