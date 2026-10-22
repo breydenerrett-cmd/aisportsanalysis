@@ -7,7 +7,7 @@
  *   1 SCAN     "Scanning 47 settled tickets": the server's diagnosis table (POST /hounds/{id}/train/diagnose), one line per cut that
  *              was really checked (price band, side, sport, day, slate time, rest, line movement, books, rules, streaks...), each
  *              resolving with its own record and units. A tile per cut lights in a small heatmap; the weak spots go red.
- *   2 ASK      "Asking the coach (Claude Haiku)": the real request (POST /hounds/{id}/train/assess). The line waits for the answer.
+ *   2 ASK      "Asking the coach...": the real request (it names Claude Haiku or the rules engine only once the answer says which) (POST /hounds/{id}/train/assess). The line waits for the answer.
  *   3 READ     the ranked reasons, each citing the lines above, labelled "AI read" or "Coach's read (rules engine)".
  *   4 HAND OFF the caller runs the evolution (dog-evolve.js) and the real training.
  *
@@ -116,16 +116,17 @@ function readBlock(coach, diagnosis, reasons) {
     h("p", { class: "dx-read__label", "data-hook": "diagnose-label", text: head })]);
   if (coach && coach.summary) block.appendChild(h("p", { class: "dx-read__summary", "data-hook": "diagnose-summary", text: coach.summary }));
   if (!reasons.length) block.appendChild(h("p", { class: "dx-read__none", "data-hook": "diagnose-no-reason", text: "No single cut stood out enough to blame." }));
-  block.appendChild(h("ol", { class: "dx-reasons", "data-hook": "diagnose-reasons" }, reasons.map((r, i) => reasonItem(r, i))));
+  block.appendChild(h("ol", { class: "dx-reasons", "data-hook": "diagnose-reasons" }, reasons.map((r, i) => reasonItem(r, i, ai))));
   const cuts = diagnosis && diagnosis.meta && isNum(diagnosis.meta.cuts_examined) ? diagnosis.meta.cuts_examined : null;
   block.appendChild(h("p", { class: "dx-read__note", "data-hook": "diagnose-note", text: `Facts about the past, not a forecast.${cuts ? ` ${cuts} cuts were examined, so one of them can look bad by chance.` : ""}` }));
   return block;
 }
 
-function reasonItem(r, i) {
+// a rules-engine reason IS the table's own line, so listing the cited line under it would say it twice; an AI reason cites the lines it rests on
+function reasonItem(r, i, ai) {
   return h("li", { class: "dx-reason", "data-hook": "diagnose-reason", "data-rank": String(i + 1), "data-thin": r.thin ? "1" : "0", style: `--i:${i}` }, [
     h("p", { class: "dx-reason__text" }, [h("b", { class: "dx-reason__n", text: `${i + 1}` }), " ", h("span", { text: clean(r.text) })]),
-    h("ul", { class: "dx-cites" }, (r.cited || []).map((c) => h("li", { class: "dx-cite", "data-tone": c.tone || "none", "data-hook": "diagnose-cite", text: clean(c.line) }))),
+    ai ? h("ul", { class: "dx-cites" }, (r.cited || []).map((c) => h("li", { class: "dx-cite", "data-tone": c.tone || "none", "data-hook": "diagnose-cite", text: clean(c.line) }))) : null,
     h("p", { class: "dx-reason__conf", text: r.thin ? "Too few bets to say" : `Confidence: ${clean(r.confidence)}` })]);
 }
 
@@ -293,7 +294,7 @@ export function runDiagnosis({ body, dog, steps, reduced = false, layer = null, 
       // the ask: the real request; the line holds until the coach has answered
       setPhase(reduced ? "static" : "ask");
       const asked = Date.now();
-      const askLine = reduced ? null : addLine("frame", "Asking the coach (Claude Haiku)...", { state: "pending", mark: "…" });
+      const askLine = reduced ? null : addLine("frame", "Asking the coach...", { state: "pending", mark: "…" });
       let coach = null;
       let askError = null;
       try { const second = await steps.assess(); coach = second && second.coach ? second.coach : null; } catch (err) { askError = err; }
@@ -304,7 +305,7 @@ export function runDiagnosis({ body, dog, steps, reduced = false, layer = null, 
         : coach.why === "too_few" ? "Too few settled bets for an AI read. Reading the table with the rules engine."
           : coach.why === "dropped" ? "None of the AI's reasons held up against the table. Reading it with the rules engine."
             : resting ? "The AI coach is resting. Reading the table with the rules engine."
-              : `Coach answered: ${coach.reasons.length} ${coach.reasons.length === 1 ? "reason" : "reasons"} ranked.`;
+              : `Claude Haiku answered: ${coach.reasons.length} ${coach.reasons.length === 1 ? "reason" : "reasons"} ranked.`;
       if (askLine) resolveLine(askLine, answered, "none", resting ? "·" : "✓");
       else addLine("frame", answered, { mark: resting ? "·" : "✓" });
 

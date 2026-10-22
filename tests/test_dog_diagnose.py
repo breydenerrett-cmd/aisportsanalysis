@@ -144,7 +144,7 @@ console.log(JSON.stringify({ ok: out.ok, calls, nRows: rowLines.length, ids: row
         self.assertEqual(got["count"], f"{len(rows)}/{len(rows)} checks")
         self.assertEqual(got["phase"], "done")
         # the framing lines: asking, the answer, and the cause(s)
-        self.assertEqual(got["frames"][0], f"Coach answered: {len(FIX['ai']['reasons'])} reasons ranked.")
+        self.assertEqual(got["frames"][0], f"Claude Haiku answered: {len(FIX['ai']['reasons'])} reasons ranked.")
         self.assertTrue(got["frames"][1].startswith("Most likely cause: "))
         self.assertEqual(len(got["frames"]), 2 + (len(FIX["ai"]["reasons"]) - 1))
 
@@ -158,9 +158,28 @@ const waiting = byHook(body, "diagnose-line").filter((n) => n.attrs["data-kind"]
 const phaseWaiting = byHook(body, "diagnose")[0].attrs["data-phase"];
 release(); const out = await run;
 console.log(JSON.stringify({ waiting, phaseWaiting, ok: out.ok }));''')
-        self.assertEqual(got["waiting"], [["Asking the coach (Claude Haiku)...", "pending"]])
+        self.assertEqual(got["waiting"], [["Asking the coach...", "pending"]])
         self.assertEqual(got["phaseWaiting"], "ask")
         self.assertTrue(got["ok"])
+
+    def test_the_ask_line_never_names_haiku_before_the_answer_and_the_answer_names_who_read(self):
+        # owner honesty rule: never claim AI ran when it did not
+        for key, must, must_not in (("ai", "Claude Haiku answered", "rules engine"), ("rules", "rules engine", "Claude Haiku")):
+            with self.subTest(key=key):
+                coach = json.dumps({**FIX[key], "why": None if key == "ai" else "resting"})
+                got = run_dx(f'''
+let release; const gate = new Promise((r) => {{ release = r; }});
+const slow = {{ diagnose: steps.diagnose, assess: async () => {{ await gate; return {{ coach: {coach} }}; }} }};
+const run = Dx.runDiagnosis({{ body, dog: {{ id: "u-1", name: "Gus", look: LOOK }}, steps: slow, layer, speed: 0 }});
+await sleep(30);
+const frames = () => byHook(body, "diagnose-line").filter((n) => n.attrs["data-kind"] === "frame").map(lineText);
+const before = frames();
+release(); await run;
+console.log(JSON.stringify({{ before, after: frames()[0] }}));''')
+                self.assertEqual(got["before"], ["Asking the coach..."])
+                self.assertNotIn("Haiku", got["before"][0])
+                self.assertIn(must, got["after"])
+                self.assertNotIn(must_not, got["after"])
 
     def test_the_read_is_labelled_ai_only_when_the_model_answered(self):
         ai = run_dx('''
@@ -176,7 +195,9 @@ console.log(JSON.stringify({ label: byHook(body, "diagnose-label").map((n) => n.
         rules = run_dx('''
 await Dx.runDiagnosis({ body, dog: { id: "u-1", name: "Gus", look: LOOK }, steps, layer, speed: 0 });
 console.log(JSON.stringify({ label: byHook(body, "diagnose-label").map((n) => n.textContent), source: byHook(body, "diagnose-read").map((n) => n.attrs["data-source"]),
-  frames: byHook(body, "diagnose-line").filter((n) => n.attrs["data-kind"] === "frame").map(lineText) }));''', coach="rules")
+  frames: byHook(body, "diagnose-line").filter((n) => n.attrs["data-kind"] === "frame").map(lineText),
+  cites: byHook(body, "diagnose-cite").length }));''', coach="rules")
+        self.assertEqual(rules["cites"], 0, "a rules reason is the table's own line, so it is not printed twice")
         self.assertEqual(rules["label"], ["Coach's read (rules engine)"])
         self.assertEqual(rules["source"], ["rules"])
         self.assertEqual(rules["frames"][0], "The AI coach is resting. Reading the table with the rules engine.")

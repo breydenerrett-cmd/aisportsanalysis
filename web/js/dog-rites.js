@@ -204,7 +204,7 @@ export function coachBlock(coach) {
     coach.reasons.length
       ? h("ol", { class: "rt-coach__reasons", "data-hook": "training-reasons" }, coach.reasons.map((x, i) => h("li", { class: "rt-coach__reason", "data-hook": "training-reason", "data-rank": String(i + 1) }, [
         h("p", { class: "rt-coach__text", text: String(x.text || "") }),
-        h("ul", { class: "rt-coach__cites" }, (x.cited || []).map((c) => h("li", { class: "hd-fine", "data-hook": "training-cite", text: String(c.line || "") }))),
+        ai ? h("ul", { class: "rt-coach__cites" }, (x.cited || []).map((c) => h("li", { class: "hd-fine", "data-hook": "training-cite", text: String(c.line || "") }))) : null,   // a rules reason is the table's own line: not said twice
         x.thin ? h("p", { class: "hd-fine", text: "Too few bets to say." }) : null])))
       : h("p", { class: "hd-muted", "data-hook": "training-no-reason", text: "No single cut stood out enough to blame." }),
     h("p", { class: "hd-fine", text: "These are facts about the past, not a forecast. The new version starts with a new record." })]);
