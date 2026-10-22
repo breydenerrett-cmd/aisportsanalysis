@@ -2,10 +2,10 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2027.jsonl": {
-   "bytes": 147273,
-   "newest": "2026-10-22T06:33:23Z",
-   "records": 246,
-   "sha256": "8c9c158646069a4d4880279be505b0b3ee0a5bf3c4223ff16353d3924d9b1951"
+   "bytes": 154644,
+   "newest": "2026-10-22T09:33:40Z",
+   "records": 258,
+   "sha256": "9f9dbddc393b5cd5804a495785a319c8994df40fa80b9cf8150f299fcb38609d"
   },
   "injuries.jsonl": {
    "bytes": 58293,
@@ -44,8 +44,8 @@
    "sha256": "1928b4b55c69e86bf9792f0aed91f29809a2b352a10785add1ef223599ec7cf6"
   }
  },
- "generated_utc": "2026-10-22T06:33:30Z",
+ "generated_utc": "2026-10-22T09:33:48Z",
  "league": "nhl",
- "refreshed_utc": "2026-10-22T06:33:30Z",
+ "refreshed_utc": "2026-10-22T09:33:48Z",
  "title": "NHL"
 }
