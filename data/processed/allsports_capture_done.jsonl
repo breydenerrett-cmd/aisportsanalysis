@@ -1597,3 +1597,6 @@
 {"commence_utc": "2026-10-22T14:30:00Z", "event_id": "8afa92b39d83c062090730e884a9d726", "kind": "phase", "observed_utc": "2026-10-22T14:09:37.807082Z", "phase": "t30m", "rows": 10, "sport_key": "soccer_uefa_europa_conference_league"}
 {"call_kind": "pregame", "credits": 2, "events": 18, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-22T14:09:37.807082Z", "regions": ["us"], "rows": 176, "sport_key": "soccer_uefa_europa_conference_league", "stored": 176}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T14:09:37.807082Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 2}
+{"events": 0, "kind": "peek", "next_check_utc": "2026-10-22T20:22:33.006392Z", "observed_utc": "2026-10-22T14:22:33.006392Z", "sport_key": "cricket_test_match"}
+{"commence_utc": "2026-10-22T14:45:00Z", "event_id": "027232b18e95f59b4f093b979833f5d7", "kind": "phase", "observed_utc": "2026-10-22T14:22:33.006392Z", "phase": "t30m", "rows": 20, "sport_key": "soccer_saudi_arabia_pro_league"}
+{"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-22T14:22:33.006392Z", "regions": ["eu"], "rows": 176, "sport_key": "soccer_saudi_arabia_pro_league", "stored": 108}
