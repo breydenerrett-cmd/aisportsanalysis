@@ -1302,3 +1302,4 @@
 {"commence_utc": "2026-10-23T02:10:00Z", "event_id": "2d1a2e330020589eb147fe4736ccfd1e", "kind": "phase", "observed_utc": "2026-10-22T02:14:37.054214Z", "phase": "t24h", "rows": 30, "sport_key": "icehockey_nhl"}
 {"commence_utc": "2026-10-23T02:10:00Z", "event_id": "ec5f71ec810aef5fc417a879c49750f1", "kind": "phase", "observed_utc": "2026-10-22T02:14:37.054214Z", "phase": "t24h", "rows": 32, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 14, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-22T02:14:37.054214Z", "regions": ["us"], "rows": 371, "sport_key": "icehockey_nhl", "stored": 371}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T02:27:29.159961Z", "regions": ["us"], "rows": 6, "sport_key": "soccer_conmebol_copa_libertadores", "stored": 6}
