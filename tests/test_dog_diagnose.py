@@ -14,7 +14,6 @@ out", and every line on screen must be a real check with its real result. What m
 
 from __future__ import annotations
 
-import http.server
 import json
 import re
 import tempfile
@@ -478,7 +477,7 @@ class TheDiagnosisFitsAPhoneAtEveryBeat(unittest.TestCase):
         import subprocess
         from tests import test_dog_evolve as evolve
         routes = page_routes()
-        cls.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), evolve.make_handler(routes))
+        cls.server = evolve.FixtureServer(("127.0.0.1", 0), evolve.make_handler(routes))      # a deep backlog: see FixtureServer
         threading.Thread(target=cls.server.serve_forever, daemon=True).start()
         cls.base = f"http://127.0.0.1:{cls.server.server_address[1]}"
         cls.play = staticmethod(lambda mode: json.loads([ln for ln in subprocess.run(
