@@ -113,6 +113,8 @@ def dog_entry(row: dict, view, look: Optional[dict], trained: int = 0) -> dict:
         "id": row["id"], "name": row["name"], "tagline": row.get("tagline") or "", "status": row["status"],
         "version_no": row["version_no"], "root_id": row.get("root_id") or row["id"], "look": look, "trained_times": trained,
         "coached_from": row.get("coached_from"),
+        # how this version came to be when it was not an edit or a coach's training: "owner retune (from chat)" (user_store.ORIGIN_LABELS)
+        "origin": row.get("origin"), "origin_label": user_store.ORIGIN_LABELS.get(row.get("origin")),
         "sports": [str(s).lower() for s in (row["spec"].get("sports") or [])],
         "record": {"bets": int(rec.get("bets") or 0), "wins": wins, "losses": losses, "pushes": pushes,
                    "units_average_price": rec.get("units_average_price")},

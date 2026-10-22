@@ -82,6 +82,7 @@ def context(**over) -> ask.AskContext:
 
 # every phrasing a person might plausibly type, and the intent it must land on
 PHRASINGS = [
+    ("What rules would you change to find more relevant bets today? I don't like that you won't take a single bet on anything today", "retune"),
     ("Why didn't you bet the Yankees?", "why_not"),
     ("why did you skip the Rays", "why_not"),
     ("why did you pass on Cleveland", "why_not"),

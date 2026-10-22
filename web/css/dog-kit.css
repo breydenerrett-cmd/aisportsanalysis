@@ -217,6 +217,19 @@
 .rt-change p { margin: 2px 0; overflow-wrap: anywhere; }
 .rt-change__from { color: var(--hd-mute); text-decoration: line-through; text-decoration-thickness: 1px; }
 .rt-change__to { color: #fff; font-weight: 600; }
+
+/* the review of a proposal (web/js/dog-review.js): a tick on each change, the owner's own line quoted, Apply / Veto / Tweak */
+.rt-review { display: grid; gap: 10px; }
+.rt-review .hd-h3 { margin: 6px 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--hd-mute); font-weight: 600; }
+.rt-change--pick .rt-change__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; margin: 0; cursor: pointer; }
+.rt-change--pick input[type="checkbox"] { width: 20px; height: 20px; flex: 0 0 auto; align-self: center; accent-color: var(--hd-accent); }
+.rt-change__cite { font-style: italic; }
+.rt-tweak { display: grid; gap: 8px; }
+.rt-tweak[hidden] { display: none; }
+.rt-tweak label { display: grid; gap: 6px; }
+.rt-tweak__input { width: 100%; box-sizing: border-box; min-height: 72px; padding: 8px 10px; border: 1px solid var(--hd-line); border-radius: 4px; background: var(--hd-card-2); color: inherit; font: inherit; }
+.rt-review [data-hook="review-error"][hidden] { display: none; }
+.dk-retune { margin-top: 10px; display: grid; gap: 6px; justify-items: start; }
 .rt-guidance { margin: 0; font-size: 15px; line-height: 1.5; color: var(--hd-text-2); }
 .rt-records { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }
 .rt-records dt { color: var(--hd-mute); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }

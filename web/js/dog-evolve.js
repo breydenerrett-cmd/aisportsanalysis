@@ -62,6 +62,11 @@ export function changePhrase(change) {
     case "require_role": return `Takes ${to}`;
     case "more_books": return `Needs ${to} quoting`;
     case "fewer_bets": return `Max ${to} a day`;
+    case "widen_band": return `Price range widened to ${to}`;
+    case "lower_books": return `Needs ${to} quoting`;
+    case "add_sport": return `Sports widened to ${to}`;
+    case "add_market": return `Markets widened to ${to}`;
+    case "more_bets": return `Max ${to} a day`;
     default: return label ? `${label}: ${to}` : to;
   }
 }

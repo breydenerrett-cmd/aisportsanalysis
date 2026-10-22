@@ -309,6 +309,15 @@ class ServesTheNewFilesWhereTheyAreRead(unittest.TestCase):
         self.assertIn("if (reduced) { showCard(false); return; }", src)
 
 
+class FixtureServer(http.server.ThreadingHTTPServer):
+    """The fixture server the phone-width Chrome runs load from. A page opens a burst of parallel connections (each css and
+    js module), and socketserver's default listen backlog of 5 overflows on Windows when the machine is busy: Chrome then gets
+    ERR_CONNECTION_REFUSED for kennel.js, the kennel never draws, and the run reads as no phase at all. A deep backlog keeps the
+    measurement about the page, not about the test server."""
+    request_queue_size = 128
+    daemon_threads = True
+
+
 def make_handler(api):
     class Handler(http.server.SimpleHTTPRequestHandler):
         def __init__(self, *a, **kw):
@@ -355,7 +364,7 @@ class TheEvolutionFitsAPhoneAtEveryBeat(unittest.TestCase):
         import subprocess
         from tests import test_kennel_page as kennel_tests
         routes = rites.kennel_routes([kennel_tests.dog("u-1", version_no=1)])
-        cls.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), make_handler(routes))
+        cls.server = FixtureServer(("127.0.0.1", 0), make_handler(routes))
         threading.Thread(target=cls.server.serve_forever, daemon=True).start()
         cls.base = f"http://127.0.0.1:{cls.server.server_address[1]}"
         cls.play = staticmethod(lambda mode, width="390": json.loads([ln for ln in subprocess.run(

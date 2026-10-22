@@ -111,7 +111,11 @@ class OnTheRealApp(Steps):
         a = client.post(base + "/assess", headers=mine)
         self.assertEqual(a.status_code, 200, a.text)
         self.assertEqual(a.json()["coach"]["label"], "AI read")
-        t = client.post(base, json={"confirm": True}, headers=mine)
+        one_tap = client.post(base, json={"confirm": True}, headers=mine)          # never applied without the review card
+        self.assertEqual((one_tap.status_code, one_tap.json()["detail"]["error"]), (409, "review_required"), one_tap.text)
+        card = client.post(base + "/propose", json={}, headers=mine)
+        self.assertEqual(card.status_code, 200, card.text)
+        t = client.post(base, json={"confirm": True, "picks": card.json()["picks"], "basis": card.json()["basis"]}, headers=mine)
         self.assertEqual(t.status_code, 200, t.text)
         self.assertEqual(t.json()["coach"]["label"], "AI read")
         self.assertEqual(len(self.adapter.calls), 1)

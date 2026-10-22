@@ -41,8 +41,14 @@ await send("Page.navigate", { url: base + "/web/kennel.html" });
 for (let i = 0; i < 120; i++) { if (await ev(`!!document.querySelector("[data-hook='dog-action-train']")`)) break; await sleep(300); }
 await sleep(400);
 await ev(`document.querySelector("[data-hook='dog-action-train']").click()`);
-await sleep(300);
+// wait for the confirm sheet rather than a fixed pause: a click before it is drawn throws inside the page, nothing starts,
+// and the run reads as no phase at all (seen as ["review", ""] on a busy machine)
+for (let i = 0; i < 100; i++) { if (await ev(`!!document.querySelector("[data-hook='training-go']")`)) break; await sleep(100); }
 await ev(`document.querySelector("[data-hook='training-go']").click()`);
+// every training is reviewed first: wait for the proposal, measure it at this width, then Apply (only Apply starts the evolution)
+for (let i = 0; i < 100; i++) { if (await ev(`!!document.querySelector("[data-hook='review-apply']")`)) break; await sleep(100); }
+const reviewFit = await ev(`(() => { const sheet = document.querySelector(".rt-sheet"); return { sw: document.documentElement.scrollWidth, iw: innerWidth, sheetSw: sheet ? sheet.scrollWidth : 0, sheetCw: sheet ? sheet.clientWidth : 0 }; })()`);
+await ev(`document.querySelector("[data-hook='review-apply']").click()`);
 const measure = () => ev(`(() => {
   const sheet = document.querySelector(".rt-sheet");
   const wide = [];
@@ -60,7 +66,7 @@ const measure = () => ev(`(() => {
   return { phase: (document.querySelector(".rt-layer") || {getAttribute(){return ""}}).getAttribute("data-phase"), flip: stage ? stage.getAttribute("data-flip") : "", overlap, sw: document.documentElement.scrollWidth, iw: innerWidth,
     sheetSw: sheet ? sheet.scrollWidth : 0, sheetCw: sheet ? sheet.clientWidth : 0, wide };
 })()`);
-const samples = [];
+const samples = [{ phase: "review", flip: "", overlap: false, wide: [], ...reviewFit }];
 const seenAt = {};
 const t0 = Date.now();
 let seenCard = false;
