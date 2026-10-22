@@ -1528,3 +1528,6 @@
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T11:07:37.719305Z", "regions": ["us"], "rows": 21, "sport_key": "tennis_wta_ningbo_open", "stored": 21}
 {"commence_utc": "2026-10-23T05:00:00Z", "event_id": "70d2acd96d31199e701797e524beb6f4", "kind": "phase", "observed_utc": "2026-10-22T11:19:18.554685Z", "phase": "t24h", "rows": 1, "sport_key": "tennis_wta_ningbo_open"}
 {"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T11:19:18.554685Z", "regions": ["us"], "rows": 22, "sport_key": "tennis_wta_ningbo_open", "stored": 22}
+{"events": 0, "kind": "peek", "next_check_utc": "2026-10-22T17:27:28.613011Z", "observed_utc": "2026-10-22T11:27:28.613011Z", "sport_key": "cricket_international_t20"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-10-22T17:27:28.613011Z", "observed_utc": "2026-10-22T11:27:28.613011Z", "sport_key": "soccer_mexico_ligamx"}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T11:27:28.613011Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 2}
