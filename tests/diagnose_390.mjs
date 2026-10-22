@@ -74,6 +74,8 @@ while (Date.now() - t0 < 70000) {
     const s = await send("Page.captureScreenshot", { format: "png" });
     fs.writeFileSync(path.join(outDir, m.phase + ".png"), Buffer.from(s.result.data, "base64"));
   }
+  // after the diagnosis the proposal is reviewed: measure it once at this width, then stop (nothing is applied here)
+  if (await ev(`!!document.querySelector("[data-hook='review-apply']")`)) { sawEnd = true; await sleep(300); samples.push(await measure()); samples[samples.length - 1].phase = "review"; break; }
   if (m.phase === "static" && !continued) { await sleep(500); continued = true; await ev(`document.querySelector("[data-hook='diagnose-continue']").click()`); continue; }
   if (m.phase === "card" || m.phase === "static") { if (m.phase === "static" && !(await ev(`!document.querySelector(".dx")`))) { if (sawEnd) break; sawEnd = true; await sleep(1500); continue; } if (m.phase === "card") { if (sawEnd) break; sawEnd = true; await sleep(1500); continue; } }
   await sleep(120);

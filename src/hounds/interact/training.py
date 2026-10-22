@@ -30,6 +30,15 @@ WHAT HAPPENS, IN ORDER
   5. ``user_store.create_version``: the old version is retired with its record frozen, a NEW version starts with an empty
      record, stamped ``coached_from`` the old one, and one ``trained`` event is written in the same transaction.
 
+PROPOSAL, REVIEW, APPLY (owner ruling 2026-10-22: "players should have a choice to veto the upgrade or tell it to tweak the
+changes and why"). Steps 3 to 4 no longer write anything on their own. ``review`` builds the proposal card (the changes, a reason
+for each, what today's board would have said), ``veto`` says no (nothing changes and it does not count against the limit), a
+``tweak`` maps the owner's words to the same closed menu through Claude Haiku or the rules engine (at most three rounds), and only
+``train`` with the owner's confirm and the ids they left ticked (``picks``) performs step 5. The menu also holds LOOSENING changes
+(``retune.py``) for the paths where the owner asked: a Retune from the Ask chat, a tweak, and the default for a hound that has not
+placed a settled bet, which is never narrowed (production 2026-10-22: a Gematria hound with no bets was sent from 3 bets a day to
+2). The new version of a retune is marked ``owner retune (from chat)`` in its lineage (``user_store`` ``origin``).
+
 WHAT IT NEVER SAYS. Nothing here claims the new version is better, will win, or fixes anything. A weak spot is a fact
 about the past ("its 6 away-side tickets went 1-5"); a change is "no longer takes them"; the card ends with "its new
 record starts now". The hindsight line is labelled hindsight: it counts what the change would have left out of the
@@ -56,6 +65,7 @@ from __future__ import annotations
 import copy
 import json
 import os
+import re
 import threading
 from datetime import datetime
 from typing import Callable, Mapping, Optional, Sequence
@@ -528,7 +538,7 @@ def _apply_entry(current: dict, entry: Mapping, pick: str) -> Optional[tuple]:
     change.update(why=entry.get("why") or _why(seg, cand["id"]), segment=_segment_view(seg) if seg else None,
                   hindsight={k: seg[k] for k in ("n", "wins", "losses", "pushes", "units")}
                   if seg and cand["id"] in ("drop_sport", "drop_market", "tighten_band", "drop_venue") else None,
-                  cid=entry["cid"], factors=list(entry["addresses"]), pick=pick)
+                  cid=entry["cid"], factors=list(entry["addresses"]), pick=pick, direction=entry.get("direction", "narrow"))
     return valid, change
 
 
@@ -573,7 +583,7 @@ def propose(spec: Mapping, analysis: Mapping, *, seed_key: str, hound_id: str, l
             change.update(why=_why(seg, cand["id"]), segment=_segment_view(seg),
                           hindsight={k: seg[k] for k in ("n", "wins", "losses", "pushes", "units")}
                           if cand["id"] in ("drop_sport", "drop_market", "tighten_band", "drop_venue") else None,
-                          cid=cid_of(cand["id"], seg), factors=[f"{seg['dimension']}:{seg['key']}"], pick="rules")
+                          cid=cid_of(cand["id"], seg), factors=[f"{seg['dimension']}:{seg['key']}"], pick="rules", direction="narrow")
             changes.append(change)
         if changes:
             return current, changes, "analysed", ""
@@ -592,7 +602,8 @@ def propose(spec: Mapping, analysis: Mapping, *, seed_key: str, hound_id: str, l
         change = {k: v for k, v in cand.items() if k != "spec"}
         why = ("A small careful adjustment: one more book must quote the price before it bets." if cand["id"] == "more_books"
                else "A small careful adjustment: one bet fewer a day.")
-        change.update(why=why, segment=None, hindsight=None, cid=cand["id"], factors=[], pick="rules")
+        change.update(why=why, segment=None, hindsight=None, factors=[], pick="rules", direction="narrow",
+                      cid="more_books:all" if cand["id"] == "more_books" else cand["id"])
         note = "not_enough_bets" if light else "no_weak_spot"
         return valid, [change], "light", note
     return None, [], "light", "nothing_to_change"
@@ -756,15 +767,318 @@ def read_step(dog: Optional[common.Dog], user_id: int, coach, *, stage: str, now
     return out
 
 
+# ---------------------------------------------------------------------------
+# proposal -> review -> apply (owner ruling 2026-10-22: "players should have a choice to veto the upgrade or tell it to tweak
+# the changes and why")
+# ---------------------------------------------------------------------------
+#
+# EVERY training now goes in steps, and only the last one writes anything:
+#   ``review``  builds the proposal card (each change old -> new with its one-line reason, what today's board would have said,
+#               and the coach's read when there is one). It reads the ledger and the board and writes NOTHING.
+#   ``review`` again, with a ``tweak`` (up to ``retune.TWEAK_ROUNDS`` times): the owner says why or what instead, the words are
+#               mapped to the same closed menu (``retune.full_menu``) by Claude Haiku or the rules engine, within the same caps,
+#               and a revised card comes back. Still nothing written.
+#   ``veto``    says no. Nothing is written, no version is made and the training limit does not move.
+#   ``train``   with the owner's confirm and the cids they left ticked (``picks``) is Apply: the one place a version is created.
+# The picks are cids on the menu and nothing else: ``train`` rebuilds each change from the menu against the spec as it stands,
+# runs it through ``user_spec.validate_spec``, and refuses a cid that is not on the menu.
+
+TWEAK_REGISTRY_MAX = 512
+_tweaks: dict = {}
+_tweaks_lock = threading.Lock()
+NOT_BETTING_SETTLED = 0          # a hound with this many settled bets or fewer has nothing to be coached on: it is not betting
+LOOSEN_DEFAULT_MAX = 2           # the default proposal for a hound that is not betting widens at most this many things
+
+
+def _tweak_key(hound_id: str, spec: Mapping) -> tuple:
+    return (hound_id, user_spec.spec_hash(spec))
+
+
+def tweaks_used(hound_id: str, spec: Mapping) -> int:
+    with _tweaks_lock:
+        return _tweaks.get(_tweak_key(hound_id, spec), 0)
+
+
+def _tweak_bump(hound_id: str, spec: Mapping, at_least: int = 0) -> int:
+    """Count one more tweak round for this hound on this rule and return the new count. Held in this process (like the coach's
+    cache); the page also reports the round it is on and the larger of the two counts is used, so a restart cannot hand out more."""
+    key = _tweak_key(hound_id, spec)
+    with _tweaks_lock:
+        used = max(_tweaks.get(key, 0), at_least) + 1
+        _tweaks[key] = used
+        while len(_tweaks) > TWEAK_REGISTRY_MAX:
+            _tweaks.pop(next(iter(_tweaks)))
+        return used
+
+
+def _tweaks_clear(hound_id: str) -> None:
+    with _tweaks_lock:
+        for key in [k for k in _tweaks if k[0] == hound_id]:
+            del _tweaks[key]
+
+
+def _propose_loosening(spec: Mapping, board_fn: Optional[Callable]) -> tuple:
+    """``(new spec or None, [change], "loosen", note)``: the default for a hound that is not betting. It never narrows. With
+    today's board it offers only changes that would add a candidate there (most added first, one per kind of change); without a
+    board it offers the first of each kind in the menu's own order. A change to the daily limit is never offered: a hound that
+    places nothing is not stopped by its limit."""
+    from src.hounds.interact import retune
+    pool = [e for e in retune.loosening_menu(spec) if e["family"] != retune.BETS_FAMILY]
+    counted = retune.whatif(spec, pool, board_fn)
+    if counted["base"] is not None:
+        scored = []
+        for e in pool:
+            c = counted["by_cid"].get(e["cid"])
+            if c is not None and c["after"] > c["before"]:
+                scored.append((c["after"] - c["before"], e))
+        scored.sort(key=lambda t: (-t[0], retune.FAMILY_ORDER.index(t[1]["family"])))
+        ordered, note = [e for _g, e in scored], "not_betting"
+    else:
+        ordered, note = pool, "not_betting_no_board"
+    current, changes, used = copy.deepcopy(dict(spec)), [], set()
+    for e in ordered:
+        if len(changes) >= LOOSEN_DEFAULT_MAX:
+            break
+        if e["family"] in used:
+            continue
+        applied = _apply_entry(current, e, "rules")
+        if applied is None:
+            continue
+        used.add(e["family"])
+        current, change = applied
+        changes.append(change)
+    if not changes:
+        return None, [], "loosen", "nothing_sensible"
+    return current, changes, "loosen", note
+
+
+def _default_plan(dog, hound, bets, rows, analysis, gate, coach, board_fn) -> dict:
+    """The proposal Send to training makes by itself: the coach's read and the narrowing menu as always, EXCEPT for a hound that
+    is not betting (no settled bet on this version), which is offered loosening instead, never narrowing."""
+    from src.hounds.interact import coach as coach_mod
+    spec = hound["spec"]
+    the_coach = coach or coach_mod.Coach(rules_only=True)
+    inp = _coach_input(dog, hound, bets, rows, analysis, spec)
+    table = the_coach.diagnosis(inp)
+    entries = menu(spec, analysis, table)
+    read = the_coach.read(inp, entries, table)
+    if analysis["settled"] <= NOT_BETTING_SETTLED:
+        new_spec, changes, mode, note = _propose_loosening(spec, board_fn)
+    else:
+        new_spec, changes, mode, note = propose(spec, analysis, seed_key=f"train-v{hound['version_no']}", hound_id=dog.id,
+                                                light=gate["light"], preferred=read["picks"] if read["source"] == "ai" else (),
+                                                entries=entries)
+    return {"spec": new_spec, "changes": changes, "mode": mode, "note": note, "read": read, "table": table}
+
+
+def _menu_for(spec, analysis, table, origin) -> list:
+    """The closed set a pick or a tweak may use. The diagnosis table feeds it only for the training path (the chat path has none)."""
+    from src.hounds.interact import retune
+    return retune.full_menu(spec, analysis, table if origin is None else None)
+
+
+def _apply_items(spec: Mapping, items: Sequence[Mapping], entries: Sequence[Mapping]) -> tuple:
+    """``(new spec, [change])`` for mapped items (cid, line, quote, text) applied in order, each re-validated; a change that no
+    longer applies is skipped. A change made for an item that cites a chat line carries that line."""
+    by_cid = {e["cid"]: e for e in entries}
+    current, changes = copy.deepcopy(dict(spec)), []
+    for item in items:
+        if len(changes) >= MAX_CHANGES:
+            break
+        entry = by_cid.get(item["cid"])
+        if entry is None:
+            continue
+        applied = _apply_entry(current, entry, "owner")
+        if applied is None:
+            continue
+        current, change = applied
+        if item.get("line") is not None:
+            change["cite"] = {"line": item["line"], "text": item["text"], "quote": item.get("quote") or ""}
+        changes.append(change)
+    return current, changes
+
+
+def _picked_plan(spec: Mapping, picks: Sequence[str], entries: Sequence[Mapping]) -> tuple:
+    """The changes for the cids the owner left ticked. A cid that is not on the menu refuses the whole request (422), more than
+    ``MAX_CHANGES`` refuses it (422), and none left refuses it (400): a stray POST can never smuggle in a change."""
+    ids = [c for c in dict.fromkeys(picks) if isinstance(c, str)]
+    if not ids:
+        raise RiteError("no_changes_selected", "Pick at least one change to apply, or say no to the proposal.", 400)
+    if len(ids) > MAX_CHANGES:
+        raise RiteError("too_many_changes", f"A training makes at most {MAX_CHANGES} changes.", 422)
+    on_menu = {e["cid"] for e in entries}
+    unknown = [c for c in ids if c not in on_menu]
+    if unknown:
+        raise RiteError("unknown_change", "That change is not one the hound is allowed to make.", 422, unknown=unknown[:3])
+    return _apply_items(spec, [{"cid": c, "line": None, "text": "", "quote": ""} for c in ids], entries)
+
+
+def _mode_of(changes: Sequence[Mapping], gate: Mapping, origin: Optional[str], settled: int) -> tuple:
+    """``(mode, note)`` for changes the owner chose: a retune from chat; an analysis when a change is aimed at a weak spot;
+    loosening for changes that only widen; otherwise the light adjustment or a plain owner-chosen training."""
+    if origin:
+        return "retune", ""
+    if any(c.get("segment") for c in changes):
+        return "analysed", ""
+    if changes and all(c.get("direction") == "loosen" for c in changes):
+        return "loosen", "not_betting"
+    if gate["light"]:
+        return "light", "not_enough_bets" if settled < MIN_NEW_SETTLED else "no_weak_spot"
+    return "owner", ""
+
+
+def guidance_owner(name: str, analysis: Mapping, changes: Sequence, mode: str, from_version: int) -> str:
+    """The paragraph for a training the owner shaped (a retune, a hound that was not betting, a tweak): what was changed, in plain
+    words, never a promise."""
+    n = analysis["overall"]["n"]
+    if mode == "retune":
+        intro = f"{name} changed itself because its owner asked in the chat."
+    elif mode == "loosen":
+        intro = (f"{name} had {'not placed a settled bet' if n == 0 else 'few settled bets'} on this version, so there was no "
+                 "record to coach on. The changes widen what it looks at, so it considers more games.")
+    else:
+        intro = f"{name} has {n} settled {'bet' if n == 1 else 'bets'} on this version. The changes below were chosen with its owner."
+    made = coach_card.change_sentence(changes)
+    return (f"{intro} The changes: {made}. This changes how many and which games it looks at; it makes no promise about results. "
+            f"Version {from_version} keeps its record as it stands. The new version's record starts now.")
+
+
+def _today_block(spec: Mapping, new_spec: Optional[Mapping], changes: list, entries: Sequence[Mapping],
+                 board_fn: Optional[Callable]) -> Optional[dict]:
+    """What the proposal would have meant on today's board, and the same for each change on its own. Counts of candidates, from
+    boards only (``retune.board_counts``). None when there is no board function or the board cannot be read. Each change gets
+    its own ``today`` ({before, after}) when it could be counted."""
+    from src.hounds.interact import retune
+    if board_fn is None:
+        return None
+    base = board_fn(spec)
+    if base is None:
+        return None
+    by_cid = {e["cid"]: e for e in entries}
+    for change in changes:
+        entry = by_cid.get(change["cid"])
+        applied = _apply_entry(copy.deepcopy(dict(spec)), entry, "owner") if entry else None
+        counts = board_fn(applied[0]) if applied else None
+        change["today"] = None if counts is None else {"before": base["candidates"], "after": counts["candidates"]}
+    after = base if new_spec is None else board_fn(new_spec)
+    if after is None:
+        return None
+    return {"games": base["games"], "before": base["candidates"], "after": after["candidates"],
+            "text": retune.today_text(base["candidates"], after["candidates"]), "note": retune.TODAY_NOTE}
+
+
+def _clean_origin(origin) -> Optional[str]:
+    from src.hounds.interact import retune
+    if origin in (None, "", "training"):
+        return None
+    if origin in ("chat", retune.ORIGIN_CHAT):
+        return retune.ORIGIN_CHAT
+    raise RiteError("bad_origin", "That is not a kind of training this hound knows.", 422)
+
+
+def _nothing_message(dog, mode: str) -> str:
+    if mode == "loosen":
+        return (f"{dog.name} has not bet yet, and none of the changes it is allowed to make would add a game to today's board, "
+                "so there is nothing sensible to change. Tell it what you would like instead, or say no.")
+    return f"{dog.name} is already as careful as its rule can be, so there is nothing left to train."
+
+
+def review(dog: Optional[common.Dog], user_id: int, coach=None, *, origin=None, chat: Sequence = (), tweak: Optional[str] = None,
+           round_no: int = 0, board_fn: Optional[Callable] = None, router=None, env: Optional[Mapping] = None,
+           now: Optional[datetime] = None, rows: Optional[Sequence] = None, ledger_path: Optional[str] = None, db=None) -> dict:
+    """The proposal card for a training: what the hound would change, each change with its reason, what today's board would have
+    said, and the owner's choices. WRITES NOTHING. Same refusals as ``train`` minus the confirm (an open ticket, too soon).
+
+    ``origin`` ``"chat"`` is a Retune from the Ask chat (``chat`` holds the owner's lines): the proposal is mapped from those
+    lines. A ``tweak`` (the owner's reason or what they want instead) re-maps the proposal from the chat lines plus that line,
+    at most ``retune.TWEAK_ROUNDS`` times per hound and rule."""
+    from src.hounds.interact import coach as coach_mod, retune
+    origin = _clean_origin(origin)
+    dog, _moment, rows, bets, hound, gate = _ready(dog, user_id, confirmed_required=False, confirmed=False, now=now, rows=rows,
+                                                    ledger_path=ledger_path, db=db)
+    spec = hound["spec"]
+    analysis = analyse(bets, spec, rule_index_of(rows, dog.id))
+    the_coach = coach or coach_mod.Coach(rules_only=True)
+    lines = retune.clean_lines(chat)
+    used = tweaks_used(dog.id, spec)
+    mapper, read, table, message = None, None, None, ""
+    if tweak is not None:
+        line = " ".join(re.sub(r"[\x00-\x1f\x7f]", " ", str(tweak)).split())[:retune.LINE_MAX]
+        if not line:
+            raise RiteError("tweak_empty", "Say what you want changed, or why, and the hound will look again.", 422)
+        used = max(used, min(max(int(round_no or 0), 0), retune.TWEAK_ROUNDS))
+        if used >= retune.TWEAK_ROUNDS:
+            raise RiteError("tweak_limit", f"That is {retune.TWEAK_ROUNDS} tweaks. Apply the proposal, or say no and start again.",
+                            409, tweak={"used": used, "left": 0, "max": retune.TWEAK_ROUNDS})
+        lines = (lines + [line])[-retune.MAX_CHAT_LINES:]
+    if tweak is None and origin is None:
+        plan = _default_plan(dog, hound, bets, rows, analysis, gate, coach, board_fn)
+        new_spec, changes, mode, note, read, table = plan["spec"], plan["changes"], plan["mode"], plan["note"], plan["read"], plan["table"]
+        entries = _menu_for(spec, analysis, table, origin)
+        if not changes:
+            message = _nothing_message(dog, mode)
+    else:
+        table = the_coach.diagnosis(_coach_input(dog, hound, bets, rows, analysis, spec)) if origin is None else None
+        entries = _menu_for(spec, analysis, table, origin)
+        counted = retune.whatif(spec, entries, board_fn)
+        mapper = retune.map_chat(lines, entries, counted, router=router, env=env)
+        new_spec, changes = _apply_items(spec, mapper["items"], entries)
+        if tweak is not None:
+            used = _tweak_bump(dog.id, spec, at_least=used)
+        mode, note = ("retune" if origin else "owner"), ""
+        if not changes:
+            new_spec = None
+            message = ("I could not turn that into a change I am allowed to make. Say it another way." if tweak is not None else
+                       "I could not turn what you said into a change I am allowed to make, so I would leave my rule as it is.")
+    framing = f"{dog.name} has not bet yet. Want it to look at more games?" if analysis["settled"] <= NOT_BETTING_SETTLED else None
+    today = _today_block(spec, new_spec, changes, entries, board_fn)
+    return {
+        "origin": origin or "training", "mode": mode, "note": note, "light": gate["light"], "settled": analysis["settled"],
+        "version_no": hound["version_no"], "name": dog.name, "framing": framing, "message": message,
+        "changes": [dict(c) for c in changes], "picks": [c["cid"] for c in changes], "nothing": not changes,
+        "today": today, "mapper": None if mapper is None else {k: mapper[k] for k in ("source", "label", "status")},
+        "coach": coach_view(read) if read is not None and origin is None else None,
+        "tweak": {"used": used, "left": max(0, retune.TWEAK_ROUNDS - used), "max": retune.TWEAK_ROUNDS},
+        "limit_note": "Applying counts as a training and makes a new version. Saying no changes nothing and does not count.",
+        "honesty": retune.HONESTY, "paper_only": True,
+    }
+
+
+def veto(dog: Optional[common.Dog], user_id: int) -> dict:
+    """The owner says no to a proposal. Nothing is written: no version, no event, no frozen record, and the training limit is
+    untouched (a limit counts versions made by training, and none is made). The tweak rounds for this hound are cleared."""
+    dog = rites.guard(dog, user_id)
+    _tweaks_clear(dog.id)
+    return {"vetoed": True, "changed": False, "counts_toward_limit": False, "version_no": (dog.hound or {}).get("version_no"),
+            "headline": f"{dog.name} stays as it is. Nothing was changed, and this does not count as a training.", "paper_only": True}
+
+
+def gate_for(dog: Optional[common.Dog], user_id: int, *, now: Optional[datetime] = None, rows: Optional[Sequence] = None,
+             ledger_path: Optional[str] = None, db=None) -> tuple:
+    """``(allowed, message)``: whether this hound could be trained now, as a sentence. Reads only. Ask uses it to decide whether
+    its Retune button works; the real refusal still comes from ``review`` and ``train``."""
+    try:
+        _ready(dog, user_id, confirmed_required=False, confirmed=False, now=now, rows=rows, ledger_path=ledger_path, db=db)
+    except RiteError as exc:
+        return False, str(exc)
+    return True, ""
+
+
 def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, now: Optional[datetime] = None,
           rows: Optional[Sequence] = None, ledger_path: Optional[str] = None, db=None,
           env: Optional[Mapping] = None, poster: Optional[Callable] = None, background: bool = True,
-          coach=None) -> dict:
-    """Send ``dog`` to training for ``user_id``. Returns the "what changed and why" card or raises ``RiteError``.
+          coach=None, picks: Optional[Sequence[str]] = None, origin=None, board_fn: Optional[Callable] = None) -> dict:
+    """APPLY a training for ``user_id``. Returns the "what changed and why" card or raises ``RiteError``.
 
     ``coach`` is the ``coach.Coach`` that reads the diagnosis (the live routes pass ``coach.live()``, whose read the page already
-    waited for and which is cached, so it is not paid for twice). With none, the rules engine reads it: no router, no disk."""
-    from src.hounds.interact import coach as coach_mod
+    waited for and which is cached, so it is not paid for twice). With none, the rules engine reads it: no router, no disk.
+
+    ``picks`` are the menu cids the owner left ticked on the review card; with them the changes are exactly those (rebuilt from
+    the menu and re-validated). With none, the default proposal is applied (the caller said yes without choosing). ``origin``
+    ``"chat"`` marks the new version "owner retune (from chat)" in its lineage. ``board_fn`` is only used to choose the default
+    changes for a hound that is not betting."""
+    from src.hounds.interact import coach as coach_mod, retune
+    origin = _clean_origin(origin)
     dog = rites.guard(dog, user_id)
     dog, moment, rows, bets, hound, gate = _ready(dog, user_id, confirmed_required=True, confirmed=confirmed, now=now, rows=rows,
                                                     ledger_path=ledger_path, db=db)
@@ -772,67 +1086,87 @@ def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, n
     analysis = analyse(bets, spec, rule_index_of(rows, dog.id))
     the_coach = coach or coach_mod.Coach(rules_only=True)
     inp = _coach_input(dog, hound, bets, rows, analysis, spec)
-    table = the_coach.diagnosis(inp)
-    entries = menu(spec, analysis, table)
-    read = the_coach.read(inp, entries, table)
-    seed_key = f"train-v{hound['version_no']}"
-    new_spec, changes, mode, note = propose(spec, analysis, seed_key=seed_key, hound_id=dog.id, light=gate["light"],
-                                            preferred=read["picks"] if read["source"] == "ai" else (), entries=entries)
+    if picks is not None:
+        table = the_coach.diagnosis(inp) if origin is None else None
+        entries = _menu_for(spec, analysis, table, origin)
+        new_spec, changes = _picked_plan(spec, picks, entries)
+        read = the_coach.read(inp, menu(spec, analysis, table), table) if origin is None else None
+        mode, note = _mode_of(changes, gate, origin, analysis["settled"])
+        if not changes:
+            new_spec = None
+    else:
+        plan = _default_plan(dog, hound, bets, rows, analysis, gate, the_coach, board_fn)
+        new_spec, changes, mode, note, read, table = plan["spec"], plan["changes"], plan["mode"], plan["note"], plan["read"], plan["table"]
+        if origin and changes:
+            mode = "retune"
     if new_spec is None:
-        raise RiteError("nothing_to_change", f"{dog.name} is already as careful as its rule can be, so there is nothing "
-                                             "left to train.", 409)
-    text = guidance_text(dog.name, analysis, changes, mode, note, hound["version_no"])
+        raise RiteError("nothing_to_change", _nothing_message(dog, mode), 409)
+    if mode in ("retune", "loosen", "owner"):
+        text = guidance_owner(dog.name, analysis, changes, mode, hound["version_no"])
+    else:
+        text = guidance_text(dog.name, analysis, changes, mode, note, hound["version_no"])
     frozen = dict(analysis["overall"])
     applied = [c["cid"] for c in changes if c.get("pick") == "coach"]
-    coach_event = {"source": read["source"], "status": read["status"], "model": read.get("model"),
-                   "cost_usd": read.get("cost_usd") or 0.0,
-                   "reasons": [{"factors": r["factors"], "confidence": r["confidence"]} for r in read["reasons"]],
-                   "picks": list(read.get("picks") or []), "picks_applied": applied,
-                   "cuts_examined": table["meta"]["cuts_examined"]}
+    if read is not None:
+        coach_event = {"source": read["source"], "status": read["status"], "model": read.get("model"),
+                       "cost_usd": read.get("cost_usd") or 0.0,
+                       "reasons": [{"factors": r["factors"], "confidence": r["confidence"]} for r in read["reasons"]],
+                       "picks": list(read.get("picks") or []), "picks_applied": applied,
+                       "cuts_examined": table["meta"]["cuts_examined"] if table else None}
+    else:
+        coach_event = {"source": "none", "status": "not_asked", "model": None, "cost_usd": 0.0, "reasons": [], "picks": [],
+                       "picks_applied": [], "cuts_examined": None}
     event = {"kind": user_store.EVENT_TRAINED,
              "payload": {"name": hound["name"], "from_hound_id": dog.id, "from_version": hound["version_no"],
                          "to_version": hound["version_no"] + 1, "mode": mode, "settled": analysis["settled"],
+                         "origin": origin or "training", "owner_chosen": picks is not None,
                          "record": {k: frozen[k] for k in ("wins", "losses", "pushes")},
                          "changes": [{k: c[k] for k in ("id", "label", "old_text", "new_text")} for c in changes],
                          "coach": coach_event}}
     try:
-        new = user_store.create_version(dog.id, new_spec, actor=f"owner:{user_id}", reason="sent to training", now=moment,
-                                        db=db, coached_from=dog.id, event=event)
+        new = user_store.create_version(dog.id, new_spec, actor=f"owner:{user_id}",
+                                        reason=retune.LINEAGE_LABEL if origin else "sent to training", now=moment,
+                                        db=db, coached_from=dog.id, event=event, origin=origin)
     except user_spec.SpecError as exc:
         raise RiteError("spec_invalid", "The trained rule did not pass the menu's checks, so nothing was changed.", 422,
                         fields=exc.errors)
     except user_store.StoreError as exc:
         status = {"not_found": 404, "retired": 409, "buried": 409}.get(exc.code, 400)
         raise RiteError(exc.code, str(exc), status)
+    _tweaks_clear(dog.id)
     import logging
     logging.getLogger("linehound.hounds.training").info(
-        "training done hound=%s from_v=%s to_v=%s mode=%s coach=%s status=%s cost_usd=%.6f picks_applied=%d", dog.id,
-        hound["version_no"], new["version_no"], mode, read["source"], read["status"], coach_event["cost_usd"], len(applied))
+        "training done hound=%s from_v=%s to_v=%s mode=%s origin=%s coach=%s status=%s cost_usd=%.6f picks_applied=%d", dog.id,
+        hound["version_no"], new["version_no"], mode, origin or "training", coach_event["source"], coach_event["status"],
+        coach_event["cost_usd"], len(applied))
     from src.hounds.english import render
-    brief = build_brief(dog.name, analysis, changes, mode, text)
+    brief = build_brief(dog.name, analysis, changes, mode if mode in ("analysed", "light") else "light", text)
     asked = send_brief(brief, f"training-{new['id']}", env=env, poster=poster, background=background)
     trained_times = user_store.trained_count(new["root_id"], db=db)
-    light = mode == "light"
+    light = mode in ("light", "loosen")
     return {
-        "mode": mode, "light_adjustment": light,
-        "label": "Light adjustment" if light else "Trained",
+        "mode": mode, "light_adjustment": light, "origin": origin or "training",
+        "label": "Retuned" if mode == "retune" else "Light adjustment" if light else "Trained",
+        "lineage": retune.LINEAGE_LABEL if origin else None,
         "headline": (f"{dog.name} is back as version {new['version_no']}. Its new record starts now."),
         "light_note": ("A light adjustment: the hound does not have enough settled bets yet for the coach to find a weak "
-                       "spot." if light and note == "not_enough_bets" else
-                       "A light adjustment: nothing in its record stood out." if light else None),
-        "changes": [dict(c) for c in changes],
+                       "spot." if mode == "light" and note == "not_enough_bets" else
+                       "A light adjustment: nothing in its record stood out." if mode == "light" else
+                       "A light adjustment: the hound had not bet yet, so the changes widen what it looks at."
+                       if mode == "loosen" else None),
+        "changes": [{k: v for k, v in c.items() if k != "today"} for c in changes],
         "change_sentence": coach_card.change_sentence(changes),
         "diff": render.diff_specs(spec, new["spec"]),
         "analysis": {"settled": analysis["settled"], "overall": analysis["overall"],
                      "weak": analysis["weak"][:3]},
-        "coach": coach_view(read, applied),
-        "diagnosis": {"settled": table["settled"], "checks": sum(1 for f in table["rows"] if f["kind"] != "unavailable"),
-                      "cuts_examined": table["meta"]["cuts_examined"], "ranked": table["ranked"][:5]},
+        "coach": coach_view(read, applied) if read is not None else None,
+        "diagnosis": ({"settled": table["settled"], "checks": sum(1 for f in table["rows"] if f["kind"] != "unavailable"),
+                       "cuts_examined": table["meta"]["cuts_examined"], "ranked": table["ranked"][:5]} if table else None),
         "guidance": {"text": text, "source": "code", "ai_requested": asked},
         "old": {"id": dog.id, "version_no": hound["version_no"], "record": frozen, "frozen": True},
-        "new": {"id": new["id"], "version_no": new["version_no"], "coached_from": new["coached_from"],
+        "new": {"id": new["id"], "version_no": new["version_no"], "coached_from": new["coached_from"], "origin": new.get("origin"),
                 "trained_times": trained_times, "page_href": f"hound.html?id={new['id']}",
                 "record": {"wins": 0, "losses": 0, "pushes": 0, "bets": 0}},
         "next_training": f"It can train again after {MIN_NEW_SETTLED} new settled bets on version {new['version_no']}.",
-        "paper_only": True,
+        "honesty": retune.HONESTY, "paper_only": True,
     }

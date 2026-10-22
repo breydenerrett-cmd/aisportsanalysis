@@ -14,6 +14,11 @@ edge, nothing that sounds like a promise: a record is stated with its sample siz
 small. Every number in an answer is one the page already shows (a test holds that), and every answer can be
 rated Good call or Bad call by a signed-in visitor (``store``).
 
+RETUNE. When the owner tells a member hound its rule is too tight or too loose ("I don't like that you won't take a single bet"),
+the intent is ``retune`` (``retune.detect``): the hound answers with what its rule did on today's board, from real counts
+(``AskContext.retune_fn``, given to the OWNER of a member hound and to no one else), and the answer carries ``retune`` so the owner's page
+can show a "Retune me" button. The button starts the proposal and review in ``training``; this module changes nothing.
+
 Paper only. Nothing here suggests a real bet.
 """
 
@@ -25,10 +30,10 @@ from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
 from src.hounds import stats
-from src.hounds.interact import ask_intents, ask_voice, fire
+from src.hounds.interact import ask_intents, ask_voice, fire, retune
 
 INTENTS = ("hello", "record", "today", "why_bet", "best_worst", "picks_now", "picks_earlier_today",
-           "backtest_window", "why_not", "rules", "improve", "explain_market", "fans", "coach", "help")
+           "backtest_window", "why_not", "rules", "improve", "explain_market", "fans", "coach", "help", "retune")
 FALLBACK = "fallback"
 ANSWER_KINDS = INTENTS + (FALLBACK,)
 
@@ -60,6 +65,7 @@ class AskContext:
     backtest_fn: Optional[Callable[[int], dict]] = None     # the drill for 7, 14 or 30 days
     now: Optional[datetime] = None                          # the clock the answer speaks in (tests inject it)
     sizing: Optional[object] = None                         # the asker's unit_size.Sizing (their dollars); None = the reference account
+    retune_fn: Optional[Callable[[str], dict]] = None       # the OWNER's self-diagnosis facts (retune.ask_facts); None for everyone else
 
 
 # ---------------------------------------------------------------------------
@@ -857,6 +863,30 @@ def _improve(ctx: AskContext) -> dict:
     return {"lines": lines}
 
 
+RETUNE_LABEL = "Retune me"
+NOT_YOURS = ("Only my owner can change my rules. Use Suggest a change to send my owner an idea: it reaches them as a "
+             "suggestion and changes nothing on its own.")
+
+
+def _retune(ctx: AskContext, question: str) -> dict:
+    """The owner said the rule is too tight, too loose, or asked what to change (owner request 2026-10-22). The hound answers with
+    what its own rule did on today's board, in the counts ``retune.self_diagnosis`` computed, and the owner (only) gets a Retune
+    button. The button starts a proposal the owner can veto or tweak; nothing is changed by this answer. A visitor, or an owner
+    asking a house hound, gets no button."""
+    if ctx.kind != "user":
+        return _improve(ctx)
+    if not ctx.is_owner or ctx.retune_fn is None:
+        return {"lines": [NOT_YOURS]}
+    facts = _guarded(ctx.retune_fn, question, missing=NOT_YOURS)
+    if facts.get("busy"):
+        return {"lines": [_busy_line(facts["busy"])]}
+    if facts.get("error"):
+        return {"lines": [facts["error"]]}
+    return {"lines": retune.compose_lines(facts),
+            "retune": {"offer": True, "label": RETUNE_LABEL, "enabled": bool(facts.get("eligible")),
+                       "note": "" if facts.get("eligible") else str(facts.get("gate") or "")}}
+
+
 def _fans(ctx: AskContext) -> dict:
     fb = ctx.feedback or {}
     good, bad = fb.get("good", 0), fb.get("bad", 0)
@@ -1068,6 +1098,8 @@ def _answer_body(intent: str, q: str, ctx: AskContext, scored: dict) -> dict:
         return _rules(ctx)
     if intent == "improve":
         return _improve(ctx)
+    if intent == "retune":
+        return _retune(ctx, q)
     if intent == "explain_market":
         return _explain_market(ctx, q)
     if intent == "fans":
@@ -1085,6 +1117,9 @@ def answer(question: str, ctx: AskContext) -> dict:
         team = find_team(q, ctx, None)
         if team and not _tickets_for(ctx, team):
             intent = "why_not"                     # a team the dog never bet: that is a question about a skip
+    asks_for_picks = intent in ("picks_now", "picks_earlier_today", "backtest_window")
+    if retune.detect(q, strong=asks_for_picks) and find_team(q, ctx, None) is None:
+        intent = "retune"                          # "I don't like that you won't take a single bet": a request to tune the rule
     body = _answer_body(intent, q, ctx, scored)
     if intent == FALLBACK:
         intent = FALLBACK
@@ -1093,6 +1128,6 @@ def answer(question: str, ctx: AskContext) -> dict:
     return {"intent": intent, "question": q, "answer": " ".join(lines), "lines": lines,
             "ui_lines": body.get("ui_lines") or lines, "cards": body.get("cards", []), "cards_at": body.get("cards_at"),
             "hindsight": bool(body.get("hindsight")), "busy": body.get("busy"),
-            "details": body.get("details"), "fine": body.get("fine"),
+            "details": body.get("details"), "fine": body.get("fine"), "retune": body.get("retune"),
             "tickets": body.get("tickets", []), "followups": followups, "matched": intent != FALLBACK,
             "dog_id": ctx.dog_id, "dog_name": ctx.name, "paper_only": True}

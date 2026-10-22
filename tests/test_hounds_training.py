@@ -87,14 +87,27 @@ class OpenTicketsBlockTraining(Train):
 class TheLimits(Train):
     def test_a_first_training_under_five_settled_bets_is_a_labelled_light_adjustment(self):
         hound = self.two_sport_dog()
-        for settled in (0, 4):
+        for settled in (1, 4):
             with self.subTest(settled=settled):
                 dog = self.dog(f"Young Dog {settled}", sports=["MLB", "NFL"])
-                out = self.train(dog, rows_for(dog["id"], [(settled, dict(result="LOSS"))]) if settled else [])
+                out = self.train(dog, rows_for(dog["id"], [(settled, dict(result="LOSS"))]))
                 self.assertEqual((out["mode"], out["light_adjustment"], out["label"]), ("light", True, "Light adjustment"))
                 self.assertIn("light adjustment", out["light_note"])
                 self.assertEqual(len(out["changes"]), 1)
                 self.assertIsNone(out["changes"][0]["segment"])
+
+    def test_a_hound_with_no_settled_bet_is_never_narrowed_it_is_offered_loosening(self):
+        """Production 2026-10-22: a Gematria hound with 0 settled bets was sent to training and came back with 'Most bets a day
+        3 -> 2'. It places nothing, so narrowing it was pointless. A hound that is not betting is offered ways to look at more."""
+        dog = self.dog("Idle Dog", sports=["MLB", "NFL"], max_bets_per_day=3)
+        out = self.train(dog, [])
+        self.assertEqual((out["mode"], out["light_adjustment"], out["label"]), ("loosen", True, "Light adjustment"))
+        self.assertTrue(out["changes"])
+        self.assertTrue(all(c["direction"] == "loosen" for c in out["changes"]), out["changes"])
+        self.assertNotIn("fewer_bets", {c["id"] for c in out["changes"]})
+        self.assertNotIn("more_bets", {c["id"] for c in out["changes"]}, "a hound that places nothing is not held back by its daily limit")
+        new = user_store.get_hound(out["new"]["id"])["spec"]
+        self.assertEqual(new["max_bets_per_day"], 3)
 
     def test_five_settled_bets_is_enough_for_an_analysis(self):
         hound = self.two_sport_dog()
@@ -134,7 +147,7 @@ class TheLimits(Train):
 
     def test_a_dog_with_nothing_left_to_tighten_is_told_so(self):
         hound = self.dog("Tight Dog", min_books=10, max_bets_per_day=1)
-        exc = refusal(self, self.train, hound, [])
+        exc = refusal(self, self.train, hound, rows_for(hound["id"], [(2, dict(result="LOSS"))]))
         self.assertEqual((exc.code, exc.status), ("nothing_to_change", 409))
         self.assertEqual(len(user_store.lineage(hound["id"])), 1)
 
@@ -185,7 +198,7 @@ class TheNewVersion(Train):
 
     def test_a_failed_training_leaves_no_event_behind(self):
         hound = self.dog("Tight Dog", min_books=10, max_bets_per_day=1)
-        refusal(self, self.train, hound, [])
+        refusal(self, self.train, hound, rows_for(hound["id"], [(2, dict(result="LOSS"))]))
         self.assertEqual(user_store.list_events(), [])
 
     def test_a_free_accounts_slot_count_does_not_move(self):

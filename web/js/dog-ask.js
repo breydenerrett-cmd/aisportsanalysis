@@ -8,6 +8,11 @@
  * pick sit in a collapsed "How I checked it", never inline. Every answer carries "Good call / Bad call" (signed-in)
  * so a visitor can say whether it helped.
  *
+ * RETUNE ME (owner request 2026-10-22). When the owner tells a hound its rule is too tight or too loose, the answer carries
+ * `retune: { offer, label, enabled, note }` and ONLY the owner's answer ever does (the server decides; the page just draws what it
+ * is given). The button starts the review (dog-rites.js `startRetune`): the proposal, then Apply / Veto / Tweak. It sends the
+ * owner's own lines from this conversation, so the hound can cite the one it is answering. Nothing changes until Apply.
+ *
  * `mountAsk` is shared with the Training camp, which opens a small chat per dog.
  */
 
@@ -16,6 +21,7 @@ import { h, clearNode } from "./hounds-core.js";
 import { get, post, errorText, statusLine } from "./dog-common.js";
 import { voteRow } from "./dog-feedback.js";
 import { isUpgradeRefusal, upgradePrompt } from "./upgrade.js";
+import { startRetune } from "./dog-rites.js";
 
 /** A collapsed "How I checked it": a title and lines the answer would otherwise print inline. */
 function checkedFold(details) {
@@ -47,6 +53,17 @@ function pickCards(cards) {
   return list;
 }
 
+/** The Retune me button under a hound's self-diagnosis (the owner only: the server sends `retune` to nobody else). */
+function retuneOffer(offer, onRetune) {
+  const wrap = h("div", { class: "dk-retune", "data-hook": "ask-retune-offer" });
+  const btn = h("button", { type: "button", class: "btn btn--primary", "data-hook": "ask-retune", text: offer.label || "Retune me" });
+  if (offer.enabled === false) btn.setAttribute("disabled", "");
+  else btn.addEventListener("click", () => onRetune(btn));
+  wrap.appendChild(btn);
+  if (offer.enabled === false && offer.note) wrap.appendChild(h("p", { class: "hd-fine", "data-hook": "ask-retune-note", text: offer.note }));
+  return wrap;
+}
+
 /** `lines` are drawn as paragraphs; `cards` (optional) go in at index `cardsAt` (default: the end). */
 function dogMessage(lines, intent, cards, cardsAt, details, fine) {
   const msg = h("div", { class: "dk-msg dk-msg--dog", "data-hook": "ask-answer", "data-intent": intent || "" });
@@ -72,6 +89,7 @@ export function mountAsk(box, { id, name, compact = false }) {
   const thread = h("div", { class: "dk-thread", role: "log", "aria-live": "polite", "aria-label": `Conversation with ${name || "this model"}`, "data-hook": "ask-thread" });
   const chips = h("div", { class: "dk-chips", "data-hook": "ask-suggestions" });
   const status = statusLine("ask-status");
+  const said = [];                                  // the owner's own lines in this conversation, newest last (what a retune may cite)
   const inputId = `dk-q-${id}`;
   const input = h("input", { type: "text", id: inputId, maxlength: "300", autocomplete: "off", "data-hook": "ask-input",
     placeholder: `Ask ${name || "it"} anything about its bets`, "aria-label": `Your question for ${name || "this model"}` });
@@ -88,6 +106,8 @@ export function mountAsk(box, { id, name, compact = false }) {
     const text = String(question || "").trim();
     if (!text) { status.textContent = "Type a question first."; return; }
     status.textContent = "";
+    said.push(text.slice(0, 300));
+    if (said.length > 6) said.shift();
     thread.appendChild(h("div", { class: "dk-msg dk-msg--you", "data-hook": "ask-question" }, [h("p", { text })]));
     input.value = "";
     thread.scrollTop = thread.scrollHeight;
@@ -98,6 +118,12 @@ export function mountAsk(box, { id, name, compact = false }) {
       const rows = hasCards && Array.isArray(out.ui_lines) && out.ui_lines.length ? out.ui_lines
         : (out.lines && out.lines.length ? out.lines : [out.answer]);
       const msg = dogMessage(rows, out.intent, hasCards ? out.cards : null, out.cards_at, out.details, out.fine);
+      if (out.retune && out.retune.offer) {
+        msg.appendChild(retuneOffer(out.retune, (opener) => startRetune({ id, name }, { chat: said.slice(), opener, onTrained: (result) => {
+          const href = (result && result.new && result.new.page_href) || `hound.html?id=${encodeURIComponent(id)}`;
+          try { window.location.href = href; } catch (err) { /* a fake window */ }
+        } })));
+      }
       msg.appendChild(voteRow({ id, kind: "answer", targetId: out.intent || "fallback", label: "this answer" }));
       thread.appendChild(msg);
       thread.scrollTop = msg.offsetTop ? Math.max(0, msg.offsetTop - 8) : thread.scrollHeight;     // the top of the new answer

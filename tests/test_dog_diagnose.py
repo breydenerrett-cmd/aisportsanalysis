@@ -414,12 +414,12 @@ class OnTheKennelPage(unittest.TestCase):
             click(hook("training-go"), "static", wait=500, capture=[
                 q("phase", hook("diagnose"), "attr", attr="data-phase"), q("label", hook("diagnose-label")), q("weak", hook("diagnose-weak") + " li", "count"),
                 q("title", hook("rites-title")), q("kind", ".rt-sheet", "attr", attr="data-hook"), q("posts_card", hook("training-card"), "count")]),
-            click(hook("diagnose-continue"), "card", wait=500, capture=[
+            click(hook("diagnose-continue"), "review", wait=250), click(hook("review-apply"), "card", wait=500, capture=[
                 q("card", hook("training-card"), "count"), q("coach", hook("training-coach")), q("coach_label", hook("training-coach-label")),
                 q("reasons", hook("training-reason"), "count"), q("cites", hook("training-cite"), "count"), q("fold", hook("evolve-why"), "attr", attr="open"),
                 q("version", hook("training-version"))])])
         urls = [p["url"] for p in out["posts"]]
-        self.assertEqual(urls, ["/hounds/u-1/train/diagnose", "/hounds/u-1/train/assess", "/hounds/u-1/train"])
+        self.assertEqual(urls, ["/hounds/u-1/train/diagnose", "/hounds/u-1/train/assess", "/hounds/u-1/train/propose", "/hounds/u-1/train"])
         static = out["captures"]["static"]
         self.assertEqual((static["phase"], static["posts_card"]), ("static", 0), "the training has not run while the summary is up")
         self.assertIn("AI read", static["label"])
@@ -437,7 +437,7 @@ class OnTheKennelPage(unittest.TestCase):
         out = self.flow(page_routes("rules"), [
             click(self.OPEN, "ask"),
             click(hook("training-go"), "static", wait=500, capture=[q("label", hook("diagnose-label")), q("source", hook("diagnose-read"), "attr", attr="data-source")]),
-            click(hook("diagnose-continue"), "card", wait=500, capture=[q("coach_label", hook("training-coach-label")), q("source", hook("training-coach"), "attr", attr="data-source")])])
+            click(hook("diagnose-continue"), "review", wait=250), click(hook("review-apply"), "card", wait=500, capture=[q("coach_label", hook("training-coach-label")), q("source", hook("training-coach"), "attr", attr="data-source")])])
         self.assertEqual(out["captures"]["static"]["label"], "Coach's read (rules engine)")
         self.assertEqual(out["captures"]["static"]["source"], "rules")
         self.assertEqual(out["captures"]["card"]["coach_label"], "Coach's read (rules engine)")
@@ -461,7 +461,7 @@ class OnTheKennelPage(unittest.TestCase):
         out = self.flow(page_routes(assess=[500, {"detail": "boom"}]), [
             click(self.OPEN, "ask"),
             click(hook("training-go"), "static", wait=500, capture=[q("label", hook("diagnose-label"))]),
-            click(hook("diagnose-continue"), "card", wait=500, capture=[q("card", hook("training-card"), "count")])])
+            click(hook("diagnose-continue"), "review", wait=250), click(hook("review-apply"), "card", wait=500, capture=[q("card", hook("training-card"), "count")])])
         self.assertEqual(out["captures"]["static"]["label"], "Coach's read (rules engine)")
         self.assertEqual(out["captures"]["card"]["card"], 1)
         self.assertEqual([p["url"] for p in out["posts"]][-1], "/hounds/u-1/train")
@@ -492,7 +492,7 @@ class TheDiagnosisFitsAPhoneAtEveryBeat(unittest.TestCase):
     def test_every_beat_of_the_full_run_fits_390_and_all_of_them_play(self):
         out = self.play("full")
         self.assertEqual(out["errors"], [])
-        for phase in ("scan", "ask", "read", "done", "card"):
+        for phase in ("scan", "ask", "read", "done", "review"):
             self.assertIn(phase, out["phases"], out["phases"])
         bad = [s for s in out["samples"] if s["sw"] > s["iw"] + 1 or s["sheetSw"] > s["sheetCw"] + 1 or s["wide"]]
         self.assertEqual(bad, [], json.dumps(bad[:3]))

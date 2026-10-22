@@ -14,6 +14,10 @@ and the Training camp's own data.
                                       and public, a headstone in the graveyard (src/hounds/interact/outback.py)
     POST /hounds/{id}/train           the owner of a member dog, {"confirm": true}: SEND TO TRAINING, the dog comes back
                                       as a new version (src/hounds/interact/training.py)
+    POST /hounds/{id}/train/propose   the owner, read only: the PROPOSAL card (each change old -> new with its reason, what today's board
+                                      says); with {"origin": "chat", "chat": [...]} a Retune from the Ask chat, with {"tweak": "..."} a
+                                      revised proposal (at most 3 rounds). Nothing is written (src/hounds/interact/training.review)
+    POST /hounds/{id}/train/veto      the owner: say no to a proposal. Nothing changes and it does not count as a training
     POST /hounds/{id}/train/diagnose  the owner, read only: the multi-factor diagnosis of the dog's settled bets
     POST /hounds/{id}/train/assess    the owner, read only: the coach's (Claude Haiku's, else the rules engine's) read of it;
                                       cached, so the training that follows takes it instead of asking again (src/hounds/interact/coach.py)
@@ -69,7 +73,7 @@ from src.appstate import ratelimit
 from src.appstate import users as users_store
 from src.hounds import unit_size, user_spec
 from src.hounds.contract import envelope
-from src.hounds.interact import ask, ask_eval, camp, coach, common, drill, fire, fire_event, look, manual, outback, right_now, rites, store, training, unleash
+from src.hounds.interact import ask, ask_eval, camp, coach, common, drill, fire, fire_event, look, manual, outback, retune, right_now, rites, store, training, unleash
 
 from api import auth as auth_mod
 from api import entitlements
@@ -318,6 +322,22 @@ class RiteRequest(BaseModel):
     confirm: bool = False
 
 
+class TrainRequest(RiteRequest):
+    """APPLY: ``confirm`` plus, from the review card, the menu ids the owner left ticked (``picks``) and, for a Retune from the Ask
+    chat, ``origin: "chat"``. Without ``picks`` the default proposal is applied. A pick that is not on the menu is a 422."""
+    picks: Optional[List[str]] = None
+    origin: Optional[str] = None
+
+
+class ProposeRequest(BaseModel):
+    """A proposal. ``chat`` is the owner's own lines in the Ask chat (at most 20 are read, the newest 6 are used); ``tweak`` is the
+    owner's reason or what they want instead; ``round`` is the tweak round the page is on."""
+    origin: Optional[str] = None
+    chat: List[str] = []
+    tweak: Optional[str] = None
+    round: int = 0
+
+
 def _rite_error(exc: rites.RiteError) -> HTTPException:
     return _err(exc.status, exc.code, str(exc), **exc.extra)
 
@@ -336,14 +356,50 @@ def take_out_back(hound_id: str, response: Response, body: Optional[RiteRequest]
 
 
 @router.post("/hounds/{hound_id}/train")
-def send_to_training(hound_id: str, response: Response, body: Optional[RiteRequest] = None,
+def send_to_training(hound_id: str, response: Response, body: Optional[TrainRequest] = None,
                      current_user: users_store.User = Depends(get_current_user),
                      _rl: None = Depends(_rl_rites)) -> dict:
-    """Send the owner's dog to training: it studies its own settled bets and comes back as the next version, with its
-    old record frozen and a new one starting now."""
+    """APPLY a training: the owner's dog studies its own settled bets (or does what the owner chose on the review card) and
+    comes back as the next version, with its old record frozen and a new one starting now. The page reviews first
+    (``train/propose``); this is the only call that writes."""
     response.headers["Cache-Control"] = _NO_STORE
     try:
-        out = training.train(common.resolve(hound_id), current_user.id, confirmed=bool(body and body.confirm), coach=coach.live())
+        dog = common.resolve(hound_id)
+        out = training.train(dog, current_user.id, confirmed=bool(body and body.confirm), coach=coach.live(),
+                             picks=getattr(body, "picks", None), origin=getattr(body, "origin", None),
+                             board_fn=retune.live_board_fn(dog) if dog is not None and dog.kind == common.KIND_USER else None)
+    except rites.RiteError as exc:
+        raise _rite_error(exc)
+    return envelope(out)
+
+
+@router.post("/hounds/{hound_id}/train/propose")
+def training_proposal(hound_id: str, response: Response, body: Optional[ProposeRequest] = None,
+                      current_user: users_store.User = Depends(get_current_user),
+                      _rl: None = Depends(_rl_training_steps)) -> dict:
+    """The proposal card, read only: what the owner's hound would change, each change with its reason and what today's board
+    would have said. With ``origin: "chat"`` it is a Retune from the Ask chat; with ``tweak`` a revised proposal (at most three
+    rounds). Claude Haiku maps words to the fixed menu when it can (the $5 cap, then the rules engine). Nothing is written."""
+    response.headers["Cache-Control"] = _NO_STORE
+    body = body or ProposeRequest()
+    if len(body.chat) > 20:
+        raise _err(422, "too_many_lines", "send at most 20 chat lines")
+    try:
+        dog = common.resolve(hound_id)
+        out = training.review(dog, current_user.id, coach.live(), origin=body.origin, chat=body.chat, tweak=body.tweak,
+                              round_no=body.round, board_fn=retune.live_board_fn(dog) if dog is not None else None)
+    except rites.RiteError as exc:
+        raise _rite_error(exc)
+    return envelope(out)
+
+
+@router.post("/hounds/{hound_id}/train/veto")
+def training_veto(hound_id: str, response: Response, current_user: users_store.User = Depends(get_current_user),
+                  _rl: None = Depends(_rl_training_steps)) -> dict:
+    """The owner says no to a proposal. Nothing is changed, no version is made and it does not count as a training."""
+    response.headers["Cache-Control"] = _NO_STORE
+    try:
+        out = training.veto(common.resolve(hound_id), current_user.id)
     except rites.RiteError as exc:
         raise _rite_error(exc)
     return envelope(out)
@@ -487,9 +543,15 @@ def _context(dog: common.Dog, viewer_id: Optional[int], request: Optional[Reques
                 raise ask_eval.Busy("rate", _retry_of(exc))
         return ask_eval.backtest(dog, days, signed_in=viewer_id is not None)
 
-    return camp.ask_context(dog, viewer_id, fire_fn=fire_fn if firable else None, tips=_graded_tips(dog),
-                            earlier_fn=earlier_fn if firable else None,
-                            backtest_fn=backtest_fn if firable else None)
+    ctx = camp.ask_context(dog, viewer_id, fire_fn=fire_fn if firable else None, tips=_graded_tips(dog),
+                           earlier_fn=earlier_fn if firable else None,
+                           backtest_fn=backtest_fn if firable else None)
+    if ctx.is_owner and dog.kind == common.KIND_USER and viewer_id is not None:
+        def retune_fn(_question: str) -> dict:
+            gate_fire()                       # counting today's board reads the stored boards: the same allowance as Fire now
+            return retune.ask_facts(dog, viewer_id)
+        ctx.retune_fn = retune_fn             # only the owner of a member hound is ever given this; nobody else gets a Retune button
+    return ctx
 
 
 @router.get("/hounds/{hound_id}/ask")
