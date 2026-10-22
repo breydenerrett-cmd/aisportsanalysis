@@ -1314,3 +1314,10 @@
 {"call_kind": "inplay", "credits": 1, "events": 35, "events_live": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T02:53:22.982720Z", "regions": ["us"], "rows": 93, "sport_key": "basketball_nba", "stored": 48}
 {"commence_utc": "2026-10-22T05:00:00Z", "event_id": "0fb3913071cee064c0674f6ad49f6f09", "kind": "phase", "observed_utc": "2026-10-22T03:09:29.057287Z", "phase": "t2h", "rows": 7, "sport_key": "tennis_wta_ningbo_open"}
 {"call_kind": "pregame", "credits": 1, "events": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T03:09:29.057287Z", "regions": ["us"], "rows": 41, "sport_key": "tennis_wta_ningbo_open", "stored": 41}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-10-22T09:16:37.131522Z", "observed_utc": "2026-10-22T03:16:37.131522Z", "sport_key": "icehockey_sweden_allsvenskan"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-10-22T09:16:37.131522Z", "observed_utc": "2026-10-22T03:16:37.131522Z", "sport_key": "soccer_brazil_serie_b"}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-10-22T09:16:37.131522Z", "observed_utc": "2026-10-22T03:16:37.131522Z", "sport_key": "soccer_spain_la_liga"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-22T09:16:37.131522Z", "observed_utc": "2026-10-22T03:16:37.131522Z", "sport_key": "soccer_uefa_champs_league"}
+{"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T03:16:37.131522Z", "regions": ["us"], "rows": 63, "sport_key": "soccer_mexico_ligamx", "stored": 13}
+{"call_kind": "inplay", "credits": 1, "events": 65, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T03:16:37.131522Z", "regions": ["us"], "rows": 584, "sport_key": "americanfootball_ncaaf", "stored": 38}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T03:16:37.131522Z", "regions": ["us"], "rows": 1, "sport_key": "icehockey_ahl", "stored": 1}
