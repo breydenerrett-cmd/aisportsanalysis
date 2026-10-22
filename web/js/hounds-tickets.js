@@ -7,6 +7,7 @@
  */
 
 import { h, isNum, signed, fmtPrice, shortDate, houndHref, NOT_REPORTED } from "./hounds-core.js";
+import { liveSpan, liveAttrs, watchTickets } from "./ticket-live.js";
 import {
   ticketStatus, ticketState, RESULT_WORDS, recordedText, ticketPrice, pickOf, marketLabel, booksText, NA,
   isOldRule, OLD_RULE_TAG, OLD_RULE_TITLE,
@@ -19,6 +20,16 @@ export function oldRuleTag(ticket) {
 }
 
 const UNGRADED_TITLE = "No grade yet, and the game started more than 36 hours ago. Not counted in the record.";
+
+/**
+ * Start the live view for a freshly built list (web/js/ticket-live.js): the money on graded tickets, and where each pending
+ * ticket's game stands (upcoming / live / final, grading). Deferred one tick so the list is on the page first. A list with no
+ * ticket the server can speak to costs nothing: no request is made.
+ */
+function watch(list) {
+  if (typeof setTimeout === "function") setTimeout(() => { try { watchTickets(list); } catch (err) { /* decoration only */ } }, 0);
+  return list;
+}
 
 /** The status chip: the word is the signal, the colour only agrees with it. Takes the whole ticket so the
  * server's UNGRADED status can show; a bare result string still works. */
@@ -74,7 +85,7 @@ export function ticketCard(ticket, { showModel = false, name = "", flip = false 
       ]),
       resultChip(t, "card-status"),
     ]),
-    h("div", { class: "hd-card__l2", "data-hook": "card-game" }, line2),
+    h("div", { class: "hd-card__l2", "data-hook": "card-game" }, line2.concat([liveSpan()])),
     h("div", { class: "hd-card__l3", "data-hook": "card-when" }, [
       h("span", { class: "hd-num", text: shortDate(t.date) || NA }),
       rehearsal ? h("span", { class: "hd-rec hd-rec--rehearsal", text: "Written after the games; never counted" })
@@ -95,8 +106,8 @@ export function ticketCard(ticket, { showModel = false, name = "", flip = false 
     lines.push(h("details", { class: "hd-card__why", "data-hook": "card-why" }, [
       h("summary", { text: "Why this bet" }), h("p", { text: t.reason })]));
   }
-  return h("div", { class: "hd-card", "data-hook": "ticket-card", "data-status": state,
-    "data-segment": String(t.segment || "") }, lines);
+  return h("div", Object.assign({ class: "hd-card", "data-hook": "ticket-card", "data-status": state,
+    "data-segment": String(t.segment || "") }, liveAttrs(t)), lines);
 }
 
 /** The price, with the best quote and its book as small print when they differ from the headline price. */
@@ -127,8 +138,8 @@ export function ticketItem(ticket, { showModel = true, name = "" } = {}) {
   const status = ticketState(t);
   const model = name || t.hound_name || t.name || "";
   const units = ticketUnits(t);
-  return h("li", { class: "hd-ticket", "data-status": status, "data-hound": t.hound_id === undefined ? "" : String(t.hound_id),
-    "data-hook": "ticket" }, [
+  return h("li", Object.assign({ class: "hd-ticket", "data-status": status, "data-hound": t.hound_id === undefined ? "" : String(t.hound_id),
+    "data-hook": "ticket" }, liveAttrs(t)), [
     h("div", { class: "hd-ticket__when" }, [
       h("span", { class: "hd-num", text: shortDate(t.date) || NA }),
       showModel && model ? (t.hound_id !== undefined
@@ -146,6 +157,7 @@ export function ticketItem(ticket, { showModel = true, name = "" } = {}) {
     h("div", { class: "hd-ticket__rec" }, [recordedCell(t)]),
     h("div", { class: "hd-ticket__res" }, [
       resultChip(t),
+      liveSpan(),
       units ? h("span", { class: `hd-num hd-units-text hd-units-text--${t.units > 0 ? "up" : t.units < 0 ? "down" : "flat"}`,
         text: units }) : null,
     ]),
@@ -162,7 +174,7 @@ export function ticketList(tickets, opts = {}) {
     h("span", { text: "Price" }), h("span", { text: "Recorded" }), h("span", { text: "Status" }),
   ]));
   for (const t of tickets) ul.appendChild(ticketItem(t, opts));
-  return ul;
+  return watch(ul);
 }
 
 /**
@@ -190,7 +202,7 @@ export function ticketTable(tickets, { graded = false, hook = "tickets-table", c
       h("td", { class: "hd-num" }, [priceCell(t)]),
     ];
     if (graded) cells.push(h("td", { class: "hd-num", "data-hook": "ticket-clv", text: clv }));
-    cells.push(h("td", {}, [resultChip(t), rehearsal ? h("small", { class: "hd-aux", text: "Rehearsal" }) : null]));
+    cells.push(h("td", {}, [resultChip(t), liveSpan(), rehearsal ? h("small", { class: "hd-aux", text: "Rehearsal" }) : null]));
     if (graded) {
       cells.push(h("td", Object.assign({ class: `hd-num hd-tone--${!units ? "none" : t.units > 0 ? "up" : t.units < 0 ? "down" : "flat"}`,
         "data-hook": "ticket-units", text: units || NA }, fresh && units ? { "data-count": "1", "data-count-ms": "500" } : {})));
@@ -208,16 +220,16 @@ export function ticketTable(tickets, { graded = false, hook = "tickets-table", c
     cells.push(h("td", { class: "hd-td-stamp", "data-hook": "bet-stamp" }, [
       rehearsal ? h("span", { class: "hd-rec hd-rec--rehearsal", text: "Written after the games; never counted" }) : recordedCell(t)]));
     return h("tr", Object.assign({ class: "hd-trow", "data-status": status, "data-segment": String(t.segment || "") },
-      fresh ? { "data-flip": "1", style: `--i:${Math.min(index, 5)}` } : {}), cells);
+      liveAttrs(t), fresh ? { "data-flip": "1", style: `--i:${Math.min(index, 5)}` } : {}), cells);
   });
   const cards = h("ol", { class: "hd-cards", "data-hook": `${hook}-cards`, "aria-label": caption },
     tickets.map((t, index) => h("li", Object.assign({ class: "hd-cardrow" },
       index < flipCount ? { "data-flip": "1", style: `--i:${Math.min(index, 5)}` } : {}), [ticketCard(t, { flip: index < flipCount })])));
-  return h("div", { class: "hd-ticketview", "data-hook": `${hook}-view` }, [
+  return watch(h("div", { class: "hd-ticketview", "data-hook": `${hook}-view` }, [
     h("div", { class: "hd-tablewrap hd-tablewrap--tickets", tabindex: "0", role: "region", "aria-label": `${caption}. Scrolls sideways on a narrow screen.` }, [
       h("table", { class: "hd-table hd-table--tickets", "data-hook": hook }, [
         h("caption", { class: "hd-sr-only", text: caption }),
         h("thead", {}, [h("tr", {}, head.map((t) => h("th", { scope: "col", text: t })))]),
         h("tbody", {}, rows)])]),
-    cards]);
+    cards]));
 }

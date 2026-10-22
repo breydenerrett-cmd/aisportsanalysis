@@ -50,6 +50,7 @@ import {
   basisOf, basisWords,
 } from "./hounds-board.js";
 import { ticketTable } from "./hounds-tickets.js";
+import { gradingBadge } from "./ticket-live.js";
 import { settleGrades } from "./first-grade.js";
 import { playReveal, MAX_FLIPS } from "./reveal-fx.js";
 import { celebrate } from "./dog-common.js";
@@ -257,6 +258,32 @@ async function switchSeason(id) {
   resultLines(state.hound);
   renderVerdict(state.hound);
   renderCharts();
+}
+
+/**
+ * A ticket graded since this page last looked (the live settlement loop writes grades within minutes of a final): fetch the
+ * model's summary and series again and reload the ticket lists, so the record, bankroll and lists never wait on a refresh.
+ */
+async function refreshAfterGrade() {
+  if (!state.hound) return;
+  try {
+    const data = await apiGet(`/hounds/${encodeURIComponent(state.id)}?${seasonParam(state.season)}`);
+    if (data && typeof data === "object" && !isWarming(data)) {
+      state.hound = data;
+      if (data.season && typeof data.season === "object") state.seasonMeta = data.season;
+      if (Array.isArray(data.series)) state.series = normalizeSeries({ series: { [state.id]: data.series } });
+      renderHeroFacts(state.hound);
+      renderScoreboard(state.hound);
+      resultLines(state.hound);
+      renderVerdict(state.hound);
+      renderCharts();
+    }
+  } catch (err) {
+    /* keep what is on screen; the lists below still reload */
+  }
+  loadOpen();
+  loadUngraded();
+  loadGraded(1);
 }
 
 // ---- KPI strip -------------------------------------------------------------------------------------
@@ -534,6 +561,8 @@ function renderOpen() {
     return;
   }
   if (state.open === null) { box.appendChild(h("p", { class: "hd-muted", text: "Checking open tickets..." })); return; }
+  // "Last graded 02:14" and a "Grading" pill while games wait on a final; a new grade reloads the record at once
+  box.appendChild(gradingBadge({ onGraded: refreshAfterGrade, pollMs: 0 }));  // this page's own poller rebuilds it each minute
   const note = q("today-note");
   if (note) note.textContent = "";
   if (state.open.items.length === 0) {

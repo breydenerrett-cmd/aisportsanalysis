@@ -272,7 +272,8 @@ def bet_row(bet: Bet, teams: Optional[tuple]) -> BetRow:
         units=_round(recorded_units(bet)) if bet.graded else None,
         clv_pts=bet.clv_pts, who_decided=bet.who_decided, reason=bet.reason,
         segment=bet.segment, verified=bet.verified, start_utc=bet.start_utc, recorded_utc=bet.recorded_utc,
-        book_count=bet.book_count)
+        book_count=bet.book_count, event_id=bet.event_id, sport=bet.sport,
+        graded_utc=bet.graded_utc if bet.graded else None)
 
 
 FORM_DAYS = 7           # "last 7 days" on the race page, counted back from the book's as-of day

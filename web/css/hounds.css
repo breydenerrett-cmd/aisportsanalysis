@@ -436,6 +436,18 @@ a.hd-ticket__model:hover { text-decoration: underline; text-underline-offset: 3p
 .hd-res--push, .hd-res--void { color: var(--hd-flat); }
 .hd-res--pending { color: var(--hd-warn); border-color: rgba(242, 184, 75, .5); }
 .hd-res--ungraded { color: var(--hd-text-2); border-style: dashed; border-color: var(--hd-mute); }
+/* Where a ticket's game stands (web/js/ticket-live.js): the word beside the status chip, and the grading badge. */
+.hd-live { font-size: 12px; font-weight: 600; color: var(--hd-text-2); white-space: nowrap; }
+.hd-live[hidden], .hd-graded[hidden], .hd-graded__pill[hidden] { display: none; }
+.hd-live--live { color: var(--hd-good); }
+.hd-live--grading { color: var(--hd-warn); }
+.hd-live--up { color: var(--hd-good); }
+.hd-live--down { color: var(--hd-bad); }
+.hd-live--flat, .hd-live--postponed, .hd-live--cancelled { color: var(--hd-flat); }
+.hd-res[data-live="live"] { color: var(--hd-good); border-color: var(--hd-good); }
+.hd-res[data-live="grading"] { color: var(--hd-warn); border-style: dashed; }
+.hd-graded { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 10px; font-size: 12.5px; color: var(--hd-mute); }
+.hd-graded__pill { font-size: 11px; font-weight: 700; letter-spacing: .06em; padding: 2px 8px; border-radius: 3px; border: 1px dashed var(--hd-warn); color: var(--hd-warn); }
 .hd-units-text--up { color: var(--hd-good); }
 .hd-units-text--down { color: var(--hd-bad); }
 .hd-units-text--flat { color: var(--hd-flat); }

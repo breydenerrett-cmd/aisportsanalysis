@@ -19,6 +19,8 @@ WHAT IT CHECKS (each limit is a named constant below, justified where it is set)
                  hourly production redeploy, so when it stops, odds AND deploys stop.
   health         the app's own freshness verdicts (src/appstate/alert_feed.py, src/pipeline/freshness_policy.py).
                  Reused, not re-judged: the numbers live in the policy and only there.
+  grading        a member, manual or AI ticket still open ``GRADING_OVERDUE_HOURS`` after its game's scheduled start
+                 (the live settlement loop, src/hounds/live_settle.py, should have graded it within minutes).
   ai_spend       paid AI spend at ``AI_SPEND_WARN`` of its cap: the AI router's monthly meter (AI_PAID_CAP_USD)
                  and the analyst's stores. Skipped while neither exists.
   github_reach   the watchdog itself: it cannot see GitHub for ``BLIND_MINUTES`` and is therefore not watching.
@@ -109,6 +111,7 @@ STUCK_MINUTES = STUCK_MINUTES_BY_WORKFLOW[WF_DEPLOY]
 NORMAL_MINUTES_DEFAULT = {WF_DEPLOY: 6, WF_TESTS: 40, WF_CAPTURE: 70, WF_SLATE: None}   # "normal is N" until runs give a median
 BEHIND_MINUTES = 90                  # hourly dispatch + ~6 min build leaves ~66 min of normal lag; 90 is the owner's
 CAPTURE_STALL_HOURS = 3              # quiet-hours capture slots are 60 min apart: three hours is two missed slots
+GRADING_OVERDUE_HOURS = 4.0          # the owner's line (2026-10-22): a ticket open this long after its game's start is stuck
 AI_SPEND_WARN = 0.8                  # alert at 80% of the cap, before the analyst stops itself at 100%
 BLIND_MINUTES = 90                   # long enough to ride out a GitHub blip and a rate-limit hour
 RESOLVED_FEED_HOURS = 36             # how long an "All clear" item stays in the feed for a polling Zap to see
@@ -562,7 +565,8 @@ class Watchdog:
                  version: Optional[Callable[[], Optional[dict]]] = None,
                  started_utc: Optional[Callable[[], Optional[str]]] = None,
                  health: Optional[Callable[[datetime], list]] = None,
-                 ai_spend: Optional[Callable[[datetime], Optional[dict]]] = None):
+                 ai_spend: Optional[Callable[[datetime], Optional[dict]]] = None,
+                 grading: Optional[Callable[[datetime], Optional[list]]] = None):
         self.env = os.environ if env is None else env
         self.now = now or _utcnow
         self.store = store or StateStore(default_state_path(self.env))
@@ -571,6 +575,7 @@ class Watchdog:
         self._started = started_utc or (lambda: None)
         self._health = health
         self._ai_spend = ai_spend
+        self._grading = grading
         self._lock = threading.Lock()
         self.state = self.store.load()
         gh = self.state.get("github") or {}
@@ -843,6 +848,38 @@ class Watchdog:
         return Outcome("ai_spend", ALERT, summary, [Finding("ai_spend", spend.get("key", "x"),
                        f"AI spend is at {pct}% of its cap", what, fix)], spend)
 
+    def check_grading(self, now: datetime) -> Outcome:
+        """Open tickets whose game started more than ``GRADING_OVERDUE_HOURS`` ago. The list comes from
+        ``live_settle.overdue_tickets``, which counts only what the live loop is responsible for (it leaves out
+        postponed and cancelled games, games still in play and families it cannot read), so this fires on a real stall
+        and not every night. The house pack is graded by the capture slot and is not counted here."""
+        if self._grading is None:
+            return Outcome("grading", SKIPPED, "no open-ticket source wired")
+        try:
+            overdue = self._grading(now)
+        except Exception as exc:  # noqa: BLE001 -- not being able to look is unknown, never "all clear"
+            return Outcome("grading", UNKNOWN, f"could not read the open tickets ({type(exc).__name__})")
+        if overdue is None:
+            return Outcome("grading", SKIPPED, "no open-ticket source wired")
+        if not overdue:
+            return Outcome("grading", OK, f"no ticket has been open more than {GRADING_OVERDUE_HOURS:g} h past its game's start")
+        tickets = sum(int(o.get("tickets") or 1) for o in overdue)
+        oldest = overdue[0]
+        games = ", ".join(f"{o['game']} ({o['sport']}, started {o['start_utc'][11:16]} UTC)" for o in overdue[:4])
+        more = f" and {len(overdue) - 4} more" if len(overdue) > 4 else ""
+        what = (f"{tickets} ticket{'s' if tickets != 1 else ''} on {len(overdue)} game{'s' if len(overdue) != 1 else ''} "
+                f"{'are' if tickets != 1 else 'is'} still open more than {GRADING_OVERDUE_HOURS:g} hours after the scheduled "
+                f"start: {games}{more}. The live settlement loop should have graded them within minutes of the final. "
+                "Records and bankrolls are out of date until they grade")
+        fix = ("open GET /hounds/live/status and the app log (search 'live settle'); the usual causes are the score feed "
+               "not listing the game under the names the ticket carries, the feed down, or LIVE_SETTLE=off. Ask Claude to look")
+        detail = {"games": len(overdue), "tickets": tickets, "oldest": oldest["key"],
+                  "oldest_hours": oldest["hours_overdue"]}
+        return Outcome("grading", ALERT, f"{tickets} ticket{'s' if tickets != 1 else ''} open past {GRADING_OVERDUE_HOURS:g} h",
+                       [Finding("grading_overdue", str(oldest["key"]),
+                                f"{tickets} ticket{'s' if tickets != 1 else ''} not graded {GRADING_OVERDUE_HOURS:g}+ hours after the game",
+                                what, fix)], detail)
+
     # -- incidents ----------------------------------------------------------
 
     def _open(self, kind: str) -> Optional[dict]:
@@ -907,6 +944,7 @@ class Watchdog:
             run("capture", lambda: self.check_capture(now))
             run("health", lambda: self.check_health(now))
             run("ai_spend", lambda: self.check_ai_spend(now))
+            run("grading", lambda: self.check_grading(now))
             outcomes["github_reach"] = self._reach(outcomes, now)
             for out in outcomes.values():
                 self._reconcile(out, now)
@@ -1185,8 +1223,15 @@ def health_alerts_source(started_utc: Optional[Callable[[], Optional[str]]] = No
     return source
 
 
+def grading_source(now: datetime) -> list:
+    """The open tickets past the grading line, from the live settlement loop's own reader (the app's ledgers and cache)."""
+    from src.hounds import live_settle
+    return live_settle.overdue_tickets(now, hours=GRADING_OVERDUE_HOURS)
+
+
 def build(*, env: Optional[Mapping] = None, started_utc: Optional[Callable[[], Optional[str]]] = None) -> Watchdog:
-    return Watchdog(env=env, started_utc=started_utc, health=health_alerts_source(started_utc))
+    return Watchdog(env=env, started_utc=started_utc, health=health_alerts_source(started_utc),
+                    grading=grading_source)
 
 
 def start_loop(*, ready: Optional[Callable[[], bool]] = None, stop_event: Optional[threading.Event] = None,

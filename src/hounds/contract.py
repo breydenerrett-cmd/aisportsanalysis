@@ -258,6 +258,12 @@ class BetRow:
     # "OPEN" | "GRADED" | "UNGRADED" (``ticket_status``), stamped when a payload is built, not when the book is
     # cached, so the 36-hour line is exact at the moment of the request. "" until stamped and on a refusal.
     status: str = ""
+    # The live-state keys (added 2026-10-22, additive, src/hounds/live_settle.py): ``event_id`` is the id the page asks
+    # GET /hounds/live about (upcoming / live score / final), ``sport`` the family code, ``graded_utc`` when the grade was
+    # written (the "Last graded" stamp). None when the source row carried none; the page then says less.
+    event_id: Optional[str] = None
+    sport: Optional[str] = None
+    graded_utc: Optional[str] = None
 
 
 @dataclass
