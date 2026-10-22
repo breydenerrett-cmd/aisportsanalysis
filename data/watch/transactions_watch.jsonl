@@ -5438,3 +5438,9 @@
 {"fetched_utc": "2026-10-22T21:44:12.128766+00:00", "game_date": "2026-10-22", "poll": true}
 {"fetched_utc": "2026-10-22T21:54:38.912068+00:00", "game_date": "2026-10-22", "poll": true}
 {"fetched_utc": "2026-10-22T22:10:08.631973+00:00", "game_date": "2026-10-22", "poll": true}
+{"fetched_utc": "2026-10-22T22:23:06.231760+00:00", "game_date": "2026-10-22", "poll": true}
+{"category": "other", "date": "2026-10-22", "first_seen_utc": "2026-10-22T22:23:06.231760+00:00", "player": "Alex Lange", "player_id": 656638, "team": "KC", "transaction_id": 946841}
+{"category": "other", "date": "2026-10-22", "first_seen_utc": "2026-10-22T22:23:06.231760+00:00", "player": "Mason Black", "player_id": 696131, "team": "KC", "transaction_id": 946842}
+{"category": "other", "date": "2026-10-22", "first_seen_utc": "2026-10-22T22:23:06.231760+00:00", "player": "Connor Seabold", "player_id": 657756, "team": "KC", "transaction_id": 946843}
+{"category": "other", "date": "2026-10-22", "first_seen_utc": "2026-10-22T22:23:06.231760+00:00", "player": "Easton McGee", "player_id": 668834, "team": "KC", "transaction_id": 946844}
+{"category": "other", "date": "2026-10-22", "first_seen_utc": "2026-10-22T22:23:06.231760+00:00", "player": "Alec Marsh", "player_id": 679525, "team": "KC", "transaction_id": 946845}
