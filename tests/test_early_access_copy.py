@@ -145,8 +145,8 @@ class TheWordsAgreeWithWhatIsEnforced(unittest.TestCase):
         self.assertEqual(re.findall(r"<a[^>]*data-checkout-cta[^>]*>", HTML), [])
         labels = [m.strip() for m in re.findall(
             r'<a[^>]*data-hook="cta-(?:primary|signup-hero|signup|signup-bottom)"[^>]*>(.*?)</a>', HTML, re.S)]
-        # # owner ruling 2026-10-20 kennel-first: the bar's primary button (cta-primary) is "Find your hound"; the hero, pricing and closing buttons stay the free account
-        self.assertEqual(labels, ["Find your hound"] + ["Create free account"] * 3)
+        # # owner ruling 2026-10-20 kennel-first: the bar's primary button (cta-primary) is "Make your first hound"; the hero, pricing and closing buttons stay the free account
+        self.assertEqual(labels, ["Make your first hound"] + ["Create free account"] * 3)
 
 
 class TheLandingPageStaysHonestWithJavaScriptOff(unittest.TestCase):
