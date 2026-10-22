@@ -1399,3 +1399,8 @@
 {"call_kind": "pregame", "credits": 3, "events": 4, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-22T06:48:34.623896Z", "regions": ["us"], "rows": 12, "sport_key": "basketball_nbl", "stored": 6}
 {"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T06:48:34.623896Z", "regions": ["us"], "rows": 34, "sport_key": "tennis_wta_ningbo_open", "stored": 34}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T07:12:11.899469Z", "regions": ["us"], "rows": 3, "sport_key": "cricket_international_t20", "stored": 3}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-10-22T13:25:00.677226Z", "observed_utc": "2026-10-22T07:25:00.677226Z", "sport_key": "soccer_japan_j_league"}
+{"events": 29, "kind": "peek", "next_check_utc": "2026-10-22T13:25:00.677226Z", "observed_utc": "2026-10-22T07:25:00.677226Z", "sport_key": "soccer_usa_mls"}
+{"commence_utc": "2026-10-22T07:45:00Z", "event_id": "1b7cc3ef0b6f98cf5a6dff4e3239db03", "kind": "phase", "observed_utc": "2026-10-22T07:25:00.677226Z", "phase": "t30m", "rows": 7, "sport_key": "cricket_test_match"}
+{"call_kind": "pregame", "credits": 1, "events": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T07:25:00.677226Z", "regions": ["au"], "rows": 8, "sport_key": "cricket_test_match", "stored": 7}
+{"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T07:25:00.677226Z", "regions": ["us"], "rows": 32, "sport_key": "tennis_wta_ningbo_open", "stored": 32}
