@@ -116,6 +116,21 @@ class OnTheRealApp(Steps):
         self.assertEqual(t.json()["coach"]["label"], "AI read")
         self.assertEqual(len(self.adapter.calls), 1)
 
+    def test_both_read_steps_are_rate_limited_per_user(self):
+        # checker 2026-10-21: the limit was wired but never exercised
+        from api.app import app
+        client = TestClient(app)
+        limiter = self.api._training_steps_limiter
+        limiter._windows.clear()
+        self.addCleanup(limiter._windows.clear)
+        mine = {"Authorization": f"Bearer {self.token}"}
+        url = f"/hounds/{self.hound_row['id']}/train/diagnose"
+        codes = [client.post(url, headers=mine).status_code for _ in range(limiter.limit + 1)]
+        self.assertEqual(codes[:limiter.limit], [200] * limiter.limit)
+        self.assertEqual(codes[-1], 429)
+        self.assertEqual(client.post(url.replace("diagnose", "assess"), headers=mine).status_code, 429)
+        self.assertEqual(self.adapter.calls, [], "a refused call asks no model")
+
     def test_a_training_without_the_confirm_is_still_a_400_and_asks_no_model(self):
         from api.app import app
         client = TestClient(app)
