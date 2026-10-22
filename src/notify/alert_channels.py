@@ -175,21 +175,30 @@ class SmsChannel(Channel):
             return Result(S_SKIPPED, "text alerts are for paid members")
         if not self.has_target(ctx):
             return Result(S_SKIPPED, "no opted-in number")
-        source = ctx.env if ctx.env is not None else os.environ
+        return self.send_to(ctx.prefs["phone"], text, http=ctx.http, env=ctx.env, now=ctx.now)
+
+    def send_to(self, phone: str, text: str, *, http: Callable, env: Optional[Mapping] = None,
+                now: Optional[datetime] = None) -> Result:
+        """One text through Twilio. The caller has already checked paid status and consent."""
+        source = env if env is not None else os.environ
         sid, token, sender = (str(source.get(k) or "").strip() for k in (ENV_SID, ENV_TOKEN, ENV_FROM))
-        body = urllib.parse.urlencode({"To": ctx.prefs["phone"], "From": sender, "Body": text}).encode()
+        body = urllib.parse.urlencode({"To": phone, "From": sender, "Body": text}).encode()
         basic = base64.b64encode(f"{sid}:{token}".encode()).decode()
         headers = {"Authorization": f"Basic {basic}", "Content-Type": "application/x-www-form-urlencoded",
                    "User-Agent": mail.USER_AGENT}
-        code, answer = ctx.http(TWILIO_URL.format(sid=sid), headers, body, mail.TIMEOUT_S)
+        code, answer = http(TWILIO_URL.format(sid=sid), headers, body, mail.TIMEOUT_S)
         if 200 <= code < 300:
             return Result(S_SENT)
         if code == 400 and str(TWILIO_STOPPED_CODE).encode() in (answer or b""):
-            alerts.sms_stop(ctx.prefs["phone"], now=ctx.now)
+            alerts.sms_stop(phone, now=now)
             return Result(S_SKIPPED, "member replied STOP")
         if code == 0 or code == 429 or code >= 500:
             return Result(S_RETRY, f"http {code}")
         return Result(S_DEAD, f"refused {code}")
+
+    def send_code(self, phone: str, code: str, *, http: Callable, env: Optional[Mapping] = None) -> Result:
+        """The verification text (api/alerts_routes.py). The code is in the body only, never in a log or a Result."""
+        return self.send_to(phone, f"LINEHOUND code {code}. Paper bets only. Reply STOP to end.", http=http, env=env)
 
     def deliver(self, ctx: Ctx) -> Result:
         return self._post(ctx, render.sms_text(ctx.events, ctx.sizing, ctx.prefs["tz"], ctx.env))

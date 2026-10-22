@@ -131,7 +131,7 @@ export function alertsPanel() {
     if (!c.available) note = c.reason;
     else if (c.name === "sms" && !c.allowed) note = "Text alerts are part of the member plan.";
     else if (c.name === "sms" && c.stopped) note = "You replied STOP. Add your number again to turn texts back on.";
-    else if (c.name === "sms" && !c.opted_in) note = "Add your number below to turn on texts.";
+    else if (c.name === "sms" && !c.opted_in) note = c.pending_phone ? "Type the code we texted you below." : "Add your number below to turn on texts.";
     else if (c.name === "push" && !c.has_target) note = "Switch on to allow notifications in this browser.";
     else if (c.name === "email" && !c.has_target) note = "No deliverable email address on this account.";
     else note = c.on ? "On." : "Off.";
@@ -161,14 +161,35 @@ export function alertsPanel() {
       form.appendChild(remove);
       return form;
     }
+    if (c.pending_phone) {
+      form.appendChild(el("p", { class: "signin__body", text: `We texted a 6-digit code to ${c.pending_phone}. Type it here to turn texts on.` }));
+      const code = el("input", { type: "text", inputmode: "numeric", autocomplete: "one-time-code", maxlength: "6", placeholder: "6-digit code", "data-hook": "alerts-sms-code" });
+      const verify = el("button", { type: "button", class: "btn btn--primary", "data-hook": "alerts-sms-verify", text: "Check code and turn on texts" });
+      verify.addEventListener("click", async () => {
+        try {
+          state = await apiPost("/me/alerts/sms/verify", { code: code.value });
+          state = await apiFetch("/me/alerts", { method: "PUT", body: JSON.stringify({ channels: { sms: true } }) });
+          say(status, "Texts are on.");
+        } catch (err) { say(status, errorText(err), true); }
+        render();
+      });
+      const cancel = el("button", { type: "button", class: "btn btn--ghost", text: "Use a different number" });
+      cancel.addEventListener("click", async () => {
+        try { state = await apiPost("/me/alerts/sms/remove", {}); } catch (err) { say(status, errorText(err), true); }
+        render();
+      });
+      form.appendChild(code);
+      form.appendChild(verify);
+      form.appendChild(cancel);
+      return form;
+    }
     const phone = el("input", { type: "tel", inputmode: "tel", autocomplete: "tel", placeholder: "US mobile number", "data-hook": "alerts-sms-phone" });
     const agree = el("input", { type: "checkbox", id: "alerts-sms-agree", "data-hook": "alerts-sms-agree" });
-    const save1 = el("button", { type: "button", class: "btn btn--primary", text: "Save number and turn on texts" });
+    const save1 = el("button", { type: "button", class: "btn btn--primary", text: "Text me a code" });
     save1.addEventListener("click", async () => {
       try {
         state = await apiPost("/me/alerts/sms", { phone: phone.value, consent: agree.checked });
-        state = await apiFetch("/me/alerts", { method: "PUT", body: JSON.stringify({ channels: { sms: true } }) });
-        say(status, "Texts are on.");
+        say(status, "Code sent. Type it below.");
       } catch (err) { say(status, errorText(err), true); }
       render();
     });

@@ -394,7 +394,7 @@ class Push(Base):
         raw = ua.public_key().public_bytes(webpush._crypto()["serialization"].Encoding.X962,
                                            webpush._crypto()["serialization"].PublicFormat.UncompressedPoint)
         auth = webpush.b64u(os.urandom(16))
-        return ua, {"endpoint": "https://push.example.net/send/abc123", "p256dh": webpush.b64u(raw), "auth": auth}
+        return ua, {"endpoint": "https://fcm.googleapis.com/fcm/send/abc123", "p256dh": webpush.b64u(raw), "auth": auth}
 
     def test_push_is_disabled_without_the_key(self):
         self.assertFalse(webpush.status({})["available"])
@@ -575,7 +575,8 @@ class Api(Base):
         body = self.api.feed(token, _rl=None).body.decode()
         self.assertIn("<rss", body)
         self.assertIn("just bet: Boston Red Sox ML +110", body)
-        self.assertIn(f"alert-{user.id}-", body)
+        self.assertIn("<guid isPermaLink=\"false\">alert-", body)
+        self.assertNotIn(f"alert-{user.id}-", body)          # the item id is opaque: no member id, no global counter
         for bad in ("", "short", "x" * 32, alerts.get_prefs(other.id)["feed_token"][:-1] + "A"):
             with self.assertRaises(HTTPException) as ctx:
                 self.api.feed(bad, _rl=None)
@@ -695,6 +696,214 @@ class Settings(Base):
         out = dispatch.send_test(user, "email", http=self.http, env=ENV)
         self.assertTrue(out["ok"])
         self.assertEqual(self.http.emails()[0]["subject"], "Test alert from LINEHOUND")
+
+
+# ---------------------------------------------------------------------------
+# checker round (2026-10-22): replay never alerts, the phone is verified, push endpoints are allow-listed, START/HELP
+# ---------------------------------------------------------------------------
+
+class CheckerRound(Base):
+    def run_engine(self, hound, **kw):
+        runner = dict(hound, created_at="2026-01-01T00:00:00Z")
+        return user_engine.run(DATE, [runner], standard_rows(), ledger=self.ledger, now=utc("2026-10-20T21:10:00Z"),
+                               game_pk_index={EVENT: {"game_pk": "900001"}}, **kw)
+
+    def test_a_replay_bet_graded_in_a_scratch_ledger_never_alerts(self):
+        # the "Before you unleashed" list and the backtest replay a slate into a scratch ledger and grade it with
+        # the same settler; the member's record is not involved, so no "your hound won" text may go out
+        user, hound = self.member()
+        self.run_engine(hound, mode="replay")
+        user_settle.settle(ledger=self.ledger, now=utc("2026-10-21T12:00:00Z"),
+                           mlb_results={"900001": result_row("900001", DATE, "BOS", "SEA", 5, 3)},
+                           game_pk_index={EVENT: {"game_pk": "900001"}}, close_fn=lambda bet: None)
+        self.assertEqual(alerts.events_for(user.id), [])
+
+    def test_a_locked_database_does_not_stop_the_bet(self):
+        import sqlite3
+        user, hound = self.member()
+        lock = sqlite3.connect(str(self.db), isolation_level=None)
+        lock.execute("BEGIN IMMEDIATE")
+        try:
+            with mock.patch.object(alerts, "_insert_event", side_effect=sqlite3.OperationalError("database is locked")):
+                with self.assertLogs("linehound.notify.alerts", level="ERROR"):
+                    out = self.run_engine(hound)
+        finally:
+            lock.execute("ROLLBACK")
+            lock.close()
+        self.assertEqual(out["bets_written"], 1)
+
+    # -- phone verification ------------------------------------------------------------------------------------------
+    def test_a_number_is_stored_only_after_the_code_is_typed_back(self):
+        user, _ = self.member()
+        number, code = alerts.sms_begin(user.id, "(555) 234-5678", now=at(0))
+        self.assertIsNone(alerts.get_prefs(user.id)["phone"])
+        self.assertEqual(alerts.sms_pending_phone(user.id, now=at(1)), "+15552345678")
+        with self.assertRaises(alerts.AlertError) as wrong:
+            alerts.sms_confirm(user.id, "000000" if code != "000000" else "111111", now=at(5))
+        self.assertEqual(wrong.exception.code, "sms_code_wrong")
+        self.assertIsNone(alerts.get_prefs(user.id)["phone"])
+        prefs = alerts.sms_confirm(user.id, code, now=at(10))
+        self.assertEqual(prefs["phone"], "+15552345678")
+        self.assertEqual(prefs["sms_consent_utc"], alerts.iso(at(0)))      # the consent time, not the verify time
+        self.assertIsNone(alerts.sms_pending_phone(user.id, now=at(11)))
+
+    def test_the_code_expires_and_five_wrong_tries_burn_it(self):
+        user, _ = self.member()
+        _, code = alerts.sms_begin(user.id, "5552345678", now=at(0))
+        for _i in range(alerts.SMS_CODE_TRIES):
+            with self.assertRaises(alerts.AlertError):
+                alerts.sms_confirm(user.id, "12345x", now=at(5))
+        with self.assertRaises(alerts.AlertError) as burnt:           # the right code no longer works
+            alerts.sms_confirm(user.id, code, now=at(6))
+        self.assertEqual(burnt.exception.code, "sms_code_expired")
+        _, code = alerts.sms_begin(user.id, "5552345678", now=at(120))
+        with self.assertRaises(alerts.AlertError) as late:
+            alerts.sms_confirm(user.id, code, now=at(120 + alerts.SMS_CODE_TTL_S + 1))
+        self.assertEqual(late.exception.code, "sms_code_expired")
+        self.assertIsNone(alerts.get_prefs(user.id)["phone"])
+
+    def test_codes_are_rate_limited_per_member_and_per_number(self):
+        user, _ = self.member()
+        other, _ = self.member(email="second.person@sample-mail.net", name="Rival")
+        alerts.sms_begin(user.id, "5552345678", now=at(0))
+        with self.assertRaises(alerts.AlertError) as soon:
+            alerts.sms_begin(user.id, "5552345678", now=at(10))
+        self.assertEqual(soon.exception.status, 429)
+        with self.assertRaises(alerts.AlertError) as busy:           # a second member cannot aim a code at the same number
+            alerts.sms_begin(other.id, "5552345678", now=at(20))
+        self.assertEqual(busy.exception.code, "sms_number_busy")
+        for k in range(1, alerts.SMS_CODE_PER_HOUR):
+            alerts.sms_begin(user.id, "5552345678", now=at(100 * k))
+        with self.assertRaises(alerts.AlertError) as capped:
+            alerts.sms_begin(user.id, "5552345678", now=at(100 * alerts.SMS_CODE_PER_HOUR))
+        self.assertEqual(capped.exception.code, "sms_code_limit")
+
+    @unittest.skipUnless(HAS_FASTAPI, "needs FastAPI")
+    def test_the_opt_in_route_texts_a_code_and_the_verify_route_stores_the_number(self):
+        import urllib.parse
+        from fastapi import HTTPException, Response
+        from api import alerts_routes as api
+        user, _ = self.member()
+        http = FakeHttp()
+        sent = []
+
+        def twilio(url, headers, body, timeout):
+            sent.append(body.decode())
+            return http(url, headers, body, timeout)
+        with mock.patch.dict(os.environ, TWILIO), mock.patch.object(api, "_is_paid", return_value=True), \
+                mock.patch.object(api, "_http", return_value=twilio):
+            api.sms_opt_in(api.SmsRequest(phone="5552345678", consent=True), Response(), current_user=user, _rl=None)
+            self.assertIsNone(alerts.get_prefs(user.id)["phone"])                 # not stored by the opt-in
+            self.assertEqual(len(sent), 1)
+            form = urllib.parse.parse_qs(sent[0])
+            self.assertEqual(form["To"], ["+15552345678"])
+            code = [w.rstrip(".") for w in form["Body"][0].split() if w.rstrip(".").isdigit() and len(w.rstrip(".")) == 6][0]
+            with self.assertRaises(HTTPException) as bad:
+                api.sms_verify(api.VerifyRequest(code="000000" if code != "000000" else "111111"), Response(),
+                               current_user=user, _rl=None)
+            self.assertEqual(bad.exception.status_code, 422)
+            api.sms_verify(api.VerifyRequest(code=code), Response(), current_user=user, _rl=None)
+        self.assertEqual(alerts.get_prefs(user.id)["phone"], "+15552345678")
+        self.assertTrue(alerts.get_prefs(user.id)["sms_consent_utc"])
+
+    @unittest.skipUnless(HAS_FASTAPI, "needs FastAPI")
+    def test_nothing_is_texted_when_the_text_provider_is_off_or_the_member_is_free(self):
+        from fastapi import HTTPException, Response
+        from api import alerts_routes as api
+        user, _ = self.member()
+        env = {k: v for k, v in os.environ.items() if k not in TWILIO}
+        with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(api, "_is_paid", return_value=True):
+            with self.assertRaises(HTTPException) as off:
+                api.sms_opt_in(api.SmsRequest(phone="5552345678", consent=True), Response(), current_user=user, _rl=None)
+        self.assertEqual(off.exception.status_code, 503)
+        with mock.patch.object(api, "_is_paid", return_value=False):
+            with self.assertRaises(HTTPException) as free:
+                api.sms_verify(api.VerifyRequest(code="123456"), Response(), current_user=user, _rl=None)
+        self.assertEqual(free.exception.status_code, 402)
+        self.assertIsNone(alerts.sms_pending_phone(user.id))
+
+    # -- START / HELP ------------------------------------------------------------------------------------------------
+    @unittest.skipUnless(HAS_FASTAPI, "needs FastAPI")
+    def test_start_switches_a_stopped_verified_number_back_on_and_help_answers(self):
+        from api import alerts_routes as api
+        user, _ = self.member()
+        alerts.sms_opt_in(user.id, "5552345678", now=at(-60))
+        alerts.update_prefs(user.id, {"channels": {"sms": True}})
+        alerts.sms_stop("+15552345678")
+        self.assertTrue(alerts.get_prefs(user.id)["sms_stopped"])
+
+        def post(word):
+            params = {"From": "+15552345678", "Body": word}
+            sig = api.twilio_signature("tok_test_secret", "https://linehound.app/alerts/sms/inbound", params)
+
+            class Req:
+                headers = {"X-Twilio-Signature": sig}
+
+                class url:
+                    path = "/alerts/sms/inbound"
+
+                async def body(self):
+                    return f"From=%2B15552345678&Body={word}".encode()
+            return asyncio.run(api.sms_inbound(Req(), _rl=None)).body.decode()
+        with mock.patch.dict(os.environ, {ch.ENV_TOKEN: "tok_test_secret", "PUBLIC_BASE_URL": "https://linehound.app"}):
+            self.assertIn("STOP", post("HELP"))
+            self.assertTrue(alerts.get_prefs(user.id)["sms_stopped"])        # HELP changes nothing
+            self.assertIn("back on", post("start"))
+        prefs = alerts.get_prefs(user.id)
+        self.assertFalse(prefs["sms_stopped"])
+        self.assertTrue(prefs["channels"]["sms"])
+        self.assertEqual(alerts.sms_start("+15559990000"), 0)                # an unverified number is untouched
+
+    # -- push endpoints ----------------------------------------------------------------------------------------------
+    def test_only_real_push_services_are_accepted_as_endpoints(self):
+        user, _ = self.member()
+        key, auth = webpush.b64u(b"\x04" + b"k" * 64), webpush.b64u(b"a" * 16)
+        for good in ("https://fcm.googleapis.com/fcm/send/x", "https://updates.push.services.mozilla.com/wpush/v2/x",
+                     "https://web.push.apple.com/x", "https://wns2-par02p.notify.windows.com/w/?token=x"):
+            alerts.add_push_subscription(user.id, good, key, auth)
+        for bad in ("https://169.254.169.254/latest", "https://internal.example.local/admin", "http://fcm.googleapis.com/x",
+                    "https://fcm.googleapis.com.evil.net/x", "https://fcm.googleapis.com:8443/x",
+                    "https://user:pw@fcm.googleapis.com/x", "https://evilfcm.googleapis.com.attacker.io/x"):
+            with self.assertRaises(alerts.AlertError, msg=bad):
+                alerts.add_push_subscription(user.id, bad, key, auth)
+        with self.assertRaises(alerts.AlertError):                       # keys that are not a P-256 point and a 16-byte secret
+            alerts.add_push_subscription(user.id, "https://fcm.googleapis.com/x2", "short", auth)
+        with self.assertRaises(alerts.AlertError):
+            alerts.add_push_subscription(user.id, "https://fcm.googleapis.com/x3", key, "short")
+
+    def test_a_member_cannot_store_unlimited_subscriptions(self):
+        user, _ = self.member()
+        key, auth = webpush.b64u(b"\x04" + b"k" * 64), webpush.b64u(b"a" * 16)
+        for n in range(alerts.MAX_PUSH_SUBSCRIPTIONS):
+            alerts.add_push_subscription(user.id, f"https://fcm.googleapis.com/fcm/send/{n}", key, auth)
+        with self.assertRaises(alerts.AlertError) as over:
+            alerts.add_push_subscription(user.id, "https://fcm.googleapis.com/fcm/send/extra", key, auth)
+        self.assertEqual(over.exception.code, "subscription_limit")
+        alerts.add_push_subscription(user.id, "https://fcm.googleapis.com/fcm/send/0", key, auth)   # a re-save is fine
+
+    # -- the secret feed ---------------------------------------------------------------------------------------------
+    def test_the_feed_token_is_looked_up_by_hash_and_an_old_row_is_migrated(self):
+        user, _ = self.member()
+        token = alerts.get_prefs(user.id)["feed_token"]
+        self.assertEqual(alerts.user_for_feed_token(token), user.id)
+        with alerts.connect() as conn:                       # the plain token is not what the lookup index holds
+            self.assertNotEqual(conn.execute("SELECT feed_hash FROM alert_prefs WHERE user_id = ?", (user.id,)).fetchone()[0], token)
+            conn.execute("UPDATE alert_prefs SET feed_hash = NULL")      # a row written before the column existed
+        self.assertEqual(alerts.user_for_feed_token(token), user.id)     # the next connect backfills it
+        self.assertIsNone(alerts.user_for_feed_token(token[:-1] + ("A" if token[-1] != "A" else "B")))
+
+    @unittest.skipUnless(HAS_FASTAPI, "needs FastAPI")
+    def test_the_access_log_never_shows_the_feed_token(self):
+        import logging
+        from api import alerts_routes as api  # noqa: F401 -- importing it installs the filter
+        user, _ = self.member()
+        token = alerts.get_prefs(user.id)["feed_token"]
+        record = logging.LogRecord("uvicorn.access", logging.INFO, __file__, 1, '%s - "%s %s HTTP/%s" %d',
+                                   ("1.2.3.4:5", "GET", f"/alerts/feed/{token}.xml", "1.1", 200), None)
+        for f in logging.getLogger("uvicorn.access").filters:
+            f.filter(record)
+        self.assertNotIn(token, record.getMessage())
+        self.assertIn("/alerts/feed/REDACTED.xml", record.getMessage())
 
 
 if __name__ == "__main__":

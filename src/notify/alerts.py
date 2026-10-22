@@ -33,13 +33,15 @@ NO SECRETS IN LOGS: nothing here logs a phone number, an endpoint, a token or a 
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import logging
 import re
 import secrets
 import threading
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Iterator, List, Mapping, Optional
 
 from src.appstate import users as users_store
@@ -93,6 +95,11 @@ def _ensure_schema(conn) -> None:
         phone TEXT, sms_consent_utc TEXT, sms_stopped INTEGER NOT NULL DEFAULT 0,
         created_utc TEXT, updated_utc TEXT)""")
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS alert_prefs_feed ON alert_prefs(feed_token)")
+    _migrate_feed_hash(conn)
+    conn.execute("""CREATE TABLE IF NOT EXISTS sms_verifications (
+        user_id INTEGER PRIMARY KEY, phone TEXT NOT NULL, code_hash TEXT NOT NULL, consent_utc TEXT NOT NULL,
+        expires_utc TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, sent_utc TEXT NOT NULL,
+        window_start_utc TEXT NOT NULL, window_count INTEGER NOT NULL DEFAULT 1)""")
     conn.execute("""CREATE TABLE IF NOT EXISTS alert_events (
         id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, kind TEXT NOT NULL,
         hound_id TEXT NOT NULL, bet_id TEXT NOT NULL, payload_json TEXT NOT NULL, created_utc TEXT NOT NULL,
@@ -113,6 +120,26 @@ def _ensure_schema(conn) -> None:
         id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, platform TEXT NOT NULL,
         token TEXT NOT NULL UNIQUE, app_version TEXT, created_utc TEXT NOT NULL, last_seen_utc TEXT,
         revoked_utc TEXT)""")
+
+
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(str(token).encode("utf-8")).hexdigest()
+
+
+def _migrate_feed_hash(conn) -> None:
+    """The RSS feed is looked up by the SHA-256 of its token (an index probe on a hash tells a guesser nothing about
+    the token itself), then confirmed with a constant-time compare. Adds the column to a table made before it."""
+    columns = {r[1] for r in conn.execute("PRAGMA table_info(alert_prefs)").fetchall()}
+    if "feed_hash" not in columns:
+        try:
+            conn.execute("ALTER TABLE alert_prefs ADD COLUMN feed_hash TEXT")
+        except Exception:  # noqa: BLE001 -- another process added it first
+            pass
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS alert_prefs_feed_hash ON alert_prefs(feed_hash)")
+    for row in conn.execute("SELECT user_id, feed_token FROM alert_prefs WHERE feed_hash IS NULL "
+                            "AND feed_token IS NOT NULL").fetchall():
+        conn.execute("UPDATE alert_prefs SET feed_hash = ? WHERE user_id = ? AND feed_hash IS NULL",
+                     (_hash_token(row[1]), row[0]))
 
 
 @contextmanager
@@ -148,8 +175,9 @@ def ensure_prefs(user_id: int, *, now: Optional[datetime] = None) -> dict:
     """Create the all-off row (with its secret RSS token) the first time, then return it."""
     stamp = iso(now or utcnow())
     with _lock, connect() as conn:
-        conn.execute("INSERT OR IGNORE INTO alert_prefs (user_id, feed_token, created_utc, updated_utc) "
-                     "VALUES (?, ?, ?, ?)", (int(user_id), secrets.token_urlsafe(24), stamp, stamp))
+        fresh = secrets.token_urlsafe(24)
+        conn.execute("INSERT OR IGNORE INTO alert_prefs (user_id, feed_token, feed_hash, created_utc, updated_utc) "
+                     "VALUES (?, ?, ?, ?, ?)", (int(user_id), fresh, _hash_token(fresh), stamp, stamp))
         row = conn.execute("SELECT * FROM alert_prefs WHERE user_id = ?", (int(user_id),)).fetchone()
     return _row_prefs(row)
 
@@ -233,8 +261,10 @@ def normalize_phone(raw: Any) -> Optional[str]:
     return candidate if len(digits) == 10 and PHONE_RE.match(candidate) else None
 
 
-def sms_opt_in(user_id: int, phone: str, *, now: Optional[datetime] = None) -> dict:
-    """Store the number ONLY on an explicit opt-in (the route requires the consent box). Clears an old STOP."""
+def sms_opt_in(user_id: int, phone: str, *, now: Optional[datetime] = None,
+               consent_utc: Optional[str] = None) -> dict:
+    """Store a number that has ALREADY been verified (``sms_confirm`` is the route's only caller: a text with a code
+    reached the number first). Clears an old STOP. ``consent_utc`` is when the member ticked the agree box."""
     number = normalize_phone(phone)
     if number is None:
         raise AlertError("phone_invalid", "enter a US mobile number")
@@ -242,12 +272,128 @@ def sms_opt_in(user_id: int, phone: str, *, now: Optional[datetime] = None) -> d
     stamp = iso(now or utcnow())
     with _lock, connect() as conn:
         conn.execute("UPDATE alert_prefs SET phone = ?, sms_consent_utc = ?, sms_stopped = 0, updated_utc = ? "
-                     "WHERE user_id = ?", (number, stamp, stamp, int(user_id)))
+                     "WHERE user_id = ?", (number, consent_utc or stamp, stamp, int(user_id)))
     return get_prefs(user_id)
 
 
+# -- phone verification: a number is stored only after the member types back a code texted to it ----------------------
+# Without this a paid member could type ANY number and have LINEHOUND text a stranger. The code is 6 digits, valid 10
+# minutes, 5 tries; a member may ask for at most 5 codes an hour and one per minute; a number gets at most one code
+# per 10 minutes across all members. Only a hash of the code is stored and the code is never logged.
+
+SMS_CODE_TTL_S = 600
+SMS_CODE_TRIES = 5
+SMS_CODE_GAP_S = 60
+SMS_CODE_PER_HOUR = 5
+SMS_NUMBER_GAP_S = 600
+
+
+def _code_hash(user_id: int, phone: str, code: str) -> str:
+    return hashlib.sha256(f"{int(user_id)}|{phone}|{code}".encode()).hexdigest()
+
+
+def sms_begin(user_id: int, phone: str, *, now: Optional[datetime] = None) -> tuple:
+    """Start verification: returns (number, code) for the caller to TEXT to that number. Nothing is stored on the
+    member's preferences yet. Raises AlertError(429) when asked too often."""
+    number = normalize_phone(phone)
+    if number is None:
+        raise AlertError("phone_invalid", "enter a US mobile number")
+    at = now or utcnow()
+    stamp = iso(at)
+    ensure_prefs(user_id, now=now)
+    with _lock, connect() as conn:
+        mine = conn.execute("SELECT * FROM sms_verifications WHERE user_id = ?", (int(user_id),)).fetchone()
+        window_start, count = stamp, 1
+        if mine is not None:
+            last = parse_iso(mine["sent_utc"])
+            if last is not None and (at - last).total_seconds() < SMS_CODE_GAP_S:
+                raise AlertError("sms_code_too_soon", "wait a minute before asking for another code", 429)
+            started = parse_iso(mine["window_start_utc"])
+            if started is not None and (at - started).total_seconds() < 3600:
+                window_start, count = mine["window_start_utc"], int(mine["window_count"]) + 1
+                if count > SMS_CODE_PER_HOUR:
+                    raise AlertError("sms_code_limit", "too many codes this hour; try again later", 429)
+        for r in conn.execute("SELECT sent_utc FROM sms_verifications WHERE phone = ? AND user_id != ?",
+                              (number, int(user_id))).fetchall():
+            sent = parse_iso(r["sent_utc"])
+            if sent is not None and (at - sent).total_seconds() < SMS_NUMBER_GAP_S:
+                raise AlertError("sms_number_busy", "a code was just sent to that number; try again later", 429)
+        code = f"{secrets.randbelow(10 ** 6):06d}"
+        conn.execute(
+            "INSERT INTO sms_verifications (user_id, phone, code_hash, consent_utc, expires_utc, attempts, sent_utc, "
+            "window_start_utc, window_count) VALUES (?,?,?,?,?,0,?,?,?) ON CONFLICT(user_id) DO UPDATE SET "
+            "phone = excluded.phone, code_hash = excluded.code_hash, consent_utc = excluded.consent_utc, "
+            "expires_utc = excluded.expires_utc, attempts = 0, sent_utc = excluded.sent_utc, "
+            "window_start_utc = excluded.window_start_utc, window_count = excluded.window_count",
+            (int(user_id), number, _code_hash(user_id, number, code), stamp,
+             iso(at + timedelta(seconds=SMS_CODE_TTL_S)), stamp, window_start, count))
+    return number, code
+
+
+def sms_cancel_pending(user_id: int) -> None:
+    with _lock, connect() as conn:
+        conn.execute("DELETE FROM sms_verifications WHERE user_id = ?", (int(user_id),))
+
+
+def sms_pending_phone(user_id: int, *, now: Optional[datetime] = None) -> Optional[str]:
+    """The number a code was sent to that is still waiting for it, else None."""
+    with connect() as conn:
+        row = conn.execute("SELECT phone, expires_utc FROM sms_verifications WHERE user_id = ?",
+                           (int(user_id),)).fetchone()
+    if row is None:
+        return None
+    expires = parse_iso(row["expires_utc"])
+    return row["phone"] if expires is not None and (now or utcnow()) < expires else None
+
+
+def sms_confirm(user_id: int, code: Any, *, now: Optional[datetime] = None) -> dict:
+    """Check the typed code. On success the number is stored with the member's consent time and the pending row is
+    removed; a wrong code costs one of five tries; an expired or exhausted one is deleted."""
+    at = now or utcnow()
+    typed = re.sub(r"\D", "", str(code or ""))
+    failure: Optional[AlertError] = None
+    phone = consent = ""
+    with _lock, connect() as conn:                # the failure is raised AFTER the block: leaving it by an exception would roll back the tries counter
+        row = conn.execute("SELECT * FROM sms_verifications WHERE user_id = ?", (int(user_id),)).fetchone()
+        expires = parse_iso(row["expires_utc"]) if row else None
+        if row is None or expires is None or at >= expires or int(row["attempts"]) >= SMS_CODE_TRIES:
+            if row is not None:
+                conn.execute("DELETE FROM sms_verifications WHERE user_id = ?", (int(user_id),))
+            failure = AlertError("sms_code_expired", "that code has expired; ask for a new one", 410)
+        elif len(typed) != 6 or not hmac.compare_digest(_code_hash(user_id, row["phone"], typed).encode(),
+                                                        row["code_hash"].encode()):
+            conn.execute("UPDATE sms_verifications SET attempts = attempts + 1 WHERE user_id = ?", (int(user_id),))
+            failure = AlertError("sms_code_wrong", "that code is not right", 422)
+        else:
+            phone, consent = row["phone"], row["consent_utc"]
+            conn.execute("DELETE FROM sms_verifications WHERE user_id = ?", (int(user_id),))
+    if failure is not None:
+        raise failure
+    return sms_opt_in(user_id, phone, now=at, consent_utc=consent)
+
+
+def sms_start(phone: str, *, now: Optional[datetime] = None) -> int:
+    """START (or YES / UNSTOP) from a number that was verified and opted in: lift the STOP flag and switch texts back
+    on. A number nobody verified is untouched. Returns how many members were switched back on."""
+    number = normalize_phone(phone)
+    if number is None:
+        return 0
+    n = 0
+    with _lock, connect() as conn:
+        for row in conn.execute("SELECT * FROM alert_prefs WHERE phone = ? AND sms_consent_utc IS NOT NULL "
+                                "AND sms_stopped = 1", (number,)).fetchall():
+            channels = _row_prefs(row)["channels"]
+            channels["sms"] = True
+            conn.execute("UPDATE alert_prefs SET channels_json = ?, sms_stopped = 0, updated_utc = ? "
+                         "WHERE user_id = ?", (json.dumps(channels, sort_keys=True), iso(now or utcnow()),
+                                               row["user_id"]))
+            n += 1
+    return n
+
+
 def sms_remove(user_id: int, *, now: Optional[datetime] = None) -> None:
-    """Forget the number and the consent and turn SMS off."""
+    """Forget the number and the consent and turn SMS off (and drop a code still waiting to be typed)."""
+    sms_cancel_pending(user_id)
     prefs = get_prefs(user_id)
     if prefs is None:
         return
@@ -280,8 +426,8 @@ def rotate_feed_token(user_id: int, *, now: Optional[datetime] = None) -> str:
     ensure_prefs(user_id, now=now)
     token = secrets.token_urlsafe(24)
     with _lock, connect() as conn:
-        conn.execute("UPDATE alert_prefs SET feed_token = ?, updated_utc = ? WHERE user_id = ?",
-                     (token, iso(now or utcnow()), int(user_id)))
+        conn.execute("UPDATE alert_prefs SET feed_token = ?, feed_hash = ?, updated_utc = ? WHERE user_id = ?",
+                     (token, _hash_token(token), iso(now or utcnow()), int(user_id)))
     return token
 
 
@@ -291,18 +437,54 @@ def user_for_feed_token(token: Any) -> Optional[int]:
     if len(text) < 20 or len(text) > 80:
         return None
     with connect() as conn:
-        row = conn.execute("SELECT user_id FROM alert_prefs WHERE feed_token = ?", (text,)).fetchone()
-    return int(row["user_id"]) if row else None
+        row = conn.execute("SELECT user_id, feed_token FROM alert_prefs WHERE feed_hash = ?",
+                           (_hash_token(text),)).fetchone()
+    if row is None or not hmac.compare_digest(str(row["feed_token"] or "").encode(), text.encode()):
+        return None
+    return int(row["user_id"])
 
 
 # ---------------------------------------------------------------------------
 # push subscriptions and native device tokens
 # ---------------------------------------------------------------------------
 
+#: the push services the browsers use. The server POSTs to whatever endpoint a member saves, so an endpoint outside
+#: these hosts is refused (otherwise a member could aim the server at any https address it can reach).
+PUSH_HOST_SUFFIXES = ("fcm.googleapis.com", "android.googleapis.com", "push.services.mozilla.com", "push.apple.com",
+                      "notify.windows.com")
+MAX_PUSH_SUBSCRIPTIONS = 10
+
+
+def push_endpoint_ok(endpoint: Any) -> bool:
+    from urllib.parse import urlparse
+    try:
+        parsed = urlparse(str(endpoint))
+        host = (parsed.hostname or "").lower()
+        port = parsed.port
+    except ValueError:
+        return False
+    if parsed.scheme != "https" or parsed.username or parsed.password or port not in (None, 443):
+        return False
+    return any(host == suffix or host.endswith("." + suffix) for suffix in PUSH_HOST_SUFFIXES)
+
+
+def _b64u_len(text: Any) -> int:
+    import base64
+    raw = str(text)
+    try:
+        return len(base64.urlsafe_b64decode(raw + "=" * (-len(raw) % 4)))
+    except Exception:  # noqa: BLE001
+        return -1
+
+
 def add_push_subscription(user_id: int, endpoint: str, p256dh: str, auth: str, *, now: Optional[datetime] = None) -> None:
-    if not str(endpoint).startswith("https://") or len(endpoint) > 1000 or not p256dh or not auth:
+    if not push_endpoint_ok(endpoint) or len(endpoint) > 1000 or _b64u_len(p256dh) != 65 or _b64u_len(auth) != 16:
         raise AlertError("subscription_invalid", "that is not a push subscription")
     with _lock, connect() as conn:
+        known = conn.execute("SELECT 1 FROM push_subscriptions WHERE endpoint = ?", (endpoint,)).fetchone()
+        mine = conn.execute("SELECT COUNT(*) FROM push_subscriptions WHERE user_id = ?", (int(user_id),)).fetchone()[0]
+        if known is None and mine >= MAX_PUSH_SUBSCRIPTIONS:
+            raise AlertError("subscription_limit", "too many browsers; remove one first", 409)
         conn.execute("INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth, created_utc) VALUES (?,?,?,?,?) "
                      "ON CONFLICT(endpoint) DO UPDATE SET user_id = excluded.user_id, p256dh = excluded.p256dh, "
                      "auth = excluded.auth", (int(user_id), endpoint, p256dh, auth, iso(now or utcnow())))
@@ -394,9 +576,13 @@ def _owner_of(hound_id: str) -> Optional[tuple]:
     return (hound, owner) if get_prefs(owner) is not None else None
 
 
+def _is_replay(row: Mapping) -> bool:
+    return row.get("provenance") == "replay" or row.get("segment") == "replay"
+
+
 def emit_placed(row: Mapping, *, now: Optional[datetime] = None) -> bool:
     """One 'bet placed' event for a freshly written bet row. True when an event was written."""
-    if row.get("kind") not in (None, "hound_user_bet") or row.get("provenance") == "replay" or row.get("role"):
+    if row.get("kind") not in (None, "hound_user_bet") or _is_replay(row) or row.get("role"):
         return False
     if not _price_ok(row.get("price")):
         return False
@@ -411,7 +597,9 @@ def emit_placed(row: Mapping, *, now: Optional[datetime] = None) -> bool:
 def emit_settled(bet: Mapping, graded: Mapping, *, now: Optional[datetime] = None) -> bool:
     """One 'bet settled' event (win, loss or push; a void is not reported)."""
     result = str(graded.get("result") or "").lower()          # the grader writes WIN / LOSS / PUSH / VOID
-    if result not in SETTLED_RESULTS or bet.get("role"):
+    # A replay bet (the "before you unleashed" list, a backtest, a rehearsal) is graded in a scratch ledger by the same
+    # settler; it is not the member's record, so it never alerts.
+    if result not in SETTLED_RESULTS or bet.get("role") or _is_replay(bet):
         return False
     found = _owner_of(bet["hound_id"])
     if found is None:

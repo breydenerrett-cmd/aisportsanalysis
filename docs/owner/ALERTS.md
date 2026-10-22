@@ -29,7 +29,7 @@ Optional: `VAPID_SUBJECT` = `mailto:you@yourdomain` (a contact the push services
 
 ## 2. Text alerts (SMS): the decision memo and the steps
 
-**Decision made 2026-10-21:** texts are a paid-member feature (free accounts get email and notifications). The code is written and OFF until all three of `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` are set. It stores a phone number only after the member ticks the agree box, never texts a free account, and a STOP reply switches that number off for good (Twilio also enforces STOP at the carrier).
+**Decision made 2026-10-21:** texts are a paid-member feature (free accounts get email and notifications). The code is written and OFF until all three of `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` are set. It stores a phone number only after the member ticks the agree box AND types back a 6-digit code texted to that number (so nobody can make LINEHOUND text a stranger; codes are limited to 1 a minute and 5 an hour per member), never texts a free account, and a STOP reply switches that number off until the member replies START (Twilio also enforces STOP at the carrier). HELP gets a one-line answer.
 
 **Cost (verify on https://www.twilio.com/en-us/sms/pricing/us and https://www.twilio.com/en-us/user-authentication-identity/pricing before paying; figures change):**
 - Per text: roughly 0.8 cents Twilio plus carrier fees of about 0.3 to 0.5 cent per segment, so about 1.1 to 1.4 cents each. A burst is ONE text (60-second batching) and the cap is 6 texts per member per hour.

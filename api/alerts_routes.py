@@ -5,7 +5,10 @@
     POST /me/alerts/test                signed in. {channel}: one sample alert, now.
     POST /me/alerts/push                signed in. {endpoint, keys:{p256dh, auth}}: save this browser's push subscription.
     POST /me/alerts/push/remove         signed in. {endpoint}.
-    POST /me/alerts/sms                 signed in, PAID members only. {phone, consent:true}: the explicit opt-in.
+    POST /me/alerts/sms                 signed in, PAID members only. {phone, consent:true}: the explicit opt-in. Texts a
+                                        6-digit code to the number; nothing is stored on the account yet.
+    POST /me/alerts/sms/verify          signed in, PAID members only. {code}: the number is stored only when the code
+                                        texted to it is typed back (a member cannot make LINEHOUND text a stranger).
     POST /me/alerts/sms/remove          signed in. Forget the number.
     POST /me/alerts/feed/rotate         signed in. A new secret RSS address (the old one stops working).
     POST /me/alerts/device              signed in. {platform, token, app_version}: the native apps register here (stub channel).
@@ -22,7 +25,9 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+import logging
 import os
+import re
 import urllib.parse
 from typing import Any, Optional
 
@@ -41,6 +46,7 @@ from src.notify import alert_channels as ch
 from src.notify import alert_dispatch as dispatch
 from src.notify import alert_render as render
 from src.notify import alerts
+from src.notify import email as mail
 from src.notify import email_prefs as prefs_mod
 from src.notify import webpush
 
@@ -52,12 +58,43 @@ _write_limiter = ratelimit.FixedWindowLimiter(limit=60, window_s=3600.0)
 _rl_write = ratelimit.limiter_dependency(_write_limiter, user_dependency=get_current_user)
 _test_limiter = ratelimit.FixedWindowLimiter(limit=10, window_s=3600.0)
 _rl_test = ratelimit.limiter_dependency(_test_limiter, user_dependency=get_current_user)
+_sms_code_limiter = ratelimit.FixedWindowLimiter(limit=10, window_s=3600.0)
+_rl_sms_code = ratelimit.limiter_dependency(_sms_code_limiter, user_dependency=get_current_user)
 _public_limiter = ratelimit.FixedWindowLimiter(limit=60, window_s=60.0)
 _rl_public = ratelimit.limiter_dependency(_public_limiter)
 
 STOP_WORDS = ("STOP", "STOPALL", "UNSUBSCRIBE", "CANCEL", "END", "QUIT")
+START_WORDS = ("START", "YES", "UNSTOP")
+HELP_WORDS = ("HELP", "INFO")
+HELP_TEXT = ("LINEHOUND bet alerts (paper bets only, 21+). Change them in Account, Alerts at linehound.app. "
+             "Reply STOP to end, START to resume.")
+
+
+class _HideFeedToken(logging.Filter):
+    """uvicorn's access log prints the request path, and the secret feed address IS a path. Blank the token there."""
+    _pattern = re.compile(r"/alerts/feed/[^/\s?\"]+")
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        try:
+            if isinstance(record.args, tuple):
+                record.args = tuple(self._pattern.sub("/alerts/feed/REDACTED.xml", a) if isinstance(a, str) else a
+                                    for a in record.args)
+            if isinstance(record.msg, str):
+                record.msg = self._pattern.sub("/alerts/feed/REDACTED.xml", record.msg)
+        except Exception:  # noqa: BLE001 -- a log filter must never break a request
+            pass
+        return True
+
+
+logging.getLogger("uvicorn.access").addFilter(_HideFeedToken())
+
 SMS_PAID_MESSAGE = "Text alerts are part of the member plan. Email and browser notifications are free."
 FEED_ITEMS = 50
+
+
+def _http():
+    """The transport for the one text this module sends (the verification code). A test replaces this."""
+    return mail.urllib_sender
 
 
 def _mask_phone(phone: Optional[str]) -> Optional[str]:
@@ -88,6 +125,7 @@ def _payload(user) -> dict:
             entry["phone"] = _mask_phone(prefs["phone"])
             entry["opted_in"] = bool(prefs["phone"] and prefs["sms_consent_utc"])
             entry["stopped"] = prefs["sms_stopped"]
+            entry["pending_phone"] = _mask_phone(alerts.sms_pending_phone(user.id))
         if name == "push":
             entry["public_key"] = webpush.public_key()
         channels.append(entry)
@@ -182,8 +220,9 @@ class SmsRequest(BaseModel):
 
 @router.post("/me/alerts/sms")
 def sms_opt_in(body: SmsRequest, response: Response, current_user: users_store.User = Depends(get_current_user),
-               _rl: None = Depends(_rl_write)) -> dict:
-    """The explicit opt-in. Paid members only; ``consent`` must be literally true (the page's checkbox)."""
+               _rl: None = Depends(_rl_sms_code)) -> dict:
+    """The explicit opt-in. Paid members only; ``consent`` must be literally true (the page's checkbox). The number is
+    NOT stored yet: a 6-digit code is texted to it and ``/me/alerts/sms/verify`` stores it when typed back."""
     response.headers["Cache-Control"] = "no-store"
     if not _is_paid(current_user):
         raise HTTPException(status_code=402, detail={"error": "upgrade_required", "feature": "sms_alerts",
@@ -191,8 +230,34 @@ def sms_opt_in(body: SmsRequest, response: Response, current_user: users_store.U
     if body.consent is not True:
         raise HTTPException(status_code=422, detail={"error": "consent_required",
                                                      "message": "Tick the box to agree to receive texts."})
+    if not ch.CHANNELS["sms"].availability()["available"]:
+        raise HTTPException(status_code=503, detail={"error": "sms_unavailable",
+                                                     "message": "Text alerts are not switched on yet."})
     try:
-        alerts.sms_opt_in(current_user.id, str(body.phone or ""))
+        number, code = alerts.sms_begin(current_user.id, str(body.phone or ""))
+    except alerts.AlertError as exc:
+        raise _error(exc)
+    result = ch.CHANNELS["sms"].send_code(number, code, http=_http())
+    if result.status != ch.S_SENT:
+        alerts.sms_cancel_pending(current_user.id)
+        raise HTTPException(status_code=502, detail={"error": "sms_not_sent",
+                                                     "message": "We could not text that number. Check it and try again."})
+    return envelope(_payload(current_user))
+
+
+class VerifyRequest(BaseModel):
+    code: Optional[Any] = None
+
+
+@router.post("/me/alerts/sms/verify")
+def sms_verify(body: VerifyRequest, response: Response, current_user: users_store.User = Depends(get_current_user),
+               _rl: None = Depends(_rl_write)) -> dict:
+    response.headers["Cache-Control"] = "no-store"
+    if not _is_paid(current_user):
+        raise HTTPException(status_code=402, detail={"error": "upgrade_required", "feature": "sms_alerts",
+                                                     "message": SMS_PAID_MESSAGE})
+    try:
+        alerts.sms_confirm(current_user.id, body.code)
     except alerts.AlertError as exc:
         raise _error(exc)
     return envelope(_payload(current_user))
@@ -250,7 +315,7 @@ def feed(token: str, _rl: None = Depends(_rl_public)) -> Response:
         pub = alerts.parse_iso(event["created_utc"])
         p = event["payload"]
         items.append({"title": render.subject([event]), "link": render.hound_link(p["hound_id"]),
-                      "guid": f"alert-{user_id}-{event['id']}", "pub": pub,
+                      "guid": "alert-" + hashlib.sha256(f"{user_id}:{event['id']}".encode()).hexdigest()[:20], "pub": pub,
                       "description": render.event_line(event, sizing, prefs["tz"] if prefs else alerts.DEFAULT_TZ)
                       + ". Paper bet. 21+. 1-800-GAMBLER."})
     xml = rss.render(title="LINEHOUND bet alerts", link=prefs_mod.base_url() + "/web/",
@@ -302,7 +367,8 @@ def twilio_signature(auth_token: str, url: str, params: dict) -> str:
 async def sms_inbound(request: Request, _rl: None = Depends(_rl_public)) -> Response:
     """Twilio posts every reply here (set as the number's 'A message comes in' webhook). The signature is checked
     against TWILIO_AUTH_TOKEN; with no token set the route does not exist (404). STOP, STOPALL, UNSUBSCRIBE, CANCEL,
-    END and QUIT switch that number off; anything else is ignored. The answer is an empty TwiML document."""
+    END and QUIT switch that number off; START (YES, UNSTOP) switches a verified number back on; HELP answers with
+    one line; anything else is ignored. The answer is a TwiML document."""
     token = str(os.environ.get(ch.ENV_TOKEN) or "").strip()
     if not token:
         raise HTTPException(status_code=404, detail="not found")
@@ -311,7 +377,15 @@ async def sms_inbound(request: Request, _rl: None = Depends(_rl_public)) -> Resp
     sent = request.headers.get("X-Twilio-Signature", "")
     if not hmac.compare_digest(sent.encode(), twilio_signature(token, url, params).encode()):
         raise HTTPException(status_code=403, detail="bad signature")
-    if str(params.get("Body") or "").strip().upper() in STOP_WORDS:
+    word = str(params.get("Body") or "").strip().upper()
+    reply = ""
+    if word in STOP_WORDS:
         alerts.sms_stop(str(params.get("From") or ""))
-    return Response(content="<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response></Response>",
+    elif word in START_WORDS:
+        alerts.sms_start(str(params.get("From") or ""))
+        reply = "LINEHOUND bet alerts are back on. Reply STOP to end."
+    elif word in HELP_WORDS:
+        reply = HELP_TEXT
+    answer = f"<Message>{reply}</Message>" if reply else ""
+    return Response(content=f"<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response>{answer}</Response>",
                     media_type="application/xml")
