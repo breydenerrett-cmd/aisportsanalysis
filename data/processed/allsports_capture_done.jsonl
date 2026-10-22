@@ -1384,3 +1384,9 @@
 {"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T05:42:25.262726Z", "regions": ["us"], "rows": 39, "sport_key": "tennis_wta_ningbo_open", "stored": 39}
 {"commence_utc": "2026-10-22T07:45:00Z", "event_id": "1b7cc3ef0b6f98cf5a6dff4e3239db03", "kind": "phase", "observed_utc": "2026-10-22T05:50:01.806616Z", "phase": "t2h", "rows": 8, "sport_key": "cricket_test_match"}
 {"call_kind": "pregame", "credits": 1, "events": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T05:50:01.806616Z", "regions": ["au"], "rows": 9, "sport_key": "cricket_test_match", "stored": 8}
+{"commence_utc": "2026-10-22T06:20:00Z", "event_id": "b22bbc938da4853cc3b24227e1530341", "kind": "phase", "observed_utc": "2026-10-22T06:08:27.270823Z", "phase": "t30m", "rows": 7, "sport_key": "tennis_wta_ningbo_open"}
+{"commence_utc": "2026-10-22T07:30:00Z", "event_id": "2790f03a39ec672cd20a0fb57c24cdab", "kind": "phase", "observed_utc": "2026-10-22T06:08:27.270823Z", "phase": "t2h", "rows": 7, "sport_key": "tennis_wta_ningbo_open"}
+{"call_kind": "pregame", "credits": 1, "events": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T06:08:27.270823Z", "regions": ["us"], "rows": 38, "sport_key": "tennis_wta_ningbo_open", "stored": 38}
+{"commence_utc": "2026-10-22T08:00:00Z", "event_id": "33bc7ae2f79ff11c4d2a98b5d15812a9", "kind": "phase", "observed_utc": "2026-10-22T06:08:27.270823Z", "phase": "t2h", "rows": 1, "sport_key": "cricket_odi"}
+{"commence_utc": "2026-10-22T08:00:00Z", "event_id": "702cafd919aab57f47080d441ed5fbf7", "kind": "phase", "observed_utc": "2026-10-22T06:08:27.270823Z", "phase": "t2h", "rows": 1, "sport_key": "cricket_odi"}
+{"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T06:08:27.270823Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 2}
