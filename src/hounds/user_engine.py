@@ -63,6 +63,8 @@ from src import paths
 from src.core import odds as odds_math
 from src.hounds import one_side, user_rules, user_spec
 from src.ledger.chain import HashChainLedger
+from src.notify import alerts
+
 
 logger = logging.getLogger("linehound.hounds.one_side")
 
@@ -772,6 +774,8 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
             for key, value in (hound.get("row_extra") or {}).items():
                 row.setdefault(key, value)
             store.append(row)
+            if mode == "live":
+                alerts.emit_placed_safe(row)       # after the ledger write; can never fail the bet
             positions.take(row)
             seen_ids.add(bet_id)
             per_day[(hound["id"], date)] += 1

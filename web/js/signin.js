@@ -36,6 +36,7 @@ import { attributionPayload } from "./attribution.js";
 import { el, clear } from "./dom.js";
 import { unitSettings } from "./unitchip.js";
 import { syncFromAccount } from "./unitsize.js";
+import { alertsPanel } from "./alerts.js";
 import {
   loadCheckoutState, loadTesterBilling, NOT_ON, signinNote, signinLinkLabel,
   testerEndedLine, upgradeLabel, TESTER_NOT_OPEN, TESTER_REPLY,
@@ -543,6 +544,8 @@ export async function renderSignin(container, query = {}) {
     sizing.appendChild(el("h3", { class: "signin__section-title", text: "Paper dollars" }));
     sizing.appendChild(unitSettings());
     account.appendChild(sizing);
+    // Bet alerts: email, browser/phone notifications and (paid members) texts. web/js/alerts.js.
+    account.appendChild(alertsPanel());
     if (query && (query.password === "1" || query.password === "true")) openChangePassword(slot, has);
     return has;
   }

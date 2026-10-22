@@ -32,6 +32,7 @@ from api.billing import router as billing_router
 from api.passwords import router as passwords_router
 from api.free_signup import router as free_signup_router
 from api.email_routes import router as email_router
+from api.alerts_routes import router as alerts_router
 from api.onboarding import router as onboarding_router
 from api.signup import router as signup_router
 from api.hounds_create import router as hounds_create_router
@@ -236,6 +237,8 @@ app.include_router(admin_router)
 app.include_router(ai_admin_router)
 # GET/POST /email/unsubscribe (public, signed link) and /admin/email/status|test (admin token): api/email_routes.py.
 app.include_router(email_router)
+# Bet alerts (settings, test, push/SMS enrolment, secret RSS feed, one-click off, Twilio STOP): api/alerts_routes.py.
+app.include_router(alerts_router)
 app.include_router(billing_router)
 # support mounts WITHOUT the authed dependency: POST /support accepts
 # anonymous-with-email by design; its /admin routes carry their own guard.
@@ -373,6 +376,25 @@ def _start_email_jobs() -> None:
         return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
 
     email_jobs.start_loop(ready=_warm_up_done)
+
+
+# -- bet alerts (src/notify/alert_dispatch.py) -------------------------------------------------------------------
+#
+# Drains the alert outbox every ten seconds from ONE daemon thread (single-writer, like the loops above). It starts
+# on every machine but each channel inside it is skipped unless its keys are set (RESEND_API_KEY, VAPID_PRIVATE_KEY,
+# the three TWILIO_* names), and a member with no alert preferences has no events, so an unconfigured app does
+# nothing. ALERTS_JOBS=off stops it. docs/owner/ALERTS.md.
+@app.on_event("startup")
+def _start_alert_dispatch() -> None:
+    from src.notify import alert_dispatch
+
+    def _warm_up_done() -> bool:
+        status = warmup.status()
+        return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
+
+    from api import auth as auth_mod
+    alert_dispatch.set_paid_check(lambda user: not auth_mod.is_free_member(user))
+    alert_dispatch.start_loop(ready=_warm_up_done)
 
 
 # -- the watchdog (src/ops/watchdog.py) --------------------------------------------------------------------
