@@ -86,7 +86,14 @@
 }
 .qz-bar .qz-btn--primary { margin-left: auto; }
 .qz-bar .qz-btn--primary { min-width: 132px; }
-@media (max-width: 760px) { .qz-bar { bottom: calc(62px + env(safe-area-inset-bottom, 0px)); padding-bottom: 12px; } }
+/* On a phone the shared tab bar is HIDDEN for the whole quiz (checker, 2026-10-21): with it up, the Back / Next row and "Show me others"
+   were under it at some scroll positions (the sticky bar cannot leave its section, so near the end of the page it sat in the bar's strip).
+   The quiz is a short focused flow with its own Back / Next; the top bar still carries the brand and Sign in. */
+@media (max-width: 760px) {
+  body.qz-page .lh-tabbar { display: none; }
+  body.qz-page:not(.member-app) { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+  .qz-bar { bottom: 0; }
+}
 
 /* ---- the wall of pins ------------------------------------------------------------------------------------------------ */
 .qz-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }

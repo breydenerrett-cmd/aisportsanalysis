@@ -904,6 +904,8 @@ function handleSaveError(err) {
     showSignin("Your sign-in has lapsed, or this account cannot build yet. Your quiz is saved on this device.");
   } else if (status === 422 && detail && detail.fields) {
     setMessage("The builder refused part of that: " + Object.entries(detail.fields).map(([k, v]) => `${k}: ${v}`).join("; "));
+  } else if (status === 402 && showUpgrade(q("reveal-message"), err)) {
+    /* a free account already keeps its one hound: the member prompt (the same one the builder shows) replaced the message box */
   } else if (status === 409) {
     setMessage(detail && detail.message ? detail.message : "You already have the most hounds running. Retire one first.");
   } else if (status === 429) {

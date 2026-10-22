@@ -246,7 +246,7 @@ class TheLeaderboardIsTheFirstScreen(unittest.TestCase):
         self.assertEqual(enter.group(1).strip(), "Open the leaderboard")
         self.assertIn('href="hounds.html"', enter.group(0))
         self.assertIn("btn--primary", enter.group(0))
-        self.assertEqual(quiz.group(1).strip(), "Find your hound")        # the desk page keeps its own secondary button
+        self.assertEqual(quiz.group(1).strip(), "Make your first hound")       # the desk page keeps its own secondary button
         self.assertIn('href="quiz.html?start=1"', quiz.group(0))
         self.assertNotIn("btn--primary", quiz.group(0))
         # data-hook starts with "cta", so landing.js's delegated listener counts both clicks

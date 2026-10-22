@@ -45,11 +45,13 @@ class QuizTabBarClearance(unittest.TestCase):
 
     def test_the_page_is_a_phone_with_the_tab_bar_and_no_sideways_scroll(self):
         self.assertEqual(self.out["iw"], 390, self.out)
-        self.assertGreaterEqual(self.out["bar"], 50, "the shared phone tab bar is on the quiz page")
+        # checker 2026-10-21: the phone tab bar is hidden for the whole quiz (the sticky Back / Next row cannot leave its section, so near the
+        # end of the page it sat in the bar's strip); the quiz has its own Back / Next
+        self.assertEqual(self.out["bar"], 0, "the shared phone tab bar is hidden on the quiz page")
         self.assertLessEqual(self.out["sw"], 391, self.out)
 
-    def test_the_page_leaves_the_bars_height_and_air_under_its_last_content(self):
-        self.assertGreaterEqual(self.out["pad"], self.out["bar"] + 24, self.out)
+    def test_the_page_leaves_air_under_its_last_content(self):
+        self.assertGreaterEqual(self.out["pad"], 24, self.out)
 
     def test_some_scroll_position_shows_the_pill_and_back_next_uncovered(self):
         self.assertIsNotNone(self.out["clearAt"], "no scroll position shows the pill and both buttons clear of the tab bar: " + json.dumps(self.out))
