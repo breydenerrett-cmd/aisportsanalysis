@@ -4,7 +4,7 @@
  * A version is the same hound grown up, so the breed and the coat never change; what changes is what it wears and how it is drawn:
  *
  *   v2   a bandana in the tier's metal, knotted at the sides with two tails that stick out past the jaw
- *   v3   + a vest (two dark panels, a trimmed front edge, a chest strap with a buckle) and a bolder brow ridge (the outline is bolder too:
+ *   v3   + a vest (two dark panels, a trimmed front hem, a chest strap with a buckle) and a bolder brow ridge (the outline is bolder too:
  *        dog-tiers.js `tierStyle`)
  *   v4   + a domed plate over each shoulder, and a soft glow round each eye
  *   v5+  + a mantle: wings behind the shoulders that rise up beside the head like a high collar, and an aura round the hound
@@ -38,7 +38,7 @@ export function gearShapes(v, T, fill, a, K, geo) {
   const top = Math.max(94, a.chin.y + 1), bulk = (geo && geo.bulk) || 1, nk = a.neck.half, cy = a.chin.y;
   const X = (d, s) => f(60 + s * d * bulk);          // a distance from the centre line, scaled by the breed's bulk
   const Y = (y) => f(Math.min(121, y));
-  const edge = (w = 0.7) => ({ stroke: K.oc, "stroke-width": f(Math.max(0.9, K.ow * w)), "stroke-linejoin": "round" });
+  const rim = (w = 0.7) => ({ stroke: K.oc, "stroke-width": f(Math.max(0.9, K.ow * w)), "stroke-linejoin": "round" });
   const both = (fn) => [fn(-1), fn(1)];
 
   // the mantle's wings, behind the torso (v5): they flare out past the shoulders and rise up beside the head like a high collar
@@ -50,7 +50,7 @@ export function gearShapes(v, T, fill, a, K, geo) {
     ]))));
   }
 
-  // the vest (v3): two dark panels with a trimmed front edge, and a chest strap with a buckle
+  // the vest (v3): two dark panels with a trimmed front hem, and a chest strap with a buckle
   if (v.vest) {
     const panel = (s) => {
       const d = `M${X(14, s)} ${Y(top)} C${X(26, s)} ${Y(top - 2)} ${X(38, s)} ${Y(top - 3)} ${X(48, s)} ${Y(top + 1)} C${X(55, s)} ${Y(top + 6)} ${X(57, s)} ${Y(top + 14)} ${X(60, s)} 122 L${X(13, s)} 122 C${X(11, s)} ${Y(top + 16)} ${X(9, s)} ${Y(top + 9)} ${X(14, s)} ${Y(top)} Z`;
@@ -63,8 +63,8 @@ export function gearShapes(v, T, fill, a, K, geo) {
     const sy = Math.min(114, top + 13), sh = small ? 6 : 4.6;
     out.gear.push(grp("dk-tier dk-tier--vest", [
       ...both(panel),
-      path(`M${X(14, -1)} ${f(sy)} H${X(14, 1)} V${f(sy + sh)} H${X(14, -1)} Z`, Object.assign({ fill }, edge(0.55))),
-      path(`M${X(3.6, -1)} ${f(sy - 1.2)} H${X(3.6, 1)} V${f(sy + sh + 1.2)} H${X(3.6, -1)} Z`, Object.assign({ fill: T.lit }, edge(0.55))),
+      path(`M${X(14, -1)} ${f(sy)} H${X(14, 1)} V${f(sy + sh)} H${X(14, -1)} Z`, Object.assign({ fill }, rim(0.55))),
+      path(`M${X(3.6, -1)} ${f(sy - 1.2)} H${X(3.6, 1)} V${f(sy + sh + 1.2)} H${X(3.6, -1)} Z`, Object.assign({ fill: T.lit }, rim(0.55))),
       K.fine(n("rect", { x: 58.4, y: f(sy + 0.8), width: 3.2, height: f(sh - 1.6), fill: T.dark })),
     ]));
   }
@@ -83,7 +83,7 @@ export function gearShapes(v, T, fill, a, K, geo) {
   // the bandana (v2): a triangle of cloth on the chest, knotted at the sides with two tails that stick out past the jaw
   {
     const w = nk + 9, y0 = cy - 8, tipY = Math.min(118, cy + 27);
-    const tail = (s) => path(`M${f(60 + s * (w - 3))} ${f(y0 + 1)} L${f(60 + s * (w + 10))} ${f(y0 - 8)} L${f(60 + s * (w + 7))} ${f(y0 + 3)} L${f(60 + s * (w + 11))} ${f(y0 + 8)} L${f(60 + s * (w - 3))} ${f(y0 + 8)} Z`, Object.assign({ fill }, edge(0.55)));
+    const tail = (s) => path(`M${f(60 + s * (w - 3))} ${f(y0 + 1)} L${f(60 + s * (w + 10))} ${f(y0 - 8)} L${f(60 + s * (w + 7))} ${f(y0 + 3)} L${f(60 + s * (w + 11))} ${f(y0 + 8)} L${f(60 + s * (w - 3))} ${f(y0 + 8)} Z`, Object.assign({ fill }, rim(0.55)));
     out.gear.push(grp("dk-tier dk-tier--bandana", [
       ...both(tail),
       ...K.solid(`M${f(60 - w)} ${f(y0)} Q60 ${f(y0 + 12)} ${f(60 + w)} ${f(y0)} L${f(60 + 6)} ${f(tipY - 2)} Q60 ${f(tipY + 3)} ${f(60 - 6)} ${f(tipY - 2)} Z`, fill, { rim: true }),
