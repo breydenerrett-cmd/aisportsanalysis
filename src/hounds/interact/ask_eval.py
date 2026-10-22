@@ -316,6 +316,9 @@ def fire_v2(dog: common.Dog, *, now: Optional[datetime] = None, ledger: Optional
             over = used[date] + position >= spec["max_bets_per_day"]
             position += 1
             pick = _pick(dog, spec, item, now, date, over, with_rows)
+            # the hound's own order within the slate day (its ``rank_by``): the page's "what I'd play right now" reads it
+            pick["rank_in_day"] = position - 1
+            pick["rank_by"] = spec.get("rank_by")
             picks.append(pick)
             observed = E._utc(pick["board_observed_utc"])
             newest = observed if observed and (newest is None or observed > newest) else newest

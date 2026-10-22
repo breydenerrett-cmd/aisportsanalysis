@@ -5,6 +5,8 @@ and the Training camp's own data.
     POST /hounds/{id}/fire            "What would you bet right now?" (the pages call it UNLEASH; the route keeps its
                                       name): the rule over the latest stored boards, READ ONLY; public, rate limited
                                       per address
+    GET  /hounds/{id}/right-now       what the hound would play RIGHT NOW, best first by its own rank_by (read only, public,
+                                      the Fire now allowance): the hound page's headline card
     POST /hounds/{id}/unleash         the owner of a member dog: START it betting today (paper, forward) and show the day, with
                                       what it would have taken before it started (not on its record); free accounts included
                                       (src/hounds/interact/unleash.py)
@@ -64,7 +66,7 @@ from src.appstate import ratelimit
 from src.appstate import users as users_store
 from src.hounds import unit_size, user_spec
 from src.hounds.contract import envelope
-from src.hounds.interact import ask, ask_eval, camp, common, drill, fire, fire_event, look, manual, outback, rites, store, training, unleash
+from src.hounds.interact import ask, ask_eval, camp, common, drill, fire, fire_event, look, manual, outback, right_now, rites, store, training, unleash
 
 from api import auth as auth_mod
 from api import entitlements
@@ -271,6 +273,20 @@ def fire_now(hound_id: str, response: Response, body: Optional[FireRequest] = No
             entitlements.paid_dog_tool_for(authorization, request, entitlements.FEATURE_LIVE_SEND)
         return envelope(_event_payload(dog, body.event_id))
     return envelope(_fire_payload(dog, _viewer_id(authorization)))
+
+
+@router.get("/hounds/{hound_id}/right-now")
+def right_now_pick(hound_id: str, response: Response, authorization: Optional[str] = Header(default=None),
+                   _rl: None = Depends(_rl_fire_route)) -> dict:
+    """The hound page's headline card: what this hound would play RIGHT NOW, best first by its own rank_by, from the current
+    board only (src/hounds/interact/right_now.py). Read only and public, on the Fire now allowance; a hound with no rule to
+    run (a desk model, a baseline) answers 422 ``not_firable`` and the page hides the card."""
+    response.headers["Cache-Control"] = _NO_STORE
+    dog = _dog(hound_id)
+    try:
+        return envelope(right_now.build(dog, _viewer_id(authorization)))
+    except fire.NotFirable as exc:
+        raise _err(422, "not_firable", str(exc))
 
 
 @router.post("/hounds/{hound_id}/unleash")

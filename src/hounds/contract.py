@@ -456,6 +456,33 @@ def filter_by_status(rows: list, status: Optional[str], now: Optional[datetime] 
     return rows
 
 
+BET_OUTCOMES = ("won", "lost", "push")
+BET_SORTS = ("newest", "biggest_win", "biggest_loss", "price")
+_OUTCOME_RESULTS = {"won": ("win", "won", "w"), "lost": ("loss", "lost", "l"), "push": ("push", "p")}
+
+
+def refine_bets(rows: list, outcome: Optional[str] = None, sort: Optional[str] = None) -> list:
+    """The hound page's ticket filter and order. ``outcome`` (won | lost | push) keeps tickets with that grade; ``sort``
+    (newest | biggest_win | biggest_loss | price) reorders them: newest is the list's own order, the wins and losses are by
+    the units each moved (biggest first), price is the longest price first. An unknown word changes nothing; the sort is
+    stable, so ties keep the newest-first order they came in."""
+    if outcome in _OUTCOME_RESULTS:
+        wanted = _OUTCOME_RESULTS[outcome]
+        rows = [b for b in rows if str(b.result or "").lower() in wanted]
+    if sort == "biggest_win":
+        return sorted(rows, key=lambda b: -(b.units if isinstance(b.units, (int, float)) else float("-inf")))
+    if sort == "biggest_loss":
+        return sorted(rows, key=lambda b: (b.units if isinstance(b.units, (int, float)) else float("inf")))
+    if sort == "price":
+        def dec(b):
+            p = b.price_average if isinstance(b.price_average, (int, float)) else b.price
+            if not isinstance(p, (int, float)) or p == 0:
+                return float("-inf")
+            return 1 + (p / 100.0 if p > 0 else 100.0 / -p)
+        return sorted(rows, key=lambda b: -dec(b))
+    return rows
+
+
 def bets_payload(hound_id: str, bets_page: dict, as_of: Optional[str], season: Optional[dict] = None) -> dict:
     out = {"hound_id": hound_id, "as_of": as_of, **{**bets_page, "items": to_json(with_status(bets_page["items"]))}}
     if season is not None:
