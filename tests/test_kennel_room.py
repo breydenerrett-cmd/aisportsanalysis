@@ -296,7 +296,9 @@ class StateTable(unittest.TestCase):
 
     def test_garbage_in_is_handled_without_a_crash_or_a_made_up_state(self):
         src = ('import { build } from "./room-adapter.js";\n'
-               "const out = [build(null), build({}), build({hounds: [null, 3, {}, {id: 'x'}, {id: 'x'}]}), build({hounds: [{id: 'y', name: 7, record: 'x', sports: 'mlb', open_bets: 'two'}], board: {counts: 5}})];\n"
+               # the viewer's local night turns "nap" into "asleep": pin a daytime hour (CI failed at 23:19Z and 00:15Z, 2026-10-21)
+               "const day = {localHour: 15};\n"
+               "const out = [build(null, day), build({}, day), build({hounds: [null, 3, {}, {id: 'x'}, {id: 'x'}]}, day), build({hounds: [{id: 'y', name: 7, record: 'x', sports: 'mlb', open_bets: 'two'}], board: {counts: 5}}, day)];\n"
                "console.log(JSON.stringify(out.map(m => m.characters.map(c => [c.id, c.state, c.name]))));\n")
         out = run_js(src)
         self.assertEqual(out[0], [])
