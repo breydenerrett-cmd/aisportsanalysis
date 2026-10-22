@@ -117,7 +117,7 @@ export async function bootDogKit(hound, { onUnleashed = null } = {}) {
     // the same dogs that can be unleashed can be backtested (house dogs and builder dogs: the rule runs on demand)
     if (sections.backtest) mountBacktest(sections.backtest, { id, name });
   }
-  jobs.push(bootAsk(sections.ask, { id, name }));
+  jobs.push(bootAsk(sections.ask, { id, name, gematria: !!kit.gematria }));
   jobs.push(mountFans(sections.fans, { id, name, kit, hound }));
   if (kit.can_customize && sections.locker) {
     mountLocker(sections.locker, { id, name, kit, vibe, onSaved: (look) => applyHeaderBadge(look, name, false, { id, root_id: kit.root_id, vibe, version_no: kit.version_no, pose: poseOfHound(hound) }) });

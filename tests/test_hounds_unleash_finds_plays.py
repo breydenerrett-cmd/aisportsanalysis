@@ -136,9 +136,9 @@ class PerReasonCounts(_Case):
         self.assertEqual(counts, {"on_record": 1, "started": 1, "waits_lock": 1, "too_few_books": 1, "price_band": 1, "board_too_old": 1})
         self.assertEqual(sum(counts.values()), out["why"]["checked"], out["why"]["counts"])
         self.assertEqual(out["why"]["placed"], 1)
-        self.assertIn("Checked 6 games: ", out["why"]["text"])
+        self.assertIn("6 checked: ", out["why"]["text"])
         self.assertIn("1 price outside +100 to +250", out["why"]["text"])
-        self.assertTrue(out["why"]["text"].endswith("→ placed 1"))
+        self.assertFalse(out["why"]["text"].endswith("placed 1"))     # the placed count is the cards' and the headline's, not this line's
         nxt = out["next_check"]
         self.assertEqual((nxt["event_id"], nxt["when_utc"]), ("books", "2026-10-20T21:30:00Z"))   # 23:30 start, 120-minute lock
 
@@ -296,7 +296,7 @@ class PostLockPregameIsTruthful(_Case):
 
     def test_an_empty_day_reads_as_no_games_not_as_a_rule_that_did_not_fit(self):
         out = self.go([], "2026-10-20T18:00:00Z")
-        self.assertEqual(out["why"]["text"], "No games on today's board in its sports yet → placed 0")
+        self.assertEqual(out["why"]["text"], "No games on today's board in its sports yet")
         self.assertIn("no games on today's board", out["headline"])
         self.assertNotIn("fits its rule", out["headline"])
 
@@ -344,8 +344,7 @@ class TheUi(unittest.TestCase):
             q("open", HOOK("unleash-open-ticket"), "count"), q("live", HOOK("unleash-live-chip"), "texts"),
             q("status", HOOK("unleash-ticket-status"), "texts")])])
         c = out["captures"]["open"]
-        self.assertIn("Checked 1 game: 1 price outside +100 to +250", c["why"])
-        self.assertTrue(c["why"].endswith("placed 0"))
+        self.assertEqual(c["why"], "1 checked: 1 price outside +100 to +250")      # one line; no per-reason list under it
         self.assertEqual(c["steps"][-1], "1 open ticket, none new")
         self.assertEqual((c["open"], c["status"]), (1, ["Not started yet"]))
         self.assertRegex(c["live"][0], r"^Live bet · price at 23:27 UTC$")

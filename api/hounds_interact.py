@@ -69,7 +69,7 @@ from src.appstate import ratelimit
 from src.appstate import users as users_store
 from src.hounds import unit_size, user_spec
 from src.hounds.contract import envelope
-from src.hounds.interact import ask, ask_eval, camp, coach, common, drill, fire, fire_event, look, manual, outback, right_now, rites, store, training, unleash
+from src.hounds.interact import ask, ask_eval, camp, coach, common, drill, fire, fire_event, gematria_analysis, look, manual, outback, right_now, rites, store, training, unleash
 
 from api import auth as auth_mod
 from api import entitlements
@@ -294,6 +294,18 @@ def right_now_pick(hound_id: str, response: Response, authorization: Optional[st
         return envelope(right_now.build(dog, _viewer_id(authorization)))
     except fire.NotFirable as exc:
         raise _err(422, "not_firable", str(exc))
+
+
+@router.get("/hounds/{hound_id}/analysis")
+def gematria_analysis_route(hound_id: str, response: Response, _rl: None = Depends(_rl_fire_route)) -> dict:
+    """The Gematria hound's analysis of today's games, as lines the page plays (src/hounds/interact/gematria_analysis.py): the ciphers
+    it computed, the matches found, each side's score and the pick or the pass with its reason, for at most 12 games. Read only and
+    public (it is the preview's data, which anyone may run); any hound that is not a Gematria hound answers 422 ``not_gematria``."""
+    response.headers["Cache-Control"] = _NO_STORE
+    dog = _dog(hound_id)
+    if not gematria_analysis.is_gematria_dog(dog):
+        raise _err(422, "not_gematria", "only a Gematria hound has an analysis")
+    return envelope(gematria_analysis.build(dog))
 
 
 @router.post("/hounds/{hound_id}/unleash")

@@ -1,0 +1,29 @@
+/*
+ * THE GEMATRIA ANALYSIS (web/js/dog-gematria-stream.js): the hound's real work on today's games, played line by line while Unleash
+ * runs, then folded away under the day. Imported by css/dog-kit.css. It rides the .dx readout classes of css/diagnose.css (the same
+ * dark terminal look as the training diagnosis); this file adds only what a game-by-game log needs.
+ *
+ * Phone first: the log wraps every line (nothing can push the page sideways), the host never exceeds its column, and the folded
+ * copy keeps the same wrapping. Motion only inside prefers-reduced-motion: no-preference (the .dx[data-motion="full"] rules).
+ */
+
+.gs-host { min-width: 0; max-width: 100%; }
+.gs { max-width: 100%; }
+.gs-meters { grid-template-columns: 1fr 1fr; gap: 4px 14px; }
+.gs-log { max-height: 46vh; min-height: 200px; }
+.gs-line { grid-template-columns: 14px minmax(0, 1fr); }
+.gs-line .dx-line__text { overflow-wrap: anywhere; word-break: break-word; }
+.gs-line[data-kind="frame"] { margin-top: 6px; color: var(--dx-cyan); }
+.gs-line[data-kind="date"] { color: var(--dx-dim); }
+.gs-line[data-kind="cipher"] { color: var(--dx-dim); }
+.gs-line[data-kind="basis"] { color: var(--dx-amber); }
+.gs-line[data-kind="score"] { color: var(--dx-ink); border-top: 1px dashed var(--dx-line-hi); margin-top: 3px; padding-top: 3px; }
+.gs-line[data-tone="thin"] { color: var(--dx-faint); }
+.gs-line[data-kind="decision"][data-tone="good"] { color: #7fe0a3; font-weight: 600; }
+.gs-line[data-kind="decision"][data-tone="good"] .dx-line__mark { color: #7fe0a3; }
+.gs-line[data-kind="decision"][data-tone="pass"] { color: var(--dx-dim); }
+
+/* the folded copy under the day: same lines, no mask, scrolls inside its own box */
+.gs-fold { max-width: 100%; margin-top: 14px; }
+.gs-fold__sum { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--hd-accent, #00e0ff); overflow-wrap: anywhere; }
+.gs-fold .gs-log { max-height: 320px; min-height: 0; overflow: auto; }

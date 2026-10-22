@@ -144,8 +144,26 @@ def day_label(date: str, now: datetime) -> str:
     return f"{months[target.month - 1]} {target.day}"
 
 
-def _games_text(items: list) -> str:
-    return ", ".join(f"{game} ({clock_et(start)})" for game, start in items)
+MAX_LISTED = 40         # the most games one group of the "See all games" list carries; the rest are only counted (``more``)
+
+
+def _listed(items: list) -> tuple:
+    """([{game, start_utc, start_et}], games left out) for one group of the full list, earliest first, capped."""
+    shown = [{"game": g, "start_utc": common.iso(s), "start_et": clock_et(s)} for g, s in items[:MAX_LISTED]]
+    return shown, max(0, len(items) - MAX_LISTED)
+
+
+def counts_line(counts: dict) -> str:
+    """'60 games today · 12 started · 34 later · 14 checked now': counts only, no game is ever named in prose (owner, 2026-10-22).
+    A zero part is left out; nothing today gives an empty string."""
+    total = counts.get("total") or 0
+    if not total:
+        return ""
+    parts = [f"{total} {'game' if total == 1 else 'games'} today"]
+    for key, word in (("started", "started"), ("later", "later"), ("checked_now", "checked now")):
+        if counts.get(key):
+            parts.append(f"{counts[key]} {word}")
+    return " \u00b7 ".join(parts)
 
 
 def slate_view(now: datetime, started: list, upcoming: list, other_live: Optional[dict] = None) -> dict:
@@ -153,22 +171,33 @@ def slate_view(now: datetime, started: list, upcoming: list, other_live: Optiona
     "not looking at tonight's games" (owner, 2026-10-20).
 
     ``started`` is [(game, start)] for games already under way; ``upcoming`` is [(game, start, lock)] for games
-    ahead. Only games whose EASTERN date is today count as today's. ``line`` is the sentence to say first:
-      started, nothing left today  "Tonight's games already started: A @ B (8:10 pm ET). Next games I can bet: Thursday."
-      nothing on the board today   "No games today. Next slate: Thursday."
-      some started, some ahead     "Already started today: ... Still ahead today: 2 games."
-    and a game inside the dog's placing window (its lock has passed, the game has not started) is named too.
+    ahead. Only games whose EASTERN date is today count as today's.
 
-    NEXT GAME AND OTHER SPORTS (2026-10-19): when nothing is on today, the line also names the NEXT game in
-    the dog's sports ("Next game: A @ B (Thursday, 7:10 pm ET)"), and, when ``other_live`` (a
-    ``src.sports.allsports_view.live_elsewhere`` answer) shows games live in OTHER sports, adds "Live now in
-    other sports: 5 games (tennis, cricket)." so an empty board for the dog's own sports is never a dead end.
-    ``next_game`` and ``other_live`` are also returned as fields for every state."""
+    NO GAME IS NAMED IN PROSE (owner, 2026-10-22: a 60-game day printed every game and "looked sloppy"). ``line`` is a short
+    sentence of counts; the games themselves are structured data the page folds behind "See all games":
+
+      counts   {total, started, later, checked_now}: today's games, split into those under way, those whose placing time has
+               not come ("later") and those inside the placing window now ("checked now"). They add up to ``total``.
+      groups   [{key, label, games: [{game, start_utc, start_et}], more}], one per non-empty split, earliest first, capped at
+               ``MAX_LISTED`` a group (``more`` counts the rest).
+      line     started, nothing left today  "Tonight's games already started (3). Next games I can bet: Thursday."
+               nothing on the board today   "No games today. Next slate: Thursday."
+               some started, some ahead     "4 started today. 2 games still ahead today."
+               and, with games inside the window, " 3 inside my placing window now."
+
+    The NEXT GAME is not in ``line`` any more: it is said once, by ``next_game`` (this fires' preview) or by the Unleash day's own
+    "Next game it checks" line. ``next_game`` and ``other_live`` are still returned as fields."""
     today = day_of(now)
+    # A caller's "upcoming" game that has started by ``now`` is a started game (red team 2026-10-22: a caller that split on an older
+    # clock left it in neither part, and the counts no longer added up to the total).
+    started = list(started) + [(g, s) for g, s, _k in upcoming if s <= now]
+    upcoming = [(g, s, k) for g, s, k in upcoming if s > now]
     today_started = sorted([(g, s) for g, s in started if day_of(s) == today], key=lambda t: t[1])
     today_ahead = [(g, s, k) for g, s, k in upcoming if day_of(s) == today]
     later = sorted([(g, s) for g, s, _k in upcoming if day_of(s) > today], key=lambda t: t[1])
     in_window = sorted([(g, s) for g, s, k in upcoming if k is not None and k <= now and s > now], key=lambda t: t[1])
+    window_today = [(g, s) for g, s in in_window if day_of(s) == today]
+    later_today = sorted([(g, s) for g, s, k in today_ahead if not (k is not None and k <= now)], key=lambda t: t[1])
     next_date = day_of(later[0][1]) if later else None
     next_label = day_label(next_date, now) if next_date else None
     next_game = None
@@ -177,30 +206,35 @@ def slate_view(now: datetime, started: list, upcoming: list, other_live: Optiona
         next_game = {"game": n_game, "start_utc": common.iso(n_start), "start_et": clock_et(n_start),
                      "day_label": next_label, "text": f"{n_game} ({clock_et(n_start)})"}
     nxt = (f"Next games I can bet: {next_label}." if next_label else "No later games are on the stored boards yet.")
+    n_started = len(today_started)
     if today_started and not today_ahead:
         state = "started"
         word = "Tonight's" if now.astimezone(_eastern()).hour >= 17 else "Today's"
-        line = f"{word} games already started: {_games_text(today_started)}. {nxt}"
+        line = f"{word} games already started ({n_started}). {nxt}"
     elif today_started:
         state = "open"
-        line = (f"Already started today: {_games_text(today_started)}. Still ahead today: "
-                f"{len(today_ahead)} {'game' if len(today_ahead) == 1 else 'games'}.")
+        line = f"{n_started} started today. {len(today_ahead)} {'game' if len(today_ahead) == 1 else 'games'} still ahead today."
     elif today_ahead:
         state, line = "open", ""
     else:
         state = "none"
-        line = (f"No games today. Next slate: {next_label}. Next game: {next_game['text']}." if next_label
+        line = (f"No games today. Next slate: {next_label}." if next_label
                 else "No games today, and none are on the stored boards yet.")
-        if other_live and other_live.get("games"):
-            line += " " + other_live["text"]
     if in_window:
-        line = (line + " " if line else "") + f"Inside my placing window now: {_games_text(in_window)}."
+        line = (line + " " if line else "") + f"{len(in_window)} inside my placing window now."
+    counts = {"total": n_started + len(today_ahead), "started": n_started, "later": len(later_today), "checked_now": len(window_today)}
+    groups = []
+    for key, label, items in (("started", "Started", today_started), ("checked_now", "Inside the placing window now", window_today),
+                              ("later", "Later today", later_today)):
+        if items:
+            shown, more = _listed(items)
+            groups.append({"key": key, "label": label, "games": shown, "more": more})
     day_counts: dict = {}
     for _g, s, _k in upcoming:
         d = day_of(s)
         day_counts[d] = day_counts.get(d, 0) + 1
     return {
-        "today": today, "today_state": state, "line": line,
+        "today": today, "today_state": state, "line": line, "counts": counts, "counts_line": counts_line(counts), "groups": groups,
         "started": [{"game": g, "start_utc": common.iso(s), "start_et": clock_et(s)} for g, s in today_started],
         "in_window": [{"game": g, "start_utc": common.iso(s), "start_et": clock_et(s)} for g, s in in_window],
         "next_day": next_date, "next_day_label": next_label, "next_game": next_game,

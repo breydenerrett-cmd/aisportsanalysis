@@ -27,6 +27,7 @@ import { h, clearNode, fmtPrice, isNum } from "./hounds-core.js";
 import { post, errorText, errorCode, whenText, spanText, statusLine, celebrate, PAPER_NOTE } from "./dog-common.js";
 import { dogBadge, DEFAULT_LOOK } from "./dog-avatar.js";
 import { stakeWords } from "./unitsize.js";
+import { runGematriaStream, gematriaAnalysis, analysisLog, reducedMotion } from "./dog-gematria-stream.js";
 
 const SLOW = 90000;
 
@@ -117,17 +118,12 @@ function localClock(stamp) {
   try { return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", timeZoneName: "short" }); } catch (err) { return ""; }
 }
 
-/** The server's slate sentence ("Tonight's games already started: ... Next games I can bet: Thursday."), with each
- *  game's Eastern time swapped for the visitor's local time. Said first, so a list that begins on Thursday is not
- *  read as "not looking at tonight's games". */
+/** The server's slate sentence, said first so a list that begins on Thursday is not read as "not looking at tonight's games". Since
+ *  2026-10-22 it is a COUNTS sentence (no game is ever named in it: "Tonight's games already started (12). Next games I can bet:
+ *  Thursday."), and it is only worth a line when it carries something the counts block does not: the day it is waiting for. */
 function slateLine(slate) {
   if (!slate || !slate.line) return "";
-  let line = String(slate.line);
-  for (const g of [...(slate.started || []), ...(slate.in_window || [])]) {
-    const t = localClock(g.start_utc);
-    if (t && g.start_et) line = line.split(`(${g.start_et})`).join(`(${t})`);
-  }
-  return line;
+  return String(slate.line);
 }
 
 /** A sentence out of a field the server may send as a string or as {line}. */
@@ -136,25 +132,68 @@ function sentenceOf(v) {
   return v && typeof v.line === "string" ? v.line.trim() : "";
 }
 
+/** "7:10 PM EDT" in the visitor's own clock, else the server's Eastern one. */
+function gameClock(g) {
+  return localClock(g.start_utc) || g.start_et || "";
+}
+
 /**
- * When the dog has no pick: the server's own words about the dog's NEXT game (`next_game`) and about what is live in OTHER sports
- * right now (`live_elsewhere`), each a string or {line}, and always a link to the live board (web/live.html). The page writes none
- * of this itself; a server that sends neither still gets the link.
+ * THE DAY AS COUNTS (owner, 2026-10-22: the day "dumped every game by name ... way too long a printout and looks sloppy"). One tidy
+ * block, "60 games today · 12 started · 34 later · 14 checked now", and the games themselves folded behind "See all games", grouped
+ * (Started / Checked now / Later today) and short ("Away @ Home · 7:10 PM"). The words are the server's (`day` on an Unleash answer,
+ * `slate` on the preview): the page adds nothing and names no game outside the fold. Every string goes in as text.
+ */
+export function dayBlock(data) {
+  const src = (data.day && (data.day.counts_line || (data.day.groups || []).length)) ? data.day : (data.slate || {});
+  const line = typeof src.counts_line === "string" ? src.counts_line : "";
+  const groups = (Array.isArray(src.groups) ? src.groups : []).filter((g) => g && Array.isArray(g.games) && g.games.length);
+  if (!line && !groups.length) return null;
+  const kids = [];
+  if (line) kids.push(h("p", { class: "dk-counts hd-num", "data-hook": "fire-counts", text: line }));
+  if (groups.length) {
+    const total = groups.reduce((n, g) => n + g.games.length + (isNum(g.more) ? g.more : 0), 0);
+    kids.push(h("details", { class: "dk-games", "data-hook": "fire-games" }, [
+      h("summary", { class: "dk-games__sum", "data-hook": "fire-games-toggle", text: "See all games" }),
+      ...groups.map((g) => h("div", { class: "dk-games__group", "data-group": g.key }, [
+        h("p", { class: "dk-games__head", text: `${g.label} (${g.games.length + (isNum(g.more) ? g.more : 0)})` }),
+        h("ul", { class: "dk-games__list" }, [
+          ...g.games.map((x) => h("li", { class: "dk-games__item", text: `${x.game}${gameClock(x) ? ` · ${gameClock(x)}` : ""}` })),
+          isNum(g.more) && g.more > 0 ? h("li", { class: "dk-games__item dk-games__more", text: `and ${g.more} more` }) : null])])),
+      h("p", { class: "hd-fine", text: `${total} ${total === 1 ? "game" : "games"} in all.` })]));
+  }
+  return h("div", { class: "dk-block dk-day", "data-hook": "fire-day-block" }, kids);
+}
+
+/** Whether the sentence adds anything over the counts: only while it is waiting for another day (nothing left today, or none at all). */
+function wantsSentence(slate) {
+  return !!slate && !!slate.line && slate.today_state !== "open";
+}
+
+/**
+ * When the dog has no pick: the server's own words about the dog's NEXT game (`next_game`, said ONCE: an Unleash answer carries "Next
+ * game it checks" already, so `next_check` suppresses it here) and, as ONE small link to the live board (web/live.html), what is live
+ * in OTHER sports (`live_elsewhere`; the link reads the server's words when it sent some, else "See what's on in every sport").
+ * The page writes none of this itself; a server that sends neither still gets the link.
  */
 function elsewhereBlock(data) {
-  const lines = [sentenceOf(data.next_game), sentenceOf(data.live_elsewhere)].filter(Boolean);
-  return h("div", { class: "dk-block dk-elsewhere", "data-hook": "fire-elsewhere" }, [
-    ...lines.map((line, i) => h("p", { class: "dk-headline dk-elsewhere__line", "data-hook": i === 0 && sentenceOf(data.next_game) ? "fire-next-game" : "fire-live-elsewhere", text: line })),
-    h("p", { class: "hd-fine" }, [lines.length ? "" : "Other sports may have games on right now. ", h("a", { href: "live.html", "data-hook": "fire-live-link", text: "See what's on in every sport" }), "."])]);
+  const next = data.next_check ? "" : sentenceOf(data.next_game);
+  const live = sentenceOf(data.live_elsewhere);
+  const kids = [];
+  if (next) kids.push(h("p", { class: "dk-headline dk-elsewhere__line", "data-hook": "fire-next-game", text: next }));
+  kids.push(h("p", { class: "hd-fine dk-livelink" }, [
+    h("a", { href: "live.html", class: "dk-livelink__a", "data-hook": "fire-live-link", "data-live": live ? "1" : "0", text: live || "See what's on in every sport" })]));
+  return h("div", { class: "dk-block dk-elsewhere", "data-hook": "fire-elsewhere" }, kids);
 }
 
 /** Draw a fire payload into `box`. `canRecord` shows the owner's manual-pick buttons. `name` heads it "<name>'s picks right now". */
 export function renderFireResult(box, data, { id, name, canRecord = false, onRecord } = {}) {
   clearNode(box);
   if (name) box.appendChild(h("h3", { class: "hd-h3", "data-hook": "fire-title", text: `${name}'s picks right now` }));
-  const slate = slateLine(data.slate);
+  const slate = wantsSentence(data.slate) ? slateLine(data.slate) : "";
   if (slate) box.appendChild(h("p", { class: "dk-headline dk-slate", "data-hook": "fire-slate", text: slate }));
   box.appendChild(h("p", { class: "dk-headline", "data-hook": "fire-headline", role: "status", text: data.headline || "" }));
+  const dayNode = dayBlock(data);
+  if (dayNode) box.appendChild(dayNode);
   const asOf = [];
   if (data.as_of) asOf.push(`Run ${whenText(data.as_of)}`);
   if (data.newest_board_utc) asOf.push(`newest board ${whenText(data.newest_board_utc)}`);
@@ -229,16 +268,12 @@ export function liveLabel(p) {
   return `Live bet · price at ${pad(at.getUTCHours())}:${pad(at.getUTCMinutes())} UTC`;
 }
 
-/** Why each game was or was not taken: "Checked 60 games: 38 not in its sports · 14 price outside ... → placed 2", the game
- *  checked next, and when. Every string goes in as text. */
+/** Why each game was or was not taken, as ONE line ("60 checked: 52 numbers didn't line up · 8 too few books"; the old one-row-per-reason
+ *  list under it said it twice), the game checked next and when (said ONCE, here). Every string goes in as text. */
 function whyBlock(data) {
   const why = data.why;
   if (!why || !why.text) return null;
   const kids = [h("p", { class: "dk-why", "data-hook": "unleash-why", text: why.text })];
-  if (Array.isArray(why.counts) && why.counts.length) {
-    kids.push(h("ul", { class: "dk-misses", "data-hook": "unleash-why-list" }, why.counts.map((c) =>
-      h("li", { class: "dk-miss", "data-code": c.code, text: `${c.count} ${c.label}` }))));
-  }
   const nx = data.next_check;
   if (nx) kids.push(h("p", { class: "hd-fine", "data-hook": "unleash-next", text: `Next game it checks: ${nx.game}, ${whenText(nx.when_utc)} (${nx.what}).` }));
   else kids.push(h("p", { class: "hd-fine", "data-hook": "unleash-next", text: "No more games left to check today in its sports." }));
@@ -340,9 +375,11 @@ export function renderUnleashDay(box, data, { name, id } = {}) {
   box.appendChild(rise(stepsDone(data)));
   if (name) box.appendChild(h("h3", { class: "hd-h3", "data-hook": "unleash-title", text: `${name}'s day` }));
   // the same slate sentence the preview opens with ("Tonight's games already started ... Next games I can bet: Thursday."), said first
-  const slate = slateLine(data.slate);
+  const slate = wantsSentence(data.slate) ? slateLine(data.slate) : "";
   if (slate) box.appendChild(rise(h("p", { class: "dk-headline dk-slate", "data-hook": "fire-slate", text: slate })));
   box.appendChild(rise(h("p", { class: "dk-headline", "data-hook": "unleash-headline", role: "status", text: data.headline || "" })));
+  const dayNode = dayBlock(data);
+  if (dayNode) box.appendChild(rise(dayNode));
   const picks = Array.isArray(data.picks) ? data.picks : [];
   // no pick today: the server's words on the next game and on what is live elsewhere, and the link to the live board (never a dead end)
   if (!picks.length) box.appendChild(rise(elsewhereBlock(data)));
@@ -376,7 +413,7 @@ export function renderUnleashDay(box, data, { name, id } = {}) {
 }
 
 /** The owner's Unleash panel: one button, the working state while the request runs, then the day. */
-function mountUnleashToday(section, body, { id, name, avatar, onDone }) {
+function mountUnleashToday(section, body, { id, name, avatar, onDone, gematria = false }) {
   body.appendChild(h("p", { class: "hd-muted" }, `Unleash starts ${name || "this hound"} betting today. It checks every game on today's board that is still open for its placing time, places the bets that fit its rule, and from then on it keeps going on its own. It also shows what it would have taken earlier today, kept apart from its record. Paper only.`));
   const result = h("div", { class: "dk-result", "data-hook": "fire-result", "aria-live": "polite" });
   const btn = h("button", { type: "button", class: "btn btn--primary", "data-hook": "fire-btn", text: "Unleash" });
@@ -384,10 +421,26 @@ function mountUnleashToday(section, body, { id, name, avatar, onDone }) {
   btn.addEventListener("click", async () => {
     btn.setAttribute("disabled", "");
     status.textContent = "";
-    clearNode(result).appendChild(unleashWorking(Object.assign({ name }, avatar || {})));
+    const working = unleashWorking(Object.assign({ name }, avatar || {}));
+    clearNode(result).appendChild(working);
     try {
-      const data = await unleashToday(id);
+      // The request starts first, always. A Gematria hound's real analysis (src/hounds/interact/gematria_analysis.py) is fetched beside
+      // it and played line by line while the request runs (dog-gematria-stream.js); it never delays the request, it only shows the work.
+      const request = unleashToday(id);
+      let streamed = null;
+      if (gematria) {
+        request.catch(() => null);                          // reported below; the stream must not trip on it
+        const host = h("div", { class: "gs-host", "data-hook": "gematria-host" });
+        result.appendChild(host);
+        streamed = await runGematriaStream({ body: host, load: () => gematriaAnalysis(id), waitFor: request, reduced: reducedMotion(),
+          onStart: () => { if (working.parentNode) working.parentNode.removeChild(working); } });
+      }
+      const data = await request;
       renderUnleashDay(result, data, { name: name || "This hound", id });
+      if (streamed && streamed.ok) {
+        const fold = analysisLog(streamed.payload);
+        if (fold) result.appendChild(fold);
+      }
       if (onDone) onDone(data);
     } catch (err) {
       clearNode(result);
@@ -409,7 +462,7 @@ export function mountFire(section, { id, name, kit, onRecord, today = false, ava
   const body = section.querySelector("[data-hook='dog-fire']");
   if (!body) return;
   clearNode(body);
-  if (today && kit && kit.is_owner) return mountUnleashToday(section, body, { id, name, avatar, onDone });
+  if (today && kit && kit.is_owner) return mountUnleashToday(section, body, { id, name, avatar, onDone, gematria: !!kit.gematria });
   const canRecord = !!(kit && kit.can_record_manual);
   body.appendChild(h("p", { class: "hd-muted" }, `Run ${name || "this model"}'s current rule on the latest stored boards and see what it would pick. Nothing is recorded${canRecord ? " unless you choose to" : ""}.`));
   const result = h("div", { class: "dk-result", "data-hook": "fire-result", "aria-live": "polite" });

@@ -64,8 +64,9 @@ EXPLAINER = (
     "Gematria reads the numbers in a game. For each team it works out what the numbers in names, cities, mascots, the date "
     "and our stored results would say if that team won: letter values, win and loss counts, streaks, days since the last "
     "win. Every time two of those numbers match, that is one piece of evidence. Your hound backs the side with clearly more "
-    "matches, on moneylines only, an hour before the start, and passes when the data is thin, the sides are too close or the "
-    "price is -200 or worse. It uses the same rules as the house Gematria Hound, so the two never drift apart. It is a "
+    "matches, on moneylines only, an hour before the start, and passes when the sides are too close or the price is -200 or "
+    "worse. Where our stored results are thin it reads the names and the date alone. It uses the same rules as the house "
+    "Gematria Hound, so the two never drift apart. It is a "
     "for-fun style: nothing here claims that numbers predict games, and every pick is paper and graded in public.")
 QUIZ_LINE = "Reads the numbers in names, dates and streaks. Bets when they line up."
 
@@ -234,13 +235,21 @@ def rule_sentence(spec: Mapping) -> str:
     d = rules.decision
     lo, hi = spec["rules"][0]["price_min"], spec["rules"][0]["price_max"]
     sports = user_spec.sports_phrase(spec["rules"][0]["sports"])
+    if rules.static_fallback:
+        # rules v2: thin counts are read statically, and the lead is judged against the game's own noise
+        lead = (f"It backs the side with the larger total only if it leads by at least {d.min_margin:g} and by clearly more than the "
+                "game's own noise (a game with many coincidences needs a bigger lead), and the side's average price is between "
+                f"{_price(lo)} and {_price(hi)} (never -200 or worse); otherwise it passes. Where our stored results are thin, or a "
+                "sport has none, it reads the names, the date and founding dates alone.")
+    else:
+        lead = (f"It backs the side with the larger total only if it leads by at least {d.min_margin:g}, both sides had enough "
+                f"stored results to count, and the side's average price is between {_price(lo)} and {_price(hi)} "
+                "(never -200 or worse); otherwise it passes.")
     return (
         f"{CANONICAL_LABEL}: {sports} moneylines. For each team it works out what the numbers would say if that team won "
         "(the cipher values of names, cities and mascots, the number of the date, how far the game is from a founding "
         "date, and counts from our stored results such as records, streaks and days since a win); each time two of those "
-        f"numbers match is one piece of evidence. It backs the side with the larger total only if it leads by at least "
-        f"{d.min_margin:g}, both sides had enough stored results to count, and the side's average price is between "
-        f"{_price(lo)} and {_price(hi)} (never -200 or worse); otherwise it passes. It runs the house Gematria Hound's "
+        f"numbers match is one piece of evidence. {lead} It runs the house Gematria Hound's "
         f"rules ({rules.version}) and makes no claim that numbers predict games.")
 
 
@@ -255,15 +264,16 @@ def fixed_text(fixed: Mapping) -> str:
         parts.append(f"at an average price between {_price(band[0])} and {_price(band[1])} (never -200 or worse)")
     if fixed.get("rules_version"):
         parts.append(f"under the house hound's rules {fixed['rules_version']}")
-    return "Fixed by the style: " + ", ".join(parts) + ". It passes when the data is thin."
+    tail = ". It passes when the data is thin." if fixed.get("rules_version") in (None, "", "v1") else ". Where stored results are thin it reads names and dates alone."
+    return "Fixed by the style: " + ", ".join(parts) + tail
 
 
 def global_sentences(spec: Mapping) -> list:
     bets, stake = spec["max_bets_per_day"], spec["stake_units"]
     return [
         f"{spec['lock_minutes']} minutes before the start it weighs each game once, from the board as it stood then and "
-        "the results stored by then (nothing newer).",
-        f"At most {bets} {'bet' if bets == 1 else 'bets'} a day, the earliest games first.",
+        "the results stored by then (nothing newer). Unleash weighs the day's open games at once, on the board standing then.",
+        f"At most {bets} {'bet' if bets == 1 else 'bets'} a day: the strongest cases when you Unleash, the earliest games first after that.",
         f"Each bet is {stake:g} paper unit{'' if stake == 1 else 's'}, graded at the average price.",
     ]
 
@@ -364,7 +374,9 @@ class Weigher:
             else:
                 board = base.build_board(self.stores().quotes_by_event.get(event_id) or [], at=as_of, start=ctx.start,
                                          sport=ctx.sport)
-            out = (ctx, board, self.runtime.weigh(ctx, board))
+            ahead = as_of is not None and as_of < ctx.lock
+            # an ahead read is cut at its own instant for the history too (``GematriaRuntime.inputs``), not only for the board
+            out = (ctx, board, self.runtime.weigh(ctx, board, known_at=as_of) if ahead else self.runtime.weigh(ctx, board))
         if as_of is None:
             self._memo[key] = out
         return out
@@ -397,9 +409,17 @@ def _candidate(game, ctx, board, weighed, runtime) -> Optional[dict]:
 
 def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, date: str, *, mode: str,
                      clock: Callable[[], datetime], seen_ids: set, skipped, considered: dict,
-                     weigher: Weigher, env: Optional[Mapping] = None) -> list:
+                     weigher: Weigher, env: Optional[Mapping] = None, ahead: bool = False) -> list:
     """The candidates of one member Gematria hound on one slate date, in the shape ``user_engine.run`` ranks and writes:
-    ``[(sortkey, lock_utc, event_id, market, game, commence, cand, bet_id)]``."""
+    ``[(sortkey, lock_utc, event_id, market, game, commence, cand, bet_id)]``.
+
+    ``ahead`` is Unleash (``user_engine.run(place_ahead=True)``). Until 2026-10-22 this function ignored it: every game still
+    more than ``lock_minutes`` from its start was skipped as ``not_locked_yet``, so a member who tapped Unleash at noon had
+    the whole evening slate unevaluated and read "Checked 60 games ... rule not met". With ``ahead`` a game not yet at its lock is
+    weighed NOW, on the newest board at or before now and on results stored by now (``Weigher.weigh(as_of=now)``: nothing later
+    exists), exactly as the preview reads it, and the bet says it was placed ahead. Under rules v2 the day's candidates are
+    ranked by their z (the margin in units of the game's own noise), best first, so the daily limit keeps the strongest cases
+    rather than the earliest games; the lock-time runner (one game at a time) cannot rank, and still goes earliest first."""
     from src.hounds import user_engine as E
 
     if not enabled(env):
@@ -421,14 +441,16 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, date: str, *
         if now >= game.commence:
             skipped["game_started"] += 1
             continue
-        if now < lock_pre:
+        if now < lock_pre and not ahead:
             skipped["not_locked_yet"] += 1
             continue
-        if created is not None and created > lock_pre:
+        if created is not None and created > lock_pre and not ahead:
             skipped["hound_created_after_lock"] += 1
             continue
         considered.setdefault(hound["id"], set()).add(event_id)
-        got = weigher.weigh(event_id)
+        # ahead: a game not at its lock yet, or one whose lock passed before this hound existed, is read on the board standing now
+        as_of = now if (ahead and (now < lock_pre or (created is not None and created > lock_pre))) else None
+        got = weigher.weigh(event_id, as_of=as_of)
         if got is None:
             skipped[PASS_PREFIX + "no_context"] += 1
             continue
@@ -436,7 +458,7 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, date: str, *
         if now >= ctx.start:
             skipped["game_started"] += 1
             continue
-        if now < ctx.lock:
+        if now < ctx.lock and not ahead:
             skipped["not_locked_yet"] += 1
             continue
         if not weighed.verdict.is_bet:
@@ -446,7 +468,17 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, date: str, *
         if cand is None:
             skipped[PASS_PREFIX + "no_board"] += 1
             continue
-        out.append(((ctx.lock, event_id, 0), ctx.lock, event_id, MARKET, game, ctx.start, cand, bet_id))
+        if as_of is not None:
+            cand["row_extra"]["placed_ahead"] = True        # weighed before its lock (or after a lock the hound missed): said on the row
+        ranked = weigher.runtime.rules.static_fallback and ahead
+        key = (-weighed.verdict.z, ctx.lock, event_id, 0) if ranked else (ctx.lock, event_id, 0)
+        # Which ORDER chose this bet under the daily limit, on the row (red team 2026-10-22). The order is code, not the rules file, so
+        # the rules_hash alone cannot say it: on 2026-10-20 and 10-22 an Unleash's top 5 by z shared only 2 and 3 games with the 5 the
+        # lock-time runner takes earliest first. Same rules, a different selection: the record must be able to tell them apart.
+        # Only a ranked bet carries it (absent = earliest first), so a lock-time row is byte-for-byte what it was.
+        if ranked:
+            cand["row_extra"]["day_order"] = "z"
+        out.append((key, ctx.lock, event_id, MARKET, game, ctx.start, cand, bet_id))
     return out
 
 
@@ -474,12 +506,15 @@ def preview(spec: Mapping, games: Mapping, date: str, now: datetime, *, weigher:
         if weighed.verdict.is_bet:
             cand = _candidate(game, ctx, board, weighed, weigher.runtime)
             if cand is not None:
-                picks.append((ctx.lock, event_id, game, ctx, cand))
+                picks.append((ctx.lock, event_id, game, ctx, cand, weighed.verdict.z))
                 continue
         skipped[PASS_PREFIX + weighed.verdict.code] += 1
-    picks.sort(key=lambda p: (p[0], p[1]))
+    if weigher.runtime.rules.static_fallback:
+        picks.sort(key=lambda p: (-p[5], p[0], p[1]))
+    else:
+        picks.sort(key=lambda p: (p[0], p[1]))
     out = []
-    for position, (lock, event_id, game, ctx, cand) in enumerate(picks):
+    for position, (lock, event_id, game, ctx, cand, _z) in enumerate(picks):
         out.append({
             "event_id": event_id, "sport": game.sport, "market": MARKET, "away_team": game.away_team,
             "home_team": game.home_team, "start_utc": E._iso(ctx.start), "lock_utc": E._iso(lock), "locked": now >= lock,

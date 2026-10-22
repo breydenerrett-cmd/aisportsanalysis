@@ -33,6 +33,14 @@ event, complete streaks, spans, ciphers and statehood are exact in any window an
 
 Missing data is silence: a fact or count that is not there makes no quantity, so it can make no match. Pure functions,
 stdlib only.
+
+RULES V2 AND THE STATIC BASIS. Under ``rules.static_fallback`` (rules_v2.json) a game whose outcome-conditional counts are thin
+(a season a few days old, or a sport we hold no results for) is not passed as ``thin_data``/``no_history``. Each side is scored on
+STATIC evidence instead: coincidences among the numbers that belong to that side's own team (its name, city, mascot, state,
+founding spans, any stored number) and the numbers of the game date. Nothing in it depends on a result, so it exists for every
+game with two names; it is the same arithmetic as the posts' cipher, statehood and date bullets, minus the counts we cannot make.
+A game scored this way says so (``Signals.basis == "static"``) and the margin is judged against the game's own noise
+(``Signals.noise_sd``), not a fixed number.
 """
 
 from __future__ import annotations
@@ -42,7 +50,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 from src.hounds.gematria import facts as facts_mod
 from src.hounds.gematria import history
-from src.hounds.gematria.rules import KINDS, Rules
+from src.hounds.gematria.rules import ALL_KINDS as KINDS, Rules
 from src.research import gematria
 
 SIDES = ("home", "away")
@@ -106,6 +114,20 @@ class Signals:
     home: SideSignals
     away: SideSignals
     static_count: int = 0
+    basis: str = "season"            # "season" (outcome-conditional counts, rules v1 and v2) | "static" (rules v2's fallback)
+
+    @property
+    def noise_sd(self) -> float:
+        """The chance scale of the margin: each match is a rare coincidence, so a side's score is a sum of independent small
+        weights and the variance of the difference is the sum of the squared weights of ALL matches on both sides. A game with a
+        big search and many matches has a wide noise band; a quiet game a narrow one."""
+        return round(sum(e.weight ** 2 for side in (self.home, self.away) for e in side.evidence) ** 0.5, 6)
+
+    @property
+    def z(self) -> float:
+        """The margin in units of its own noise (0 when nothing matched on either side)."""
+        sd = self.noise_sd
+        return round(abs(self.margin) / sd, 6) if sd > 0 else 0.0
 
     def side(self, which: str) -> SideSignals:
         return self.home if which == "home" else self.away
@@ -353,8 +375,79 @@ def _world(g: GameInputs, winner: str, static: Sequence[Quantity], rules: Rules)
     return side
 
 
+#: static quantity groups that belong to a team (a game-level date number belongs to neither side)
+_OWNED_GROUPS = ("name", "fact", "state", "span")
+
+
+def _source_key(q: Quantity) -> str:
+    """Which fact a quantity was read from: all four ciphers of one text are ONE source ("home.name.city"), and every unit and
+    both inclusive conventions of one dated anchor are ONE source ("home.span.state admitted"), so a fact never matches itself."""
+    parts = q.qid.split(".")
+    return ".".join(parts[:3]) if q.group in ("name", "span") else q.qid
+
+
+def static_world(g: GameInputs, side: str, static: Sequence[Quantity], rules: Rules) -> SideSignals:
+    """``side``'s STATIC evidence (rules v2): matches among the numbers of this side's own team and the game date. Needs no
+    result. ``milestones`` is the count of the side's own static numbers (what the side brings to the search), so the
+    "enough to compare" gate of v1 still means something."""
+    out = SideSignals(side=side)
+    st = [q for q in static if rules.in_range(q.value)]
+    owned = [q for q in st if q.owner == side and q.group in _OWNED_GROUPS]
+    dates = [q for q in st if q.group == "date"]
+    out.milestones = len(owned)
+    seen = set()
+
+    def add(kind: str, a: Quantity, b: Optional[Quantity], value: int, note: str = "") -> None:
+        key = (kind, a.qid, b.qid if b else None)
+        if key in seen:
+            return
+        seen.add(key)
+        out.evidence.append(Evidence(kind, a, b, value, _weight(rules, kind, value, a, b), note))
+
+    for q in owned:
+        for d in dates:                                  # a team's own number against the number of the date
+            out.comparisons += 1
+            if q.value == d.value:
+                add("own_name_eq_date" if q.group == "name" else "static_eq_date", q, d, q.value)
+    for i, q1 in enumerate(owned):                      # two different facts of the same team that agree
+        for q2 in owned[i + 1:]:
+            if _source_key(q1) == _source_key(q2):
+                continue
+            out.comparisons += 1
+            if q1.value == q2.value:
+                add("static_eq_static", q1, q2, q1.value)
+    pool = owned + dates                                # prime / triangular links, at least one end the team's own
+    owned_ids = {q.qid for q in owned}
+    for x in pool:
+        px = gematria.nth_prime(x.value) if x.value <= gematria.MAX_PRIME_INDEX else None
+        tx = x.value * (x.value + 1) // 2
+        for y in pool:
+            if y is x or (x.qid not in owned_ids and y.qid not in owned_ids):
+                continue
+            out.comparisons += 2
+            if px is not None and y.value == px:
+                add("prime_link", x, y, y.value, f"{y.value} is the {_ordinal(x.value)} prime")
+            if y.value == tx:
+                add("triangular_link", x, y, y.value, f"{y.value} is the {_ordinal(x.value)} triangular number")
+    for q in owned:
+        out.comparisons += 1
+        if q.value in rules.special_numbers:
+            add("static_special_33_47", q, None, q.value)
+    out.evidence.sort(key=lambda e: (-e.weight, KINDS.index(e.kind), e.a.qid, e.b.qid if e.b else ""))
+    out.score = round(sum(e.weight for e in out.evidence), 6)
+    return out
+
+
 def generate(g: GameInputs, rules: Rules) -> Signals:
-    """Both worlds for one game. Pure: same inputs and rules, same evidence, same score."""
+    """Both worlds for one game. Pure: same inputs and rules, same evidence, same score.
+
+    Under ``rules.static_fallback`` a game with thin counts (either side under ``min_milestones_per_side``, or no stored
+    results at all) is scored on its static evidence instead (``basis == "static"``); otherwise exactly rules v1."""
     static = static_quantities(g, rules)
-    return Signals(home=_world(g, "home", static, rules), away=_world(g, "away", static, rules),
-                   static_count=len(static))
+    home, away = _world(g, "home", static, rules), _world(g, "away", static, rules)
+    basis = "season"
+    if rules.static_fallback and (not g.history_available
+                                  or min(home.milestones, away.milestones) < rules.decision.min_milestones_per_side):
+        home, away = static_world(g, "home", static, rules), static_world(g, "away", static, rules)
+        basis = "static"
+    return Signals(home=home, away=away, static_count=len(static), basis=basis)

@@ -127,3 +127,76 @@ the record/streak claims are UNVERIFIED_HISTORY because the NBA store holds this
 The hound builds the same worlds for every game on the board, not for the games a person chose, logs the size of the search, applies one
 fixed table of weights and a fixed margin, and passes when it cannot decide. Whether any of it beats the price is exactly what its
 public record will say. Until then: experimental, paper, no claim.
+
+## Rules v2: pre-registration (written 2026-10-22, before `active.json` points at it)
+
+**Date:** 2026-10-22. **Outcomes consulted: none.** No win, loss, score, grade or `result` column of any game, pick or post was read to choose
+anything below; the only evidence used is HOW MANY picks the rules make per day on the stored boards (`research/rabbitszn/v2_pick_rate.py`
+prints pick counts and pass reasons and nothing else). `tests/test_gematria_v2.py` plants results and asserts the picks do not change.
+
+**Why v2 exists.** The owner's production report: a member's Gematria hound "is not picking any bets for today ... seems too restricted"
+(`Checked 60 games: 60 rule not met -> placed 0`) and took about 30 seconds. Diagnosis on the stored boards at 2026-10-22 18:30Z, 82 games on
+the day's slate, rules v1, each game weighed on the newest board (the preview's reading):
+
+| why v1 did not pick | games |
+|---|---|
+| `no_history` (no stored results for the sport: soccer 40, hockey 8, basketball 7, tennis 4, cricket 4, MMA 1) | 64 |
+| `uneven_search` (one side searched much more than the other) | 5 |
+| `thin_data` (fewer than 3 outcome-conditional counts on a side: NBA season 2 days old) | 4 |
+| `outside_band` (the stronger side was -200 or worse, or above +400) | 3 |
+| `small_margin` (under the fixed 3.0) | 1 |
+| `bet` | 5 |
+
+So the margin of 3.0 was NOT what stopped it (1 game of 18 that had counts), the season being a few days old stopped 4, and missing stored
+results stopped 64 of 82. Separately, and larger for a member: Unleash (`place_ahead`) never reached the Gematria style. Games more than an hour
+from their start were skipped as `not_locked_yet` (19 of the 82 at that moment; the 44 already started cannot be bet), and the day view
+then labelled every game "rule not met" because the house engine's own reason was never asked (`unleash_why.game_code`). Both are fixed in code
+(`user_gematria.hound_candidates(ahead=...)`, `unleash_why.gematria_bucket`) and are not part of the rules.
+
+**Target pick rate.** The reference handicapper's `ledger.csv`: 62 documented picks over 17 posting days = 3.65 a day counting props
+(median 4), 2.53 a day counting moneylines and leans only (median 2). The instruction was "roughly 2 to 5 picks a day across sports when
+games exist". Target: **a median of 3 and a range of 2 to 5 capped picks per day on days with at least 4 games on the stored boards.**
+
+**Parameters, `config/gematria/rules_v2.json` (version `v2`, hound_version `gematria-v2`, hound_number 2):**
+
+* `static_fallback: true`. A game whose either side has fewer than `min_milestones_per_side` (3) outcome-conditional counts, or whose sport has no
+  stored results, is scored on STATIC evidence (`signals.static_world`): coincidences between a team's own numbers (cipher values of its name,
+  city, mascot, state, coach, abbreviation; statehood order; spans from founding dates; any stored number) and the numbers of the game date, two
+  different facts of one team agreeing, primes and triangular links, and 33/47. Three new kinds with weights copied from their nearest v1
+  analogue: `static_eq_date` 1.0, `static_eq_static` 0.5, `static_special_33_47` 1.0; v1's `own_name_eq_date` 0.5, `prime_link` 1.0,
+  `triangular_link` 0.5 apply unchanged. No result is used by this basis at all.
+* `name_only_teams: true`. A team the facts layer does not hold (soccer, tennis, cricket, MMA ...) is read by its NAME alone (its four cipher
+  values); a team with no name at all is still `no_facts`.
+* `margin_mode: noise_scaled`: the lead must clear a floor `min_margin` = **1.0** (v1: 3.0 fixed) AND be at least `min_z` = **1.0** times the game's
+  own noise, `noise_sd = sqrt(sum of squared weights of every match on both sides)` (`Signals.z`). A game with a big search and many matches needs
+  a bigger lead. This is the "noise-scaled margin" the v1 replay notes proposed; no parameter in it was fitted.
+* `max_search_imbalance` **0.5** (v1: 0.35): two sides may differ by half in search size before the margin is called a coverage artefact (a name-only
+  team against a facts-rich one is the case it is relaxed for).
+* `max_picks_per_day` **5** (v1: 3). Under Unleash the day's candidates are ranked by z, best first, so the daily limit keeps the strongest cases;
+  the one-game-at-a-time lock runner cannot rank (a later game's board does not exist at an earlier game's lock) and goes earliest first.
+* `confidence_bands` [1.0, 2.0, 3.5, 6.0] (margins on the smaller static scale; display only, they choose nothing).
+* Unchanged from v1: moneyline only, `price_band` [-199, 400] (the -200 cap is also a load-time error), `lock_minutes` 60, lock-time inputs only
+  (history cut at lock minus 6 hours; the board is the board standing when it was weighed), one side per game, 4 ciphers, special numbers, span units.
+
+**How the two numbers were chosen.** A sweep over `min_margin` in {0.5, 1.0} and `min_z` in {0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5} on nine days of stored
+boards (2026-10-14 to 2026-10-22), reading only counts. Chosen: the loosest pair whose capped counts had median 3, and no cap-bound runaway: at
+`min_margin` 0.5 and `min_z` 1.0 the busy days reach 13 to 15 candidates for a limit of 5, which is a filter that is not filtering. Result, uncapped
+then capped (`v2_pick_rate.py --days 2026-10-14,...,2026-10-22`): 0/0, 2/2, 3/3, 3/3, 5/5, 0/0, 8/5, 1/1, 7/5. On the seven days with at least 4 games
+the capped counts are 1, 2, 3, 3, 5, 5, 5: **median 3, mean 3.43**, against the reference's 3.65 (all markets) and 2.53 (moneylines). The day with 1 is
+2026-10-21: 46 games but only 16 had a moneyline board with three books. Pass reasons are in the script's output; the dominant ones are `no_board`
+(books) and `small_margin`.
+One bug was fixed during this work, before any pick existed: a dated anchor (a founding date counted in days and in weeks, exclusive and
+inclusive) could agree with itself; `signals._source_key` now treats every unit of one anchor as one fact. It did not change a single day's counts above.
+
+**What this does not do.** It does not say v2 picks winners. v1 and v2 are both experimental numerology graded in public; v1's history stays
+attributed to `rules_v1.json` (the `rules_hash` stamp on every bet row changes with the file), and v2's record starts with its first forward pick.
+The rules file is frozen the moment it makes a pick; a change is `rules_v3.json`. If the forward pick rate leaves the 2-to-5 band for ten days,
+that is a reason to propose v3, never to edit v2.
+
+**Amendment, 2026-10-22, adversarial check before any v2 pick (no parameter changed, outcomes still not consulted).** Two read-time
+fixes, neither a rules change. (1) An AHEAD read (Unleash, the preview, the analysis stream: a game weighed before its lock) now cuts the
+history at the read instant minus `FINISH_LAG`, not at the later lock minus `FINISH_LAG` (`GematriaRuntime.inputs(known_at=...)`). Live,
+nothing after now exists anyway; in this note's replay of past mornings the later cut could count a game that finished after 15:00Z. The
+sweep above was re-run with the fix: the nine days' uncapped/capped counts are identical (0/0, 2/2, 3/3, 3/3, 5/5, 0/0, 8/5, 1/1, 7/5;
+median 3, mean 3.43). (2) The analysis the page plays applies the hound's own daily limit in its own placing order (a member: Unleash,
+by z; the house hound: the lock-time runner, earliest first), so it never prints more "Pick" lines than the hound can place.

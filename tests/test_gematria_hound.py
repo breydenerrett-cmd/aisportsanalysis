@@ -150,12 +150,17 @@ class ConfigAndRulesTests(unittest.TestCase):
         self.assertIn("unproven", text)
 
     def test_the_shipped_rules_load_and_are_stamped(self):
-        r = rules_mod.load()
+        # v1 is frozen and still loads exactly as it did; the ACTIVE file is v2 since 2026-10-22 (tests/test_gematria_v2.py)
+        r = rules_mod.load("rules_v1.json")
         self.assertEqual((r.version, r.hound_version, r.hound_number), ("v1", "gematria-v1", 1))
         self.assertEqual(len(r.rules_hash), 64)
-        self.assertEqual(rules_mod.load().rules_hash, r.rules_hash)
+        self.assertEqual(rules_mod.load("rules_v1.json").rules_hash, r.rules_hash)
         self.assertEqual(r.decision.max_picks_per_day, 3)
         self.assertEqual(r.decision.price_band[0], -199)
+        self.assertEqual((r.static_fallback, r.decision.margin_mode, r.decision.min_margin), (False, "fixed", 3.0))
+        active = rules_mod.load()
+        self.assertEqual((active.version, active.hound_version, active.hound_number), ("v2", "gematria-v2", 2))
+        self.assertNotEqual(active.rules_hash, r.rules_hash)
 
     def test_every_kind_has_a_weight_and_an_unknown_kind_is_refused(self):
         data = rules_dict()
@@ -179,7 +184,10 @@ class ConfigAndRulesTests(unittest.TestCase):
         a = rules_mod.Rules.from_dict(data, raw_bytes=lf).rules_hash
         b = rules_mod.Rules.from_dict(data, raw_bytes=crlf).rules_hash
         self.assertEqual(a, b)
-        self.assertEqual(rules_mod.load().rules_hash, hashlib.sha256(lf).hexdigest())
+        self.assertEqual(rules_mod.load("rules_v1.json").rules_hash, hashlib.sha256(lf).hexdigest())
+        lf2 = (ROOT / "config" / "gematria" / "rules_v2.json").read_bytes().replace(chr(13).encode() + chr(10).encode(), chr(10).encode())
+        self.assertEqual(rules_mod.load("rules_v2.json").rules_hash, hashlib.sha256(lf2).hexdigest())
+        self.assertEqual(rules_mod.load().rules_hash, hashlib.sha256(lf2).hexdigest())     # the active file
 
     def test_a_price_band_that_reaches_minus_200_is_refused(self):
         with self.assertRaises(rules_mod.RulesError):
@@ -385,7 +393,7 @@ class MlbHasNoSeasonCountsTests(unittest.TestCase):
 
 class SignalTests(unittest.TestCase):
     def setUp(self):
-        self.rules = rules_mod.load()
+        self.rules = rules_mod.load("rules_v1.json")          # the v1 engine's behaviour; v2's is in tests/test_gematria_v2.py
         self.games = season_games()
 
     def inputs(self):

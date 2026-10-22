@@ -418,7 +418,7 @@ class TheDogPageNoGames(unittest.TestCase):
             routes = dog_routes(owner=False, fire_payload=payload)
         return dog_page(routes, actions=[dict(do="click", sel=dhook("fire-btn"), wait=120)], queries=[
             q("block", "[data-hook='dog-fire'] [data-hook='fire-elsewhere']"), q("next", "[data-hook='dog-fire'] [data-hook='fire-next-game']"),
-            q("elsewhere", "[data-hook='dog-fire'] [data-hook='fire-live-elsewhere']"),
+            q("elsewhere", "[data-hook='dog-fire'] [data-hook='fire-live-link']"),
             q("href", "[data-hook='dog-fire'] [data-hook='fire-live-link']", "attr", attr="href"), q("count", "[data-hook='dog-fire'] [data-hook='fire-live-link']", "count")])
 
     def test_no_pick_shows_the_servers_words_and_a_link_to_the_live_board(self):
@@ -426,16 +426,18 @@ class TheDogPageNoGames(unittest.TestCase):
             f = self.fire(owner=owner, next_game="Next game it can bet: Thursday 7:00 PM ET.",
                           live_elsewhere="Live now in other sports: Tennis 4, Soccer 3.")["final"]
             self.assertEqual(f["next"], "Next game it can bet: Thursday 7:00 PM ET.", owner)
+            # 2026-10-22: "Live now in other sports" is ONE small link to the live board, not a line beside a second link
             self.assertEqual(f["elsewhere"], "Live now in other sports: Tennis 4, Soccer 3.", owner)
             self.assertEqual(f["href"], "live.html", owner)
-            self.assertIn("See what's on in every sport", f["block"])
+            self.assertEqual(f["count"], 1, owner)
+            self.assertNotIn("See what's on in every sport", f["block"])
 
     def test_a_server_that_sends_neither_still_gets_the_link(self):
         for owner in (False, True):
             f = self.fire(owner=owner)["final"]
             self.assertEqual(f["href"], "live.html", owner)
             self.assertIsNone(f["next"])
-            self.assertIsNone(f["elsewhere"])
+            self.assertEqual(f["elsewhere"], "See what's on in every sport")
 
     def test_a_dog_with_a_pick_does_not_get_the_block(self):
         from tests.test_hounds_interact_web import Payloads, dog_routes, hook as dhook, page as dog_page

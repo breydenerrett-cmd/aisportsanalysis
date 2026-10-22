@@ -61,6 +61,12 @@ class HoundCase(unittest.TestCase):
             patcher = mock.patch(target, side_effect=AssertionError("a test reached for the network"))
             patcher.start()
             self.addCleanup(patcher.stop)
+        # These tests are about the CLAUDE hound. The Gematria Hound shares the pass and, under rules v2 (2026-10-22: names alone are enough
+        # for a sport with no stored results), now bets on the all-sports fixtures too; its own tests are tests/test_gematria_hound.py and
+        # tests/test_gematria_v2.py. Its kill switch keeps it out of a pass about someone else.
+        env = mock.patch.dict(os.environ, {"GEMATRIA_HOUND": "off"})
+        env.start()
+        self.addCleanup(env.stop)
 
     def haiku_router(self, respond, env=None):
         self.client = ScriptedClient(respond)

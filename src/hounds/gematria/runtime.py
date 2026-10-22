@@ -18,6 +18,7 @@ anything; ``now_fn`` only stamps the row.
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import json
 import os
@@ -72,8 +73,10 @@ def _inputs_hash(g: sig_mod.GameInputs) -> str:
 class Weighed:
     """One game's full result: the verdict, the signals and the evidence block that goes on a bet row."""
 
-    def __init__(self, verdict: decision_mod.Verdict, signals: Optional[sig_mod.Signals], block: Optional[dict]):
+    def __init__(self, verdict: decision_mod.Verdict, signals: Optional[sig_mod.Signals], block: Optional[dict],
+                 inputs: Optional[sig_mod.GameInputs] = None):
         self.verdict, self.signals, self.block = verdict, signals, block
+        self.inputs = inputs            # what the generator read (the analysis stream prints the names and ciphers from it)
 
 
 class GematriaRuntime:
@@ -92,10 +95,19 @@ class GematriaRuntime:
 
     # -- inputs -----------------------------------------------------------------------------------
 
-    def inputs(self, ctx: base.Context) -> sig_mod.GameInputs:
-        past = self.source.past(ctx)
+    def inputs(self, ctx: base.Context, *, known_at: Optional[datetime] = None) -> sig_mod.GameInputs:
+        """``known_at`` is an AHEAD read (Unleash, the preview, the analysis stream: a game weighed before its lock). The read instant
+        then plays the lock's part for the history: results are cut at ``known_at - FINISH_LAG``, never at the later
+        ``lock - FINISH_LAG``. Live, nothing after now exists anyway; in a replay of a past morning (``v2_pick_rate.py``) the
+        later cut counted a game that finished after the read instant (red team 2026-10-22). None, or at/after the lock: the lock."""
+        hist_ctx = ctx if known_at is None or known_at >= ctx.lock else dataclasses.replace(ctx, lock=known_at)
+        past = self.source.past(hist_ctx)
         home_t = self.facts.team(ctx.sport, ctx.home_name)
         away_t = self.facts.team(ctx.sport, ctx.away_name)
+        if self.rules.name_only_teams:
+            for t in (home_t, away_t):
+                if not t.known and t.name:
+                    t.texts["name"] = t.name      # rules v2: a team we hold no facts for is read by its name alone (its cipher values)
         home_in, away_in = sig_mod.TeamInputs(home_t), sig_mod.TeamInputs(away_t)
         series = None
         if past.available and past.home_id and past.away_id:
@@ -107,10 +119,15 @@ class GematriaRuntime:
 
     # -- weighing ---------------------------------------------------------------------------------
 
-    def weigh(self, ctx: base.Context, board: Mapping) -> Weighed:
-        g = self.inputs(ctx)
-        known = bool(g.home.team.known and g.away.team.known)
-        sig = sig_mod.generate(g, self.rules) if (g.history_available and known) else None
+    def weigh(self, ctx: base.Context, board: Mapping, *, known_at: Optional[datetime] = None) -> Weighed:
+        g = self.inputs(ctx, known_at=known_at)
+        if self.rules.name_only_teams:
+            known = bool(g.home.team.name_texts() and g.away.team.name_texts())
+            computable = known and (g.history_available or self.rules.static_fallback)
+        else:
+            known = bool(g.home.team.known and g.away.team.known)
+            computable = g.history_available and known
+        sig = sig_mod.generate(g, self.rules) if computable else None
         verdict = decision_mod.decide(sig, board, self.rules, history_available=g.history_available, teams_known=known)
         block = None
         if sig is not None:
@@ -131,7 +148,11 @@ class GematriaRuntime:
                 "price": verdict.price, "side": verdict.side, "confidence": verdict.confidence, "history": g.scope,
                 "inputs_hash": _inputs_hash(g),
             }
-        return Weighed(verdict, sig, block)
+            if self.rules.static_fallback:
+                # rules v2 only (a v1 block is byte-for-byte what it was): which evidence the scores rest on and how loud the game was
+                block.update({"basis": sig.basis, "z": sig.z, "noise_sd": sig.noise_sd, "min_z": self.rules.decision.min_z,
+                              "history": g.scope if sig.basis == "season" else "static evidence only (names, date, founding spans)"})
+        return Weighed(verdict, sig, block, g)
 
     # -- the log ------------------------------------------------------------------------------------
 

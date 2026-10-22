@@ -1,4 +1,4 @@
 {
-  "rules": "rules_v1.json",
-  "note": "Which rules file the Gematria Hound runs under. To change the rules: add rules_v2.json, bump hound_version in it, and point this file at it. Never edit a rules file that has made picks."
+  "rules": "rules_v2.json",
+  "note": "Which rules file the Gematria Hound runs under. To change the rules: add rules_v3.json, bump hound_version in it, and point this file at it. Never edit a rules file that has made picks. v2 became active 2026-10-22 (research/rabbitszn/METHOD.md, Rules v2: pre-registration); v1 is frozen."
 }

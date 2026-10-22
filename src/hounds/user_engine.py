@@ -761,7 +761,8 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
             from src.hounds import user_gematria
             gem_weigher = gem_weigher or user_gematria.Weigher(games)
             candidates = user_gematria.hound_candidates(hound, spec, games, date, mode=mode, clock=clock, seen_ids=seen_ids,
-                                                        skipped=skipped, considered=considered, weigher=gem_weigher)
+                                                        skipped=skipped, considered=considered, weigher=gem_weigher,
+                                                        ahead=place_ahead)
         elif user_spec.is_v2(spec):
             candidates = v2.hound_candidates(hound, spec, games, facts, date, mode=mode, clock=clock,
                                              seen_ids=seen_ids, game_pk_index=game_pk_index,

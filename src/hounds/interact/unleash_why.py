@@ -10,6 +10,11 @@ ONE REASON PER GAME. A game fails several tests at once (wrong price AND too few
 game got FURTHEST through (``_DEPTH``): "the rule was not met" beats "price outside the band" beats "too few books" beats
 "no board". That is the honest answer to "how close was it".
 
+THE GEMATRIA STYLE IS BROKEN DOWN TOO (2026-10-22). Until then ``game_code`` answered "rule_not_met" for every game of a Gematria hound
+(the house engine's own verdict was not asked), so a member read "Checked 60 games: 60 rule not met". The Gematria engine has its own
+reasons and each is a bucket here: ``no_history`` / ``no_facts`` / ``thin_data`` / ``uneven_search`` (it could not compare the sides),
+``no_numbers`` (it could, and the numbers did not line up), ``too_few_books`` (no moneyline board with enough books), the price buckets.
+
 Nothing here writes a bet, reads a store, or talks to a book.
 """
 
@@ -45,12 +50,17 @@ BUCKETS = (
     ("not_in_sports", "not in its sports"),
     ("waits_lock", "waiting for its check time (no fresh board yet)"),
     ("no_board", "no board saved for it"),
+    ("no_history", "no stored results for its sport"),
+    ("no_facts", "teams it holds no facts for"),
+    ("thin_data", "too few counts to compare"),
+    ("uneven_search", "sides too uneven to compare"),
     ("board_too_old", "board too old"),
     ("no_live_board", "no live price yet"),
     ("live_price_too_old", "live price too old"),
-    ("too_few_books", "fewer books than it needs"),
+    ("too_few_books", "too few books"),
     ("price_cap", "priced -200 or worse (never bet)"),
     ("price_band", "price outside its band"),
+    ("no_numbers", "numbers didn't line up"),
     ("rule_not_met", "rule not met"),
     ("over_limit", "over its daily limit"),
     ("one_side", "other side already held"),
@@ -95,6 +105,27 @@ def game_code(hound: Mapping, spec: Mapping, game, now: datetime, date: str, fac
     return max(codes, key=lambda c: _DEPTH[c]) if codes else "rule_not_met"
 
 
+#: the Gematria engine's decision codes -> the buckets above
+_GEM_BUCKET = {"no_history": "no_history", "no_facts": "no_facts", "thin_data": "thin_data", "uneven_search": "uneven_search",
+               "no_board": "too_few_books", "small_margin": "no_numbers", "outside_band": "price_band"}
+
+
+def gematria_bucket(weigher, event_id: str, game, spec: Mapping, now: datetime) -> str:
+    """The bucket of ONE game for a Gematria hound: ``"fit"`` or one of ``_GEM_BUCKET`` (asked of the house engine itself)."""
+    if game.commence is None or now >= game.commence:
+        return "started"
+    lock = game.commence - timedelta(minutes=spec["lock_minutes"])
+    got = weigher.weigh(event_id, as_of=now if now < lock else None)
+    if got is None:
+        return "no_board"
+    verdict = got[2].verdict
+    if verdict.is_bet:
+        return "fit"
+    if verdict.code == "outside_band" and isinstance(verdict.price, int) and verdict.price <= -200:
+        return "price_cap"
+    return _GEM_BUCKET.get(verdict.code, "rule_not_met")
+
+
 def band_text(spec: Mapping) -> str:
     """The price band in words, when every rule shares one (else a generic phrase)."""
     bands = {(r["price_min"], r["price_max"]) for r in spec["rules"]} if user_spec.is_v2(spec) \
@@ -114,9 +145,16 @@ def summarise(spec: Mapping, games: Mapping, hound: Mapping, now: datetime, date
     counts: Counter = Counter()
     by_event: dict = {}
     full = per_day_taken >= spec["max_bets_per_day"]
+    gem = None
+    if user_spec.is_gematria(spec):
+        from src.hounds import user_gematria
+        gem = user_gematria.Weigher(games)
     for eid, game in games.items():
         if eid in on_record:
             bucket = "on_record"
+        elif gem is not None:
+            code = gematria_bucket(gem, eid, game, spec, now)
+            bucket = ("over_limit" if full else "one_side") if code == "fit" else code
         else:
             code = game_code(hound, spec, game, now, date, facts, index)
             if code == "fit":
@@ -138,10 +176,9 @@ def summarise(spec: Mapping, games: Mapping, hound: Mapping, now: datetime, date
     n = len(games)
     parts = " · ".join(f"{r['count']} {r['label']}" for r in rows)
     if n == 0:
-        text = "No games on today's board in its sports yet → placed 0"
+        text = "No games on today's board in its sports yet"
     else:
-        text = f"Checked {n} {'game' if n == 1 else 'games'}" + (f": {parts}" if parts else "")
-        text += f" → placed {placed}"
+        text = f"{n} checked" + (f": {parts}" if parts else "")
     return {"checked": n, "placed": placed, "counts": rows, "text": text, "by_event": by_event}
 
 
