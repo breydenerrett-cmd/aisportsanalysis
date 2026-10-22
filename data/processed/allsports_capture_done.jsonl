@@ -1786,3 +1786,10 @@
 {"events": 1, "kind": "peek", "next_check_utc": "2026-10-22T23:29:09.485810Z", "observed_utc": "2026-10-22T17:29:09.485810Z", "sport_key": "cricket_international_t20"}
 {"events": 10, "kind": "peek", "next_check_utc": "2026-10-22T23:29:09.485810Z", "observed_utc": "2026-10-22T17:29:09.485810Z", "sport_key": "soccer_mexico_ligamx"}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T17:29:09.485810Z", "regions": ["us"], "rows": 2, "sport_key": "icehockey_mestis", "stored": 2}
+{"commence_utc": "2026-10-22T18:00:00Z", "event_id": "1daacc4ee5160f4fb5f11dae3dbc4512", "kind": "phase", "observed_utc": "2026-10-22T17:35:07.137295Z", "phase": "t30m", "rows": 29, "sport_key": "basketball_euroleague"}
+{"commence_utc": "2026-10-22T18:05:00Z", "event_id": "7124e92deb8d700d75cc82d67fe8c849", "kind": "phase", "observed_utc": "2026-10-22T17:35:07.137295Z", "phase": "t30m", "rows": 30, "sport_key": "basketball_euroleague"}
+{"call_kind": "pregame", "credits": 3, "events": 20, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-22T17:35:07.137295Z", "regions": ["us"], "rows": 291, "sport_key": "basketball_euroleague", "stored": 247}
+{"commence_utc": "2026-10-22T23:30:00Z", "event_id": "5be63fd8c778b46afe084d3352e38a40", "kind": "phase", "observed_utc": "2026-10-22T17:35:07.137295Z", "phase": "t6h", "rows": 33, "sport_key": "americanfootball_ncaaf"}
+{"call_kind": "pregame", "credits": 3, "events": 67, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-22T17:35:07.137295Z", "regions": ["us"], "rows": 1755, "sport_key": "americanfootball_ncaaf", "stored": 262}
+{"commence_utc": "2026-10-23T17:30:00Z", "event_id": "a8a501f2068eea24436462c97d0af333", "kind": "phase", "observed_utc": "2026-10-22T17:35:07.137295Z", "phase": "t24h", "rows": 13, "sport_key": "soccer_austria_bundesliga"}
+{"call_kind": "pregame", "credits": 2, "events": 12, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-22T17:35:07.137295Z", "regions": ["us"], "rows": 100, "sport_key": "soccer_austria_bundesliga", "stored": 13}
