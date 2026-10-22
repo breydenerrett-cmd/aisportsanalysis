@@ -1,0 +1,126 @@
+{
+  "summary": "I pass on all three markets. Chicago is the favorite at home, and the books make it a modest one, with a fair probability of 0.5874 on the moneyline. The spread sits at 3, which is a key number, and the two sides are priced almost evenly, so I would need a reason the number is wrong and the data does not give me one. New England's last three games look much better than Chicago's, but three games is noise, and over the full season Chicago's scoring margin per game is the larger. Both teams are on a short week with four days of rest, and New England has the longer trip. On the total, the number has moved up from 49.5 to 50.5, the two sides are priced near even, and the scoring and yards per play for both teams do not point clearly one way. We also cannot see weather for an outdoor game, and both quarterbacks are projections rather than confirmed starters. With the market already holding what the data shows, nothing here justifies a bet.",
+  "summary_derived": [],
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "CHI",
+      "verdict": "PASS",
+      "price": -155,
+      "book": "lowvig",
+      "fair_estimate": 0.57,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books make Chicago a moderate favorite and the market is probably close to right; our own numbers do not show enough to depart from it.",
+          "evidence": [
+            { "path": "markets.moneyline.options[0].fair_probability", "value": 0.5874 },
+            { "path": "markets.moneyline.options[1].fair_probability", "value": 0.4126 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Season scoring margin per game favors Chicago, while New England's last three games are stronger; those two views cancel out and the short samples make the recent run unreliable.",
+          "evidence": [
+            { "path": "sections.home.values.form.season_to_date.margin_per_game", "value": 5.1667 },
+            { "path": "sections.away.values.form.season_to_date.margin_per_game", "value": 3.8333 },
+            { "path": "sections.away.values.form.last_3.margin_per_game", "value": 12.6667 },
+            { "path": "sections.home.values.form.last_3.margin_per_game", "value": -1.6667 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -133,
+      "what_would_change_it": "Chicago's price drifting out to -133 or longer, or a change at quarterback on either side, would make me reconsider.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "NE +3",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides are priced almost evenly, so the books see this as close to a coin flip at this number.",
+          "evidence": [
+            { "path": "markets.spread.options[0].fair_probability", "value": 0.5056 },
+            { "path": "markets.spread.options[1].fair_probability", "value": 0.4944 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number sits on 3, one of the scoring-based key numbers, and it has moved from 2.5 for New England earlier in the week, so the market has already adjusted toward Chicago.",
+          "evidence": [
+            { "path": "markets.spread.options[0].line", "value": 3.0 },
+            { "path": "markets.spread.context.away_number_first_captured", "value": 2.5 },
+            { "path": "sections.reference.values.key_numbers[0]", "value": 3 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "New England's recent scoring margin is far better than Chicago's, but Chicago leads over the whole season, and three games is too few to call the recent run a reason the number is wrong.",
+          "evidence": [
+            { "path": "sections.away.values.form.last_3.margin_per_game", "value": 12.6667 },
+            { "path": "sections.home.values.form.last_3.margin_per_game", "value": -1.6667 },
+            { "path": "sections.home.values.form.season_to_date.margin_per_game", "value": 5.1667 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A quarterback change for either team on the schedule listing, or a key skill player ruled out on the injury report, would reopen this call.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 50.5",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "betmgm",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total has moved up from 49.5 to 50.5 and the two sides are priced almost evenly, so the market has already moved toward the higher scoring view.",
+          "evidence": [
+            { "path": "markets.total.context.number_first_captured", "value": 49.5 },
+            { "path": "markets.total.options[0].line", "value": 50.5 },
+            { "path": "markets.total.options[0].fair_probability", "value": 0.5085 },
+            { "path": "markets.total.options[1].fair_probability", "value": 0.4915 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Season scoring and yards per play for both teams do not line up on one side: Chicago scores more and allows more yardage per play, while New England allows fewer points.",
+          "evidence": [
+            { "path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 25 },
+            { "path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 22.6667 },
+            { "path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 19.8333 },
+            { "path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 18.8333 },
+            { "path": "sections.home.values.form.season_to_date.yards_per_play_allowed.value", "value": 6.0266 },
+            { "path": "sections.away.values.form.season_to_date.yards_per_play.value", "value": 5.801 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We cannot see weather for an outdoor game, and both teams carry a negative turnover margin this season, so swings in scoring are hard to judge.",
+          "evidence": [
+            { "path": "sections.home.values.form.season_to_date.turnover_margin.value", "value": -0.3333 },
+            { "path": "sections.away.values.form.season_to_date.turnover_margin.value", "value": -1 },
+            { "path": "sections.schedule.values.venue.roof", "value": "outdoors" }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A weather forecast showing wind or cold, or a quarterback change for either team, would move the total and could flip this call.",
+      "case_against": null
+    }
+  ]
+}

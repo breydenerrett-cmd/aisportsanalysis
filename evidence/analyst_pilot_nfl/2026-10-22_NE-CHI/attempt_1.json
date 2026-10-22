@@ -1,0 +1,122 @@
+{
+  "summary": "I pass on all three markets. The books have Chicago as a modest home favourite, with the best moneyline price at -155, and the spread has moved from 2.5 to 3 on the New England side since it was first captured. New England has the better recent form: 33.3333 points per game and 6.3961 yards per play over the last 3 games, against 20.3333 and 4.8087 for Chicago. But Chicago has the better season margin, 5.1667 points per game to 3.8333, and Chicago's defence allows 6.0266 yards per play on the season. Both teams are on a short week with the same projected quarterbacks as last game. New England has 5 players out against 2 for Chicago, though the data does not say how important those players are. Every form window rests on 6 games at most, so I treat the recent swings as noisy. The total of 50.5 sits above both teams' season points allowed, but New England's last 3 games were high scoring, and we cannot see the weather for an outdoor stadium. The prices look roughly right to me, and nothing in the data shows clearly what they miss.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "CHI",
+      "verdict": "PASS",
+      "price": -155,
+      "book": "lowvig",
+      "fair_estimate": 0.57,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books' own de-vigged number already makes Chicago the favourite, and the data gives mixed signals against it: Chicago leads on season margin while New England leads on the last 3 games.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.5874},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 5.1667},
+            {"path": "sections.away.values.form.last_3.margin_per_game", "value": 12.6667}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both teams are on the same short week and Chicago plays at home, so rest does not separate them, and the travel for New England is modest.",
+          "evidence": [
+            {"path": "sections.home.values.rest.days_since_last_game", "value": 4},
+            {"path": "sections.away.values.rest.days_since_last_game", "value": 4},
+            {"path": "sections.away.values.travel.miles_from_home_base", "value": 838.8}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -133,
+      "what_would_change_it": "A quarterback change for either team on the injury report, or Chicago's price moving to -133 or better, would make me look again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "NE +3",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": 0.51,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The spread is close to a coin flip in the books' own numbers, and 3 is one of the key scoring margins, so a move off it matters more than the half point suggests. I do not see a reason in the data that the number is wrong.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5056},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4944},
+            {"path": "sections.reference.values.key_numbers", "value": "3,6,7,10,14"}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number has moved toward Chicago since it was first captured, from 2.5 to 3 on the New England side, which fits New England's strong recent results, but the sample is only 3 games.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": 2.5},
+            {"path": "markets.spread.options[0].line", "value": 3.0},
+            {"path": "sections.away.values.form.last_3.games", "value": 3}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The injury lists point toward Chicago, with 5 players out for New England and 2 for Chicago, but the data does not measure who they are, so I do not lean on it.",
+          "evidence": [
+            {"path": "sections.away.values.injuries.totals.out", "value": 5},
+            {"path": "sections.home.values.injuries.totals.out", "value": 2}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -104,
+      "what_would_change_it": "New England's number moving to 3.5 or Chicago's running back ruling shifting the injury picture would make me look again; at this number the side is a pass.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 50.5",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "betmgm",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total has risen from 49.5 to 50.5 since it was first captured, and the books' own numbers split it almost evenly, so the market has already priced a higher-scoring game.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 49.5},
+            {"path": "markets.total.options[0].line", "value": 50.5},
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5085}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The season numbers point lower than the total, since both teams allow fewer than 20 points per game, while New England's last 3 games and Chicago's weak yards per play allowed point higher. The two sets of facts disagree, so there is no clear lean.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 19.8333},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 18.8333},
+            {"path": "sections.away.values.form.last_3.points_for_per_game", "value": 33.3333},
+            {"path": "sections.home.values.form.season_to_date.yards_per_play_allowed", "value": 6.0266}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Weather is not in the data for an outdoor stadium and the quarterbacks are projections, both of which could move a total.",
+          "evidence": [
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"},
+            {"path": "missing[1].item", "value": "weather"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A quarterback change for either team, or a weather forecast showing clear conditions or heavy wind, would make me look at this total again.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
