@@ -131,9 +131,9 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-10-21 (1:30 pm PT run): no game to brief; next NFL game is Thursday night, next MLB game is World Series Game 1, Rays at Brewers, Fri Oct 23 5:00 pm PT.",
-    "ALCS Game 6 and Monday night Commanders at 49ers briefs are graded; the public sample shows ALCS Game 6.",
-    "Production is up; hourly deploys through 20:12Z succeeded; CI tests green.",
+    "2026-10-22 (8:30 am PT run): no game in window; Thursday night Patriots at Bears kicks off 5:15 pm PT (brief on the 1:30 pm run); World Series Game 1, Rays at Brewers, Fri Oct 23 5:00 pm PT.",
+    "Commanders at 49ers and ALCS Game 6 briefs are graded; the public sample shows ALCS Game 6.",
+    "Production is up; hourly deploys through 15:09Z succeeded; CI tests green.",
     "Billing is live in production (founding $14.99, standard $19.99).",
     "Public MLB value picks remain paused. Sends 0, replies 0, testers 0."
   ],
