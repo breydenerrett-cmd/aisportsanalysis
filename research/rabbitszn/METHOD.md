@@ -192,3 +192,11 @@ inclusive) could agree with itself; `signals._source_key` now treats every unit 
 attributed to `rules_v1.json` (the `rules_hash` stamp on every bet row changes with the file), and v2's record starts with its first forward pick.
 The rules file is frozen the moment it makes a pick; a change is `rules_v3.json`. If the forward pick rate leaves the 2-to-5 band for ten days,
 that is a reason to propose v3, never to edit v2.
+
+**Amendment, 2026-10-22, adversarial check before any v2 pick (no parameter changed, outcomes still not consulted).** Two read-time
+fixes, neither a rules change. (1) An AHEAD read (Unleash, the preview, the analysis stream: a game weighed before its lock) now cuts the
+history at the read instant minus `FINISH_LAG`, not at the later lock minus `FINISH_LAG` (`GematriaRuntime.inputs(known_at=...)`). Live,
+nothing after now exists anyway; in this note's replay of past mornings the later cut could count a game that finished after 15:00Z. The
+sweep above was re-run with the fix: the nine days' uncapped/capped counts are identical (0/0, 2/2, 3/3, 3/3, 5/5, 0/0, 8/5, 1/1, 7/5;
+median 3, mean 3.43). (2) The analysis the page plays applies the hound's own daily limit in its own placing order (a member: Unleash,
+by z; the house hound: the lock-time runner, earliest first), so it never prints more "Pick" lines than the hound can place.

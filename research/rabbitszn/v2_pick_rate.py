@@ -6,8 +6,10 @@ This is the calibration tool for rules v2 (research/rabbitszn/METHOD.md, "Rules 
 match the reference handicapper's pick RATE (about 2 to 5 picks a day across sports when games exist) and to look at nothing else. So
 this script reads, for each day, the stored multibook captures (the boards) and the facts and the rules, weighs every game that had
 not started at 15:00 UTC of that day, and prints HOW MANY it would take: per day, uncapped and capped at the rules' daily maximum, plus
-how many games each pass reason removed. It reads no score and no grade of any game, prints no side or price of a pick, and
-cannot be pointed at one: the only things it imports from the program are the board reader, the engine and the rules.
+how many games each pass reason removed. It reads no outcome of any game it weighs and no grade of any pick, prints no side or
+price of a pick, and cannot be pointed at one: the only things it imports from the program are the board reader, the engine and
+the rules. (The ENGINE's season basis reads past scores, cut before the read instant, to make its counts; that is the rules' own
+input, the same live or here. The script never sees them, and no pick's result exists at the instant it weighs.)
 
 ``--set key=value`` overrides one decision key (for a sweep); it never writes a rules file.
 """

@@ -188,6 +188,10 @@ def slate_view(now: datetime, started: list, upcoming: list, other_live: Optiona
     The NEXT GAME is not in ``line`` any more: it is said once, by ``next_game`` (this fires' preview) or by the Unleash day's own
     "Next game it checks" line. ``next_game`` and ``other_live`` are still returned as fields."""
     today = day_of(now)
+    # A caller's "upcoming" game that has started by ``now`` is a started game (red team 2026-10-22: a caller that split on an older
+    # clock left it in neither part, and the counts no longer added up to the total).
+    started = list(started) + [(g, s) for g, s, _k in upcoming if s <= now]
+    upcoming = [(g, s, k) for g, s, k in upcoming if s > now]
     today_started = sorted([(g, s) for g, s in started if day_of(s) == today], key=lambda t: t[1])
     today_ahead = [(g, s, k) for g, s, k in upcoming if day_of(s) == today]
     later = sorted([(g, s) for g, s, _k in upcoming if day_of(s) > today], key=lambda t: t[1])

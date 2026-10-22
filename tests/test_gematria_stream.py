@@ -337,6 +337,15 @@ class TheCompactDay(unittest.TestCase):
         c = self.day(slate={"today_state": "started", "line": "Tonight's games already started (12). Next games I can bet: Thursday.", "started": [], "in_window": []})
         self.assertEqual(c["slate"], 1)
 
+    def test_a_markup_name_in_the_fold_stays_text(self):
+        day = counts_day(2, 2)
+        day["groups"][0]["games"][0]["game"] = "<img src=x onerror=alert(1)> @ 张之臻"
+        out = run_page("hound", routes=dog_routes(unleash_payload=day_payload(day=day)), search=f"?id={HID}", stored={"aisportsanalysis.invite_token": "tok"},
+                       actions=[dict(do="click", sel=hook("fire-btn"), wait=150, capture=[
+                           q("items", ".dk-games__item", "texts"), q("imgs", "[data-hook='fire-games'] img", "count")])])["captures"]["0"]
+        self.assertEqual(out["imgs"], 0)
+        self.assertTrue(out["items"][0].startswith("<img src=x onerror=alert(1)> @ 张之臻"))
+
     def test_no_counts_no_block(self):
         c = self.day(day={"counts": {"total": 0, "started": 0, "later": 0, "checked_now": 0}, "counts_line": "", "groups": []})
         self.assertEqual((c["fold"], c["items"]), (0, 0))
@@ -406,6 +415,10 @@ class AtPhoneWidths(unittest.TestCase):
             g["lines"][0]["text"] += " " + "Pneumonoultramicroscopicsilicovolcanoconiosis" * 3
         day = day_payload(day=counts_day(30, 40))
         day["day"]["groups"][0]["games"][0]["game"] = "Wolverhampton Wanderers Football Club " + "Supercalifragilisticexpialidocious" * 2
+        # hardening 2026-10-22: an unbreakable CJK run and a markup name, in the day's fold and in the analysis
+        day["day"]["groups"][0]["games"][1]["game"] = "张之臻" * 30 + " @ <img src=x onerror=alert(1)>"
+        long_names["games"][3]["game"] = "张之臻" * 30 + " @ <b>bold</b>"
+        long_names["games"][3]["lines"][0]["text"] = "张之臻" * 30 + ": no letters the ciphers can count"
         html = (PAGE % (json.dumps(long_names), json.dumps(day))).encode("utf-8")
         inner = make_handler({})
 

@@ -374,7 +374,9 @@ class Weigher:
             else:
                 board = base.build_board(self.stores().quotes_by_event.get(event_id) or [], at=as_of, start=ctx.start,
                                          sport=ctx.sport)
-            out = (ctx, board, self.runtime.weigh(ctx, board))
+            ahead = as_of is not None and as_of < ctx.lock
+            # an ahead read is cut at its own instant for the history too (``GematriaRuntime.inputs``), not only for the board
+            out = (ctx, board, self.runtime.weigh(ctx, board, known_at=as_of) if ahead else self.runtime.weigh(ctx, board))
         if as_of is None:
             self._memo[key] = out
         return out
@@ -470,6 +472,12 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, date: str, *
             cand["row_extra"]["placed_ahead"] = True        # weighed before its lock (or after a lock the hound missed): said on the row
         ranked = weigher.runtime.rules.static_fallback and ahead
         key = (-weighed.verdict.z, ctx.lock, event_id, 0) if ranked else (ctx.lock, event_id, 0)
+        # Which ORDER chose this bet under the daily limit, on the row (red team 2026-10-22). The order is code, not the rules file, so
+        # the rules_hash alone cannot say it: on 2026-10-20 and 10-22 an Unleash's top 5 by z shared only 2 and 3 games with the 5 the
+        # lock-time runner takes earliest first. Same rules, a different selection: the record must be able to tell them apart.
+        # Only a ranked bet carries it (absent = earliest first), so a lock-time row is byte-for-byte what it was.
+        if ranked:
+            cand["row_extra"]["day_order"] = "z"
         out.append((key, ctx.lock, event_id, MARKET, game, ctx.start, cand, bet_id))
     return out
 

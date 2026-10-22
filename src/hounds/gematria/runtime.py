@@ -18,6 +18,7 @@ anything; ``now_fn`` only stamps the row.
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import json
 import os
@@ -94,8 +95,13 @@ class GematriaRuntime:
 
     # -- inputs -----------------------------------------------------------------------------------
 
-    def inputs(self, ctx: base.Context) -> sig_mod.GameInputs:
-        past = self.source.past(ctx)
+    def inputs(self, ctx: base.Context, *, known_at: Optional[datetime] = None) -> sig_mod.GameInputs:
+        """``known_at`` is an AHEAD read (Unleash, the preview, the analysis stream: a game weighed before its lock). The read instant
+        then plays the lock's part for the history: results are cut at ``known_at - FINISH_LAG``, never at the later
+        ``lock - FINISH_LAG``. Live, nothing after now exists anyway; in a replay of a past morning (``v2_pick_rate.py``) the
+        later cut counted a game that finished after the read instant (red team 2026-10-22). None, or at/after the lock: the lock."""
+        hist_ctx = ctx if known_at is None or known_at >= ctx.lock else dataclasses.replace(ctx, lock=known_at)
+        past = self.source.past(hist_ctx)
         home_t = self.facts.team(ctx.sport, ctx.home_name)
         away_t = self.facts.team(ctx.sport, ctx.away_name)
         if self.rules.name_only_teams:
@@ -113,8 +119,8 @@ class GematriaRuntime:
 
     # -- weighing ---------------------------------------------------------------------------------
 
-    def weigh(self, ctx: base.Context, board: Mapping) -> Weighed:
-        g = self.inputs(ctx)
+    def weigh(self, ctx: base.Context, board: Mapping, *, known_at: Optional[datetime] = None) -> Weighed:
+        g = self.inputs(ctx, known_at=known_at)
         if self.rules.name_only_teams:
             known = bool(g.home.team.name_texts() and g.away.team.name_texts())
             computable = known and (g.history_available or self.rules.static_fallback)

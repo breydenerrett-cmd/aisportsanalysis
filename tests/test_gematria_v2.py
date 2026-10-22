@@ -619,9 +619,13 @@ class TheAnalysisIsTheComputedEvidence(unittest.TestCase):
         self.assertTrue(out["capped"])
         statuses = [e["status"] for e in out["games"]]
         self.assertEqual(statuses, sorted(statuses, key=lambda s: s != "bet"), "every pick comes before every pass")
-        zs = [e["z"] for e in out["games"] if e["status"] == "bet"]
-        self.assertEqual(zs, sorted(zs, reverse=True))
-        self.assertEqual(out["picks_total"], sum(1 for _c, w, _r in self.weighed if w.verdict.is_bet))
+        # the house hound is placed by the lock-time runner, earliest first, at most its rules' limit a day (2026-10-22 hardening:
+        # the payload once ranked by z and called every candidate "Pick", more than the hound could place)
+        starts = [e["start_utc"] for e in out["games"] if e["status"] == "bet"]
+        self.assertEqual(starts, sorted(starts))
+        self.assertEqual(out["ranked_by"], "start")
+        self.assertEqual(out["candidates_total"], sum(1 for _c, w, _r in self.weighed if w.verdict.is_bet))
+        self.assertEqual(out["picks_total"], min(out["candidates_total"], self.rules.decision.max_picks_per_day))
         self.assertLess(len(json.dumps(out)), 80_000, "the payload stays small")
         small = self.build(limit=3)
         self.assertEqual(small["shown"], 3)
