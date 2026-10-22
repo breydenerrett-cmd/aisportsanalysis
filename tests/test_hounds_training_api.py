@@ -11,8 +11,11 @@ import tempfile
 import unittest
 from unittest import mock
 
-from fastapi import Response
-from fastapi.testclient import TestClient
+try:
+    from fastapi import Response
+    from fastapi.testclient import TestClient
+except ImportError:  # pragma: no cover -- Linux CI runs without FastAPI; RouteCase skips every class below
+    Response = TestClient = None
 
 from src.hounds import user_store
 from src.hounds.interact import coach as coach_mod
