@@ -1783,3 +1783,6 @@
 {"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-22T17:11:48.028101Z", "regions": ["us"], "rows": 113, "sport_key": "soccer_turkey_super_league", "stored": 13}
 {"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T17:11:48.028101Z", "regions": ["us"], "rows": 6, "sport_key": "icehockey_sweden_hockey_league", "stored": 6}
 {"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T17:11:48.028101Z", "regions": ["us"], "rows": 16, "sport_key": "icehockey_liiga", "stored": 12}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-22T23:29:09.485810Z", "observed_utc": "2026-10-22T17:29:09.485810Z", "sport_key": "cricket_international_t20"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-10-22T23:29:09.485810Z", "observed_utc": "2026-10-22T17:29:09.485810Z", "sport_key": "soccer_mexico_ligamx"}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T17:29:09.485810Z", "regions": ["us"], "rows": 2, "sport_key": "icehockey_mestis", "stored": 2}
