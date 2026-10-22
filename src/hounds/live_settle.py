@@ -129,7 +129,9 @@ CREATE TABLE IF NOT EXISTS live_games (
   first_seen_utc TEXT, updated_utc TEXT, final_utc TEXT, applied_utc TEXT,
   fails INTEGER NOT NULL DEFAULT 0, next_try_utc TEXT, last_error TEXT,
   settle_tries INTEGER NOT NULL DEFAULT 0, settle_next_utc TEXT,
-  payload TEXT                          -- tennis / MMA: the free reader's whole result row (a winner or a named void), as JSON
+  payload TEXT,                         -- tennis / MMA: the free reader's whole result row (a winner or a named void), as JSON
+  progress TEXT,                        -- a live game's {period, clock, name, label} as JSON: the bet alerts' "halftime" and "late in the game"
+  sched_utc TEXT                        -- the start time the scoreboard itself last gave (the odds feed's start can be hours off): "starting soon" prefers it
 );
 CREATE TABLE IF NOT EXISTS live_lock (name TEXT PRIMARY KEY, holder TEXT NOT NULL, expires_utc TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS live_meta (key TEXT PRIMARY KEY, value TEXT);
@@ -154,8 +156,13 @@ def connect(path: Optional[Path] = None) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.executescript(SCHEMA)
-    if "payload" not in {r["name"] for r in conn.execute("PRAGMA table_info(live_games)")}:
+    columns = {r["name"] for r in conn.execute("PRAGMA table_info(live_games)")}
+    if "payload" not in columns:
         conn.execute("ALTER TABLE live_games ADD COLUMN payload TEXT")       # a cache file made before tennis and MMA
+    if "progress" not in columns:
+        conn.execute("ALTER TABLE live_games ADD COLUMN progress TEXT")      # a cache file made before the bet alerts
+    if "sched_utc" not in columns:
+        conn.execute("ALTER TABLE live_games ADD COLUMN sched_utc TEXT")     # a cache file made before the scheduled-time fix
     return conn
 
 
@@ -240,7 +247,12 @@ def _slim_user(row: Mapping, label: str) -> dict:
             "home_team": row.get("home_team"), "away_team": row.get("away_team"),
             "start": row.get("commence_time") or row.get("start_utc"), "slate_date": row.get("slate_date"),
             "game_pk": row.get("game_pk"), "league": row.get("league"), "bet_id": row.get("bet_id"),
-            "hound_id": row.get("hound_id"), "segment": row.get("segment") or "forward"}
+            "hound_id": row.get("hound_id"), "segment": row.get("segment") or "forward",
+            # what the bet alerts need to word a ticket and to tell whether it is winning (alert_live.py)
+            "provenance": row.get("provenance"), "role": row.get("role"), "market": row.get("market"),
+            "side": row.get("side"), "line": row.get("line"), "selection": row.get("selection"),
+            "price": row.get("price"), "units": row.get("units"), "stake_units": row.get("stake_units"),
+            "player": row.get("player")}
 
 
 def _slim_pack(row: Mapping, label: str = "ai") -> dict:
@@ -352,10 +364,20 @@ def _store_answer(conn: sqlite3.Connection, game: Game, answer: Mapping, now: da
                  (ls.iso(now) if answer["state"] == ls.FINAL else None))
     conn.execute(
         "UPDATE live_games SET state=?, home_score=?, away_score=?, detail=?, source=?, source_id=?, updated_utc=?,"
-        " final_utc=?, fails=0, next_try_utc=NULL, last_error=NULL, payload=COALESCE(?, payload) WHERE game_key=?",
+        " final_utc=?, fails=0, next_try_utc=NULL, last_error=NULL, payload=COALESCE(?, payload), progress=?,"
+        " sched_utc=COALESCE(?, sched_utc) WHERE game_key=?",
         (answer["state"], answer.get("home_score"), answer.get("away_score"), answer.get("detail"),
          answer.get("source"), answer.get("source_id"), ls.iso(now), final_utc,
-         json.dumps(answer["payload"], sort_keys=True) if answer.get("payload") else None, game.key))
+         json.dumps(answer["payload"], sort_keys=True) if answer.get("payload") else None,
+         json.dumps(answer["progress"], sort_keys=True) if answer.get("progress") else None,
+         _sched_of(answer), game.key))
+
+
+def _sched_of(answer: Mapping) -> Optional[str]:
+    """The scoreboard's own scheduled start from an answer, normalised, or None (kept apart from ``start_utc``, which is the
+    ticket's odds-feed start and drives when the loop asks)."""
+    parsed = ls.parse_utc(answer.get("start_utc"))
+    return ls.iso(parsed) if parsed is not None else None
 
 
 def _store_failure(conn: sqlite3.Connection, game: Game, error: str, now: datetime) -> None:
@@ -727,6 +749,16 @@ def run_settle(conn: sqlite3.Connection, games: Sequence[Game], now: datetime, *
 # one pass
 # ---------------------------------------------------------------------------
 
+def alerts_scan(conn: sqlite3.Connection, now: datetime, paths: Mapping) -> Optional[dict]:
+    """Queue the bet alerts this pass's cache implies. Never raises, never fetches; None when it could not run."""
+    try:
+        from src.notify import alert_live
+        return alert_live.scan(conn, now, paths)
+    except Exception as exc:  # noqa: BLE001 -- an alert is a courtesy; the grade must not depend on it
+        logger.error("live settle: bet alert scan failed: %s", type(exc).__name__)
+        return None
+
+
 def default_fetch_json() -> Callable[[str], dict]:
     """Free ESPN JSON through the data service's polite client: one request at a time, retries with backoff, a hard
     request cap, and NO cache reuse (a live score must be the live score)."""
@@ -767,6 +799,10 @@ def run_pass(*, now: Optional[datetime] = None, conn: Optional[sqlite3.Connectio
                     fetch_json = default_fetch_json()
                 report["fetch"] = fetch_due(conn, due, moment, fetch_json=fetch_json, fetch_instances=fetch_instances,
                                             mma_provider=mma_provider)
+            # Bet alerts ("starting soon", "live update") read what this pass just cached, BEFORE the settle below so the
+            # "final" update goes out ahead of the grade. They only write rows into the alert outbox (a local sqlite
+            # insert; the dispatcher thread sends them) and never raise: no network call and no wait on the grading path.
+            report["alerts"] = alerts_scan(conn, moment, paths)
             if settle:
                 # The lock was taken before the fetches, and a slow feed with retries can outlast its life. Take it again
                 # (a renewal when it is still ours) and settle only if no other pass took it meanwhile: the ledger append

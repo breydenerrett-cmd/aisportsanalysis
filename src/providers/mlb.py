@@ -502,8 +502,12 @@ def fetch_games(game_date, timeout: float = DEFAULT_TIMEOUT) -> list:
     return [parse_game(g) for g in fetch_schedule(game_date, timeout=timeout)]
 
 
-def fetch_game_instances(game_pk, timeout: float = DEFAULT_TIMEOUT) -> list:
+def fetch_game_instances(game_pk, timeout: float = DEFAULT_TIMEOUT, with_progress: bool = False) -> list:
     """Every schedule entry for one gamePk, parsed, in the API's date order.
+
+    ``with_progress`` adds ``current_inning`` and ``inning_state`` ("Top" / "Middle" / "Bottom" / "End") from the
+    linescore the SAME request already hydrates, for the bet alerts' "late in the game" test. Off by default so
+    every other caller's records are byte-identical.
 
     A postponed game keeps its gamePk: the original date stays on the schedule
     as "Postponed" and the makeup is a second entry under its own date. A
@@ -523,7 +527,16 @@ def fetch_game_instances(game_pk, timeout: float = DEFAULT_TIMEOUT) -> list:
     games = []
     for entry in payload.get("dates") or []:
         games.extend(entry.get("games") or [])
-    return [parse_game(g) for g in games if g.get("gamePk") == int(game_pk)]
+    out = []
+    for g in games:
+        if g.get("gamePk") != int(game_pk):
+            continue
+        record = parse_game(g)
+        if with_progress:
+            line = g.get("linescore") or {}
+            record["current_inning"], record["inning_state"] = line.get("currentInning"), line.get("inningState")
+        out.append(record)
+    return out
 
 
 def fetch_results(game_date, timeout: float = DEFAULT_TIMEOUT) -> dict:

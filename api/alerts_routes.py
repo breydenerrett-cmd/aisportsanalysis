@@ -1,7 +1,8 @@
 """api/alerts_routes.py: bet-alert settings, the test button, push/SMS enrolment, the secret RSS feed and the one-click off link.
 
     GET  /me/alerts                     signed in. Status of every channel, the member's switches, quiet hours, feed URL.
-    PUT  /me/alerts                     signed in. {channels:{email,push,sms,native}, events, quiet_start, quiet_end, tz}.
+    PUT  /me/alerts                     signed in. {channels:{email,push,sms,native}, event_toggles:{placed,starting,live,
+                                        settled}, events (legacy), quiet_start, quiet_end, tz}.
     POST /me/alerts/test                signed in. {channel}: one sample alert, now.
     POST /me/alerts/push                signed in. {endpoint, keys:{p256dh, auth}}: save this browser's push subscription.
     POST /me/alerts/push/remove         signed in. {endpoint}.
@@ -109,6 +110,12 @@ def _feed_url(token: str) -> str:
     return f"{prefs_mod.base_url()}/alerts/feed/{token}.xml"
 
 
+def _kind_channels() -> dict:
+    """{event: channels that may carry it}, so the page can say "email: placed and settled only" without a copy of the rule."""
+    return {kind: tuple(c for c in alerts.CHANNEL_NAMES if kind in alerts.CHANNEL_KINDS[c] and c != "native")
+            for kind in alerts.KINDS}
+
+
 def _payload(user) -> dict:
     prefs = alerts.ensure_prefs(user.id)
     paid = _is_paid(user)
@@ -129,7 +136,8 @@ def _payload(user) -> dict:
         if name == "push":
             entry["public_key"] = webpush.public_key()
         channels.append(entry)
-    return {"channels": channels, "events": prefs["events"], "quiet_start": prefs["quiet_start"],
+    return {"channels": channels, "events": prefs["events"], "event_toggles": prefs["event_toggles"],
+            "event_channels": {k: list(v) for k, v in _kind_channels().items()}, "quiet_start": prefs["quiet_start"],
             "quiet_end": prefs["quiet_end"], "tz": prefs["tz"], "feed_url": _feed_url(prefs["feed_token"]),
             "sizing": unit_size.get(user.id).as_dict(), "paper_only": True,
             "ios_note": "On iPhone, add LINEHOUND to your Home Screen first (Share, then Add to Home Screen), "
@@ -150,6 +158,7 @@ def get_alerts(response: Response, current_user: users_store.User = Depends(get_
 class AlertsRequest(BaseModel):
     channels: Optional[Any] = None
     events: Optional[Any] = None
+    event_toggles: Optional[Any] = None
     quiet_start: Optional[Any] = None
     quiet_end: Optional[Any] = None
     tz: Optional[Any] = None
@@ -165,7 +174,7 @@ def put_alerts(body: AlertsRequest, response: Response, current_user: users_stor
         if body.channels.get("sms") and not _is_paid(current_user):
             raise HTTPException(status_code=402, detail={"error": "upgrade_required", "feature": "sms_alerts",
                                                          "message": SMS_PAID_MESSAGE})
-    for key in ("events", "quiet_start", "quiet_end", "tz"):
+    for key in ("events", "event_toggles", "quiet_start", "quiet_end", "tz"):
         if key in body.model_fields_set:
             patch[key] = getattr(body, key)
     try:
@@ -319,7 +328,7 @@ def feed(token: str, _rl: None = Depends(_rl_public)) -> Response:
                       "description": render.event_line(event, sizing, prefs["tz"] if prefs else alerts.DEFAULT_TZ)
                       + ". Paper bet. 21+. 1-800-GAMBLER."})
     xml = rss.render(title="LINEHOUND bet alerts", link=prefs_mod.base_url() + "/web/",
-                     description="Bets your hounds placed and settled. Paper only.", items=items,
+                     description="Bets your hounds placed, are about to play, are playing and settled. Paper only.", items=items,
                      self_url=_feed_url(token))
     return Response(content=xml, media_type=rss.CONTENT_TYPE,
                     headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex"})

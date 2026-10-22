@@ -1,10 +1,16 @@
-"""Bet alerts, the store and the event emitters: "your hound just bet", "your hound's bet settled".
+"""Bet alerts, the store and the event emitters: "your hound just bet", "starting soon", "live update", "settled".
 
 WHY THIS EXISTS (owner, 2026-10-21): "when our hounds are making bets, send them to us ASAP so we can see them
 live." The owner said SMS; Resend is email-only and real SMS needs a paid carrier registration (docs/owner/ALERTS.md),
 so the plumbing is CHANNEL-AGNOSTIC: one event stream, one preference row per member, and channels that plug in
 (email, web push, SMS, and a native APNs/FCM channel later; see ``alert_channels.py``). This module owns the data
-and the two emitters. ``alert_render.py`` words the messages, ``alert_dispatch.py`` drains the outbox.
+and the emitters. ``alert_render.py`` words the messages, ``alert_dispatch.py`` drains the outbox.
+
+FOUR EVENT KINDS (owner, 2026-10-22: members want to see their hounds' bets "live or upcoming"). ``placed`` and ``settled``
+come from the ledger writers. ``starting`` ("tips off in 15 min") and ``live`` (went live, halftime, a late lead change,
+final) come from ``alert_live.py``, which reads the live-score cache the grading loop already fills: no extra request.
+The member's four toggles live in ``event_toggles`` (placed on, starting on, live OFF, settled on). Which CHANNEL may
+carry which kind is ``CHANNEL_KINDS``: email carries placed and settled only.
 
 THE EMITTERS NEVER BLOCK A BET. ``emit_placed_safe`` / ``emit_settled_safe`` are called right AFTER the ledger write
 in user_engine.run, interact/manual.record and user_settle.settle. They catch everything: a failing alert table
@@ -49,12 +55,22 @@ from src.appstate import users as users_store
 logger = logging.getLogger("linehound.notify.alerts")
 
 KIND_PLACED = "placed"
+KIND_STARTING = "starting"
+KIND_LIVE = "live"
 KIND_SETTLED = "settled"
-KINDS = (KIND_PLACED, KIND_SETTLED)
+KINDS = (KIND_PLACED, KIND_STARTING, KIND_LIVE, KIND_SETTLED)
 
-#: which events a member wants: placed only, settled only, or both
-EVENTS_CHOICES = ("placed", "settled", "both")
+#: The legacy single "which events" choice (the page used to offer exactly these). It is still accepted on a PUT and still
+#: reported, derived from the placed / settled toggles ("none" when both are off).
+EVENTS_CHOICES = ("placed", "settled", "both", "none")
 DEFAULT_EVENTS = "both"
+#: What a member who never touched the toggles gets. Live updates are opt-in (owner, 2026-10-22).
+DEFAULT_TOGGLES = {KIND_PLACED: True, KIND_STARTING: True, KIND_LIVE: False, KIND_SETTLED: True}
+#: Which kinds a channel may carry. Email is the slow, durable channel: a "tips off in 15 min" mail arrives after the
+#: tip. Starting-soon and live updates are for the channels that arrive in seconds.
+CHANNEL_KINDS = {"email": (KIND_PLACED, KIND_SETTLED), "push": KINDS, "sms": KINDS, "native": KINDS}
+#: A starting / live event is worthless once it is old: it is dropped, not delivered late (alert_dispatch.MAX_AGE_S).
+SHORT_LIVED_KINDS = (KIND_STARTING, KIND_LIVE)
 DEFAULT_TZ = "America/New_York"
 #: the channels a member can switch on (alert_channels.py registers one object per name). Native is listed so the
 #: preference exists the day the app ships; with no device registered it simply has nothing to send to.
@@ -105,6 +121,9 @@ def _ensure_schema(conn) -> None:
         hound_id TEXT NOT NULL, bet_id TEXT NOT NULL, payload_json TEXT NOT NULL, created_utc TEXT NOT NULL,
         UNIQUE(user_id, kind, bet_id))""")
     conn.execute("CREATE INDEX IF NOT EXISTS alert_events_user ON alert_events(user_id, id)")
+    _migrate_event_toggles(conn)
+    conn.execute("""CREATE TABLE IF NOT EXISTS alert_live_state (
+        bet_id TEXT PRIMARY KEY, user_id INTEGER NOT NULL, side TEXT, updated_utc TEXT NOT NULL)""")
     conn.execute("""CREATE TABLE IF NOT EXISTS alert_deliveries (
         event_id INTEGER NOT NULL, channel TEXT NOT NULL, status TEXT NOT NULL,
         attempts INTEGER NOT NULL DEFAULT 0, next_try_utc TEXT, detail TEXT, updated_utc TEXT,
@@ -120,6 +139,30 @@ def _ensure_schema(conn) -> None:
         id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, platform TEXT NOT NULL,
         token TEXT NOT NULL UNIQUE, app_version TEXT, created_utc TEXT NOT NULL, last_seen_utc TEXT,
         revoked_utc TEXT)""")
+
+
+def _migrate_event_toggles(conn) -> None:
+    """The four per-event switches, as JSON. NULL (every member before 2026-10-22) means "derive from ``events``"."""
+    columns = {r[1] for r in conn.execute("PRAGMA table_info(alert_prefs)").fetchall()}
+    if "event_toggles" not in columns:
+        try:
+            conn.execute("ALTER TABLE alert_prefs ADD COLUMN event_toggles TEXT")
+        except Exception:  # noqa: BLE001 -- another process added it first
+            pass
+
+
+def toggles_from_events(events: str, base: Optional[Mapping] = None) -> dict:
+    """The legacy placed / settled / both / none choice as toggles; starting and live keep ``base`` (or the defaults)."""
+    out = dict(DEFAULT_TOGGLES)
+    out.update({k: bool(v) for k, v in (base or {}).items() if k in KINDS})
+    out[KIND_PLACED] = events in ("placed", "both")
+    out[KIND_SETTLED] = events in ("settled", "both")
+    return out
+
+
+def events_label(toggles: Mapping) -> str:
+    placed, settled = bool(toggles.get(KIND_PLACED)), bool(toggles.get(KIND_SETTLED))
+    return "both" if placed and settled else "placed" if placed else "settled" if settled else "none"
 
 
 def _hash_token(token: str) -> str:
@@ -142,6 +185,38 @@ def _migrate_feed_hash(conn) -> None:
                      (_hash_token(row[1]), row[0]))
 
 
+def short_waits(ms: int):
+    """Scope a short lock wait over every app.db connection opened inside it (``users_store.short_waits``): the grading
+    loop's alert scan uses it, so a locked alert store costs a pass milliseconds, never the store's five seconds."""
+    return users_store.short_waits(ms)
+
+
+@contextmanager
+def held_open() -> Iterator[None]:
+    """Keep one idle connection to app.db open while a burst of short calls runs (the grading loop's alert scan).
+
+    Every store call opens and closes its own connection, and when the LAST connection to a WAL database closes, sqlite
+    checkpoints the log and deletes it: measured at ~6 ms per close on Windows, the larger half of a scan's cost. An idle
+    keeper (no transaction held, so it blocks nobody) makes each of those closes cheap. Best effort: a missing database
+    is not created here, and a keeper that cannot open changes nothing."""
+    import sqlite3
+    keeper = None
+    try:
+        path = users_store.db_path()
+        if path.exists():
+            keeper = sqlite3.connect(str(path), timeout=0)
+            keeper.execute("SELECT 1 FROM sqlite_master LIMIT 1").fetchall()
+    except Exception:  # noqa: BLE001 -- an optimisation only
+        if keeper is not None:
+            keeper.close()
+        keeper = None
+    try:
+        yield
+    finally:
+        if keeper is not None:
+            keeper.close()
+
+
 @contextmanager
 def connect() -> Iterator:
     with users_store._connect() as conn:
@@ -158,8 +233,18 @@ def _row_prefs(row) -> dict:
         channels = json.loads(row["channels_json"] or "{}")
     except ValueError:
         channels = {}
+    toggles = dict(DEFAULT_TOGGLES)
+    raw = row["event_toggles"] if "event_toggles" in row.keys() else None
+    try:
+        stored = json.loads(raw) if raw else None
+    except ValueError:
+        stored = None
+    if isinstance(stored, dict):
+        toggles.update({k: bool(v) for k, v in stored.items() if k in KINDS})
+    else:
+        toggles = toggles_from_events(row["events"])
     return {"user_id": row["user_id"], "channels": {n: bool(channels.get(n)) for n in CHANNEL_NAMES},
-            "events": row["events"], "quiet_start": row["quiet_start"], "quiet_end": row["quiet_end"],
+            "events": events_label(toggles), "event_toggles": toggles, "quiet_start": row["quiet_start"], "quiet_end": row["quiet_end"],
             "tz": row["tz"], "feed_token": row["feed_token"], "phone": row["phone"],
             "sms_consent_utc": row["sms_consent_utc"], "sms_stopped": bool(row["sms_stopped"])}
 
@@ -218,8 +303,9 @@ def _zone_ok(name: str) -> bool:
 
 
 def update_prefs(user_id: int, patch: Mapping, *, now: Optional[datetime] = None) -> dict:
-    """Apply a validated partial update: ``channels`` {name: bool}, ``events``, ``quiet_start``/``quiet_end`` (both
-    set or both null), ``tz``. Turning SMS on is refused here unless a phone number was opted in (the opt-in has its
+    """Apply a validated partial update: ``channels`` {name: bool}, ``event_toggles`` {placed, starting, live, settled:
+    bool} (a partial dict is merged), the legacy ``events`` (placed / settled / both / none: sets the placed and settled
+    toggles), ``quiet_start``/``quiet_end`` (both set or both null), ``tz``. Turning SMS on is refused here unless a phone number was opted in (the opt-in has its
     own route) and the member has not replied STOP."""
     current = ensure_prefs(user_id, now=now)
     channels = dict(current["channels"])
@@ -231,9 +317,22 @@ def update_prefs(user_id: int, patch: Mapping, *, now: Optional[datetime] = None
         raise AlertError("sms_needs_opt_in", "add your phone number and agree to texts first", 409)
     if channels.get("sms") and current["sms_stopped"]:
         raise AlertError("sms_stopped", "you replied STOP; text START to the number or opt in again", 409)
-    events = patch.get("events", current["events"])
-    if events not in EVENTS_CHOICES:
-        raise AlertError("events_invalid", "events must be placed, settled or both")
+    toggles = dict(current["event_toggles"])
+    if "events" in patch:
+        if patch["events"] not in EVENTS_CHOICES:
+            raise AlertError("events_invalid", "events must be placed, settled, both or none")
+        toggles = toggles_from_events(patch["events"], toggles)
+    if "event_toggles" in patch:
+        asked = patch["event_toggles"]
+        if not isinstance(asked, Mapping):
+            raise AlertError("toggles_invalid", "event_toggles must be an object")
+        for name, value in asked.items():
+            if name not in KINDS:
+                raise AlertError("toggles_invalid", f"unknown alert type {name!r}")
+            if not isinstance(value, bool):
+                raise AlertError("toggles_invalid", "each alert type is on or off")
+            toggles[name] = value
+    events = events_label(toggles)
     start = _hour(patch["quiet_start"], "quiet start") if "quiet_start" in patch else current["quiet_start"]
     end = _hour(patch["quiet_end"], "quiet end") if "quiet_end" in patch else current["quiet_end"]
     if (start is None) != (end is None):
@@ -242,9 +341,9 @@ def update_prefs(user_id: int, patch: Mapping, *, now: Optional[datetime] = None
     if not _zone_ok(tz):
         raise AlertError("tz_invalid", "unknown time zone")
     with _lock, connect() as conn:
-        conn.execute("UPDATE alert_prefs SET channels_json = ?, events = ?, quiet_start = ?, quiet_end = ?, tz = ?, "
-                     "updated_utc = ? WHERE user_id = ?",
-                     (json.dumps(channels, sort_keys=True), events, start, end, tz,
+        conn.execute("UPDATE alert_prefs SET channels_json = ?, events = ?, event_toggles = ?, quiet_start = ?, "
+                     "quiet_end = ?, tz = ?, updated_utc = ? WHERE user_id = ?",
+                     (json.dumps(channels, sort_keys=True), events, json.dumps(toggles, sort_keys=True), start, end, tz,
                       iso(now or utcnow()), int(user_id)))
     return get_prefs(user_id) or current
 
@@ -576,8 +675,20 @@ def _owner_of(hound_id: str) -> Optional[tuple]:
     return (hound, owner) if get_prefs(owner) is not None else None
 
 
+#: A row that is not on the member's record: the "before you unleashed" list and backtests (replay), a rehearsal, a
+#: preview. They live in scratch ledgers today; the check is on the row so a future writer cannot start alerting by accident.
+NOT_THE_RECORD = ("replay", "rehearsal", "preview", "backtest")
+
+
 def _is_replay(row: Mapping) -> bool:
-    return row.get("provenance") == "replay" or row.get("segment") == "replay"
+    return row.get("provenance") in NOT_THE_RECORD or row.get("segment") in NOT_THE_RECORD
+
+
+def eligible_ticket(row: Mapping) -> bool:
+    """A member's own bet that may raise an alert: a hound bet, on the record, not a shadow challenger, a price that is
+    allowed on the site."""
+    return (row.get("kind") in (None, "hound_user_bet") and not _is_replay(row) and not row.get("role")
+            and _price_ok(row.get("price")))
 
 
 def emit_placed(row: Mapping, *, now: Optional[datetime] = None) -> bool:
@@ -626,6 +737,132 @@ def emit_settled_safe(bet: Mapping, graded: Mapping) -> None:
         emit_settled(bet, graded)
     except Exception as exc:  # noqa: BLE001
         logger.error("bet alert (settled) not queued: %s", type(exc).__name__)
+
+
+# -- starting soon and live updates (alert_live.py decides WHEN; these write the outbox row) --------------------------
+
+#: The most live updates one ticket can ever raise (owner, 2026-10-22). The "final" update is always allowed a slot of its
+#: own (alert_live.py spends at most LIVE_CAP - 1 on the earlier moments), so a busy game cannot starve it.
+LIVE_CAP_PER_TICKET = 3
+LIVE_KEY_SEP = "#live:"
+
+
+def wants(user_id: int, kind: str) -> bool:
+    """Does this member have the ``kind`` toggle on? A member with no preferences row wants nothing."""
+    prefs = get_prefs(user_id)
+    return bool(prefs and prefs["event_toggles"].get(kind))
+
+
+def live_key(bet_id: str, moment: str) -> str:
+    return f"{bet_id}{LIVE_KEY_SEP}{moment}"
+
+
+def live_count(user_id: int, bet_id: str) -> int:
+    """How many live updates this ticket has already raised (every moment, flips included)."""
+    prefix = f"{bet_id}{LIVE_KEY_SEP}"
+    with connect() as conn:
+        return conn.execute("SELECT COUNT(*) FROM alert_events WHERE user_id = ? AND kind = ? AND bet_id >= ? AND bet_id < ?",
+                            (int(user_id), KIND_LIVE, prefix, prefix + "\U0010ffff")).fetchone()[0]
+
+
+def get_live_side(bet_id: str) -> Optional[str]:
+    """The last DECIDED position ("winning" / "losing") seen for a ticket; None before the first one."""
+    with connect() as conn:
+        row = conn.execute("SELECT side FROM alert_live_state WHERE bet_id = ?", (str(bet_id),)).fetchone()
+    return row["side"] if row else None
+
+
+def set_live_side(user_id: int, bet_id: str, side: str, *, now: Optional[datetime] = None) -> None:
+    with _lock, connect() as conn:
+        conn.execute("INSERT INTO alert_live_state (bet_id, user_id, side, updated_utc) VALUES (?,?,?,?) "
+                     "ON CONFLICT(bet_id) DO UPDATE SET side = excluded.side, updated_utc = excluded.updated_utc",
+                     (str(bet_id), int(user_id), side, iso(now or utcnow())))
+
+
+def member_of(hound_id: Any) -> Optional[tuple]:
+    """(hound row, owner id, the owner's event toggles) for a member hound whose owner opened Alerts, else None.
+    Two reads (the hound, the owner's preferences)."""
+    from src.hounds import user_store
+    hound = user_store.get_hound(str(hound_id))
+    if hound is None or hound.get("owner_user_id") is None:
+        return None
+    owner = int(hound["owner_user_id"])
+    prefs = get_prefs(owner)
+    return (hound, owner, prefs["event_toggles"]) if prefs else None
+
+
+def owner_if_wanted(row: Mapping, kind: str) -> Optional[tuple]:
+    """(hound, owner id) when ``row`` may raise a ``kind`` alert for a member who switched that kind on, else None."""
+    if not eligible_ticket(row):
+        return None
+    found = _owner_of(row["hound_id"])
+    if found is None:
+        return None
+    return found if wants(found[1], kind) else None
+
+
+def starting_sent(user_id: int) -> set:
+    """Every bet id this member already has a 'starting soon' event for: one read, so a scan of many tickets does not
+    open a connection (and, once, write) per ticket just to learn the answer is 'already raised'."""
+    with connect() as conn:
+        return {r[0] for r in conn.execute("SELECT bet_id FROM alert_events WHERE user_id = ? AND kind = ?",
+                                           (int(user_id), KIND_STARTING)).fetchall()}
+
+
+def live_book(user_id: int) -> tuple:
+    """({bet id: live updates raised}, {bet id: last decided side}, {every live event key raised}) for one member, in
+    two reads, so a scan of many tickets learns "already raised" without a connection (or a write) per ticket."""
+    counts: dict = {}
+    raised: set = set()
+    with connect() as conn:
+        for (key,) in conn.execute("SELECT bet_id FROM alert_events WHERE user_id = ? AND kind = ?",
+                                   (int(user_id), KIND_LIVE)).fetchall():
+            raised.add(key)
+            bet = key.split(LIVE_KEY_SEP, 1)[0]
+            counts[bet] = counts.get(bet, 0) + 1
+        sides = {r[0]: r[1] for r in conn.execute("SELECT bet_id, side FROM alert_live_state WHERE user_id = ?",
+                                                  (int(user_id),)).fetchall()}
+    return counts, sides, raised
+
+
+def emit_starting(row: Mapping, *, minutes_out: int, now: Optional[datetime] = None, _owner: Optional[tuple] = None) -> bool:
+    """One 'starting soon' event for an open ticket whose game starts in ``minutes_out`` minutes. Once per ticket.
+    ``_owner`` is (hound, owner id) when the caller has already checked the ticket and the member's toggle."""
+    found = _owner or owner_if_wanted(row, KIND_STARTING)
+    if found is None:
+        return False
+    hound, owner = found
+    payload = _payload_placed(row, hound)
+    payload["minutes_out"] = max(int(minutes_out), 0)
+    return _insert_event(owner, KIND_STARTING, str(row["hound_id"]), str(row["bet_id"]), payload, now or utcnow())
+
+
+def emit_live(row: Mapping, moment: str, snapshot: Mapping, *, now: Optional[datetime] = None,
+              _owner: Optional[tuple] = None) -> bool:
+    """One 'live update' event. ``moment`` is start / half / flip<n> / final; ``snapshot`` carries the score, the
+    ticket's position and where the game is. The event key is per moment, so a moment is raised once per ticket.
+
+    The cap is enforced IN the insert (one statement, one write transaction), so two machines scanning the same ticket
+    at once cannot both spend the slot the final needs: an earlier moment is written only while fewer than
+    LIVE_CAP_PER_TICKET - 1 are on file, the final while fewer than LIVE_CAP_PER_TICKET are."""
+    found = _owner or owner_if_wanted(row, KIND_LIVE)
+    if found is None:
+        return False
+    hound, owner = found
+    payload = _payload_placed(row, hound)
+    payload.update({"moment": moment, "home_score": snapshot.get("home_score"), "away_score": snapshot.get("away_score"),
+                    "status": snapshot.get("status"), "label": snapshot.get("label")})
+    bet = str(row["bet_id"])
+    prefix = f"{bet}{LIVE_KEY_SEP}"
+    room = LIVE_CAP_PER_TICKET if moment == "final" else LIVE_CAP_PER_TICKET - 1
+    with _lock, connect() as conn:
+        cur = conn.execute(
+            "INSERT OR IGNORE INTO alert_events (user_id, kind, hound_id, bet_id, payload_json, created_utc) "
+            "SELECT ?, ?, ?, ?, ?, ? WHERE (SELECT COUNT(*) FROM alert_events WHERE user_id = ? AND kind = ? "
+            "AND bet_id >= ? AND bet_id < ?) < ?",
+            (int(owner), KIND_LIVE, str(row["hound_id"]), live_key(bet, moment), json.dumps(dict(payload), sort_keys=True),
+             iso(now or utcnow()), int(owner), KIND_LIVE, prefix, prefix + "􏿿", room))
+        return cur.rowcount > 0
 
 
 def events_for(user_id: int, *, limit: int = 50) -> List[dict]:

@@ -1,6 +1,6 @@
 /**
  * Account -> Alerts: "tell me when my hounds bet". One switch per channel, the status of each, a test button, which
- * events, optional quiet hours, and the secret RSS address. The server (api/alerts_routes.py) decides everything that
+ * alert types (placed, starting soon, live updates, settled), optional quiet hours, and the secret RSS address. The server (api/alerts_routes.py) decides everything that
  * matters: this file only shows its answer and sends the member's choices.
  *
  * WORDS THAT MATTER (docs/VOICE.md): the alerts REPORT a bet the hound made. Paper only; no promise of anything.
@@ -13,6 +13,14 @@
 
 import { apiFetch, apiPost, ApiError } from "./api.js";
 import { el, clear } from "./dom.js";
+
+/** The four alert types, in the order the page lists them; the server owns the defaults (Live updates start OFF). */
+const EVENT_ROWS = [
+  ["placed", "Bet placed", "When one of your hounds makes a bet."],
+  ["starting", "Starting soon", "About 15 minutes before a game with one of your open bets starts."],
+  ["live", "Live updates", "Game went live, halftime, a late lead change that flips a bet, and the final. At most 3 per bet."],
+  ["settled", "Bet settled", "When a bet is graded."],
+];
 
 const SW_URL = "/web/alerts-sw.js";
 const SW_SCOPE = "/web/";
@@ -80,7 +88,7 @@ export function alertsPanel() {
   const body = el("div", { "data-hook": "alerts-body" });
   root.appendChild(el("h3", { class: "signin__section-title", text: "Alerts" }));
   root.appendChild(el("p", { class: "signin__body",
-    text: "Get a message when your hounds bet and when a bet settles. Paper bets only; the alert reports what the hound did." }));
+    text: "Get a message when your hounds bet, before their games start, while they play, and when a bet settles. Paper bets only; the alert reports what the hound did." }));
   root.appendChild(body);
   let state = null;
   const status = el("p", { class: "signin__status", role: "status", "data-hook": "alerts-status" });
@@ -201,6 +209,26 @@ export function alertsPanel() {
     return form;
   }
 
+  /** One checkbox per alert type. Each applies to every channel above that may carry it (email carries placed and settled only). */
+  function eventsBlock() {
+    const box = el("div", { class: "alerts__events", "data-hook": "alerts-events" });
+    box.appendChild(el("p", { class: "signin__body", text: "Send me an alert when:" }));
+    const toggles = state.event_toggles || {};
+    const carried = state.event_channels || {};
+    for (const [kind, label, note] of EVENT_ROWS) {
+      const row = el("div", { class: "alerts__row", "data-hook": `alerts-event-${kind}` });
+      const input = el("input", { type: "checkbox", id: `alerts-event-${kind}`, "data-hook": `alerts-event-${kind}-toggle` });
+      input.checked = !!toggles[kind];
+      input.addEventListener("change", () => save({ event_toggles: { [kind]: input.checked } }));
+      row.appendChild(el("label", { for: `alerts-event-${kind}`, text: label }));
+      row.appendChild(input);
+      const noEmail = Array.isArray(carried[kind]) && !carried[kind].includes("email");
+      row.appendChild(el("span", { class: "alerts__note", text: noEmail ? `${note} Notifications and texts only, not email.` : note }));
+      box.appendChild(row);
+    }
+    return box;
+  }
+
   function hourSelect(value, onChange, label) {
     const sel = el("select", { "aria-label": label });
     sel.appendChild(el("option", { value: "", text: "off" }));
@@ -218,14 +246,7 @@ export function alertsPanel() {
     // Anything that is not the server's alerts payload (a failed load, an unexpected answer) shows nothing rather than a half page.
     if (!state || !Array.isArray(state.channels)) return;
     for (const c of state.channels) body.appendChild(channelRow(c));
-    const events = el("select", { "aria-label": "Which alerts", "data-hook": "alerts-events" });
-    for (const [v, t] of [["both", "Bets placed and settled"], ["placed", "Only when a hound bets"], ["settled", "Only when a bet settles"]]) {
-      const o = el("option", { value: v, text: t });
-      if (state.events === v) o.selected = true;
-      events.appendChild(o);
-    }
-    events.addEventListener("change", () => save({ events: events.value }));
-    body.appendChild(el("div", { class: "alerts__row" }, [el("label", { text: "Send me" }), events]));
+    body.appendChild(eventsBlock());
     const qs = hourSelect(state.quiet_start, () => quiet(), "Quiet hours start");
     const qe = hourSelect(state.quiet_end, () => quiet(), "Quiet hours end");
     function quiet() {

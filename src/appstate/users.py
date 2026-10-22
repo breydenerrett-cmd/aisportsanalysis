@@ -54,6 +54,7 @@ billing tables in this same file. A tester's token is an ordinary row in
 
 from __future__ import annotations
 
+import contextvars
 import hashlib
 import os
 import secrets
@@ -166,8 +167,25 @@ def _set_wal_mode(conn: sqlite3.Connection) -> None:
     raise last_exc
 
 
+#: How long a connection waits on a locked database, when a caller has scoped a shorter wait (``short_waits``). None means
+#: the store's own 5 s. The grading loop's bet-alert scan runs on the grading thread and sets a short one, so a locked
+#: app.db costs a pass milliseconds, never seconds -- for EVERY connection opened in that scope (alerts, hounds, users).
+_BUSY_MS: contextvars.ContextVar = contextvars.ContextVar("users_busy_ms", default=None)
+DEFAULT_BUSY_MS = 5000
+
+
 @contextmanager
-def _connect(path: Optional[Path] = None) -> Iterator[sqlite3.Connection]:
+def short_waits(ms: int) -> Iterator[None]:
+    """Every connection this context opens waits at most ``ms`` milliseconds on a lock."""
+    token = _BUSY_MS.set(max(0, int(ms)))
+    try:
+        yield
+    finally:
+        _BUSY_MS.reset(token)
+
+
+@contextmanager
+def _connect(path: Optional[Path] = None, busy_ms: Optional[int] = None) -> Iterator[sqlite3.Connection]:
     """One connection per call, schema ensured, closed on exit. sqlite3's
     per-call connect is cheap enough at this scale (invite-only alpha) and
     sidesteps holding a long-lived handle open across process lifetimes."""
@@ -184,7 +202,9 @@ def _connect(path: Optional[Path] = None) -> Iterator[sqlite3.Connection]:
     # is here), busy_timeout is in effect for every later statement this
     # connection runs. (_set_wal_mode below covers the one lock conflict
     # busy_timeout can't -- see its own docstring.)
-    conn.execute("PRAGMA busy_timeout=5000")
+    if busy_ms is None:
+        busy_ms = _BUSY_MS.get()
+    conn.execute(f"PRAGMA busy_timeout={int(DEFAULT_BUSY_MS if busy_ms is None else busy_ms)}")
     # WAL (write-ahead log) journal mode lets readers run concurrently with
     # a writer instead of sqlite's default rollback journal, which locks
     # the whole db file for every writer and blocks every reader until it
