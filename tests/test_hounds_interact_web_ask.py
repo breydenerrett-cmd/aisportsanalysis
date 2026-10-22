@@ -63,14 +63,34 @@ class AskDrawsPickCards(unittest.TestCase):
             dict(do="set", sel=hook("ask-input"), value="What would you bet right now?", wait=10),
             dict(do="click", sel=hook("ask-send"), wait=100, capture=[
                 q("cards", hook("ask-card"), "count"), q("sel", hook("ask-card") + " .dk-pick__sel"),
-                q("price", hook("ask-card") + " .dk-chip"), q("reason", hook("ask-card") + " .dk-pick__reason"),
+                q("price", hook("ask-card") + " .dk-chip"), q("stake", hook("ask-stake")),
+                q("game", hook("ask-card") + " .dk-pick__game"),
+                q("folds", hook("ask-checked"), "count"), q("foldsOpen", hook("ask-checked"), "attrs", attr="open"),
+                q("foldTitle", hook("ask-checked") + " summary"), q("foldText", hook("ask-checked")),
+                q("answers", hook("ask-answer"), "texts"), q("note", hook("ask-note"), "count"),
+                q("fine", hook("ask-fine")),
                 q("intents", hook("ask-answer"), "attrs", attr="data-intent")])])
         c = out["captures"]["1"]
         self.assertEqual(c["cards"], 1)
         self.assertEqual(c["sel"], "Cleveland Guardians to win")
         self.assertIn("+131", c["price"])
-        self.assertIn("Rule: the underdog", c["reason"])
+        self.assertEqual(c["stake"], "Stake $10")                       # the viewer's sizing (the runner pins the reference account)
+        self.assertIn("Tampa Bay Rays @ Cleveland Guardians", c["game"])
+        self.assertIn("7:10 pm ET", c["game"])
+        # the rule text is behind ONE collapsed "How I checked it", never inline
+        self.assertEqual(c["folds"], 1)
+        self.assertEqual(c["foldTitle"], "How I checked it")
+        self.assertEqual(c["foldsOpen"], [None])
+        self.assertIn("Rule 2: Stats Nerd", c["foldText"])
+        self.assertEqual(c["answers"][-1].count("Rule 2"), 1)           # once, inside the fold: not inline as well
+        self.assertEqual(c["note"], 0)                                  # the "not written by an AI model" line is gone
+        self.assertIn("21+", c["fine"])
         self.assertEqual(c["intents"][-1], "picks_now")
+
+    def test_the_answers_of_the_page_never_say_it_was_not_written_by_an_ai_model(self):
+        out = page(self.routes(), queries=[q("ask", hook("dog-ask"))])
+        self.assertTrue(out["final"]["ask"])
+        self.assertNotIn("not written by an AI", out["final"]["ask"])
 
 
 if __name__ == "__main__":

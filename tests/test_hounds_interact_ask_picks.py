@@ -118,15 +118,15 @@ class RightNow(Tmp):
         out = self.say("What would you bet right now?", dog_of(), NOW_BEFORE_LOCK, standard_rows())
         self.assertEqual(out["intent"], "picks_now")
         a = out["answer"]
-        self.assertIn("I would take this", a)
+        self.assertLessEqual(len(out["lines"]), 2)             # one or two short lines in the hound's voice, then the card
         self.assertIn("Boston Red Sox to win at +120", a)
-        self.assertIn(f"{AWAY} @ {HOME}", a)
-        self.assertIn("Today 7:10 pm ET", a)
-        self.assertIn("Rule: the underdog", a)                 # the reason line, as the ticket would carry it
+        self.assertNotIn("Rule: the underdog", a)              # the rule text is behind "How I checked it", never inline
         card = out["cards"][0]
         self.assertEqual((card["selection"], card["price"], card["game"], card["when"], card["state"]),
                          ("Boston Red Sox to win", 120, f"{AWAY} @ {HOME}", "Today 7:10 pm ET", "ahead"))
-        self.assertIn("Paper only", a)
+        self.assertEqual(card["reason"], "")
+        self.assertTrue(any("Rule: the underdog" in line for line in out["details"]["lines"]))
+        self.assertIn("21+", out["fine"])
 
     def test_a_version_2_dog_can_be_fired_at_all(self):
         """Before 2026-10-20 ``fire_user`` raised KeyError on a dog built from English rules."""
@@ -151,37 +151,45 @@ class RightNow(Tmp):
         dog = dog_of(price_min=200, price_max=250)             # Boston is +120: outside the band
         out = self.say("what would you bet tonight", dog, NOW_BEFORE_LOCK, standard_rows())
         a = out["answer"]
-        self.assertIn("Nothing qualifies on the boards stored right now.", a)
-        self.assertIn(f"Closest: {AWAY} @ {HOME} (Moneyline)", a)
-        self.assertIn("shorter than my band of +200 to +250", a)
-        self.assertNotIn("your band", a)
+        self.assertEqual(len(out["lines"]), 1)
+        self.assertIn(f"Next game I'll check: {AWAY} @ {HOME}, Today 7:10 pm ET", a)     # names the next game, not a started one
+        self.assertNotIn("Closest", a)                         # the near misses sit behind "How I checked it"
+        why = " ".join(out["details"]["lines"])
+        self.assertIn(f"Closest: {AWAY} @ {HOME} (Moneyline)", why)
+        self.assertIn("shorter than my band of +200 to +250", why)
+        self.assertNotIn("your band", why)
         self.assertEqual(out["cards"], [])
-        self.assertIn("I looked at 1 game.", a)
+        self.assertIn("I looked at 1 game.", why)
 
     def test_a_version_2_dog_that_passes_names_the_failed_condition(self):
         dog = v2_dog(price_min=200, price_max=250)
         out = self.say("what would you bet right now", dog, NOW_BEFORE_LOCK, standard_rows())
-        self.assertIn("Nothing qualifies", out["answer"])
-        self.assertIn(f"Closest: {AWAY} @ {HOME}", out["answer"])
-        self.assertIn("outside the band my rule allows", out["answer"])
+        self.assertEqual(out["cards"], [])
+        why = " ".join(out["details"]["lines"])
+        self.assertIn(f"Closest: {AWAY} @ {HOME}", why)
+        self.assertIn("outside the band my rule allows", why)
 
     def test_a_game_that_has_started_is_said_first_and_the_next_day_named(self):
         rows = standard_rows() + nfl_rows()
         dog = dog_of(sports=["MLB", "NFL"])
         out = self.say("what would you bet", dog, "2026-10-21T00:40:00Z", rows)
-        self.assertTrue(out["answer"].startswith(f"Tonight's games already started: {AWAY} @ {HOME} (7:10 pm ET). "
-                                                 "Next games I can bet: Thursday."), out["answer"])
-        self.assertIn("Thursday 8:15 pm ET", out["answer"])
+        self.assertNotIn(f"{AWAY} @ {HOME}", out["answer"])        # a game that has started is never filler
+        self.assertNotIn("already started", out["answer"])
+        self.assertIn("Thursday 8:15 pm ET", " ".join([out["answer"], out["cards"][0]["when"]]))
         self.assertEqual(out["cards"][0]["day"], "Thursday")
 
     def test_no_games_today_is_said_before_the_next_slate(self):
         out = self.say("any plays", dog_of(sports=["MLB", "NFL"]), "2026-10-20T14:00:00Z", nfl_rows())
-        self.assertTrue(out["answer"].startswith("No games today. Next slate: Thursday."), out["answer"])
+        self.assertEqual([c["day"] for c in out["cards"]], ["Thursday"])     # nothing today: the fresh pick is the Thursday game
+        self.assertNotIn("No games today", out["answer"])
 
     def test_a_dog_that_cannot_be_fired_still_answers_with_what_it_has(self):
         out = self.say("what would you bet right now", dog_of(), NOW_BEFORE_LOCK, standard_rows(), fire_fn=None,
                        tickets=TICKETS)
-        self.assertIn("cannot run a rule on demand", out["answer"])
+        self.assertIn("can't run my rule on demand", out["answer"])
+        self.assertEqual(out["cards"], [])                       # never an answer made of a ticket it already placed
+        for ticket in TICKETS:
+            self.assertNotIn(ticket["selection"], out["answer"])
 
     def test_a_pick_at_minus_200_or_worse_is_never_offered(self):
         short = board_rows(T_LOCK, moneyline=[(b, -230, 190) for b in BOOKS])

@@ -64,6 +64,10 @@ import { loadRulebook, renderDials, renderCoach } from "./hounds-rulebook.js";
 import { bootDogKit } from "./dog-kit.js";
 import { dogFace, poseOfHound } from "./dog-avatar.js";
 import { kennelLabel } from "./kennel-label.js";
+import { mountRightNow } from "./hound-rightnow.js";
+import { buildFeed, renderFeed } from "./hound-feed.js";
+import { moodLine, voiceOf } from "./hound-lines.js";
+import { capitalBlock } from "./hound-hero.js";
 
 export const PAGE_SIZE = 20;
 export const OPEN_POLL_MS = 60000;
@@ -74,7 +78,8 @@ const SECTIONS = ["hound-actions", "hound-scoreboard-section", "hound-today-sect
   "hound-rule-section", "hound-chart-section", "hound-verdict-section"];
 
 const state = { id: "", season: "", seasonMeta: null, betsSeason: ALL_SEASON, hound: null, open: null, openError: null, ungraded: null, graded: null, gradedError: null, segment: "forward",
-  series: null, seriesError: null, rulebook: null, rulebookFailed: false, poller: null };
+  series: null, seriesError: null, rulebook: null, rulebookFailed: false, poller: null,
+  outcome: "all", sort: "newest", which: "", voice: "generic" };
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 
@@ -127,6 +132,43 @@ export function renderHeroFacts(hound) {
   ]));
   box.appendChild(h("p", { class: `hh-today hh-today--${today.tone}`, "data-hook": "hound-today-status", "data-today": today.key }, [
     h("span", { class: "hh-today__dot", "aria-hidden": "true" }), h("span", { class: "hh-today__label", text: "Today" }), h("span", { text: today.text })]));
+  paintCapital(hound);
+  paintMood(hound);
+}
+
+/** The hero's live look at the capital: a sparkline of the balance after each day (viewer's dollars) and the last 24 hours' change. */
+export function paintCapital(hound) {
+  const slot = q("hound-capital-slot");
+  if (!slot) return;
+  clearNode(slot);
+  let values = [];
+  try {
+    const pts = state.series ? pointsFor(state.series, state.id, "forward") : [];
+    const priced = pts.length ? lensSeriesUsd(pts, referenceBankrollOf(hound)) : null;
+    values = Array.isArray(priced) ? priced.filter(isNum) : [];
+  } catch (err) { values = []; }
+  const w = windowOf(hound, "h24");
+  slot.appendChild(capitalBlock(values, w ? { pnl: w.pnl, bets: w.bets } : null, (n) => fmtSignedUsd(n, true)));
+}
+
+/** The hero's "right now" mood line, in the hound's voice. */
+export function paintMood(hound) {
+  const el = q("hound-mood");
+  if (!el) return;
+  const st = hound && hound.form && hound.form.streak;
+  el.textContent = moodLine(voiceOf(state.voice), {
+    retired: !!hound && hound.status === "retired", streakKind: st && st.kind, streakLen: st && st.length,
+    open: isNum(hound && hound.open_bets) ? hound.open_bets : 0, graded: betsOf(hound) });
+}
+
+/** "What I've been up to": the hound's real recent tickets in its voice. */
+export function paintFeed() {
+  const box = q("hound-feed");
+  if (!box || !state.hound) return;
+  const graded = state.hound.bets && Array.isArray(state.hound.bets.items) ? state.hound.bets.items : [];
+  const st = state.hound.form && state.hound.form.streak;
+  renderFeed(box, buildFeed({ voice: state.voice, open: state.open ? state.open.items : [], graded,
+    streak: st && isNum(st.length) ? { kind: st.kind, length: st.length } : null, seed: state.id }));
 }
 
 function renderHeader(hound) {
@@ -151,6 +193,7 @@ function renderHeader(hound) {
       : h("span", { "data-hook": "hound-kennel", "data-house": "0", text: kennel.text })]),
     h("h1", { "data-hook": "hound-name", text: hound.name || NOT_REPORTED }),
     line ? h("p", { class: "hd-catch", "data-hook": "catchphrase", text: line }) : null,
+    h("p", { class: "hh-mood", "data-hook": "hound-mood" }),
     h("div", { "data-hook": "hound-facts" }),
     h("p", { class: "hh-paper", "data-hook": "paper-only-notice", role: "note", text: "Paper money, not advice." }),
     h("p", { class: "hd-chips hh-meta" }, [
@@ -470,6 +513,7 @@ export function renderCharts() {
   }
   const title = q("hound-chart-title");
   const pts = pointsFor(state.series, state.id, "forward");
+  if (state.hound) paintCapital(state.hound);
   const hasPoints = pts.length > 0 || hasForwardData(state.series);
   const rules = bankrollRules(state.hound);
   title.textContent = hasPoints
@@ -527,6 +571,8 @@ function betsPageOf(data) {
 function renderOpen() {
   const box = q("hound-today");
   if (!box) return;
+  paintFeed();
+  renderSwitch();
   clearNode(box);
   if (state.openError && !state.open) {
     const e = describeError(state.openError, "the open tickets");
@@ -602,6 +648,52 @@ async function loadUngraded() {
   renderUngraded();
 }
 
+export const OUTCOMES = [["all", "All"], ["won", "Won"], ["lost", "Lost"], ["push", "Push"]];
+export const SORT_WORDS = { newest: "newest first", biggest_win: "biggest win first", biggest_loss: "biggest loss first", price: "longest price first" };
+
+/** All / Won / Lost / Push over the settled tickets, and the sort menu. The server filters and orders (a hound can have hundreds). */
+function renderOutcomeBar() {
+  const bar = q("bets-outcome");
+  if (bar) {
+    clearNode(bar);
+    for (const [key, text] of OUTCOMES) {
+      bar.appendChild(h("button", { type: "button", class: "hd-seg", "data-outcome": key, "aria-pressed": state.outcome === key ? "true" : "false",
+        on: { click: () => { state.outcome = key; loadGraded(1); } } }, text));
+    }
+  }
+  const sel = q("bets-sort");
+  if (sel && !sel.getAttribute("data-wired")) {
+    sel.setAttribute("data-wired", "1");
+    const onPick = () => {
+      const next = sel.value in SORT_WORDS ? sel.value : "newest";
+      if (next === state.sort) return;                 // a browser fires input and change for one choice
+      state.sort = next;
+      loadGraded(1);
+    };
+    sel.addEventListener("change", onPick);
+    sel.addEventListener("input", onPick);
+  }
+}
+
+/** Open | Settled over the Tickets tab: one list at a time, with the counts. Defaults to Open when the hound has open tickets. */
+export function renderSwitch() {
+  const bar = q("tickets-switch");
+  const open = q("hound-today-section"), slot = q("hound-ungraded-slot"), done = q("hound-bets-section");
+  if (!bar || !state.hound) return;
+  const openN = isNum(state.hound.open_bets) ? state.hound.open_bets : 0;
+  if (!state.which) state.which = openN > 0 ? "open" : "settled";
+  clearNode(bar);
+  for (const [key, text, n] of [["open", "Open", openN], ["settled", "Settled", betsOf(state.hound)]]) {
+    bar.appendChild(h("button", { type: "button", class: "hd-seg ht-seg", "data-which": key, "aria-pressed": state.which === key ? "true" : "false",
+      on: { click: () => { state.which = key; renderSwitch(); } } }, [text, h("span", { class: "ht-n hd-num", text: String(n) })]));
+  }
+  const showOpen = state.which === "open";
+  for (const [el, on] of [[open, showOpen], [slot, showOpen], [done, !showOpen]]) {
+    if (!el) continue;
+    if (on) el.removeAttribute("hidden"); else el.setAttribute("hidden", "");
+  }
+}
+
 function renderSegmentBar() {
   const bar = q("bets-segment");
   if (!bar) return;
@@ -631,6 +723,7 @@ function renderGraded() {
   clearNode(box);
   renderSegmentBar();
   renderBetsSeasonBar();
+  renderOutcomeBar();
   if (state.gradedError) {
     const e = describeError(state.gradedError, "the graded tickets");
     box.appendChild(stateBox(e.kind, e.text, () => { loadGraded(state.graded ? state.graded.page : 1); }));
@@ -640,7 +733,8 @@ function renderGraded() {
   const page = state.graded;
   if (page.total === 0) {
     box.appendChild(h("p", { class: "hd-muted", "data-hook": "bets-empty",
-      text: state.segment === "replay" ? "No rehearsal tickets for this hound." : "No graded tickets yet." }));
+      text: state.segment === "replay" ? "No rehearsal tickets for this hound."
+        : state.outcome !== "all" ? `No ${state.outcome} tickets${state.betsSeason !== ALL_SEASON ? " in this season" : ""}.` : "No graded tickets yet." }));
     return;
   }
   // R6: tickets graded since this browser last looked at its own hound flip from PENDING to their grade, once, and the hound's FIRST
@@ -648,7 +742,7 @@ function renderGraded() {
   const fresh = state.fresh;
   state.fresh = null;
   const flip = fresh ? Math.min(fresh.fresh, MAX_FLIPS, page.items.length) : 0;
-  box.appendChild(ticketTable(page.items, { graded: true, hook: "bets-table", caption: "Graded tickets, newest first", flip }));
+  box.appendChild(ticketTable(page.items, { graded: true, hook: "bets-table", caption: `Graded tickets, ${SORT_WORDS[state.sort] || "newest first"}`, flip }));
   if (flip) {
     playReveal(box);
     if (fresh.burst) celebrate(box, "first-grade");
@@ -670,10 +764,11 @@ async function loadGraded(pageNo = 1) {
   const size = state.graded ? state.graded.page_size : PAGE_SIZE;
   try {
     const within = state.betsSeason && state.betsSeason !== ALL_SEASON ? `&${seasonParam(state.betsSeason)}` : "";
-    const data = await apiGet(`/hounds/${encodeURIComponent(state.id)}/bets?status=graded&segment=${state.segment}&page=${pageNo}&page_size=${size}${within}`);
+    const refine = `${state.outcome !== "all" ? `&outcome=${state.outcome}` : ""}${state.sort !== "newest" ? `&sort=${state.sort}` : ""}`;
+    const data = await apiGet(`/hounds/${encodeURIComponent(state.id)}/bets?status=graded&segment=${state.segment}&page=${pageNo}&page_size=${size}${within}${refine}`);
     state.graded = betsPageOf(data);
     // the live tickets, newest page, every season: the only view where "graded since I last looked" means anything
-    if (pageNo === 1 && state.segment === "forward" && (!state.betsSeason || state.betsSeason === ALL_SEASON)) {
+    if (pageNo === 1 && state.segment === "forward" && (!state.betsSeason || state.betsSeason === ALL_SEASON) && state.outcome === "all" && state.sort === "newest") {
       state.fresh = settleGrades(state.id, state.graded.total);
     }
   } catch (err) {
@@ -766,6 +861,11 @@ export async function boot() {
   startRulebook(hound);           // loads on its own: the dials and the coach never hold the page up
   // fire now, ask, manual picks, ratings and (owner) the locker room: its own request, hidden until real
   bootDogKit(hound).then(settleOwnerView).catch(() => null);
+  // the headline: what this hound would play right now (hidden for a hound with no rule to run)
+  mountRightNow(q("right-now"), { id: state.id, onData: (data) => { state.voice = voiceOf(data && data.voice); paintMood(state.hound); paintFeed(); },
+    onRecorded: () => { try { document.dispatchEvent(new CustomEvent("hound:manual-recorded")); } catch (err) { /* no CustomEvent */ } } }).catch(() => null);
+  renderSwitch();
+  paintFeed();
 
   // the AI desk's models also show how they argued their newest game (every other model never sees this)
   bootDesk(hound);

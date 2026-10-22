@@ -1,9 +1,11 @@
 /**
  * Ask your dog: a chat-style panel (GET/POST /hounds/{id}/ask, src/hounds/interact/ask.py).
  *
- * The answers are COMPUTED from the dog's own tickets, rule, record and the stored boards; no model writes them
- * and the page says so. Suggested questions sit above a text box. Each answer lists what it is built from only in
- * the sense that every number in it is one the page already shows, and carries "Good call / Bad call" (signed-in)
+ * The answers are COMPUTED from the dog's own tickets, rule, record and the stored boards; no model writes them.
+ * The page no longer SAYS so (owner, 2026-10-22): a glossary or help answer is not "this hound's own data", so the line was
+ * not true of every answer. Suggested questions sit above a text box. An answer is short: one or two lines in the hound's
+ * voice, then the pick card (game, side, price, start, the stake in the viewer's sizing). The rule text and the numbers behind a
+ * pick sit in a collapsed "How I checked it", never inline. Every answer carries "Good call / Bad call" (signed-in)
  * so a visitor can say whether it helped.
  *
  * `mountAsk` is shared with the Training camp, which opens a small chat per dog.
@@ -15,7 +17,15 @@ import { get, post, errorText, statusLine } from "./dog-common.js";
 import { voteRow } from "./dog-feedback.js";
 import { isUpgradeRefusal, upgradePrompt } from "./upgrade.js";
 
-export const NOTE = "Answers are worked out from this hound's own data, not written by an AI model.";
+/** A collapsed "How I checked it": a title and lines the answer would otherwise print inline. */
+function checkedFold(details) {
+  const rows = details && Array.isArray(details.lines) ? details.lines.filter((x) => typeof x === "string" && x) : [];
+  if (!rows.length) return null;
+  return h("details", { class: "dk-checked", "data-hook": "ask-checked" }, [
+    h("summary", { text: (details && details.title) || "How I checked it" }),
+    ...rows.map((line) => h("p", { text: line })),
+  ]);
+}
 
 /** The pick cards an answer carries (what the dog would take), drawn with the Fire now panel's own card classes. */
 function pickCards(cards) {
@@ -29,15 +39,16 @@ function pickCards(cards) {
       c.over_limit ? h("span", { class: "dk-chip dk-chip--warn", text: "Past the daily limit" }) : null,
     ]));
     li.appendChild(h("p", { class: "dk-pick__game", text: `${c.game}${c.when ? `, ${c.when}` : ""}` }));
+    if (c.stake) li.appendChild(h("p", { class: "dk-pick__stake", "data-hook": "ask-stake", text: `Stake ${c.stake}` }));
     if (c.best) li.appendChild(h("p", { class: "hd-fine", text: c.best }));
-    if (c.reason) li.appendChild(h("p", { class: "dk-pick__reason", text: c.reason }));
+    if (c.reason) li.appendChild(checkedFold({ title: "How I checked it", lines: [c.reason] }));
     list.appendChild(li);
   }
   return list;
 }
 
 /** `lines` are drawn as paragraphs; `cards` (optional) go in at index `cardsAt` (default: the end). */
-function dogMessage(lines, intent, cards, cardsAt) {
+function dogMessage(lines, intent, cards, cardsAt, details, fine) {
   const msg = h("div", { class: "dk-msg dk-msg--dog", "data-hook": "ask-answer", "data-intent": intent || "" });
   const rows = lines || [];
   const withCards = Array.isArray(cards) && cards.length > 0;
@@ -47,6 +58,9 @@ function dogMessage(lines, intent, cards, cardsAt) {
     msg.appendChild(h("p", { text: line }));
   });
   if (at === rows.length) msg.appendChild(pickCards(cards));
+  const fold = checkedFold(details);
+  if (fold) msg.appendChild(fold);
+  if (typeof fine === "string" && fine) msg.appendChild(h("p", { class: "hd-fine", "data-hook": "ask-fine", text: fine }));
   return msg;
 }
 
@@ -83,7 +97,7 @@ export function mountAsk(box, { id, name, compact = false }) {
       const hasCards = Array.isArray(out.cards) && out.cards.length > 0;
       const rows = hasCards && Array.isArray(out.ui_lines) && out.ui_lines.length ? out.ui_lines
         : (out.lines && out.lines.length ? out.lines : [out.answer]);
-      const msg = dogMessage(rows, out.intent, hasCards ? out.cards : null, out.cards_at);
+      const msg = dogMessage(rows, out.intent, hasCards ? out.cards : null, out.cards_at, out.details, out.fine);
       msg.appendChild(voteRow({ id, kind: "answer", targetId: out.intent || "fallback", label: "this answer" }));
       thread.appendChild(msg);
       thread.scrollTop = msg.offsetTop ? Math.max(0, msg.offsetTop - 8) : thread.scrollHeight;     // the top of the new answer
@@ -102,7 +116,6 @@ export function mountAsk(box, { id, name, compact = false }) {
   box.appendChild(chips);
   box.appendChild(h("div", { class: "dk-askrow" }, [input, send]));
   box.appendChild(status);
-  box.appendChild(h("p", { class: "hd-fine", "data-hook": "ask-note", text: NOTE }));
   return { ask };
 }
 

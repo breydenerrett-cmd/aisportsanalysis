@@ -25,7 +25,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
 from src.hounds import stats
-from src.hounds.interact import ask_intents, fire
+from src.hounds.interact import ask_intents, ask_voice, fire
 
 INTENTS = ("hello", "record", "today", "why_bet", "best_worst", "picks_now", "picks_earlier_today",
            "backtest_window", "why_not", "rules", "improve", "explain_market", "fans", "coach", "help")
@@ -310,15 +310,10 @@ def _no_tickets(ctx: AskContext, what: str) -> str:
 
 
 def _intro(ctx: AskContext) -> dict:
-    s = ctx.summary or {}
-    sports = ", ".join(x.upper() for x in (s.get("sports") or [])) or "my sports"
-    rule = plain_rule(ctx.rule_english or ctx.rule_text)
-    lines = [f"I am {ctx.name}." + (f" {ctx.catchphrase}" if ctx.catchphrase else "")]
-    if rule:
-        lines.append(f"What I do: {rule}")
-    lines.append(f"I make paper bets only, in {sports}, and every one is recorded before the game and graded after.")
-    lines.append("Ask me about my bets, my record, my rules, or what I would take right now.")
-    return {"lines": lines}
+    """ONE line: the name and the hound's own catchphrase. The full rules live on the Rules tab, never in the chat
+    (owner, 2026-10-22: the bio wall at the top of Ask was the first thing a visitor read)."""
+    tag = " ".join(str(ctx.catchphrase or "").split())
+    return {"lines": [f"{ctx.name} · {tag}" if tag else str(ctx.name)]}
 
 
 def _record(ctx: AskContext) -> dict:
@@ -457,6 +452,16 @@ def _clock(ctx: AskContext, stamp) -> str:
     return fire.clock_et(moment) if moment is not None else ""
 
 
+def _stake_text(ctx: AskContext, units) -> str:
+    """What a stake of ``units`` is in the ASKER's terms: "$50", or "2% of bankroll" (their sizing, the reference account's with none)."""
+    n = float(units) if isinstance(units, (int, float)) and not isinstance(units, bool) and units > 0 else 1.0
+    sizing = _asker(ctx)
+    if sizing.mode == "fixed":
+        usd = n * sizing.unit_usd
+        return f"${usd:,.0f}" if abs(usd - round(usd)) < 0.005 else f"${usd:,.2f}"
+    return f"{n * sizing.pct:g}% of bankroll"
+
+
 def _card(ctx: AskContext, p: dict) -> dict:
     best = ""
     if p.get("price_best") is not None and p.get("price_best") != p.get("price_average") and p.get("best_book"):
@@ -465,7 +470,8 @@ def _card(ctx: AskContext, p: dict) -> dict:
             "best": best, "game": p.get("game"), "market": p.get("market_label") or p.get("market"),
             "when": _et_when(ctx, p.get("start_utc")), "day": p.get("day_label"), "reason": p.get("reason") or "",
             "state": "started" if p.get("started") else "ahead", "over_limit": bool(p.get("over_daily_limit")),
-            "decided": _clock(ctx, p.get("decided_utc")) if p.get("decided_utc") else ""}
+            "decided": _clock(ctx, p.get("decided_utc")) if p.get("decided_utc") else "",
+            "stake": _stake_text(ctx, p.get("stake_units"))}
 
 
 def _pick_line(c: dict, *, hindsight: bool) -> str:
@@ -475,8 +481,6 @@ def _pick_line(c: dict, *, hindsight: bool) -> str:
         line += " That game has started."
     if c["over_limit"]:
         line += " That is past my daily limit, so I would stop before it."
-    if c["reason"]:
-        line += f" {c['reason']}"
     return line
 
 
@@ -538,37 +542,80 @@ def _unavailable(payload: Optional[dict], fallback: str) -> Optional[dict]:
     return None
 
 
+def _right_now_view(ctx: AskContext, payload: dict) -> dict:
+    """The page's own "what I'd play right now" answer for this payload: ``right_now.view_from_payload``, the SAME function the
+    hound page's card calls, so Ask and the card can never disagree about what is fresh. Imported here because right_now
+    imports camp, which imports this module."""
+    from src.hounds.interact import right_now
+    persona = (ctx.summary or {}).get("persona") if isinstance(ctx.summary, dict) else None
+    return right_now.view_from_payload(
+        payload, dog_id=ctx.dog_id, dog_name=ctx.name, kind=ctx.kind, spec=ctx.spec if ctx.kind == "user" else None,
+        persona=persona if isinstance(persona, dict) else None,
+        held=right_now.held_positions(payload.get("recorded"), ctx.manual), now=_now(ctx))
+
+
+def _how_checked(ctx: AskContext, view: dict, payload: dict) -> dict:
+    """The collapsed "How I checked it": the rule that fired, the numbers, the closest misses. Never inline in the answer."""
+    lines = []
+    top = (view.get("candidates") or [None])[0]
+    if top is not None:
+        if top.get("reason"):
+            lines.append(str(top["reason"]))
+        if top.get("lead"):
+            lines.append(top["lead"])
+        if isinstance(top.get("n_books"), int):
+            lines.append(f"{top['n_books']} {'book is' if top['n_books'] == 1 else 'books are'} quoting it.")
+        if top.get("stale"):
+            lines.append(f"The board is {top.get('board_age_minutes')} minutes old, so the price may have moved.")
+        if top.get("over_daily_limit"):
+            lines.append("That is past my daily limit, so I would stop before it.")
+        if payload.get("picks") and any(p.get("before_lock") for p in payload["picks"]):
+            lines.append("My real ticket is written at my usual time before the start, on the board then, so it can differ.")
+    else:
+        lines += _miss_lines(payload)
+        n = view.get("games_considered") or 0
+        if n:
+            lines.append(f"I looked at {n} {'game' if n == 1 else 'games'}.")
+    rule = plain_rule(ctx.rule_english or ctx.rule_text)
+    if rule:
+        lines.append(f"My rule: {rule}")
+    return {"title": "How I checked it", "lines": [x for x in lines if x]}
+
+
 def _picks_now(ctx: AskContext, payload: Optional[dict]) -> dict:
-    """"What would you bet right now": the Fire now payload, said in the dog's voice with pick cards."""
+    """"What would you bet right now": a FRESH pick from the current board, in the hound's voice, then the pick card.
+
+    The pick is chosen by ``right_now.fresh_picks`` (the same code the hound page's card runs): never a ticket the hound already
+    holds, never the other side of one, never a game that has started. With nothing fresh it says so in its voice and names the
+    next game it will check; it does not list started games and does not fall back to a ticket it already placed."""
+    from src.hounds.interact import right_now
     stop = _unavailable(payload, "I cannot read the boards just now. Try the Unleash button in a minute.")
     if stop is not None:
         return stop
-    head = []
-    slate = payload.get("slate") or {}
-    if slate.get("line"):
-        head.append(slate["line"])
-    picks = payload.get("picks") or []
-    tail = []
-    cards: list = []
-    pick_lines: list = []
-    if picks:
-        cards, pick_lines = _picks_block(ctx, picks, hindsight=False)
-        head.append("On the boards as they stand I would take this:" if len(picks) == 1
-                    else "On the boards as they stand I would take these:")
-        if any(p.get("before_lock") for p in picks):
-            tail.append("My real ticket is written at my usual time before the start, on the board then, so it can differ.")
+    view = _right_now_view(ctx, payload)
+    voice = view["voice"]
+    candidates = view["candidates"]
+    if candidates:
+        top = candidates[0]
+        card = _card(ctx, dict(top, stake_units=top.get("stake_units"), reason=""))   # the rule text is in "How I checked it"
+        lines = [ask_voice.pick_line(voice, str(top.get("selection") or ""), _price(top.get("price_average")),
+                                     seed=f"{ctx.dog_id}|{top.get('event_id')}|{top.get('market')}")]
+        if len(candidates) > 1:
+            more = len(candidates) - 1
+            lines.append(f"{more} more {'fits' if more == 1 else 'fit'} tonight. Open What I'd play right now on my page to flip through.")
+        out = {"lines": lines, "cards": [card], "cards_at": len(lines), "fire": True, "fine": PAPER_FINE}
     else:
-        head.append("Nothing qualifies on the boards stored right now.")
-        tail += _miss_lines(payload)
-        n = payload.get("games_considered") or 0
-        if n:
-            tail.append(f"I looked at {n} {'game' if n == 1 else 'games'}.")
-        elif not slate.get("line") and payload.get("headline"):
-            tail.append(payload["headline"])
-    for t in (payload.get("recorded") or [])[:MAX_TICKETS]:
-        tail.append(f"Already on my record: {t['selection']} ({t['game']}) at {_price(t.get('price_average'))}.")
-    tail.append(PAPER_TAIL)
-    return {"lines": head + pick_lines + tail, "ui_lines": head + tail, "cards": cards, "cards_at": len(head), "fire": True}
+        nxt = view.get("next_look") or {}
+        when = _et_when(ctx, nxt.get("start_utc")) if nxt.get("start_utc") else ""
+        line = ask_voice.nothing_line(voice, nxt.get("game"), when)
+        if not nxt.get("game") and view.get("next_game"):
+            line = f"{ask_voice.NOTHING.get(voice) or ask_voice.NOTHING['generic']} {view['next_game']}."
+        out = {"lines": [line], "cards": [], "cards_at": 1, "fire": True, "fine": PAPER_FINE}
+    out["details"] = _how_checked(ctx, view, payload)
+    return out
+
+
+PAPER_FINE = "Paper pick, not advice. 21+."
 
 
 MAX_TICKETS = 3
@@ -791,7 +838,7 @@ def _rules(ctx: AskContext) -> dict:
         lines.append(f"I place a pick {ctx.spec['lock_minutes']} minutes before the start, take at most {ctx.spec['max_bets_per_day']} a day, "
                      f"and need at least {ctx.spec['min_books']} books quoting.")
     lines.append("The cap is always on: I never take a price of -200 or worse.")
-    lines.append("I do not change my own rule. A new version is a new dog with its own record.")
+    lines.append("I do not change my own rule. A new version is a new hound with its own record.")
     return {"lines": lines}
 
 
@@ -827,7 +874,7 @@ def _fans(ctx: AskContext) -> dict:
 def _coach(ctx: AskContext) -> dict:
     tips = ctx.tips or []
     if not tips:
-        return {"lines": ["No graded tip has been sent about me yet. Tips on a dog with dials show up here once code has graded them."]}
+        return {"lines": ["No graded tip has been sent about me yet. Tips on a hound with dials show up here once code has graded them."]}
     lines = [f"{len(tips)} graded {'tip' if len(tips) == 1 else 'tips'} about me:"]
     for tip in tips[:3]:
         lines.append(f"{tip.get('label') or 'Not graded'}: {tip.get('line')}")
@@ -968,7 +1015,7 @@ def _guarded(fn: Optional[Callable], *args, missing: str = "") -> dict:
         return {"error": str(exc) if getattr(exc, "public", False) else "I cannot read the boards just now."}
 
 
-NOT_FIRABLE = "I cannot run a rule on demand: only the house dogs and the dogs people built can do that."
+NOT_FIRABLE = "I cannot run a rule on demand: only the house hounds and the hounds people built can do that."
 
 
 def _get_fire(ctx: AskContext) -> dict:
@@ -1003,10 +1050,8 @@ def _answer_body(intent: str, q: str, ctx: AskContext, scored: dict) -> dict:
         return _best_worst(ctx, q)
     if intent == "picks_now":
         if ctx.fire_fn is None:
-            body = _today(ctx, "my open tickets")
-            body["lines"] = ["I cannot run a rule on demand, so I cannot say what I would take right now. "
-                             "Here is what I have on the record:"] + body["lines"]
-            return body
+            # a hound with no rule to run (a desk model, a baseline) has no "right now" pick; it never answers with a ticket it already placed
+            return {"lines": [ask_voice.CANNOT_RUN], "fine": PAPER_FINE}
         return _picks_now(ctx, _get_fire(ctx))
     if intent == "picks_earlier_today":
         if ctx.earlier_fn is None:
@@ -1048,5 +1093,6 @@ def answer(question: str, ctx: AskContext) -> dict:
     return {"intent": intent, "question": q, "answer": " ".join(lines), "lines": lines,
             "ui_lines": body.get("ui_lines") or lines, "cards": body.get("cards", []), "cards_at": body.get("cards_at"),
             "hindsight": bool(body.get("hindsight")), "busy": body.get("busy"),
+            "details": body.get("details"), "fine": body.get("fine"),
             "tickets": body.get("tickets", []), "followups": followups, "matched": intent != FALLBACK,
             "dog_id": ctx.dog_id, "dog_name": ctx.name, "paper_only": True}

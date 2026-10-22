@@ -95,14 +95,14 @@ def detail(hound_id: str, *, page: int = 1, page_size: Optional[int] = None,
 
 def bets_for(hound_id: str, *, page: int = 1, page_size: Optional[int] = None,
              segment: Optional[str] = None, status: Optional[str] = None,
-             season: str = seasons.ALL) -> Optional[dict]:
+             season: str = seasons.ALL, outcome: Optional[str] = None, sort: Optional[str] = None) -> Optional[dict]:
     data = hound_data(hound_id)
     if data is None:
         return None
     view = data.view(season)
     rows = view.bets if segment is None else [b for b in view.bets if b.segment == segment]
-    from src.hounds.contract import bets_payload, filter_by_status
-    rows = filter_by_status(rows, status)
+    from src.hounds.contract import bets_payload, filter_by_status, refine_bets
+    rows = refine_bets(filter_by_status(rows, status), outcome, sort)
     book = stats.peek_book()
     return bets_payload(hound_id, paginate(rows, page, page_size), book.as_of if book else None,
                         seasons.meta(season))

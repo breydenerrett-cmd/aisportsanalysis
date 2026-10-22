@@ -14,7 +14,8 @@ Every payload carries ``paper_only: true`` and the not-advice line
     GET /hounds/series?ids=a,b,c     cumulative-units series for line charts (``&season=`` as above)
     GET /hounds/{id}?season=         one hound: summary, series, first page of bets (default s2)
     GET /hounds/{id}/bets?page=      that hound's bets, newest first (``&season=`` filters; absent = all-time;
-                                     ``status=open|ungraded|graded`` splits them; a ticket 36+ hours past its
+                                     ``outcome=won|lost|push`` and ``sort=newest|biggest_win|biggest_loss|price``
+                                     filter and order them; ``status=open|ungraded|graded`` splits them; a ticket 36+ hours past its
                                      start with no grade is "ungraded", never "open")
     GET /hounds/{id}/desk            an AI desk hound's published games (empty before the first publish)
     GET /hounds/{id}/desk/{game}     how the desk argued that game: its transcript and disagreement table
@@ -60,7 +61,7 @@ from src.hounds.gematria import view as gematria_view
 from src.hounds.interact import outback
 from src.hounds.contract import (
     DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, bets_payload, filter_by_status, graveyard_payload,
-    hound_payload, leaderboard_payload, paginate, series_payload,
+    hound_payload, leaderboard_payload, paginate, refine_bets, series_payload,
     stream_payload, warming_payload)
 
 router = APIRouter()
@@ -220,7 +221,9 @@ def hound_bets(hound_id: str, response: Response, page: int = Query(1, ge=1),
                page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
                segment: Optional[str] = Query(None, pattern="^(forward|replay)$"),
                status: Optional[str] = Query(None, pattern="^(open|graded|ungraded)$"),
-               season: Optional[str] = Query(None, max_length=16)):
+               season: Optional[str] = Query(None, max_length=16),
+               outcome: Optional[str] = Query(None, pattern="^(won|lost|push)$"),
+               sort: Optional[str] = Query(None, pattern="^(newest|biggest_win|biggest_loss|price)$")):
     # Unlike the other routes, no ``season`` here means EVERY bet: a ticket list is a record, and the model
     # page narrows it with a season chip.
     sid = _season(season, default=seasons.ALL)
@@ -231,13 +234,13 @@ def hound_bets(hound_id: str, response: Response, page: int = Query(1, ge=1),
     data = book.hounds.get(hound_id)
     if data is None:
         payload = user_view.bets_for(hound_id, page=page, page_size=page_size, segment=segment, status=status,
-                                     season=sid)
+                                     season=sid, outcome=outcome, sort=sort)
         if payload is None:
             raise HTTPException(status_code=404, detail="no such hound")
         return payload
     view = data.view(sid)
     rows = view.bets if segment is None else [b for b in view.bets if b.segment == segment]
-    rows = filter_by_status(rows, status)
+    rows = refine_bets(filter_by_status(rows, status), outcome, sort)
     return bets_payload(hound_id, paginate(rows, page, page_size), book.as_of, seasons.meta(sid))
 
 

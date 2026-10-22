@@ -491,7 +491,8 @@ def fire_user(dog: common.Dog, *, now: Optional[datetime] = None, games: Optiona
                 tickets.append({"event_id": event_id, "game": _game_text(game), "market": market,
                                 "market_label": market_label(market, game.sport), "selection": row["selection"],
                                 "price_average": row["price"], "recorded_utc": row["recorded_utc"],
-                                "start_utc": row["commence_time"], "kind": "rule"})
+                                "start_utc": row["commence_time"], "kind": "rule", "side": row.get("side"),
+                                "line": row.get("line"), "sport": game.sport})
                 game_looked = True
                 continue
             observed = _newest_capture(game, market, now)

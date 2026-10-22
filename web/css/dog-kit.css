@@ -43,6 +43,10 @@
 .dk-pick__game { color: var(--hd-text-2); font-size: 14px; }
 .dk-pick__price { font-size: 14px; color: var(--hd-text); }
 .dk-pick__reason { color: var(--hd-text-2); font-size: 14px; }
+.dk-pick__stake { color: var(--hd-text); font-size: 14px; }
+.dk-checked { margin-top: 6px; font-size: 13px; color: var(--hd-text-2); }
+.dk-checked > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; color: var(--hd-mute); }
+.dk-checked p { margin: 4px 0 0; overflow-wrap: anywhere; }
 .dk-pick__actions { margin-top: 8px; }
 .dk-checks { margin-top: 6px; font-size: 13px; color: var(--hd-text-2); }
 .dk-checks > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; color: var(--hd-mute); }

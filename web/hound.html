@@ -56,6 +56,7 @@
 
 <header class="hd-modelhead hh-hero" data-hook="hound-header"></header>
 <div class="hd-state hd-state--retired" data-hook="hound-cause" role="status" hidden></div>
+<div class="hh-capitalrow" data-hook="hound-capital-slot" aria-live="polite"></div>
 
 <!-- A VISITOR gets one clear button. The owner of this hound gets the three actions below instead (the script hides this row
      once the kit says the viewer owns the hound). Follow and Share stay as quiet text buttons. -->
@@ -82,21 +83,64 @@
   </section>
 </div>
 
-<!-- TABS (web/js/tabs.js): Overview, Tickets, Ask, Locker (the owner's). With scripts off every panel shows. -->
-<div class="lh-tabs" role="tablist" aria-label="This hound" data-autotabs data-hook="hound-tabs">
-  <button type="button" role="tab" data-tab="overview" aria-selected="true">Overview</button>
-  <button type="button" role="tab" data-tab="tickets" aria-selected="false">Tickets</button>
-  <button type="button" role="tab" data-tab="ask" aria-selected="false" data-optional>Ask</button>
-  <button type="button" role="tab" data-tab="locker" aria-selected="false" data-optional>Locker</button>
-</div>
-
-<div class="lh-tabpanel" data-tabpanel="overview" role="tabpanel" aria-label="Overview">
-<section class="hd-panel" aria-labelledby="chart-h" data-hook="hound-chart-section">
-  <h2 id="chart-h">Paper bankroll</h2>
-  <p class="hd-chart-title" data-hook="hound-chart-title" aria-live="polite"></p>
-  <div data-hook="hound-units-chart"><div class="lh-skel lh-skel--chart" aria-hidden="true"></div><p class="hd-sr-only">Loading the chart...</p></div>
+<!-- RIGHT NOW (web/js/hound-rightnow.js): the headline. Hidden until GET /hounds/{id}/right-now answers; a hound with no rule to run never shows it. -->
+<section class="hn-now" aria-labelledby="now-h" data-hook="right-now" hidden>
+  <h2 id="now-h">What I'd play right now</h2>
+  <div data-hook="right-now-body"></div>
 </section>
 
+<!-- WHAT I'VE BEEN UP TO (web/js/hound-feed.js): real tickets and streaks, in the hound's voice. -->
+<section class="hd-panel hf-section" aria-labelledby="feed-h" data-hook="hound-feed-section">
+  <h2 id="feed-h">What I've been up to</h2>
+  <div data-hook="hound-feed"></div>
+</section>
+
+<!-- TABS (web/js/tabs.js): Tickets (open and settled), Rules, Ask, Backtest, Record, Look (the owner's). With scripts off every panel shows. -->
+<div class="lh-tabs" role="tablist" aria-label="This hound" data-autotabs data-hook="hound-tabs">
+  <button type="button" role="tab" data-tab="tickets" aria-selected="true">Tickets</button>
+  <button type="button" role="tab" data-tab="rules" aria-selected="false">Rules</button>
+  <button type="button" role="tab" data-tab="ask" aria-selected="false" data-optional>Ask</button>
+  <button type="button" role="tab" data-tab="backtest" aria-selected="false" data-optional>Backtest</button>
+  <button type="button" role="tab" data-tab="record" aria-selected="false">Record</button>
+  <button type="button" role="tab" data-tab="look" aria-selected="false" data-optional>Look</button>
+</div>
+
+<div class="lh-tabpanel" data-tabpanel="tickets" role="tabpanel" aria-label="Tickets">
+<div class="ht-switch" role="group" aria-label="Open or settled tickets" data-hook="tickets-switch"></div>
+<section class="hd-panel" aria-labelledby="open-h" data-hook="hound-today-section">
+  <h2 id="open-h">Open tickets</h2>
+  <div data-hook="hound-today" aria-live="polite"><div class="lh-skel lh-skel--rows" aria-hidden="true"></div><p class="hd-sr-only">Checking open tickets...</p></div>
+  <p class="hd-fine" data-hook="today-note"></p>
+</section>
+
+<!-- Filled by web/js/hounds-detail.js only when the hound has tickets more than 36 hours past their start with no grade: an
+     "Ungraded tickets (N)" panel. Empty (and invisible) otherwise. -->
+<div data-hook="hound-ungraded-slot"></div>
+
+<section class="hd-panel" aria-labelledby="bets-h" data-hook="hound-bets-section">
+  <div class="hd-panel__head">
+    <h2 id="bets-h">Graded tickets</h2>
+    <div class="hd-segs" role="group" aria-label="Which graded tickets to list" data-hook="bets-segment"></div>
+    <div class="hd-segs" role="group" aria-label="Which season's tickets to list" data-hook="bets-season"></div>
+  </div>
+  <div class="ht-controls" data-hook="bets-controls">
+    <div class="hd-segs" role="group" aria-label="Show won, lost or pushed tickets" data-hook="bets-outcome"></div>
+    <label class="ht-sort"><span>Sort</span>
+      <select data-hook="bets-sort" aria-label="Sort the settled tickets">
+        <option value="newest">Newest</option><option value="biggest_win">Biggest win</option>
+        <option value="biggest_loss">Biggest loss</option><option value="price">Longest price</option>
+      </select></label>
+  </div>
+  <div data-hook="hound-bets"><div class="lh-skel lh-skel--rows" aria-hidden="true"></div><p class="hd-sr-only">Loading the tickets...</p></div>
+</section>
+
+<section class="hd-panel dk-panel" aria-labelledby="manual-h" data-hook="dog-manual-section" hidden>
+  <h2 id="manual-h">Manual picks</h2>
+  <div data-hook="dog-manual"></div>
+</section>
+</div>
+
+<div class="lh-tabpanel" data-tabpanel="rules" role="tabpanel" aria-label="Rules" hidden>
 <section class="hd-panel" aria-labelledby="rule-h" data-hook="hound-rule-section">
   <h2 id="rule-h">Its rule</h2>
   <div data-hook="hound-rule"></div>
@@ -106,25 +150,6 @@
 </section>
 
 <section class="hd-panel hd-coach" aria-labelledby="coach-h" data-hook="hound-coach-section" hidden></section>
-
-<!-- HOW IT'S GRADED: every term a bettor would call jargon (units, yield, CLV, the referee's status) lives behind this one tap. -->
-<details class="hd-panel hh-fold hh-graded" data-hook="hound-graded">
-  <summary><span>How it's graded</span><small data-hook="hound-graded-teaser">Units, yield, CLV and its status</small></summary>
-  <section class="hd-scoreboard" aria-labelledby="score-h" data-hook="hound-scoreboard-section">
-    <h2 id="score-h" class="hd-sr-only">Key numbers</h2>
-    <div class="hd-seasonchips" data-hook="hound-season-bar">
-      <div class="hd-segs hd-segs--season" role="group" aria-label="Season for the numbers below" data-hook="hound-season"></div>
-      <p class="hd-fine" data-hook="hound-season-line" aria-live="polite"></p>
-    </div>
-    <div data-hook="hound-scoreboard"><div class="lh-skel lh-skel--kpis" aria-hidden="true"></div><p class="hd-sr-only">Loading the numbers...</p></div>
-  </section>
-  <section aria-labelledby="verdict-h" data-hook="hound-verdict-section">
-    <h2 id="verdict-h">Status</h2>
-    <div class="hd-verdict" data-hook="hound-verdict"></div>
-    <div data-hook="hound-results"></div>
-  </section>
-  <div data-hook="hound-clv-chart"></div>
-</details>
 
 <!-- EVIDENCE (the Gematria Hound and a member's hound in the Gematria style, web/js/hounds-gematria.js): per pick, the top matches for both sides, the margin and the price, behind a tap. Hidden for every other hound. -->
 <details class="hd-panel hh-fold hh-history hh-evidence" data-hook="hound-evidence" hidden>
@@ -157,40 +182,10 @@
 </details>
 </div>
 
-<div class="lh-tabpanel" data-tabpanel="tickets" role="tabpanel" aria-label="Tickets" hidden>
-<section class="hd-panel" aria-labelledby="open-h" data-hook="hound-today-section">
-  <h2 id="open-h">Open tickets</h2>
-  <div data-hook="hound-today" aria-live="polite"><div class="lh-skel lh-skel--rows" aria-hidden="true"></div><p class="hd-sr-only">Checking open tickets...</p></div>
-  <p class="hd-fine" data-hook="today-note"></p>
-</section>
-
-<!-- Filled by web/js/hounds-detail.js only when the hound has tickets more than 36 hours past their start with no grade: an
-     "Ungraded tickets (N)" panel. Empty (and invisible) otherwise. -->
-<div data-hook="hound-ungraded-slot"></div>
-
-<section class="hd-panel" aria-labelledby="bets-h" data-hook="hound-bets-section">
-  <div class="hd-panel__head">
-    <h2 id="bets-h">Graded tickets</h2>
-    <div class="hd-segs" role="group" aria-label="Which graded tickets to list" data-hook="bets-segment"></div>
-    <div class="hd-segs" role="group" aria-label="Which season's tickets to list" data-hook="bets-season"></div>
-  </div>
-  <div data-hook="hound-bets"><div class="lh-skel lh-skel--rows" aria-hidden="true"></div><p class="hd-sr-only">Loading the tickets...</p></div>
-</section>
-
-<section class="hd-panel dk-panel" aria-labelledby="manual-h" data-hook="dog-manual-section" hidden>
-  <h2 id="manual-h">Manual picks</h2>
-  <div data-hook="dog-manual"></div>
-</section>
-</div>
-
 <div class="lh-tabpanel" data-tabpanel="ask" role="tabpanel" aria-label="Ask" hidden>
 <section class="hd-panel dk-panel" aria-labelledby="ask-h" data-hook="dog-ask-section" hidden>
   <h2 id="ask-h">Ask this hound</h2>
   <div data-hook="dog-ask"></div>
-</section>
-<section class="hd-panel dk-panel" aria-labelledby="backtest-h" data-hook="dog-backtest-section" hidden>
-  <h2 id="backtest-h">Backtest</h2>
-  <div data-hook="dog-backtest"></div>
 </section>
 <section class="hd-panel dk-panel" aria-labelledby="fans-h" data-hook="dog-fans-section" hidden>
   <h2 id="fans-h">What fans think</h2>
@@ -198,7 +193,42 @@
 </section>
 </div>
 
-<div class="lh-tabpanel" data-tabpanel="locker" role="tabpanel" aria-label="Locker" hidden>
+<div class="lh-tabpanel" data-tabpanel="backtest" role="tabpanel" aria-label="Backtest" hidden>
+<section class="hd-panel dk-panel" aria-labelledby="backtest-h" data-hook="dog-backtest-section" hidden>
+  <h2 id="backtest-h">Backtest</h2>
+  <div data-hook="dog-backtest"></div>
+</section>
+</div>
+
+<div class="lh-tabpanel" data-tabpanel="record" role="tabpanel" aria-label="Record" hidden>
+<section class="hd-panel" aria-labelledby="chart-h" data-hook="hound-chart-section">
+  <h2 id="chart-h">Paper bankroll</h2>
+  <p class="hd-chart-title" data-hook="hound-chart-title" aria-live="polite"></p>
+  <div data-hook="hound-units-chart"><div class="lh-skel lh-skel--chart" aria-hidden="true"></div><p class="hd-sr-only">Loading the chart...</p></div>
+</section>
+
+<!-- HOW IT'S GRADED: every term a bettor would call jargon (units, yield, CLV, the referee's status) lives behind this one tap. -->
+<details class="hd-panel hh-fold hh-graded" data-hook="hound-graded">
+  <summary><span>How it's graded</span><small data-hook="hound-graded-teaser">Units, yield, CLV and its status</small></summary>
+  <section class="hd-scoreboard" aria-labelledby="score-h" data-hook="hound-scoreboard-section">
+    <h2 id="score-h" class="hd-sr-only">Key numbers</h2>
+    <div class="hd-seasonchips" data-hook="hound-season-bar">
+      <div class="hd-segs hd-segs--season" role="group" aria-label="Season for the numbers below" data-hook="hound-season"></div>
+      <p class="hd-fine" data-hook="hound-season-line" aria-live="polite"></p>
+    </div>
+    <div data-hook="hound-scoreboard"><div class="lh-skel lh-skel--kpis" aria-hidden="true"></div><p class="hd-sr-only">Loading the numbers...</p></div>
+  </section>
+  <section aria-labelledby="verdict-h" data-hook="hound-verdict-section">
+    <h2 id="verdict-h">Status</h2>
+    <div class="hd-verdict" data-hook="hound-verdict"></div>
+    <div data-hook="hound-results"></div>
+  </section>
+  <div data-hook="hound-clv-chart"></div>
+</details>
+
+</div>
+
+<div class="lh-tabpanel" data-tabpanel="look" role="tabpanel" aria-label="Look" hidden>
 <section class="hd-panel dk-panel" aria-labelledby="locker-h" data-hook="dog-locker-section" hidden>
   <h2 id="locker-h">Locker</h2>
   <div data-hook="dog-locker"></div>

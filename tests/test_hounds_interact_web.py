@@ -110,8 +110,9 @@ class TheKitOnADogPage(unittest.TestCase):
             self.assertFalse(f[key], key)
         self.assertEqual(f["firebtn"], "Unleash")
         self.assertIn("What did you bet today?", f["chips"])
-        self.assertIn("I am Closer.", f["greet"])
-        self.assertIn("not written by an AI model", f["note"])
+        self.assertIn("Closer", f["greet"])
+        self.assertNotIn("What I do", f["greet"])
+        self.assertFalse(f["note"])                      # the "not written by an AI model" line is gone (not true of every answer)
         self.assertIn("/hounds/closer/kit", out["gets"])
 
     def test_fire_now_draws_the_picks_the_checks_and_the_manual_button_for_the_owner(self):
@@ -282,7 +283,7 @@ class TheKitOnADogPage(unittest.TestCase):
         f = out["final"]
         self.assertIn("1 graded (1-0), +1.20u at the average price, 1 open.", f["rec"])
         self.assertEqual(f["n"], 2)
-        self.assertIn("never counted in this dog's rule record", f["note"])
+        self.assertIn("never counted in this hound's rule record", f["note"])
         self.assertIn("Manual pick, not counted in the record.", f["first"])
 
 

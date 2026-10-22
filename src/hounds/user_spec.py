@@ -491,14 +491,34 @@ _SIDE_PHRASE = {
 }
 
 
+# How a sport reads inside a sentence. The catalog keys (GRIDIRON, BASKETBALL, NCAAF ...) are internal and never user copy; this is the
+# short label a reader sees (the hound pages' web/js/hounds-board.js SPORT_LABELS says the same words). MLB, NFL, NBA, WNBA, NHL, MMA and
+# AFL are what people call them, so they pass through.
+SPORT_PHRASE_LABELS = {
+    "NCAAF": "college football", "GRIDIRON": "CFL and UFL", "NCAAB": "college basketball", "BASKETBALL": "other basketball",
+    "HOCKEY": "other hockey", "BASEBALL": "other baseball", "SOCCER": "soccer", "TENNIS": "tennis", "CRICKET": "cricket",
+    "RUGBY": "rugby", "AFL": "Aussie rules",
+}
+
+
+def sport_words(code: str) -> str:
+    """One sport as a reader sees it: the label, never the internal key ("GRIDIRON" reads "CFL and UFL")."""
+    key = str(code or "").strip()
+    return SPORT_PHRASE_LABELS.get(key.upper()) or (key.upper() if key.upper() in SPORTS else key)
+
+
 def sports_phrase(sports: Iterable[str]) -> str:
-    """'MLB and NFL', 'NBA', 'any sport' (every dog-menu family), or 'MLB, NFL, NBA and 4 more sports'."""
+    """'MLB and NFL', 'NBA', 'any sport' (every dog-menu family), or 'MLB, NFL, NBA and 4 more sports'. Every sport reads by its
+    label (``sport_words``), never by its internal key."""
     sports = list(sports)
     if set(sports) >= set(SPORTS) and len(SPORTS) > 2:
         return "any sport"
-    if len(sports) <= 3:
-        return " and ".join(sports) if len(sports) <= 2 else ", ".join(sports[:-1]) + " and " + sports[-1]
-    return ", ".join(sports[:3]) + f" and {len(sports) - 3} more sports"
+    words = [sport_words(x) for x in sports]
+    if len(words) <= 3:
+        text = " and ".join(words) if len(words) <= 2 else ", ".join(words[:-1]) + " and " + words[-1]
+    else:
+        text = ", ".join(words[:3]) + f" and {len(words) - 3} more sport{'' if len(words) == 4 else 's'}"
+    return text[:1].upper() + text[1:]            # a phrase opens a clause
 
 
 def rule_text(spec: Mapping) -> str:
@@ -519,7 +539,7 @@ def rule_text(spec: Mapping) -> str:
         f"when the average price across the books is between {_fmt_price(spec['price_min'])} and "
         f"{_fmt_price(spec['price_max'])} (never {MAX_FAVOURITE_PRICE} or worse) and at least "
         f"{books} {'book is' if books == 1 else 'books are'} quoting it. "
-        f"At most {bets} {'bet' if bets == 1 else 'bets'} a day, earliest lock first. "
+        f"At most {bets} {'bet' if bets == 1 else 'bets'} a day, earliest placing time first. "
         f"Each bet is one paper unit, graded at the average price. {NOT_ADVICE}"
     )
 
