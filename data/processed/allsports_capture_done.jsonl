@@ -1244,3 +1244,7 @@
 {"commence_utc": "2026-10-23T00:10:00Z", "event_id": "58afd2b5779b2e4f163314436900d379", "kind": "phase", "observed_utc": "2026-10-22T00:10:00.010171Z", "phase": "t24h", "rows": 30, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 14, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-22T00:10:00.010171Z", "regions": ["us"], "rows": 354, "sport_key": "icehockey_nhl", "stored": 354}
 {"call_kind": "inplay", "credits": 1, "events": 65, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T00:10:00.010171Z", "regions": ["us"], "rows": 592, "sport_key": "americanfootball_ncaaf", "stored": 43}
+{"events": 51, "kind": "peek", "next_check_utc": "2026-10-22T06:23:40.972346Z", "observed_utc": "2026-10-22T00:23:40.972346Z", "sport_key": "americanfootball_ncaaf_fcs"}
+{"events": 4, "kind": "peek", "next_check_utc": "2026-10-22T06:23:40.972346Z", "observed_utc": "2026-10-22T00:23:40.972346Z", "sport_key": "soccer_finland_veikkausliiga"}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T00:23:40.972346Z", "regions": ["us"], "rows": 10, "sport_key": "basketball_wnba", "stored": 10}
+{"call_kind": "inplay", "credits": 1, "events": 21, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T00:23:40.972346Z", "regions": ["us"], "rows": 171, "sport_key": "soccer_usa_mls", "stored": 7}
