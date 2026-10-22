@@ -46,6 +46,7 @@ Paper only. Nothing here can place a bet anywhere. ``LIVE_SETTLE=off`` stops the
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import sqlite3
@@ -83,6 +84,9 @@ MAX_REQUESTS_PER_PASS = 40               # a bug must not turn into a hundred sc
 KEEP_FINAL_DAYS = 14                     # cache rows of finished games are pruned after this
 #: The owner's line: an open ticket this long after its game's scheduled start raises an alert (watchdog).
 OVERDUE_HOURS = 4.0
+#: Tennis and MMA get this much longer before the alert counts: a match is played in order of play, "followed by" the one
+#: before it, and a bout fights by its place on the card, so the listed start can be many hours before the first ball or bell.
+FREE_OVERDUE_EXTRA_HOURS = 4.0
 #: A "live" answer older than this is treated as not seen: the feed stopped answering, so the ticket is not "in play".
 STALE_LIVE_MINUTES = 90.0
 
@@ -124,7 +128,8 @@ CREATE TABLE IF NOT EXISTS live_games (
   state TEXT NOT NULL, home_score REAL, away_score REAL, detail TEXT, source TEXT, source_id TEXT,
   first_seen_utc TEXT, updated_utc TEXT, final_utc TEXT, applied_utc TEXT,
   fails INTEGER NOT NULL DEFAULT 0, next_try_utc TEXT, last_error TEXT,
-  settle_tries INTEGER NOT NULL DEFAULT 0, settle_next_utc TEXT
+  settle_tries INTEGER NOT NULL DEFAULT 0, settle_next_utc TEXT,
+  payload TEXT                          -- tennis / MMA: the free reader's whole result row (a winner or a named void), as JSON
 );
 CREATE TABLE IF NOT EXISTS live_lock (name TEXT PRIMARY KEY, holder TEXT NOT NULL, expires_utc TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS live_meta (key TEXT PRIMARY KEY, value TEXT);
@@ -149,6 +154,8 @@ def connect(path: Optional[Path] = None) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.executescript(SCHEMA)
+    if "payload" not in {r["name"] for r in conn.execute("PRAGMA table_info(live_games)")}:
+        conn.execute("ALTER TABLE live_games ADD COLUMN payload TEXT")       # a cache file made before tennis and MMA
     return conn
 
 
@@ -204,7 +211,13 @@ class Game:
     tickets: int = 0
 
     def espn_league(self) -> Optional[str]:
-        return None if self.sport == ls.MLB_FAMILY else ls.espn_league_for(self.sport, self.league)
+        if self.sport == ls.MLB_FAMILY or self.sport in ls.FREE_FAMILIES:
+            return None
+        return ls.espn_league_for(self.sport, self.league)
+
+    def free_family(self) -> Optional[str]:
+        """"TENNIS" or "MMA": settled by the free readers in src/pipeline/allsports_free_results.py, not a scoreboard."""
+        return self.sport if self.sport in ls.FREE_FAMILIES else None
 
     def supported(self) -> bool:
         return ls.supported(self.sport, self.league, self.game_pk)
@@ -339,9 +352,10 @@ def _store_answer(conn: sqlite3.Connection, game: Game, answer: Mapping, now: da
                  (ls.iso(now) if answer["state"] == ls.FINAL else None))
     conn.execute(
         "UPDATE live_games SET state=?, home_score=?, away_score=?, detail=?, source=?, source_id=?, updated_utc=?,"
-        " final_utc=?, fails=0, next_try_utc=NULL, last_error=NULL WHERE game_key=?",
+        " final_utc=?, fails=0, next_try_utc=NULL, last_error=NULL, payload=COALESCE(?, payload) WHERE game_key=?",
         (answer["state"], answer.get("home_score"), answer.get("away_score"), answer.get("detail"),
-         answer.get("source"), answer.get("source_id"), ls.iso(now), final_utc, game.key))
+         answer.get("source"), answer.get("source_id"), ls.iso(now), final_utc,
+         json.dumps(answer["payload"], sort_keys=True) if answer.get("payload") else None, game.key))
 
 
 def _store_failure(conn: sqlite3.Connection, game: Game, error: str, now: datetime) -> None:
@@ -355,7 +369,7 @@ def _store_failure(conn: sqlite3.Connection, game: Game, error: str, now: dateti
 
 def fetch_due(conn: sqlite3.Connection, due: Sequence[Game], now: datetime, *,
               fetch_json: Callable[[str], dict], fetch_instances: Optional[Callable] = None,
-              max_requests: int = MAX_REQUESTS_PER_PASS) -> dict:
+              max_requests: int = MAX_REQUESTS_PER_PASS, mma_provider=None) -> dict:
     """Ask the feeds about the due games and store each answer. Returns {"requests", "answered", "failed"}.
 
     ESPN games are grouped by (league, day) so ONE scoreboard request serves every open game of that league that day;
@@ -411,7 +425,94 @@ def fetch_due(conn: sqlite3.Connection, due: Sequence[Game], now: datetime, *,
             for key, answer in ls.espn_answers(payload, league, wanted, observed).items():
                 _store_answer(conn, pending.pop(key), answer, now)
                 report["answered"] += 1
+    free = [g for g in due if g.free_family()]
+    if free:
+        fetch_free(conn, free, now, fetch_json=fetch_json, report=report, max_requests=max_requests,
+                   mma_provider=mma_provider)
     return report
+
+
+# ---------------------------------------------------------------------------
+# tennis and MMA: the free readers the capture slot already uses, asked for only the open tickets' matches
+# ---------------------------------------------------------------------------
+
+#: A tennis match or a bout that the free reader could not answer yet (not finished, or not listed) is asked again after
+#: this, not every five minutes: a tennis scoreboard holds a whole draw and an MMA card is ~16 requests.
+FREE_RECHECK = timedelta(minutes=10)
+
+
+def _free_event(g: Game) -> dict:
+    """The event dict ``allsports_free_results`` reads (its ``unresolved_events`` builds the same from the odds store)."""
+    return {"event_id": g.key, "family": g.sport, "commence_time": ls.iso(g.start), "_start": g.start,
+            "home_team": g.home_team, "away_team": g.away_team, "league": g.league or g.sport.lower()}
+
+
+def _defer(conn: sqlite3.Connection, game: Game, now: datetime, wait: timedelta = FREE_RECHECK) -> None:
+    conn.execute("UPDATE live_games SET next_try_utc=? WHERE game_key=?", (ls.iso(now + wait), game.key))
+
+
+def _apply_free(conn: sqlite3.Connection, games: Sequence[Game], rows: Mapping, now: datetime, report: dict) -> None:
+    """A game the reader returned a settled row for is FINAL (the row is kept whole: a winner, or a named void); one it did
+    not is asked again later. Scores stay empty: a 1-0 match indicator is not a score and the page must not print it."""
+    for g in games:
+        row = rows.get(g.key)
+        if row is None:
+            _defer(conn, g, now)
+            continue
+        void = row.get("void_reason")
+        evidence = row.get("evidence") or {}
+        answer = {"state": ls.FINAL, "home_score": None, "away_score": None,
+                  "detail": f"Void: {void}"[:200] if void else "Final", "source": row.get("source"),
+                  "source_id": str(evidence.get("espn_match_id") or evidence.get("espn_bout_id") or ""),
+                  "payload": row}
+        _store_answer(conn, g, answer, now)
+        report["answered"] += 1
+
+
+def fetch_free(conn: sqlite3.Connection, free: Sequence[Game], now: datetime, *, fetch_json: Callable[[str], dict],
+               report: dict, max_requests: int, mma_provider=None) -> None:
+    """Settle tennis and MMA through ``allsports_free_results`` (``tennis_rows`` / ``mma_rows``), the SAME matching and
+    settlement rules the capture slot applies: both names must agree, exactly one ESPN match may fit, a retirement before a
+    set is completed, a walkover, a draw and a no contest are named voids, an inferred fighter replacement is never trusted.
+    Nothing here re-decides any of it; this only asks sooner, for the open tickets' matches only."""
+    from src.pipeline import allsports_free_results as fr
+    from src.providers import espn_tennis_results as tennis_src
+    observed = ls.iso(now)
+    tennis = [g for g in free if g.sport == ls.TENNIS_FAMILY]
+    mma = [g for g in free if g.sport == ls.MMA_FAMILY]
+    if tennis:
+        def get_json(url: str) -> dict:
+            if report["requests"] >= max_requests:
+                raise tennis_src.EspnTennisError("this pass's request cap is reached")
+            report["requests"] += 1
+            try:
+                return fetch_json(url)
+            except Exception as exc:  # noqa: BLE001 -- the reader stops on its own error type
+                raise tennis_src.EspnTennisError(f"{type(exc).__name__}: {str(exc)[:160]}") from None
+
+        events = [_free_event(g) for g in tennis]
+        feed = tennis_src.EspnTennisFeed(get_json=get_json, sleep=lambda _s: None, now=lambda: now)
+        fetched = fr.fetch_tennis_matches(events, feed)
+        if fetched["errors"] and not fetched["matches"]:
+            for g in tennis:
+                report["failed"] += 1
+                _store_failure(conn, g, "; ".join(fetched["errors"]), now)
+        else:
+            out = fr.tennis_rows(events, fetched["matches"], observed)
+            _apply_free(conn, tennis, {r["event_id"]: r for r in out["rows"]}, now, report)
+    if mma:
+        provider = mma_provider or fr.default_mma_provider()
+        events = [_free_event(g) for g in mma]
+        out = fr.mma_rows(events, provider, now, observed)
+        stats = getattr(getattr(provider, "_fetcher", None), "stats", None)
+        if isinstance(stats, dict):
+            report["requests"] += int(stats.get("requests") or 0)
+        if out["errors"] and not out["rows"]:
+            for g in mma:
+                report["failed"] += 1
+                _store_failure(conn, g, "; ".join(out["errors"]), now)
+        else:
+            _apply_free(conn, mma, {r["event_id"]: r for r in out["rows"]}, now, report)
 
 
 # ---------------------------------------------------------------------------
@@ -424,8 +525,8 @@ def final_rows(conn: sqlite3.Connection, games: Sequence[Game], now: datetime) -
     out: dict = {}
     for g in games:
         row = _row(conn, g.key)
-        if row is not None and row["state"] == ls.FINAL and row["home_score"] is not None \
-                and row["away_score"] is not None:
+        if row is not None and row["state"] == ls.FINAL and (
+                (row["home_score"] is not None and row["away_score"] is not None) or row["payload"]):
             nxt = row["settle_next_utc"]
             if nxt is None or nxt <= now_iso:
                 out[g.key] = row
@@ -438,6 +539,15 @@ def allsports_overlay(finals: Mapping, games: Mapping) -> dict:
     for key, row in finals.items():
         g = games[key]
         if g.sport == ls.MLB_FAMILY or g.sport == "NFL":
+            continue
+        if g.free_family():
+            # tennis / MMA: the free reader's own row (winner as 1-0, or a named void), exactly as the capture slot stores it
+            try:
+                kept = json.loads(row["payload"] or "")
+            except ValueError:
+                continue
+            if isinstance(kept, dict) and kept.get("completed") and kept.get("event_id") == key:
+                out[key] = dict(kept, source="live_settle:" + str(kept.get("source") or row["source"]))
             continue
         home, away = float(row["home_score"]), float(row["away_score"])
         out[key] = {"kind": "score", "event_id": key, "completed": True, "home_score": home, "away_score": away,
@@ -632,7 +742,8 @@ def run_pass(*, now: Optional[datetime] = None, conn: Optional[sqlite3.Connectio
              fetch_instances: Optional[Callable] = None, settle: bool = True,
              settle_kwargs: Optional[dict] = None, read_mlb_results: Optional[Callable] = None,
              stores_loader: Optional[Callable] = None, refresh_stats: Optional[Callable[[], object]] = None,
-             holder: Optional[str] = None, load_index: Optional[Callable[[], Mapping]] = None) -> dict:
+             holder: Optional[str] = None, load_index: Optional[Callable[[], Mapping]] = None,
+             mma_provider=None) -> dict:
     """One pass: gather, fetch, settle. Returns a small report; raises only on a bug (the loop catches it)."""
     moment = now or ls.utcnow()
     own = conn is None
@@ -654,12 +765,19 @@ def run_pass(*, now: Optional[datetime] = None, conn: Optional[sqlite3.Connectio
             if due:
                 if fetch_json is None:
                     fetch_json = default_fetch_json()
-                report["fetch"] = fetch_due(conn, due, moment, fetch_json=fetch_json, fetch_instances=fetch_instances)
+                report["fetch"] = fetch_due(conn, due, moment, fetch_json=fetch_json, fetch_instances=fetch_instances,
+                                            mma_provider=mma_provider)
             if settle:
-                out = run_settle(conn, games, moment, paths=paths, settle_kwargs=settle_kwargs,
-                                 read_mlb_results=read_mlb_results, stores_loader=stores_loader,
-                                 load_index=load_index)
-                report["settle"], report["graded"] = out, out["graded"]
+                # The lock was taken before the fetches, and a slow feed with retries can outlast its life. Take it again
+                # (a renewal when it is still ours) and settle only if no other pass took it meanwhile: the ledger append
+                # itself has no lock, so two writers must never be in settle together (verification, 2026-10-22).
+                if not acquire_lock(conn, holder, ls.utcnow() if now is None else moment):
+                    report["skipped"] = "another pass took the lock while this one was fetching"
+                else:
+                    out = run_settle(conn, games, moment, paths=paths, settle_kwargs=settle_kwargs,
+                                     read_mlb_results=read_mlb_results, stores_loader=stores_loader,
+                                     load_index=load_index)
+                    report["settle"], report["graded"] = out, out["graded"]
             _meta_set(conn, "last_pass_utc", ls.iso(moment))
             _prune(conn, moment)
         finally:
@@ -812,7 +930,8 @@ def overdue_tickets(now: Optional[datetime] = None, *, paths: Optional[Mapping] 
     try:
         out = []
         for g in open_games(moment, paths if paths is not None else ledger_paths()):
-            if g.start is None or not g.supported() or not g.settles_here()                     or moment - g.start <= timedelta(hours=hours):
+            grace = hours + (FREE_OVERDUE_EXTRA_HOURS if g.free_family() else 0.0)
+            if g.start is None or not g.supported() or not g.settles_here() or moment - g.start <= timedelta(hours=grace):
                 continue
             row = _row(conn, g.key)
             state = row["state"] if row is not None else ls.UPCOMING

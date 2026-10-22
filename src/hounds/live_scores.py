@@ -25,7 +25,7 @@ A wrong score would append a wrong grade to an append-only ledger, so every doub
   * a score counts only from a FINAL status with both numbers present. Soccer counts only regulation time
     (``STATUS_FULL_TIME``): the books grade a match result at 90 minutes, and ESPN's extra-time and penalty finals
     would grade a cup tie on a different basis;
-  * an unmapped family (cricket, rugby, AFL, tennis, MMA) or league is unsupported and stays on the old path.
+  * an unmapped family (cricket, rugby, AFL) or league is unsupported and stays on the old path.
 
 ONE REQUEST PER LEAGUE-DAY, NEVER A STORE. A scoreboard is one small request for a league on a day; only the wanted
 games are read out of it and only those are kept. MLB is asked one game at a time by ``gamePk``
@@ -45,9 +45,13 @@ from src.datasvc.espn import parse as espn_parse
 UPCOMING, LIVE, FINAL, POSTPONED, CANCELLED = "upcoming", "live", "final", "postponed", "cancelled"
 STATES = (UPCOMING, LIVE, FINAL, POSTPONED, CANCELLED)
 
-#: How far apart the ticket's start and ESPN's start may be and still be one game. Generous on purpose (the vendors
-#: round and revise starts, and a late-night game can sit on the next UTC date); the pair of names does the matching.
-MATCH_WINDOW = timedelta(hours=30)
+#: How far apart the ticket's start and ESPN's start may be and still be one game. The vendors round and revise a start
+#: by minutes, not by a day. It must stay well under 24 hours: the same two teams meet on back-to-back days in a playoff
+#: series (same home side, same orientation), and the neighbouring day's scoreboard is read when a game is not on its own
+#: day's, so a window over a day would hand yesterday's FINAL to today's ticket (found by the 2026-10-22 verification:
+#: a 30 hour window graded game 2 from game 1's score). A game moved more than this far is a different game here, and
+#: stays on the old path.
+MATCH_WINDOW = timedelta(hours=12)
 
 # The family code a ticket carries -> the ESPN league code it is settled from.
 ESPN_LEAGUE_BY_FAMILY = {
@@ -65,6 +69,10 @@ ESPN_LEAGUE_BY_KEY = {
 NFL_PATH = "football/nfl"
 NFL_CODE = "nfl"
 MLB_FAMILY = "MLB"
+#: Families with no ESPN scoreboard row per game: the free tennis and MMA readers of src/pipeline/allsports_free_results.py
+#: settle these (a winner, or a named void), never a score.
+TENNIS_FAMILY, MMA_FAMILY = "TENNIS", "MMA"
+FREE_FAMILIES = (TENNIS_FAMILY, MMA_FAMILY)
 SOCCER_FULL_TIME = "STATUS_FULL_TIME"
 
 _FINAL_STATUS = re.compile(r"^STATUS_FINAL")
@@ -109,6 +117,8 @@ def espn_league_for(family: str, league_key: Optional[str] = None) -> Optional[s
 def supported(family: str, league_key: Optional[str] = None, game_pk=None) -> bool:
     if str(family or "").upper() == MLB_FAMILY:
         return game_pk not in (None, "", "None")
+    if str(family or "").upper() in FREE_FAMILIES:
+        return True
     return espn_league_for(family, league_key) is not None
 
 

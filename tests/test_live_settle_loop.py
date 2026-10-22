@@ -363,7 +363,7 @@ class NeverGuess(unittest.TestCase):
         self.assertFalse(ls.teams_match("Utah Jazz", "Utah Mammoth"))
 
     def test_unsupported_families_are_left_to_the_old_path(self):
-        for family in ("CRICKET", "RUGBY", "TENNIS", "MMA", "AFL"):
+        for family in ("CRICKET", "RUGBY", "AFL"):      # tennis and MMA: tests/test_live_settle_verify.py
             self.assertFalse(ls.supported(family))
         self.assertTrue(ls.supported("NBA"))
         self.assertFalse(ls.supported("MLB"), "an MLB ticket with no game_pk cannot be asked by pk")

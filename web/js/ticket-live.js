@@ -26,6 +26,7 @@ import { h, isNum } from "./hounds-core.js";
 
 export const POLL_MS = 60000;
 export const MAX_IDS = 60;
+const AWAITING_MAX_MS = 20 * 60000;
 const STATUS_WORDS = { upcoming: "UPCOMING", live: "LIVE", grading: "GRADING", postponed: "POSTPONED", cancelled: "CANCELLED" };
 let lastSeen;                      // the last "last graded" stamp this page saw (undefined until the first look)
 
@@ -75,6 +76,9 @@ export function liveView(info, startIso, nowMs) {
       if (Number.isFinite(startMs) && startMs > nowMs) {
         return { key: "upcoming", chip: STATUS_WORDS.upcoming, text: `Starts in ${startsIn(startMs, nowMs)}`, title: "" };
       }
+      // Started, and the feed has said nothing yet. A few minutes of that is a pregame delay; longer is a game the feed
+      // could not match or read, and "awaiting the start" would be false, so the ticket is left as a plain PENDING chip.
+      if (Number.isFinite(startMs) && nowMs - startMs >= AWAITING_MAX_MS) return null;
       return { key: "upcoming", chip: STATUS_WORDS.upcoming, text: "Awaiting the start", title: "" };
     }
     default:
@@ -211,12 +215,18 @@ export function watchTickets(root, { fetchFn = apiGet, now = () => Date.now(), p
   return stop;
 }
 
-/** "02:14" in the viewer's own clock from an ISO instant, or "" when it is missing or unreadable. */
-export function clockText(iso) {
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "02:14" in the viewer's own clock from an ISO instant ("Oct 21, 02:14" when it was not today for the viewer, so a
+ * grade from yesterday never reads as one from this morning), or "" when it is missing or unreadable. */
+export function clockText(iso, nowMs = Date.now()) {
   const ms = Date.parse(String(iso || ""));
   if (!Number.isFinite(ms)) return "";
   const d = new Date(ms);
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const clock = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const today = new Date(nowMs);
+  const sameDay = d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+  return sameDay ? clock : `${MONTHS[d.getMonth()]} ${d.getDate()}, ${clock}`;
 }
 
 /** The badge's words from the status payload: { last, grading } (either may be empty). */
