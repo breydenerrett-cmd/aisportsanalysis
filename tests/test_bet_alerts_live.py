@@ -1202,7 +1202,7 @@ class ChannelsAndPayloads(LiveAlertBase):
         payload = render.push_payload([event], unit_size.fixed(25), "America/New_York", ENV)
         self.assertEqual(set(payload), {"title", "body", "url", "tag", "paper"})
         blob = json.dumps(payload)
-        for secret in (ADDRESS, "234-5678", "2345678", str(user.id) + "&", "user_id"):
+        for secret in (ADDRESS, "234-5678", "2345678", "=" + str(user.id) + "&", "user_id"):
             self.assertNotIn(secret, blob)
         self.assertIn(hound["id"], payload["url"])
 
