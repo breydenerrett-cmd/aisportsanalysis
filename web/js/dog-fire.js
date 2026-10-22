@@ -26,6 +26,7 @@
 import { h, clearNode, fmtPrice, isNum } from "./hounds-core.js";
 import { post, errorText, errorCode, whenText, spanText, statusLine, celebrate, PAPER_NOTE } from "./dog-common.js";
 import { dogBadge, DEFAULT_LOOK } from "./dog-avatar.js";
+import { stakeWords } from "./unitsize.js";
 
 const SLOW = 90000;
 
@@ -187,7 +188,7 @@ export function renderFireResult(box, data, { id, name, canRecord = false, onRec
 // ---- Unleash today -------------------------------------------------------------------------------------------
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
-const stakeText = (p) => `${p.stake_units === 1 ? "1 unit" : `${p.stake_units} units`}${isNum(p.stake_usd) ? ` ($${Number.isInteger(p.stake_usd) ? p.stake_usd : p.stake_usd.toFixed(2)})` : ""}`;
+const stakeText = (p) => `${p.stake_units === 1 ? "1 unit" : `${p.stake_units} units`}${isNum(p.stake_units) ? ` (${stakeWords(p.stake_units)})` : ""}`;
 
 /** The working state: the dog sniffing a board and the three steps, the first one live. The server's counts are not known yet, so the
  *  second and third steps wait with no number; nothing here is timed (see the file header). */

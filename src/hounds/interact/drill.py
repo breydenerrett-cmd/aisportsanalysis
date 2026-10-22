@@ -334,7 +334,8 @@ def backtest_bankroll(final: list) -> dict:
                                      result=p["result"].lower(), order=(p["date"], f"{i:06d}")))
     block = bankroll.block(events, basis="average")
     keep = ("start", "current", "pnl_usd", "return_pct", "units_total", "unit_usd", "unit_pct", "settled",
-            "wagered_usd", "yield_pct", "max_drawdown_usd", "max_drawdown_pct", "currency", "basis")
+            "wagered_usd", "yield_pct", "max_drawdown_usd", "max_drawdown_pct", "currency", "basis",
+            "events")             # units only: the page reprices the replay at the viewer's own unit size (unit_size.py)
     out = {k: block[k] for k in keep}
     out["label"] = bankroll.public_block()["label"]
     return out
@@ -346,6 +347,8 @@ def _summary(picks: list) -> dict:
         p["stake_units"] = _stake(p)
         p["usd"] = _usd(p)
     final = [p for p in picks if p["result"] in ("WIN", "LOSS", "PUSH")]
+    for i, p in enumerate(final):
+        p["ev"] = i       # this pick's place in ``bankroll.events`` (same order), so a page can price it at the viewer's sizing
     wins = sum(1 for p in final if p["result"] == "WIN")
     losses = sum(1 for p in final if p["result"] == "LOSS")
     pushes = sum(1 for p in final if p["result"] == "PUSH")

@@ -27,6 +27,7 @@
 <link rel="stylesheet" href="css/lhnav.css">
 <link rel="stylesheet" href="css/hounds.css">
 <link rel="stylesheet" href="css/lh.css">
+<link rel="stylesheet" href="css/unitsize.css">
 <link rel="stylesheet" href="css/studio.css">
 <link rel="stylesheet" href="css/leaderboard.css">
 </head>
@@ -81,14 +82,14 @@
   </div>
   <p class="lb-meta"><span class="hd-count" data-hook="hounds-count"></span> <span class="hd-asofline" data-hook="hounds-asof" aria-live="polite"></span></p>
   <div data-hook="hounds-table"><div class="lh-skel lh-skel--rows" aria-hidden="true"></div><p class="hd-sr-only">Loading the leaderboard...</p></div>
-  <p class="hd-bankrollline lb-bankroll" data-hook="bankroll-line">Every hound starts with the same $1,000 paper bankroll. Paper money, not advice.</p>
+  <p class="hd-bankrollline lb-bankroll" data-hook="bankroll-line" data-us="bankroll-line">Every hound starts with the same $2,500 paper bankroll. Paper money, not advice.</p>
   <details class="hd-legend-box lb-legend" data-hook="how-to-read">
     <summary>How it's graded</summary>
     <dl class="hd-defs">
       <div><dt>Seasons</dt><dd>A season is a window of dates. Season 2 started on Oct 18 and every hound starts it at zero. Records from earlier are in Season 1 and All-time; nothing is deleted. The figures cover the season you pick. The status column is the referee's verdict and stays all-time.</dd></div>
       <div><dt>Ranked, warming up</dt><dd>A hound is ranked once it has 10 settled bets in the season shown. Until then it sits in the Warming up group with its record so far.</dd></div>
-      <div><dt>Bankroll, Return</dt><dd>Every hound is a paper account that starts with the same $1,000. Bankroll is the account now; Return is the gain or loss as a percent of that $1,000 for the season shown. 7d and 24h are the same percent for bets that settled in the last 7 days and the last 24 hours. Bets are settled at the average price across books when the bet was placed.</dd></div>
-      <div><dt>Units</dt><dd>Total units won or lost. One unit is $10 (1% of the starting $1,000, fixed, never compounding), so units and Return always move together: 10 units is +10%. House hounds bet 1 unit a game; a member's hound bets the units its owner chose, so its units and dollars count that stake.</dd></div>
+      <div><dt>Bankroll, Return</dt><dd data-us="gloss-bankroll">Every hound is a paper account that starts with the same $2,500. Bankroll is the account now; Return is the gain or loss as a percent of that $2,500 for the season shown. 7d and 24h are the same percent for bets that settled in the last 7 days and the last 24 hours. Bets are settled at the average price across books when the bet was placed.</dd></div>
+      <div><dt>Units</dt><dd data-us="gloss-units">Total units won or lost. One unit is $25 at your unit size (1% of the starting $2,500, fixed, never compounding), so units and Return always move together: 10 units is +10%. House hounds bet 1 unit a game; a member's hound bets the units its owner chose, so its units and dollars count that stake. Units are the record; the dollars are yours to size.</dd></div>
       <div><dt>Ranked in full</dt><dd>A row is greyed until the hound has 20 settled bets in the view. Hover the figure for the count.</dd></div>
       <div><dt>CLV</dt><dd>How often the price taken beat the price the market closed at, and by how many points on average, over the bets that have a measurable close. n is the number of bets it rests on.</dd></div>
       <div><dt>Status</dt><dd>Whether the prices a hound takes beat the closing line, judged only once it has 150 measurable bets. It is not a ranking by units, and a hound can lead on units while paying the vig.</dd></div>

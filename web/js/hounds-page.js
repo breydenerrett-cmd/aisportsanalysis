@@ -48,6 +48,8 @@ import {
   statusOf, typeText, sportLabel, sportsOf, marketsText, presentSports, filterBySport, sortHounds, splitRanked,
   settledOf, onlyTickets, freshness, inQualifyingRound, qualifyingRows, progressText, isMemberDog, isNewDog, sortByBankroll,
 } from "./hounds-board.js";
+import { startText, withEvents } from "./unitsize.js";
+import { unitChip } from "./unitchip.js";
 import {
   ALL_SEASON, seasonOptions, chooseSeason, saveSeason, seasonParam, seasonLine, minRanked,
 } from "./hounds-season.js";
@@ -527,7 +529,7 @@ function renderTable() {
     if (state.expanded.has(String(hound.id))) tbody.appendChild(drawerRow(hound));
   });
   const table = h("table", { class: "hd-table hd-table--board", "data-hook": "leaderboard-table" }, [
-    h("caption", { class: "hd-sr-only", text: "Leaderboard. Every hound is a paper account that starts with the same $1,000. Click a column to sort." }),
+    h("caption", { class: "hd-sr-only", text: `Leaderboard. Every hound is a paper account that starts with the same ${startText()}. Click a column to sort.` }),
     thead,
     rows.length ? tbody : h("tbody", {}, [h("tr", {}, [h("td", { colspan: COLUMNS.length + 1, class: "hd-muted",
       "data-hook": "no-graded", text: `No hound has ${minRanked(state.seasonMeta)} settled bets in this view yet, so none is ranked.${
@@ -545,7 +547,10 @@ function renderTable() {
 /** The one short line next to the money: every hound starts from the same paper bankroll (from the server's `bankroll_rules`), and it is paper. */
 function renderBankrollLine() {
   const line = q("bankroll-line");
-  if (line && state.payload) line.textContent = `Every hound starts with the same ${fmtUsd(bankrollRules(state.payload).start)} paper bankroll. Paper money, not advice.`;
+  if (line && state.payload) {
+    line.textContent = `Every hound starts with the same ${fmtUsd(bankrollRules(state.payload).start)} paper bankroll. Paper money, not advice. `;
+    line.appendChild(unitChip());          // the unit size, where the money shows (web/js/unitchip.js)
+  }
 }
 
 /** The compact list (rank, hound, record, bankroll, return) or every column. The choice lives on the panel so CSS draws it. */
@@ -698,7 +703,7 @@ export async function loadGraveyard() {
   const box = q("hounds-graveyard");
   if (!box) return;
   try {
-    const data = await apiGet("/hounds/graveyard");
+    const data = await apiGet(withEvents("/hounds/graveyard"));
     if (isWarming(data)) {
       clearNode(box);
       box.appendChild(warmingBox(data));
@@ -728,7 +733,7 @@ export async function loadBoard() {
   const asked = state.season;
   renderSeasonBar();
   try {
-    const data = await apiGet(`/hounds?${seasonParam(asked)}`);
+    const data = await apiGet(withEvents(`/hounds?${seasonParam(asked)}`));
     if (asked !== state.season) return false;        // the reader picked another season while this one loaded
     if (data && typeof data === "object" && data.season && typeof data.season === "object") state.seasonMeta = data.season;
     if (isWarming(data)) {

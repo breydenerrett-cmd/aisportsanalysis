@@ -100,7 +100,6 @@ def _view(row: dict, now: datetime) -> dict:
         "selection": row["selection"], "player": row.get("player"), "line": row.get("line"),
         "price_average": row["price"], "price_best": row["best_price"], "book": row.get("best_book"),
         "n_books": row["n_books"], "stake_units": units,
-        "stake_usd": round(units * bankroll.params().unit_usd, 2),
         "start_utc": row["commence_time"], "lock_utc": row["lock_utc"], "reason": row.get("reason"),
         "started": bool(commence and now >= commence),
     }
@@ -325,7 +324,7 @@ def _other_picks(dog: common.Dog, now: datetime, injected_rows: Optional[list], 
             "market_label": p["market_label"], "side": p["side"], "selection": p["selection"], "line": p["line"],
             "player": p.get("player"),
             "price_average": p["price_average"], "stake_units": units,
-            "stake_usd": round(units * bankroll.params().unit_usd, 2), "start_utc": p["start_utc"],
+            "start_utc": p["start_utc"],
             "day_label": p["day_label"], "why_not_placed": why,
             "why_text": WHY_NOT_PLACED[why].format(n=dog.spec["max_bets_per_day"]),
             "can_record": blocked is None, "blocked": blocked})

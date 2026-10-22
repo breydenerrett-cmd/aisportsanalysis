@@ -6,8 +6,11 @@
  * file orders them, formats them and words them the way a bettor reads a betting table. Where the server did
  * not send a figure the answer is `null` and the page prints "n/a", never a zero and never a guess.
  *
- *   - THE BANKROLL (owner ruling 2026-10-19, docs/BANKROLL.md). Every model is a $1,000 paper account and one
- *     unit is $10. The headline figures are the account balance and the % it moved (season, 7 days, 24 hours),
+ *   - THE BANKROLL (owner ruling 2026-10-19, docs/BANKROLL.md). Every model is a paper account of 100 units. The
+ *     record is kept at a $1,000 / $10-unit reference, and every dollar a page prints is that same account in the
+ *     VIEWER's own sizing (owner 2026-10-21: a unit size, or a percent of bankroll; web/js/unitsize.js). Ranks and
+ *     sort keys read the REFERENCE account (`referenceBankrollOf`), never the viewer's dollars, so no setting moves a
+ *     rank. The headline figures are the account balance and the % it moved (season, 7 days, 24 hours),
  *     all read from the payload's `bankroll` block; units are the stake-weighted total. "ROI" (units per bet) is
  *     gone from the board: `roiOf` stays only as the fallback for a payload from before the bankroll view, and
  *     the model page's yield tile is the server's `yield_pct`.
@@ -27,6 +30,7 @@ import {
 } from "./hounds-core.js";
 import { unitsOf } from "./hounds-voice.js";
 import { MIN_RANKED_BETS } from "./hounds-season.js";
+import { lensBlock, getSizing, startText, unitWords, unitSentence, rulesSentence, stakeWords, sizingTag } from "./unitsize.js";
 
 export const MIN_CLV_BETS = 150;           // src/hounds/verdict.py: bets with a measurable close before a verdict
 export const STALE_HOURS = 6;              // older than this and the page says it is updating
@@ -122,17 +126,39 @@ export function recordText(hound) {
 
 // ---- the bankroll ------------------------------------------------------------------------------------
 
-/** Only used when a payload carries no `bankroll_rules` (a saved copy from before the bankroll view). */
+/** The reference account's numbers (config/bankroll.json). Used for a payload that carries no `bankroll_rules` (a saved
+ * copy from before the bankroll view) and for the sort fallback; never for a dollar a viewer reads. */
 export const START_USD = 1000;
 export const UNIT_USD = 10;
 export const SMALL_SAMPLE_SETTLED = 20;      // src/hounds/bankroll.py small_sample_min_settled (the server's flag wins)
 export const WINDOW_LABELS = { h24: "24h", d7: "7d", d30: "30d", season: "Season" };
 export const WINDOW_WORDS = { h24: "the last 24 hours", d7: "the last 7 days", d30: "the last 30 days", season: "the season shown" };
 
-/** The `bankroll` block a model carries, or null (an old payload, or a model the server could not work out). */
-export function bankrollOf(hound) {
+/** The `bankroll` block exactly as the server sent it (the reference account), or null. Ranks and sorts read this. */
+export function referenceBankrollOf(hound) {
   const b = hound && hound.bankroll;
   return b && isNum(b.current) && isNum(b.start) ? b : null;
+}
+
+const lensed = new WeakMap();
+
+/**
+ * The `bankroll` block a model carries IN THE VIEWER'S DOLLARS (web/js/unitsize.js), or null (an old payload, a model
+ * the server could not work out, or percent sizing on a payload that predates the lens). Units, bets and the record
+ * in it are the server's. Memoised per block, sizing and minute so a table of forty rows prices each bet list once.
+ */
+export function bankrollOf(hound) {
+  const raw = referenceBankrollOf(hound);
+  if (!raw) return null;
+  const sizing = getSizing();
+  const minute = Math.floor(Date.now() / 60000);
+  const key = `${JSON.stringify(sizing)}|${minute}`;
+  const hit = lensed.get(raw);
+  if (hit && hit.key === key) return hit.value;
+  const value = lensBlock(raw, sizing, Date.now() / 1000);
+  const ok = value && isNum(value.current) && isNum(value.start) ? value : null;
+  lensed.set(raw, { key, value: ok });
+  return ok;
 }
 
 /** "$1,021" (or "$1,021.41" with `cents`); "-$5" below zero; "n/a" for a missing figure. */
@@ -156,8 +182,19 @@ export function fmtPct(pct, digits = 1) {
   return isNum(pct) ? `${signed(pct, digits)}%` : NA;
 }
 
-/** { start, unit, label } from a payload's `bankroll_rules` (or the fallbacks). `label` is the server's sentence. */
+/**
+ * { start, unit, label } in the VIEWER's dollars: the starting bankroll, what one unit is (null in percent mode, where
+ * it is a share of the balance) and the sentence that says so. The payload's own `bankroll_rules` is the reference
+ * account (the server's sentence is its label); the viewer's sizing decides what a page prints.
+ */
 export function bankrollRules(payload) {
+  const sizing = getSizing();
+  return { start: sizing.start_usd, unit: sizing.mode === "fixed" ? sizing.unit_usd : null, label: rulesSentence(sizing),
+    reference: referenceRules(payload) };
+}
+
+/** The server's reference account: { start, unit, label } as `bankroll_rules` sent it (or the fallbacks). */
+export function referenceRules(payload) {
   const r = (payload && payload.bankroll_rules) || {};
   const start = isNum(r.start_usd) ? r.start_usd : START_USD;
   const unit = isNum(r.unit_usd) ? r.unit_usd : UNIT_USD;
@@ -259,12 +296,22 @@ export function drawdownOf(hound) {
 
 /** The sort value for the balance: the account now, else (an old payload) the start plus flat units at a unit. */
 function balanceKey(hound) {
-  const b = bankrollOf(hound);
+  const b = referenceBankrollOf(hound);                      // the reference account: a rank never reads the viewer's dollars
   if (b && isNum(b.bets) && b.bets <= 0) return null;       // nothing graded: no sort value, always last (never a tie at $1,000)
-  const now = bankrollNow(hound);
-  if (now !== null) return now;
+  if (b) return b.current;
   const u = unitsOf(hound);
   return u === null ? null : START_USD + u * UNIT_USD;
+}
+
+/** The reference account's return % and window %, for sorting: unit-based, so identical for every viewer sizing. */
+function referenceReturn(hound) {
+  const b = referenceBankrollOf(hound);
+  return b && isNum(b.return_pct) ? b.return_pct : null;
+}
+function referenceWindow(hound, key) {
+  const b = referenceBankrollOf(hound);
+  const w = b && b.windows && b.windows[key];
+  return w && isNum(w.return_pct) && isNum(w.bets) && w.bets > 0 ? w.return_pct : null;
 }
 
 /** Most dollars first; a model with no graded bet last; ties by more bets, then name. */
@@ -278,14 +325,18 @@ export function sortByBankroll(hounds) {
 }
 
 /**
- * The builder's stake line: "1 unit = $10 of your $1,000; this dog bets 2 units ($20 a bet)." `rules` is the
- * menu's `bankroll` block (start_usd, unit_usd); the fallbacks above stand in for an older server.
+ * The builder's stake line at the VIEWER's sizing: "1 unit = $25 of your $2,500; this dog bets 2 units ($50 a bet)." or,
+ * in percent mode, "1 unit = 2% of your bankroll ($5,000 to start); this dog bets 2 units (4% of bankroll a bet)."
+ * `sizing` defaults to the viewer's; the units are the dog's own.
  */
-export function stakeLineText(units, rules) {
-  const start = rules && isNum(rules.start_usd) ? rules.start_usd : START_USD;
-  const unit = rules && isNum(rules.unit_usd) ? rules.unit_usd : UNIT_USD;
+export function stakeLineText(units, sizingIn) {
+  const sizing = sizingIn && sizingIn.mode ? sizingIn : getSizing();       // an old caller passing the menu's bankroll block gets the viewer's
   const n = isNum(units) ? units : 1;
-  return `1 unit = ${fmtUsd(unit)} of your ${fmtUsd(start)}; this dog bets ${n} ${n === 1 ? "unit" : "units"} (${fmtUsd(n * unit)} a bet).`;
+  const word = `${n} ${n === 1 ? "unit" : "units"}`;
+  if (sizing.mode === "fixed") {
+    return `1 unit = ${fmtUsd(sizing.unit_usd)} of your ${fmtUsd(sizing.start_usd)}; this dog bets ${word} (${stakeWords(n, sizing)} a bet).`;
+  }
+  return `${unitSentence(sizing)} (${fmtUsd(sizing.start_usd)} to start); this dog bets ${word} (${stakeWords(n, sizing)} a bet).`;
 }
 
 // ---- status words ----------------------------------------------------------------------------------
@@ -371,11 +422,12 @@ export const COLUMNS = [
   { key: "model", label: "Model", numeric: false, first: "asc" },
   { key: "type", label: "Type", numeric: false, first: "asc" },
   { key: "record", label: "Record", numeric: true, first: "desc", hint: "Wins-losses-pushes" },
-  { key: "bankroll", label: "Bankroll", numeric: true, first: "desc", hint: "The paper account now, from the shared $1,000 start" },
-  { key: "return", label: "Return", numeric: true, first: "desc", hint: "Gain or loss as a percent of the $1,000 start, for the season shown" },
-  { key: "d7", label: "7d", numeric: true, first: "desc", hint: "Return on the $1,000 start from bets settled in the last 7 days" },
-  { key: "h24", label: "24h", numeric: true, first: "desc", hint: "Return on the $1,000 start from bets settled in the last 24 hours" },
-  { key: "units", label: "Units", numeric: true, first: "desc", hint: "Total units won or lost (1 unit = $10; member dogs bet the units they chose)" },
+  // The hints name the viewer's own start and unit, so they are read when asked (a getter), not frozen at import.
+  { key: "bankroll", label: "Bankroll", numeric: true, first: "desc", get hint() { return `The paper account now, from the shared ${startText()} start`; } },
+  { key: "return", label: "Return", numeric: true, first: "desc", get hint() { return `Gain or loss as a percent of the ${startText()} start, for the season shown${sizingTag() ? ` (${sizingTag()}: compounded)` : ""}`; } },
+  { key: "d7", label: "7d", numeric: true, first: "desc", get hint() { return `Return on the ${startText()} start from bets settled in the last 7 days`; } },
+  { key: "h24", label: "24h", numeric: true, first: "desc", get hint() { return `Return on the ${startText()} start from bets settled in the last 24 hours`; } },
+  { key: "units", label: "Units", numeric: true, first: "desc", get hint() { return `Total units won or lost (${unitWords()}; member dogs bet the units they chose)`; } },
   { key: "bets", label: "Bets", numeric: true, first: "desc", hint: "Graded bets" },
   { key: "price", label: "Avg price", numeric: true, first: "desc", hint: "The typical price taken" },
   { key: "clv", label: "CLV", numeric: true, first: "desc", hint: "Share of bets that beat the close, and the average points" },
@@ -397,9 +449,9 @@ export function sortValue(hound, key) {
     }
     case "units": return totalUnitsOf(hound);
     case "bankroll": return balanceKey(hound);
-    case "return": return returnPctOf(hound);
-    case "d7": return windowPct(hound, "d7");
-    case "h24": return windowPct(hound, "h24");
+    case "return": return referenceReturn(hound);
+    case "d7": return referenceWindow(hound, "d7");
+    case "h24": return referenceWindow(hound, "h24");
     case "roi": return roiOf(hound);
     case "bets": return betsOf(hound) > 0 ? betsOf(hound) : null;
     case "price": { const p = avgPriceOf(hound); return p === null ? null : americanDecimal(p); }

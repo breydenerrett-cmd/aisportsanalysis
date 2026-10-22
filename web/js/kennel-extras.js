@@ -23,6 +23,7 @@ import { foundingOfferLine, FOUNDING_FINE_PRINT, STANDARD_CENTS } from "./pricin
 import { UPGRADE_HREF } from "./upgrade.js";
 import { h, houndHref, fmtPrice, NOT_REPORTED } from "./hounds-core.js";
 import { dogBadge, dogFace, DEFAULT_LOOK, poseOfHound, breedLabel, breedFor } from "./dog-avatar.js";
+import { startText } from "./unitsize.js";
 import { bankrollNow, returnPctOf, fmtUsd, fmtPct, betsOf, recordText, onlyTickets, ticketState, RESULT_WORDS, ticketPrice, pickOf, marketLabel } from "./hounds-board.js";
 
 export const SMALL_SAMPLE = 20;
@@ -58,7 +59,7 @@ export function featuredCard(pick, kennelLabel = "") {
       h("h2", { class: "kn-feat__name" }, [h("a", { href: houndHref(dog.id), "data-hook": "featured-name", text: dog.name })]),
       h("p", { class: "kn-feat__sub hd-muted", text: [breed, kennelLabel, dog.tagline].filter(Boolean).join(" · ") }),
       h("dl", { class: "kn-feat__stats" }, [
-        stat("Bankroll", bank === null ? "$1,000" : fmtUsd(bank)),
+        stat("Bankroll", bank === null ? startText() : fmtUsd(bank)),
         stat("Return", bets > 0 && ret !== null ? fmtPct(ret) : "0.0%"),
         stat("Record", bets > 0 ? recordText(dog) : "no graded bets"),
         stat("Open", String(open))]),

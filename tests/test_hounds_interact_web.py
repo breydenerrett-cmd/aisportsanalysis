@@ -189,7 +189,9 @@ class TheKitOnADogPage(unittest.TestCase):
                 q("n", hook("ask-answer"), "count"), q("last", hook("ask-answer")), q("you", hook("ask-question")),
                 q("votes", hook("vote-row"), "count"), q("input", hook("ask-input"), "value")])])
         post = [p for p in out["posts"] if p["url"].endswith("/ask")][0]
-        self.assertEqual(post["body"], {"question": "How are you doing?"})
+        # 2026-10-21: the question carries the asker's unit size so the dog's dollars are theirs (the runner's pinned $10 viewer)
+        self.assertEqual(post["body"], {"question": "How are you doing?",
+                                        "sizing": {"mode": "fixed", "unit_usd": 10, "pct": None, "start_usd": 1000}})
         c = out["captures"]["1"]
         self.assertEqual(c["n"], 2)                                      # the greeting and the answer
         self.assertEqual(c["you"], "How are you doing?")

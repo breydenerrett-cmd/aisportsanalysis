@@ -98,7 +98,10 @@ RANK_LABELS = {
     "biggest_steam": "The pick the market moved toward the most",
 }
 
-STAKE_CHOICES = (0.5, 1.0, 1.5, 2.0, 2.5, 3.0)
+#: units a member dog stakes per bet. Widened to 5 on 2026-10-21 (owner: a unit's size and a bet's size are two
+#: separate choices); 2.5 stays so a dog saved at 2.5 units still validates. ``bankroll.MAX_STAKE_UNITS`` is the
+#: largest of these, and a pinned test keeps the two equal.
+STAKE_CHOICES = (0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0)
 
 COLORS = (("ember", "Ember", "#FF7A45"), ("crimson", "Crimson", "#FF3D57"), ("gold", "Gold", "#F2B84B"),
           ("lime", "Lime", "#8BD450"), ("mint", "Mint", "#3DDBA4"), ("sky", "Sky", "#4FB4FF"),

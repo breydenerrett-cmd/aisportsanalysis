@@ -175,8 +175,10 @@ def build_headstone(hound: Mapping, rows: Sequence, *, died: datetime, look: Opt
         "color": spec.get("color", "ember"), "badge": spec.get("badge", "bone"), "look": look,
         "record": {"bets": wins + losses + pushes, "wins": wins, "losses": losses, "pushes": pushes,
                    "units_average_price": units},
+        # ``events`` is the units-only bet list, so a page can show the frozen account at a visitor's own unit size
+        # (web/js/unitsize.js); a stone buried before it existed has none and scales in fixed mode only.
         "bankroll": {"start": box.get("start"), "final": box.get("current"), "pnl_usd": box.get("pnl_usd"),
-                     "return_pct": box.get("return_pct")},
+                     "return_pct": box.get("return_pct"), "unit_usd": box.get("unit_usd"), "events": box.get("events")},
         "best_win": _best_win(bets, raw_by_id),
         "epitaph": epitaph(spec, wins, losses, pushes, units, hound["id"]),
         "frozen": True,
