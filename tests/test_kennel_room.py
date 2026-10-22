@@ -542,10 +542,12 @@ class MyKennelFold(unittest.TestCase):
         stored = dict(SIGNED["stored"], **kw.pop("stored", {}))
         return run_page("kennel", routes=routes or self.routes(), tz="UTC", settleMs=350, stored=stored, **kw)
 
-    def test_the_fold_sits_above_the_cards_with_the_members_active_hounds(self):
+    def test_the_fold_sits_below_the_cards_with_the_members_active_hounds(self):
         out = self.go(queries=self.QS)
         html = read("kennel.html")
-        self.assertLess(html.index('data-hook="kennel-room"'), html.index('data-hook="kennel-grid"'))
+        # OWNER RULING 2026-10-21: the kennel and its hounds are the foundation, so the cards come first and the room (still open by
+        # default on a wide screen) sits below them. This pin used to say the opposite.
+        self.assertLess(html.index('data-hook="kennel-grid"'), html.index('data-hook="kennel-room"'))
         f = out["final"]
         self.assertEqual(f["title"], "Your kennel room")
         self.assertEqual(f["hounds"], ["u-1", "u-2"], "the retired hound has left the room")

@@ -895,3 +895,11 @@ class TheMotionScript(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TheHoundsComeBeforeTheRoom(unittest.TestCase):
+    def test_the_hound_cards_sit_above_the_kennel_room_fold(self):
+        # OWNER RULING 2026-10-21: the kennel and its hounds are the foundation. At 1440 the open room used to push the cards below the
+        # fold; the room stays open by default (test_kennel_room) but is drawn after the grid of cards.
+        html = (WEB / "kennel.html").read_text(encoding="utf-8")
+        self.assertLess(html.index('data-hook="kennel-grid"'), html.index('data-hook="kennel-room"'))
