@@ -310,8 +310,9 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
         ask, got = out["captures"]["ask"], out["captures"]["card"]
         self.assertEqual((ask["kind"], ask["title"]), ("training-confirm", "Send Underdog Gus to training?"))
         self.assertEqual(ask["buttons"], ["Not now", "Send to training"])
-        self.assertEqual([p["url"] for p in out["posts"]], ["/hounds/u-1/train"])
-        self.assertEqual(out["posts"][0]["body"], {"confirm": True})
+        # the diagnosis step is asked first; this fixture has no route for it, so the phase is skipped and the training goes on
+        self.assertEqual([p["url"] for p in out["posts"]], ["/hounds/u-1/train/diagnose", "/hounds/u-1/train"])
+        self.assertEqual(out["posts"][1]["body"], {"confirm": True})
         data = payloads()["trained"]
         self.assertEqual(got["kind"], "training-reveal")
         self.assertEqual((got["label"], got["version"]), ("Trained", "Version 2"))

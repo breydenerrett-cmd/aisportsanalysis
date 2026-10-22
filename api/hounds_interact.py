@@ -12,6 +12,9 @@ and the Training camp's own data.
                                       and public, a headstone in the graveyard (src/hounds/interact/outback.py)
     POST /hounds/{id}/train           the owner of a member dog, {"confirm": true}: SEND TO TRAINING, the dog comes back
                                       as a new version (src/hounds/interact/training.py)
+    POST /hounds/{id}/train/diagnose  the owner, read only: the multi-factor diagnosis of the dog's settled bets
+    POST /hounds/{id}/train/assess    the owner, read only: the coach's (Claude Haiku's, else the rules engine's) read of it;
+                                      cached, so the training that follows takes it instead of asking again (src/hounds/interact/coach.py)
     GET  /hounds/{id}/headstone       a buried dog's headstone (public)
     GET  /hounds/{id}/ask             the dog's greeting and the questions worth asking it
     POST /hounds/{id}/ask             {"question": "..."}: an answer BUILT FROM THE DOG'S DATA (no model is called)
@@ -64,7 +67,7 @@ from src.appstate import ratelimit
 from src.appstate import users as users_store
 from src.hounds import unit_size, user_spec
 from src.hounds.contract import envelope
-from src.hounds.interact import ask, ask_eval, camp, common, drill, fire, fire_event, look, manual, outback, rites, store, training, unleash
+from src.hounds.interact import ask, ask_eval, camp, coach, common, drill, fire, fire_event, look, manual, outback, rites, store, training, unleash
 
 from api import auth as auth_mod
 from api import entitlements
@@ -113,6 +116,10 @@ _rl_unleash = ratelimit.limiter_dependency(_unleash_limiter, user_dependency=get
 # A burial and a training each read the whole user ledger once; a person does either a handful of times, ever.
 _rites_limiter = ratelimit.FixedWindowLimiter(limit=20, window_s=3600.0)
 _rl_rites = ratelimit.limiter_dependency(_rites_limiter, user_dependency=get_current_user)
+# The two steps before a training (the diagnosis, then the AI read of it) are cached per hound and per set of settled bets, so a
+# repeat costs nothing; this only bounds a loop of taps. A full training is three calls.
+_training_steps_limiter = ratelimit.FixedWindowLimiter(limit=30, window_s=3600.0)
+_rl_training_steps = ratelimit.limiter_dependency(_training_steps_limiter, user_dependency=get_current_user)
 
 
 # ---------------------------------------------------------------------------
@@ -320,7 +327,33 @@ def send_to_training(hound_id: str, response: Response, body: Optional[RiteReque
     old record frozen and a new one starting now."""
     response.headers["Cache-Control"] = _NO_STORE
     try:
-        out = training.train(common.resolve(hound_id), current_user.id, confirmed=bool(body and body.confirm))
+        out = training.train(common.resolve(hound_id), current_user.id, confirmed=bool(body and body.confirm), coach=coach.live())
+    except rites.RiteError as exc:
+        raise _rite_error(exc)
+    return envelope(out)
+
+
+@router.post("/hounds/{hound_id}/train/diagnose")
+def training_diagnosis(hound_id: str, response: Response, current_user: users_store.User = Depends(get_current_user),
+                       _rl: None = Depends(_rl_training_steps)) -> dict:
+    """Step one of Send to training, read only: the diagnosis table of the owner's hound (every cut of its settled bets, each with
+    its sample-size level). Same refusals as the training itself; nothing is written and no model is asked."""
+    response.headers["Cache-Control"] = _NO_STORE
+    try:
+        out = training.read_step(common.resolve(hound_id), current_user.id, coach.live(), stage="diagnose")
+    except rites.RiteError as exc:
+        raise _rite_error(exc)
+    return envelope(out)
+
+
+@router.post("/hounds/{hound_id}/train/assess")
+def training_assessment(hound_id: str, response: Response, current_user: users_store.User = Depends(get_current_user),
+                        _rl: None = Depends(_rl_training_steps)) -> dict:
+    """Step two, read only: the coach's read of the diagnosis. Claude Haiku through the router (under its monthly cap) when it
+    can answer, the rules engine's ranking when it is capped or down. Cached, so the training that follows does not ask again."""
+    response.headers["Cache-Control"] = _NO_STORE
+    try:
+        out = training.read_step(common.resolve(hound_id), current_user.id, coach.live(), stage="assess")
     except rites.RiteError as exc:
         raise _rite_error(exc)
     return envelope(out)

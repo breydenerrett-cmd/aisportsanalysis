@@ -13,6 +13,13 @@ WHAT HAPPENS, IN ORDER
   3. ``analyse``: the dog's own settled bets cut by sport, market, price band, home or away (over or under), favourite
      or underdog, and the rule that made them. Segments with at least ``MIN_SEGMENT_BETS`` bets and units below zero
      are the weak spots, worst first.
+  3b. THE COACH (owner request 2026-10-21, "matrix-level"): before anything is proposed the coach reads a wider table than step
+     3's, ``diagnosis.diagnose`` (price band, side, sport, market, day of the week, slate time, rest, line movement, books
+     quoting, betting days, the daily limit, rules, losing runs, pairs that went wrong together, each with its own sample-size
+     level), and Claude Haiku ranks the most likely reasons from it (``coach_ai``; the rules engine reads when the model is capped
+     or down). The page runs this as two read-only steps first (``read_step``: ``/train/diagnose``, ``/train/assess``), cached by
+     ``coach``, and the training takes the cached read. The model can only reorder the menu (``menu``): a pick that is not on it is
+     ignored, and every pick is re-validated below. The spend is written to the ``trained`` event and the log.
   4. ``propose``: one to ``MAX_CHANGES`` concrete changes to the spec, each aimed at a weak spot, each one that only
      NARROWS what the dog does (a sport or market dropped, a price band tightened, one side dropped, a favourite or
      underdog condition added, more books required, fewer bets a day). That is the same rule the Houndmaster coach
@@ -443,7 +450,90 @@ def _why(seg: Mapping, change_id: str) -> str:
     return f"{spot}, its weakest part, so the new version no longer takes them."
 
 
-def propose(spec: Mapping, analysis: Mapping, *, seed_key: str, hound_id: str, light: bool) -> tuple:
+def cid_of(change_id: str, seg: Optional[Mapping]) -> str:
+    """The stable id of a candidate change on the menu: ``drop_sport:MLB``, ``tighten_band:underdogs``, ``more_books:rule1``."""
+    if seg is None:
+        return change_id
+    if seg["dimension"] == "rule":
+        return f"{change_id}:rule{seg['key']}"
+    return f"{change_id}:{seg['key']}"
+
+
+def _segment_view(seg: Mapping) -> dict:
+    return {k: seg[k] for k in ("dimension", "key", "label", "phrase", "n", "wins", "losses", "pushes", "units")}
+
+
+def _entry_for_segment(spec: Mapping, seg: Mapping) -> Optional[dict]:
+    """A menu entry for one weak segment, or None when its change does not stand on its own against ``spec``."""
+    cand = _candidate_for(copy.deepcopy(dict(spec)), seg)
+    if cand is None:
+        return None
+    valid = _validated(cand["spec"])
+    if valid is None or _hash(valid) == _hash(spec):
+        return None
+    return {"cid": cid_of(cand["id"], seg), "id": cand["id"], "addresses": [f"{seg['dimension']}:{seg['key']}"],
+            "text": f"{cand['label']}: {cand['old_text']} to {cand['new_text']}", "segment": seg, "why": None,
+            "build": lambda s, _seg=seg: _candidate_for(s, _seg)}
+
+
+def menu(spec: Mapping, analysis: Mapping, diagnosis: Optional[Mapping] = None) -> list:
+    """Every narrowing change the coach could make to ``spec`` right now, each valid on its own: the deterministic order
+    (``analysis['weak']``, worst first), then, when a diagnosis is given, a change aimed at the two other cuts the menu can
+    narrow (books quoting, the daily limit). This is the WHOLE set a model may choose from: it can reorder and pick, it cannot
+    add a change that is not here, and every pick is run through ``user_spec.validate_spec`` again when it is applied."""
+    out: list = []
+    seen: set = set()
+    for seg in analysis.get("weak", ()):
+        entry = _entry_for_segment(spec, seg)
+        if entry and entry["cid"] not in seen:
+            seen.add(entry["cid"])
+            out.append(entry)
+    for f in (diagnosis or {}).get("rows", ()):
+        if f.get("kind") != "segment" or f.get("direction") != "against" or f.get("n", 0) < MIN_SEGMENT_BETS:
+            continue
+        rec = f"{f['wins']}-{f['losses']}" + (f"-{f['pushes']}" if f["pushes"] else "")
+        if f["id"] in ("books:few", "books:mid") and "more_books:all" not in seen:
+            cand = change_more_books(copy.deepcopy(dict(spec)))
+            valid = _validated(cand["spec"]) if cand else None
+            if valid is not None and _hash(valid) != _hash(spec):
+                seen.add("more_books:all")
+                out.append({"cid": "more_books:all", "id": "more_books", "addresses": [f["id"]],
+                            "text": f"{cand['label']}: {cand['old_text']} to {cand['new_text']}", "segment": None,
+                            "why": (f"{f['label']} went {rec} over {f['n']} ({f['units']:+.2f}u at the average price), "
+                                    "so every rule now waits for one more book to quote the price."),
+                            "build": lambda s: change_more_books(s)})
+        if f["id"] == "cap:at_limit" and "fewer_bets" not in seen:
+            cand = change_fewer_bets(copy.deepcopy(dict(spec)))
+            valid = _validated(cand["spec"]) if cand else None
+            if valid is not None and _hash(valid) != _hash(spec):
+                seen.add("fewer_bets")
+                out.append({"cid": "fewer_bets", "id": "fewer_bets", "addresses": [f["id"]],
+                            "text": f"{cand['label']}: {cand['old_text']} to {cand['new_text']}", "segment": None,
+                            "why": (f"On the days it hit its daily limit its {f['n']} bets went {rec} ({f['units']:+.2f}u at "
+                                    "the average price), so the new version takes one bet fewer a day."),
+                            "build": lambda s: change_fewer_bets(s)})
+    return out
+
+
+def _apply_entry(current: dict, entry: Mapping, pick: str) -> Optional[tuple]:
+    """``(new spec, change)`` for a menu entry applied to ``current``, or None when it no longer validates or changes nothing."""
+    cand = entry["build"](copy.deepcopy(current))
+    if cand is None:
+        return None
+    valid = _validated(cand["spec"])
+    if valid is None or _hash(valid) == _hash(current):
+        return None
+    seg = entry.get("segment")
+    change = {k: v for k, v in cand.items() if k != "spec"}
+    change.update(why=entry.get("why") or _why(seg, cand["id"]), segment=_segment_view(seg) if seg else None,
+                  hindsight={k: seg[k] for k in ("n", "wins", "losses", "pushes", "units")}
+                  if seg and cand["id"] in ("drop_sport", "drop_market", "tighten_band", "drop_venue") else None,
+                  cid=entry["cid"], factors=list(entry["addresses"]), pick=pick)
+    return valid, change
+
+
+def propose(spec: Mapping, analysis: Mapping, *, seed_key: str, hound_id: str, light: bool,
+            preferred: Sequence[str] = (), entries: Sequence[Mapping] = ()) -> tuple:
     """``(new spec, [change], mode, note)`` or ``(None, [], mode, note)`` when no valid change exists.
 
     ``mode`` is ``analysed`` (changes aimed at weak spots) or ``light`` (a small careful nudge: the dog has fewer than
@@ -451,6 +541,24 @@ def propose(spec: Mapping, analysis: Mapping, *, seed_key: str, hound_id: str, l
     current = copy.deepcopy(dict(spec))
     changes: list = []
     if not light:
+        # A model's picks (``preferred``, menu ids in its order) go first, and only ones that are ON the menu: an id that is not
+        # there is ignored, and each pick is re-validated against the spec as it stands. With no valid pick the deterministic
+        # order below runs exactly as it always has.
+        if preferred and entries:
+            by_cid = {e["cid"]: e for e in entries}
+            for cid in preferred:
+                if len(changes) >= MAX_CHANGES:
+                    break
+                entry = by_cid.get(cid)
+                if entry is None or any(c["cid"] == cid for c in changes):
+                    continue
+                applied = _apply_entry(current, entry, "coach")
+                if applied is None:
+                    continue
+                current, change = applied
+                changes.append(change)
+            if changes:
+                return current, changes, "analysed", ""
         for seg in analysis.get("weak", []):
             if len(changes) >= MAX_CHANGES:
                 break
@@ -462,9 +570,10 @@ def propose(spec: Mapping, analysis: Mapping, *, seed_key: str, hound_id: str, l
                 continue
             current = valid
             change = {k: v for k, v in cand.items() if k != "spec"}
-            change.update(why=_why(seg, cand["id"]), segment={k: seg[k] for k in ("dimension", "key", "label", "phrase", "n", "wins", "losses", "pushes", "units")},
+            change.update(why=_why(seg, cand["id"]), segment=_segment_view(seg),
                           hindsight={k: seg[k] for k in ("n", "wins", "losses", "pushes", "units")}
-                          if cand["id"] in ("drop_sport", "drop_market", "tighten_band", "drop_venue") else None)
+                          if cand["id"] in ("drop_sport", "drop_market", "tighten_band", "drop_venue") else None,
+                          cid=cid_of(cand["id"], seg), factors=[f"{seg['dimension']}:{seg['key']}"], pick="rules")
             changes.append(change)
         if changes:
             return current, changes, "analysed", ""
@@ -483,7 +592,7 @@ def propose(spec: Mapping, analysis: Mapping, *, seed_key: str, hound_id: str, l
         change = {k: v for k, v in cand.items() if k != "spec"}
         why = ("A small careful adjustment: one more book must quote the price before it bets." if cand["id"] == "more_books"
                else "A small careful adjustment: one bet fewer a day.")
-        change.update(why=why, segment=None, hindsight=None)
+        change.update(why=why, segment=None, hindsight=None, cid=cand["id"], factors=[], pick="rules")
         note = "not_enough_bets" if light else "no_weak_spot"
         return valid, [change], "light", note
     return None, [], "light", "nothing_to_change"
@@ -592,12 +701,11 @@ def eligibility(dog: common.Dog, hound: Mapping, bets: Sequence) -> dict:
             "message": ""}
 
 
-def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, now: Optional[datetime] = None,
-          rows: Optional[Sequence] = None, ledger_path: Optional[str] = None, db=None,
-          env: Optional[Mapping] = None, poster: Optional[Callable] = None, background: bool = True) -> dict:
-    """Send ``dog`` to training for ``user_id``. Returns the "what changed and why" card or raises ``RiteError``."""
+def _ready(dog, user_id: int, *, confirmed_required: bool, confirmed: bool, now, rows, ledger_path, db) -> tuple:
+    """The checks every step of a training shares: the owner's live member hound, nothing unsettled, and a version that may train.
+    Returns ``(dog, moment, rows, bets, hound, gate)`` or raises ``RiteError``."""
     dog = rites.guard(dog, user_id)
-    if not confirmed:
+    if confirmed_required and not confirmed:
         raise RiteError("confirm_required", f"Say it again to send {dog.name} to training: send confirm true.", 400)
     moment = now or common.now_utc()
     rows = rites.read_rows(ledger_path) if rows is None else rows
@@ -609,20 +717,84 @@ def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, n
     gate = eligibility(dog, hound, bets)
     if not gate["allowed"]:
         raise RiteError("training_too_soon", gate["message"], 409, settled=gate["settled"], needs=gate["needs"])
+    return dog, moment, rows, bets, hound, gate
+
+
+def _coach_input(dog, hound, bets, rows, analysis, spec) -> dict:
+    return {"hound_id": dog.id, "bets": bets, "spec": spec, "rows": rows, "rule_index": rule_index_of(rows, dog.id),
+            "analysis": analysis}
+
+
+def coach_view(read: Mapping, applied: Sequence[str] = ()) -> dict:
+    """What a page receives of the coach's read: who read it, the ranked reasons with the table lines they cite, and which of the
+    read's picks became changes. No cost, no router reason, no model refusal text: those stay in the log and the event."""
+    ai = read["source"] == "ai"
+    # why the rules engine read it, in a word the page can say: resting (capped, down or no key), too_few (too few settled bets for a
+    # model to read) or dropped (the model answered but none of its reasons held up against the table)
+    why = None if ai else {"skipped": "too_few", "dropped_all": "dropped"}.get(read.get("status"), "resting")
+    return {"source": read["source"], "label": read["label"], "resting": not ai, "why": why, "model_label": "Claude Haiku" if ai else None,
+            "summary": read.get("summary"), "picks_applied": list(applied),
+            "reasons": [{"rank": i + 1, "factors": r["factors"], "text": r["text"], "confidence": r["confidence"],
+                         "thin": bool(r.get("thin")), "cited": r["cited"]} for i, r in enumerate(read["reasons"])]}
+
+
+def read_step(dog: Optional[common.Dog], user_id: int, coach, *, stage: str, now: Optional[datetime] = None,
+              rows: Optional[Sequence] = None, ledger_path: Optional[str] = None, db=None) -> dict:
+    """The first two steps of Send to training, which write nothing: ``stage`` ``diagnose`` (the table) or ``assess`` (the table and
+    the read of it). The same checks as the training itself, minus the confirm. Raises ``RiteError`` like ``train`` does."""
+    from src.hounds.interact import coach as coach_mod
+    dog, _moment, rows, bets, hound, gate = _ready(dog, user_id, confirmed_required=False, confirmed=False, now=now, rows=rows,
+                                                    ledger_path=ledger_path, db=db)
     spec = hound["spec"]
     analysis = analyse(bets, spec, rule_index_of(rows, dog.id))
+    inp = _coach_input(dog, hound, bets, rows, analysis, spec)
+    table = coach.diagnosis(inp)
+    out = {"stage": stage, "light": gate["light"], "version_no": hound["version_no"], "diagnosis": coach_mod.public_view(table),
+           "paper_only": True}
+    if stage == "assess":
+        out["coach"] = coach_view(coach.read(inp, menu(spec, analysis, table), table))
+    return out
+
+
+def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, now: Optional[datetime] = None,
+          rows: Optional[Sequence] = None, ledger_path: Optional[str] = None, db=None,
+          env: Optional[Mapping] = None, poster: Optional[Callable] = None, background: bool = True,
+          coach=None) -> dict:
+    """Send ``dog`` to training for ``user_id``. Returns the "what changed and why" card or raises ``RiteError``.
+
+    ``coach`` is the ``coach.Coach`` that reads the diagnosis (the live routes pass ``coach.live()``, whose read the page already
+    waited for and which is cached, so it is not paid for twice). With none, the rules engine reads it: no router, no disk."""
+    from src.hounds.interact import coach as coach_mod
+    dog = rites.guard(dog, user_id)
+    dog, moment, rows, bets, hound, gate = _ready(dog, user_id, confirmed_required=True, confirmed=confirmed, now=now, rows=rows,
+                                                    ledger_path=ledger_path, db=db)
+    spec = hound["spec"]
+    analysis = analyse(bets, spec, rule_index_of(rows, dog.id))
+    the_coach = coach or coach_mod.Coach(rules_only=True)
+    inp = _coach_input(dog, hound, bets, rows, analysis, spec)
+    table = the_coach.diagnosis(inp)
+    entries = menu(spec, analysis, table)
+    read = the_coach.read(inp, entries, table)
     seed_key = f"train-v{hound['version_no']}"
-    new_spec, changes, mode, note = propose(spec, analysis, seed_key=seed_key, hound_id=dog.id, light=gate["light"])
+    new_spec, changes, mode, note = propose(spec, analysis, seed_key=seed_key, hound_id=dog.id, light=gate["light"],
+                                            preferred=read["picks"] if read["source"] == "ai" else (), entries=entries)
     if new_spec is None:
         raise RiteError("nothing_to_change", f"{dog.name} is already as careful as its rule can be, so there is nothing "
                                              "left to train.", 409)
     text = guidance_text(dog.name, analysis, changes, mode, note, hound["version_no"])
     frozen = dict(analysis["overall"])
+    applied = [c["cid"] for c in changes if c.get("pick") == "coach"]
+    coach_event = {"source": read["source"], "status": read["status"], "model": read.get("model"),
+                   "cost_usd": read.get("cost_usd") or 0.0,
+                   "reasons": [{"factors": r["factors"], "confidence": r["confidence"]} for r in read["reasons"]],
+                   "picks": list(read.get("picks") or []), "picks_applied": applied,
+                   "cuts_examined": table["meta"]["cuts_examined"]}
     event = {"kind": user_store.EVENT_TRAINED,
              "payload": {"name": hound["name"], "from_hound_id": dog.id, "from_version": hound["version_no"],
                          "to_version": hound["version_no"] + 1, "mode": mode, "settled": analysis["settled"],
                          "record": {k: frozen[k] for k in ("wins", "losses", "pushes")},
-                         "changes": [{k: c[k] for k in ("id", "label", "old_text", "new_text")} for c in changes]}}
+                         "changes": [{k: c[k] for k in ("id", "label", "old_text", "new_text")} for c in changes],
+                         "coach": coach_event}}
     try:
         new = user_store.create_version(dog.id, new_spec, actor=f"owner:{user_id}", reason="sent to training", now=moment,
                                         db=db, coached_from=dog.id, event=event)
@@ -632,6 +804,10 @@ def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, n
     except user_store.StoreError as exc:
         status = {"not_found": 404, "retired": 409, "buried": 409}.get(exc.code, 400)
         raise RiteError(exc.code, str(exc), status)
+    import logging
+    logging.getLogger("linehound.hounds.training").info(
+        "training done hound=%s from_v=%s to_v=%s mode=%s coach=%s status=%s cost_usd=%.6f picks_applied=%d", dog.id,
+        hound["version_no"], new["version_no"], mode, read["source"], read["status"], coach_event["cost_usd"], len(applied))
     from src.hounds.english import render
     brief = build_brief(dog.name, analysis, changes, mode, text)
     asked = send_brief(brief, f"training-{new['id']}", env=env, poster=poster, background=background)
@@ -649,6 +825,9 @@ def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, n
         "diff": render.diff_specs(spec, new["spec"]),
         "analysis": {"settled": analysis["settled"], "overall": analysis["overall"],
                      "weak": analysis["weak"][:3]},
+        "coach": coach_view(read, applied),
+        "diagnosis": {"settled": table["settled"], "checks": sum(1 for f in table["rows"] if f["kind"] != "unavailable"),
+                      "cuts_examined": table["meta"]["cuts_examined"], "ranked": table["ranked"][:5]},
         "guidance": {"text": text, "source": "code", "ai_requested": asked},
         "old": {"id": dog.id, "version_no": hound["version_no"], "record": frozen, "frozen": True},
         "new": {"id": new["id"], "version_no": new["version_no"], "coached_from": new["coached_from"],
