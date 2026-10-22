@@ -3,23 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- THE LANDING PAGE, KENNEL FIRST (2026-10-20, docs/design/KENNEL_FIRST_BRIEF.md). The product is one sentence: create your own AI
-     betting hound, then watch it bet, train it, or take it out back. So this page is that sentence and nothing else:
+<!-- THE LANDING PAGE, MINIMAL WELCOME (owner ruling 2026-10-21, "the landing should be a big Welcome to LINEHOUND that just asks: do you
+     already have a kennel? Sign in. Don't have your first hound yet? Make one."). The page is:
 
-       1. a headline, one short line, ONE button ("Find your hound", the quiz) and one text link ("Build from a sentence");
-          about a dozen words above the fold, none of them a claim;
-       2. a live strip of real hounds (web/js/landing-home.js reads the public GET /hounds; with no answer it says so and names
-          no figure);
-       3. how it works, in three steps: Create, Watch it bet, Train it or take it out back;
+       1. "Welcome to LINEHOUND", one line on what it is, and exactly TWO big choices: "I have a kennel" (Sign in) and "Make my first
+          hound" (the quiz). A signed-in visitor who opts out of the redirect with ?stay=1 sees "Open My Kennel" in the first one;
+       2. a compact three-step strip (Pick a style, Your hound bets, Watch its record) drawn with the real hound art;
+       3. below the fold, one small live proof: the leaderboard's top three (web/js/landing-home.js reads the public GET /hounds; with no
+          answer it says so and names no figure);
        4. the founding-member line, only while GET /billing/offer says a founding seat can really be had (no seat, no line);
-       5. the footer: the page links, and the one shared legal block (21+, the helpline, paper only, not advice), mounted by
-          web/js/landing.js. The disclosure is said once, there, and not in the body copy.
+       5. the footer, with the one shared legal block mounted by web/js/landing.js.
 
-     Everything this page used to carry (the house pack's board and race, the AI desk, what is free and what is for subscribers, the
-     last graded card, pricing, the sports covered, the questions) moved whole
-     to web/desk.html, linked from the footer. Funnel and attribution are unchanged: landing.js still sends landing_view, still
-     counts every [data-hook^='cta'] click and still keeps the first touch. docs/VOICE.md. -->
-<title>LINEHOUND — Create your own AI betting hound</title>
+     Everything else the page used to carry lives on web/desk.html, linked from the footer. Funnel and attribution are unchanged:
+     landing.js still sends landing_view, counts every [data-hook^='cta'] click and keeps the first touch. docs/VOICE.md. -->
+<title>Welcome to LINEHOUND</title>
 <meta name="description" content="Create your own AI betting hound. Answer a few picks or describe a strategy in one sentence, watch it make paper bets in public, then train it or take it out back. Paper bets only, not advice. 21+.">
 <meta property="og:site_name" content="LineHound">
 <meta property="og:url" content="https://linehound.app/web/landing.html">
@@ -62,54 +59,47 @@
       <a href="live.html" data-nav="live">Live</a>
     </nav>
     <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">
-      <a class="lh-btn lh-btn--soft" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
-      <a class="lh-btn lh-btn--solid" href="quiz.html" data-hook="cta-primary" data-nav-extra>Find your hound</a>
+      <a class="lh-nav__signin" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
+      <a class="lh-btn lh-btn--solid lh-btn--lg" href="quiz.html" data-hook="cta-primary" data-nav-extra>Make your first hound</a>
     </div>
   </div>
 </header>
 
 <main>
 
-<!-- ONE: the first screen. Six words of headline, five of line. -->
-<section class="kh" aria-label="Create your hound" data-hook="kennel-hero">
-  <h1 class="kh__title" data-hook="kh-title">Create your own AI betting hound.</h1>
-  <p class="kh__sub" data-hook="kh-sub">Paper bets, graded in public.</p>
-  <div class="kh__cta">
-    <a class="btn btn--primary btn--lg" href="quiz.html?start=1" data-hook="cta-kennel-quiz">Find your hound</a>
-    <a class="kh__link" href="build-a-hound.html" data-hook="cta-kennel-build">Build from a sentence</a>
+<!-- ONE: the welcome and the two choices. -->
+<section class="kh" aria-label="Welcome" data-hook="kennel-hero">
+  <h1 class="kh__title" data-hook="kh-title">Welcome to LINEHOUND</h1>
+  <p class="kh__sub" data-hook="kh-sub">Build an AI betting hound. It bets paper picks, and its record is graded in public.</p>
+  <div class="kh-choices" data-hook="kh-choices">
+    <a class="kh-choice" href="index.html#/signin" data-hook="cta-kennel-signin">
+      <span class="kh-choice__ask">I have a kennel</span>
+      <span class="kh-choice__go" data-hook="kh-signin-label">Sign in <span aria-hidden="true">&rarr;</span></span>
+    </a>
+    <a class="kh-choice kh-choice--primary" href="quiz.html?start=1" data-hook="cta-kennel-quiz">
+      <span class="kh-choice__ask">No hound yet</span>
+      <span class="kh-choice__go">Make my first hound <span aria-hidden="true">&rarr;</span></span>
+    </a>
   </div>
 </section>
 
-<!-- TWO: real hounds, betting now. Filled from the public GET /hounds by landing-home.js; it names no figure it was not given. -->
-<section class="kh-strip" aria-label="Hounds betting now" data-hook="kh-strip">
-  <div class="kh-strip__head">
-    <h2 class="kh-strip__title">Betting right now</h2>
-    <span class="kh-strip__links"><a class="kh-strip__more" href="room.html" data-hook="kh-strip-room">Watch the kennel room &rarr;</a> <a class="kh-strip__more" href="hounds.html" data-hook="kh-strip-more">The leaderboard &rarr;</a></span>
-  </div>
-  <ol class="kh-strip__row" data-hook="kh-strip-row">
-    <li class="kh-strip__empty" data-hook="kh-strip-empty">Checking the kennel...</li>
+<!-- TWO: how it works, three steps with the real hound art (landing-home.js draws the hounds). -->
+<section class="kh-how" aria-label="How it works" data-hook="landing-steps">
+  <ol class="kh-steps" data-hook="how-steps">
+    <li class="kh-step" data-hook="how-step"><span class="kh-step__art" data-hook="how-art" aria-hidden="true"></span><span class="kh-step__n">Step 1</span><h2>Pick a style</h2></li>
+    <li class="kh-step" data-hook="how-step"><span class="kh-step__art" data-hook="how-art" aria-hidden="true"></span><span class="kh-step__n">Step 2</span><h2>Your hound bets</h2></li>
+    <li class="kh-step" data-hook="how-step"><span class="kh-step__art" data-hook="how-art" aria-hidden="true"></span><span class="kh-step__n">Step 3</span><h2>Watch its record</h2></li>
   </ol>
 </section>
 
-<!-- THREE: how it works. -->
-<section class="kh-how" aria-label="How it works" data-hook="landing-steps">
-  <h2 class="kh-how__title">How it works</h2>
-  <ol class="kh-steps" data-hook="how-steps">
-    <li class="kh-step" data-hook="how-step">
-      <span class="kh-step__n" aria-hidden="true">1</span>
-      <h3>Create it</h3>
-      <p>Answer a few picks, or type a strategy in one sentence. It becomes a hound with a written rule.</p>
-    </li>
-    <li class="kh-step" data-hook="how-step">
-      <span class="kh-step__n" aria-hidden="true">2</span>
-      <h3>Watch it bet</h3>
-      <p>Every bet is a paper bet, on the record before the game and graded win or lose.</p>
-    </li>
-    <li class="kh-step" data-hook="how-step">
-      <span class="kh-step__n" aria-hidden="true">3</span>
-      <h3>Train it or take it out back</h3>
-      <p>Send a hound to training to try again, or retire it. Its record stays on the board.</p>
-    </li>
+<!-- THREE: one small live proof, below the fold. Filled from the public GET /hounds by landing-home.js; it names no figure it was not given. -->
+<section class="kh-strip" aria-label="Hounds betting now" data-hook="kh-strip">
+  <div class="kh-strip__head">
+    <h2 class="kh-strip__title">Betting right now</h2>
+    <a class="kh-strip__more" href="hounds.html" data-hook="kh-strip-more">The leaderboard &rarr;</a>
+  </div>
+  <ol class="kh-strip__row" data-hook="kh-strip-row">
+    <li class="kh-strip__empty" data-hook="kh-strip-empty">Checking the kennel...</li>
   </ol>
 </section>
 
@@ -128,6 +118,7 @@
       <a href="hounds.html">Leaderboard</a>
       <a href="kennels.html">Kennels</a>
       <a href="live.html">Live</a>
+      <a href="room.html" data-hook="footer-room">The kennel room</a>
       <a href="learning.html">Training camp</a>
       <a href="desk.html" data-hook="footer-desk">The AI desk</a>
       <a href="sample.html" data-hook="footer-sample">A sample brief</a>

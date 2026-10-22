@@ -1048,10 +1048,11 @@ class StaticChecks(unittest.TestCase):
         self.assertRegex(css, r"\.rm-frame \{[^}]*overflow-x: auto")
         self.assertRegex(css, r"\.rm-stage \{[^}]*width: max\(100%, 860px\)")
 
-    def test_the_landing_page_links_the_room_from_betting_right_now(self):
+    def test_the_landing_page_links_the_room_from_its_footer(self):
+        # owner ruling 2026-10-21 (kennel front): the landing page keeps one small proof element, so the room link moved from the strip to the footer
         html = read("landing.html")
-        strip = re.search(r'<section[^>]*data-hook="kh-strip".*?</section>', html, re.S).group(0)
-        self.assertIn('href="room.html" data-hook="kh-strip-room"', strip)
+        footer = html.split('data-hook="landing-footer"')[1]
+        self.assertIn('href="room.html" data-hook="footer-room"', footer)
 
     def test_my_kennel_mounts_the_room_with_one_hook_and_one_import(self):
         html, js = read("kennel.html"), read("js/kennel.js")

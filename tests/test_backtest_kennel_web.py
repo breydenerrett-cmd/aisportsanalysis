@@ -249,10 +249,10 @@ class TheKennelNamePrompt(unittest.TestCase):
         done = mine([dog()])
         done[1].update({"kennel_name": "Bob's Dogs", "needs_name_prompt": False, "display": "Bob's Dogs"})
         out = run_page("kennel", routes={"/hounds/kennels/mine": done}, **SIGNED, queries=[
-            q("prompt", "[data-hook='kennel-name-prompt']", "count"), q("rename", "[data-hook='kennel-rename']"), q("sub", "[data-hook='kennel-sub']")])
+            q("prompt", "[data-hook='kennel-name-prompt']", "count"), q("rename", "[data-hook='kennel-rename']"), q("title", "[data-hook='kennel-title']")])
         self.assertEqual(out["final"]["prompt"], 0)
         self.assertEqual(out["final"]["rename"], "Rename kennel")
-        self.assertIn("Bob's Dogs", out["final"]["sub"])
+        self.assertEqual(out["final"]["title"], "Bob's Dogs")          # owner ruling 2026-10-21: the kennel's own name is the big line
 
     def test_saving_puts_the_name_and_reloads_the_kennel(self):
         saved = mine([dog()])

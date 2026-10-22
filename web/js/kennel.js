@@ -251,11 +251,11 @@ function emptyMine() {
 
 // ---- the page ---------------------------------------------------------------------------------------------
 
-function setHead({ eyebrow, title, sub }) {
+function setHead({ eyebrow, title, sub, docTitle }) {
   q("kennel-eyebrow").textContent = eyebrow;
   q("kennel-title").textContent = title;
   q("kennel-sub").textContent = sub || "";
-  document.title = `${title} — LINEHOUND`;
+  document.title = `${docTitle || title} — LINEHOUND`;
 }
 
 function gate(kind) {
@@ -402,7 +402,9 @@ function render() {
   const app = q("kennel-app");
   if (app) app.setAttribute("data-empty", mine && !data.dogs.length ? "true" : "false");
   if (mine) {
-    setHead({ eyebrow: "", title: "My Kennel", sub: [data.kennel_name, active.length ? noun(active.length) : ""].filter(Boolean).join(" · ") });
+    // OWNER RULING 2026-10-21: the header feels like home. The kennel's own name is the big line ("My Kennel" until it has one),
+    // the page's name sits above it, the hounds are big below, and making another is a secondary button.
+    setHead({ eyebrow: "My Kennel", title: data.kennel_name || "My Kennel", docTitle: "My Kennel", sub: active.length ? noun(active.length) : "" });
     // one quiet way to make another: the quiz is the front door to a hound
     if (active.length) actions.appendChild(h("a", { class: "lh-btn lh-btn--soft", href: "quiz.html", "data-hook": "kennel-build", text: "Create a hound" }));
     paintMore(data);

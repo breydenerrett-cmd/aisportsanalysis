@@ -27,7 +27,7 @@ TOKEN_KEY = "aisportsanalysis.invite_token"
 SIGNED = dict(stored={TOKEN_KEY: "tok"})
 PAGES = ("kennels.html", "live.html", "hounds.html", "hound.html", "build-a-hound.html", "learning.html", "kennel.html", "landing.html", "desk.html", "why-we-paused.html",
          "postseason.html", "sample.html", "index.html", "graveyard.html", "quiz.html", "room.html", "interview.html")
-# owner ruling 2026-10-20 kennel-first: the static (signed-out) nav is Leaderboard, Live, Sign in and one primary "Find your hound" button;
+# owner ruling 2026-10-20 kennel-first: the static (signed-out) nav is Leaderboard, Live, Sign in and one primary "Make your first hound" button;
 # a member's five places (My Kennel, Create, Live, Leaderboard, Account) are built by nav.js
 LINKS = [("hounds.html", "Leaderboard"), ("live.html", "Live")]
 MEMBER_LINKS = [("kennel.html", "My Kennel"), ("quiz.html", "Create"), ("live.html", "Live"), ("hounds.html", "Leaderboard")]
@@ -99,7 +99,7 @@ class EveryPageHasTheOneNavigation(unittest.TestCase):
         for name in PAGES:
             html = read(name)
             self.assertIn('data-hook="brand-mark"', html, name)
-            self.assertRegex(html, r'<a class="lh-btn lh-btn--(solid|soft)" href="index.html#/signin" data-hook="nav-signin">Sign in</a>', name)
+            self.assertRegex(html, r'<a class="lh-nav__signin" href="index.html#/signin" data-hook="nav-signin">Sign in</a>', name)
 
     def test_the_member_app_keeps_its_own_tab_bar_so_the_component_adds_none(self):
         self.assertIn('data-bottom="off"', read("index.html"))
@@ -117,15 +117,16 @@ class EveryPageHasTheOneNavigation(unittest.TestCase):
         # kennel-first rebuild 2026-10-20: the kennels band is gone from the landing page; the footer links the kennel pages
         html = read("landing.html")
         self.assertNotIn('data-hook="kennels-card"', html)
-        self.assertRegex(html, r'<a class="btn btn--primary btn--lg" href="quiz.html\?start=1" data-hook="cta-kennel-quiz">Find your hound</a>')
+        # owner ruling 2026-10-21 (kennel front): the landing is a welcome with exactly two choices, one of which opens the quiz
+        self.assertRegex(html, r'<a class="kh-choice kh-choice--primary" href="quiz.html\?start=1" data-hook="cta-kennel-quiz">')
         footer = html.split('data-hook="landing-footer"')[1]
         for href in ("kennels.html", "hounds.html", "live.html", "learning.html", "desk.html"):
             self.assertIn(f'href="{href}"', footer)
 
-    def test_the_landing_page_keeps_its_own_find_your_hound_button_in_the_bar(self):
+    def test_the_landing_page_keeps_its_own_make_your_first_hound_button_in_the_bar(self):
         html = read("landing.html")
-        # # owner ruling 2026-10-20 kennel-first: the bar's one primary button is "Find your hound" (the quiz); landing keeps its own node and funnel hook
-        self.assertRegex(html, r'<a class="lh-btn lh-btn--solid" href="quiz.html" data-hook="cta-primary" data-nav-extra>Find your hound</a>')
+        # # owner ruling 2026-10-20 kennel-first: the bar's one primary button is "Make your first hound" (the quiz); landing keeps its own node and funnel hook
+        self.assertRegex(html, r'<a class="lh-btn lh-btn--solid lh-btn--lg" href="quiz.html" data-hook="cta-primary" data-nav-extra>Make your first hound</a>')
 
     def test_the_quiz_and_the_builder_carry_no_button_in_their_bar(self):
         for name in ("quiz.html", "build-a-hound.html"):
@@ -145,8 +146,13 @@ class EveryPageHasTheOneNavigation(unittest.TestCase):
 @unittest.skipUnless(HAS_NODE, "node not installed")
 class TheNavigationRuns(unittest.TestCase):
     QS = [q("links", ".lh-nav__links a", "texts"), q("hrefs", ".lh-nav__links a", "attrs", attr="href"),
-          q("current", ".lh-nav__links a[aria-current='page']", "texts"), q("signin", "[data-hook='nav-signin']", "count"),
-          q("cta", "[data-hook='nav-cta']", "count"), q("cta_href", "[data-hook='nav-cta']", "attr", attr="href"),
+          q("current", ".lh-nav [aria-current='page']", "texts"),
+          q("primaries", ".lh-nav .lh-btn--solid", "texts"), q("kennel_btn", "[data-hook='nav-mykennel']", "texts"),
+          q("kennel_btn_href", "[data-hook='nav-mykennel']", "attr", attr="href"), q("kennel_btn_class", "[data-hook='nav-mykennel']", "attr", attr="class"),
+          q("signin_class", "[data-hook='nav-signin']", "attr", attr="class"),
+          q("tab_primary", "[data-hook='tab-mykennel']", "texts"), q("tab_primary_class", "[data-hook='tab-mykennel']", "attr", attr="class"),
+          q("tab_order", "[data-hook='site-tabbar'] .lh-tab", "attrs", attr="data-nav"), q("signin", "[data-hook='nav-signin']", "count"),
+          q("cta", "[data-hook='nav-cta']", "count"), q("cta_href", "[data-hook='nav-cta']", "attr", attr="href"), q("cta_class", "[data-hook='nav-cta']", "attr", attr="class"),
           q("account", "[data-hook='nav-account']", "count"), q("account_href", "[data-hook='nav-account']", "attr", attr="href"),
           q("tabs", "[data-hook='site-tabbar'] .lh-tab", "texts"), q("tabhrefs", "[data-hook='site-tabbar'] .lh-tab", "attrs", attr="href"),
           q("bars", ".lh-nav", "count"), q("area", "[data-hook='nav-account-area']", "attr", attr="data-signed-in")]
@@ -156,22 +162,40 @@ class TheNavigationRuns(unittest.TestCase):
         kw.setdefault("queries", self.QS)
         return run_page("nav", **kw)
 
-    def test_signed_out_is_leaderboard_live_sign_in_and_one_find_your_hound_button(self):
+    def test_signed_out_is_leaderboard_live_a_sign_in_link_and_one_big_make_your_first_hound_button(self):
+        # owner ruling 2026-10-21 (kennel front): the visitor's one primary is "Make your first hound", with "Sign in" a quiet text link beside it
         f = self.run_nav()["final"]
         self.assertEqual(f["links"], [t for _, t in LINKS])
         self.assertEqual(f["hrefs"], [h for h, _ in LINKS])
         self.assertEqual((f["signin"], f["cta"], f["cta_href"], f["account"], f["bars"], f["area"]), (1, 1, "quiz.html", 0, 1, "false"))
-        self.assertEqual(f["tabs"], ["Leaderboard", "Live", "Sign in", "Find your hound"])
+        self.assertEqual(f["tabs"], ["Leaderboard", "Live", "Sign in", "Make your first hound"])
         self.assertEqual(f["tabhrefs"][-2:], ["index.html#/signin", "quiz.html"])
+        self.assertEqual(f["primaries"], ["Make your first hound"])                                 # exactly one filled button in the bar
+        self.assertNotIn("lh-btn", f["signin_class"])                                               # Sign in is a text link, not a button
+        self.assertIn("lh-btn--lg", f["cta_class"])
 
-    def test_signed_in_is_the_five_places_my_kennel_create_live_leaderboard_account(self):
+    def test_signed_in_has_my_kennel_as_the_one_primary_button_and_the_other_places_quiet(self):
+        # owner ruling 2026-10-21 (kennel front): "My Kennel doesn't stand out. It's the same size as Live / Leaderboard / Create."
+        # My Kennel is the one big filled button top-right beside the Account avatar; Create, Live and Leaderboard are quiet text links on the left.
         f = self.run_nav(**SIGNED)["final"]
         self.assertEqual((f["signin"], f["cta"], f["account"], f["area"]), (0, 0, 1, "true"))
-        self.assertEqual(f["links"], [t for _, t in MEMBER_LINKS])
-        self.assertEqual(f["hrefs"], [h for h, _ in MEMBER_LINKS])
+        self.assertEqual(f["links"], ["Create", "Live", "Leaderboard"])
+        self.assertEqual(f["hrefs"], ["quiz.html", "live.html", "hounds.html"])
+        self.assertEqual(f["primaries"], ["My Kennel"])                                           # the only filled button in the bar
+        self.assertEqual((f["kennel_btn"], f["kennel_btn_href"]), (["My Kennel"], "kennel.html"))
+        self.assertIn("lh-btn--solid", f["kennel_btn_class"])
+        self.assertIn("lh-btn--lg", f["kennel_btn_class"])
         self.assertEqual(f["account_href"], "index.html#/account")
-        self.assertEqual(f["tabs"], ["My Kennel", "Create", "Live", "Leaderboard", "Account"])        # the phone tab bar is the same five
-        self.assertEqual(f["tabhrefs"], ["kennel.html", "quiz.html", "live.html", "hounds.html", "index.html#/account"])
+        # the phone tab bar is the same five with My Kennel the filled centre tab
+        self.assertEqual(f["tabs"], ["Create", "Live", "My Kennel", "Leaderboard", "Account"])
+        self.assertEqual(f["tab_order"][2], "mykennel")
+        self.assertEqual(f["tab_primary"], ["My Kennel"])
+        self.assertIn("lh-tab--primary", f["tab_primary_class"])
+        self.assertEqual(f["tabhrefs"], ["quiz.html", "live.html", "kennel.html", "hounds.html", "index.html#/account"])
+
+    def test_my_kennel_is_marked_current_on_the_kennel_page(self):
+        f = self.run_nav(page_html="kennel.html", pathname="/web/kennel.html", **SIGNED)["final"]
+        self.assertEqual(f["current"][0], "My Kennel")
 
     def test_the_bar_is_never_more_than_five_places(self):
         for kw in ({}, SIGNED):

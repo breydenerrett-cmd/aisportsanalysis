@@ -3,8 +3,11 @@
  *
  * KENNEL-FIRST (owner ruling 2026-10-20, docs/design/KENNEL_FIRST_BRIEF.md): five places, never more.
  *
- *   signed in    My Kennel  Create  Live  Leaderboard  Account        (desktop bar and the phone tab bar are the same five)
- *   signed out   Leaderboard  Live  Sign in  and one primary button, "Find your hound" (the quiz)
+ *   signed in    Create  Live  Leaderboard as quiet text links on the left; on the right "My Kennel" as THE one big filled button, then the
+ *                Account avatar. The phone tab bar is the same five with My Kennel the filled centre tab.
+ *   signed out   Leaderboard  Live on the left; on the right a "Sign in" text link and THE one big filled button, "Make your first hound"
+ *
+ * OWNER RULING 2026-10-21 (kennel front): "My Kennel doesn't stand out. It's the same size as Live / Leaderboard / Create."
  *
  * Where the old places went: Kennels (everyone's kennels) is the Leaderboard's second view; the Graveyard is linked from the
  * Leaderboard and from each kennel; the Training camp is part of My Kennel (learning.html keeps working and counts as My
@@ -18,7 +21,7 @@
  * links are on the page with scripts off. `mountNav` rebuilds the host's children, so running it twice is the same as
  * running it once. `data-current="mykennel|create|live|leaderboard|account"` on the host names the page (the old keys
  * build, camp and kennels still work: see ALIASES); without it the place is read from the address. `data-bottom="off"`
- * leaves the phone tab bar out (the member app has its own). `data-cta="off"` leaves the "Find your hound" button out
+ * leaves the phone tab bar out (the member app has its own). `data-cta="off"` leaves the "Make your first hound" button out
  * (the quiz and the builder are where it leads). A `[data-nav-extra]` node in the static host replaces the default
  * button for a visitor (the landing page keeps its own, with its own funnel hook); the SAME node goes back in on a re-mount.
  *
@@ -35,7 +38,7 @@ export const SIGNIN_HREF = "index.html#/signin";
 export const PASSWORD_HREF = "index.html#/signin?password=1";
 export const ACCOUNT_HREF = "index.html#/account";
 export const CREATE_HREF = "quiz.html";
-export const CTA_LABEL = "Find your hound";
+export const CTA_LABEL = "Make your first hound";
 
 /** The member's five places, in order. `key` is what `data-current` names; the tab bar uses the same words. */
 export const PLACES = [
@@ -45,6 +48,9 @@ export const PLACES = [
   { key: "leaderboard", label: "Leaderboard", href: "hounds.html" },
   { key: "account", label: "Account", href: ACCOUNT_HREF },
 ];
+
+/** The member's quiet links, left of the bar (My Kennel is the button on the right, Account the avatar). */
+export const QUIET_PLACES = [PLACES[1], PLACES[2], PLACES[3]];
 
 /** A visitor's places: the two public ones (Sign in and the button sit on the right). */
 export const PUBLIC_PLACES = [PLACES[3], PLACES[2]];
@@ -125,14 +131,16 @@ function placeLink(place, current, extra = {}) {
 /** The right-hand side. A visitor: Sign in, then the one primary button. A member: the Account place. */
 function accountArea(current, host) {
   if (!signedIn()) {
-    const parts = [h("a", { class: "lh-btn lh-btn--soft", href: SIGNIN_HREF, "data-hook": "nav-signin", text: "Sign in" })];
+    const parts = [h("a", { class: "lh-nav__signin", href: SIGNIN_HREF, "data-hook": "nav-signin", text: "Sign in" })];
     const hideCta = host.getAttribute("data-cta") === "off" || current === "create";
     if (!hideCta) parts.push(...(extras && extras.length ? extras
-      : [h("a", { class: "lh-btn lh-btn--solid", href: CREATE_HREF, "data-hook": "nav-cta", text: CTA_LABEL })]));
+      : [h("a", { class: "lh-btn lh-btn--solid lh-btn--lg", href: CREATE_HREF, "data-hook": "nav-cta", text: CTA_LABEL })]));
     return h("div", { class: "lh-nav__account", "data-hook": "nav-account-area", "data-signed-in": "false" }, parts);
   }
   const account = PLACES[4];
+  const kennel = PLACES[0];
   return h("div", { class: "lh-nav__account", "data-hook": "nav-account-area", "data-signed-in": "true" }, [
+    placeLink(kennel, current, { class: "lh-btn lh-btn--solid lh-btn--lg", "data-hook": "nav-mykennel" }),
     placeLink(account, current, { class: "lh-avatar", "data-hook": "nav-account" }),
   ]);
 }
@@ -142,7 +150,13 @@ function tabBar(current, hideCta = false) {
   const tab = (p) => h("a", { class: "lh-tab", href: p.href, "data-nav": p.key, "aria-current": p.key === current ? "page" : undefined }, [
     icon(p.key), h("span", { class: "lh-tab__label", text: p.label })]);
   if (signedIn()) {
-    return h("nav", { class: "lh-tabbar", "aria-label": "Sections", "data-hook": "site-tabbar", "data-count": "5" }, PLACES.map(tab));
+    // My Kennel is the centre tab and the filled one; the other four are quiet
+    const order = [PLACES[1], PLACES[2], PLACES[0], PLACES[3], PLACES[4]];
+    return h("nav", { class: "lh-tabbar", "aria-label": "Sections", "data-hook": "site-tabbar", "data-count": "5" },
+      order.map((p) => p.key === "mykennel"
+        ? h("a", { class: "lh-tab lh-tab--primary", href: p.href, "data-hook": "tab-mykennel", "data-nav": p.key, "aria-current": p.key === current ? "page" : undefined }, [
+          icon(p.key), h("span", { class: "lh-tab__label", text: p.label })])
+        : tab(p)));
   }
   // On the quiz and the builder (where the button leads) the bar drops it, as the desktop bar does: one primary per screen.
   const visitor = PUBLIC_PLACES.map(tab).concat([tab({ key: "signin", label: "Sign in", href: SIGNIN_HREF })]);
@@ -171,7 +185,7 @@ export function mountNav(host = document.querySelector(".lh-nav")) {
   }
   clearNode(host);
   host.setAttribute("data-signed-in", signedIn() ? "true" : "false");
-  const links = signedIn() ? PLACES.slice(0, 4) : PUBLIC_PLACES;
+  const links = signedIn() ? QUIET_PLACES : PUBLIC_PLACES;
   host.appendChild(h("div", { class: "lh-nav__bar" }, [
     wordmark(signedIn() ? MY_KENNEL_HREF : "landing.html"),
     h("nav", { class: "lh-nav__links", "aria-label": "primary", "data-hook": "nav-links" }, links.map((p) => placeLink(p, current))),
