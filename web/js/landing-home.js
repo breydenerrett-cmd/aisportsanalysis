@@ -16,6 +16,7 @@
  */
 
 import { apiGet } from "./api.js";
+import { withEvents } from "./unitsize.js";
 import { h, clearNode, houndHref, isWarming, NOT_REPORTED } from "./hounds-core.js";
 import { dogFace, poseOfHound } from "./dog-avatar.js";
 import { boardModels } from "./landing-board.js";
@@ -56,7 +57,7 @@ export async function fillStrip() {
   const row = q("kh-strip-row");
   if (!row) return;
   let data = null;
-  try { data = await apiGet("/hounds"); } catch (err) { data = null; }
+  try { data = await apiGet(withEvents("/hounds")); } catch (err) { data = null; }
   if (!data || typeof data !== "object") { say(row, "The leaderboard is not answering right now.", "kh-strip-down"); return; }
   if (isWarming(data)) {
     say(row, "The leaderboard is warming up. Numbers in a few seconds.", "kh-strip-warming");

@@ -93,8 +93,9 @@ class StartsTheHoundToday(_Case):
         self.assertEqual((out["games_on_board"], out["games_ahead"], out["games_before"]), (6, 2, 4))
         self.assertEqual([p["event_id"] for p in out["picks"]], ["ahead1", "ahead2"])
         first = out["picks"][0]
-        self.assertEqual((first["game"], first["selection"], first["price_average"], first["stake_units"], first["stake_usd"]),
-                         ("Boston Red Sox @ Seattle Mariners", "Boston Red Sox to win", 125, 1.0, 10.0))
+        self.assertEqual((first["game"], first["selection"], first["price_average"], first["stake_units"]),
+                         ("Boston Red Sox @ Seattle Mariners", "Boston Red Sox to win", 125, 1.0))
+        self.assertNotIn("stake_usd", first)               # dollars are the viewer's lens (web/js/unitsize.js), never the server's $10
         self.assertTrue(first["placed_now"] and first["on_record"])
         rows = self.bets()
         self.assertEqual(sorted(r["event_id"] for r in rows), ["ahead1", "ahead2"])

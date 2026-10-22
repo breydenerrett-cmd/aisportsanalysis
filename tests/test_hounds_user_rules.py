@@ -280,7 +280,7 @@ class SpecValidation(unittest.TestCase):
     def test_bounds_are_enforced_on_every_global_and_rule_field(self):
         cases = [
             (F.v2(max_bets_per_day=6), "max_bets_per_day"), (F.v2(max_bets_per_day=0), "max_bets_per_day"),
-            (F.v2(stake_units=4.0), "stake_units"), (F.v2(stake_units=0.7), "stake_units"),
+            (F.v2(stake_units=5.5), "stake_units"), (F.v2(stake_units=0.7), "stake_units"),
             (F.v2(lock_minutes=45), "lock_minutes"), (F.v2(rank_by="vibes"), "rank_by"), (F.v2(color="plaid"), "color"),
             (F.v2(badge="gun"), "badge"), (F.v2(rules=[]), "rules"),
             (F.v2(rules=[F.rule()] * 5), "rules"),

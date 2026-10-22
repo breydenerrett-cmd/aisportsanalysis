@@ -95,7 +95,7 @@ class TheStepsTheStripAndTheOffer(unittest.TestCase):
         self.assertIn('href="hounds.html"', strip)
         self.assertIn("mountHome", LANDING_JS)
         self.assertIn('from "./landing-home.js"', LANDING_JS)
-        self.assertIn('apiGet("/hounds")', HOME_JS)
+        self.assertIn('apiGet(withEvents("/hounds"))', HOME_JS)       # the public GET /hounds (+ ?events=1 only for a percent-of-bankroll viewer)
 
     def test_the_founding_line_starts_hidden_and_comes_from_the_offer_endpoint_only(self):
         tag = re.search(r'<p class="kh-offer" data-hook="kh-offer"([^>]*)>', MARKUP).group(1)

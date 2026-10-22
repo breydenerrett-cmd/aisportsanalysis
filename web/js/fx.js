@@ -4,13 +4,15 @@
  * a count-up ends on the exact text it started with.
  *
  *   count-up     an element marked `data-count` counts up to the number already in its text when it scrolls into view.
- *                A DOLLAR figure (a paper bankroll) counts from the $1,000 start, never from $0: a model that has not moved shows
- *                $1,000 throughout and does not animate at all. A tab that is hidden, or reduced motion, gets the final text at once.
+ *                A DOLLAR figure (a paper bankroll) counts from the viewer's starting bankroll, never from $0: a model that has not
+ *                moved shows the start throughout and does not animate at all. A tab that is hidden, or reduced motion, gets the final text at once.
  *   celebrate    window event "linehound:celebrate" (a dog was created, a manual pick was recorded) bursts a few
  *                small pieces of confetti from the element in `detail.el` (or the middle of the screen)
  *
  * Rows fading and sliding in, hover lift, skeletons, the live pulse and the avatar's idle motion are CSS (css/lh.css).
  */
+
+import { getSizing } from "./unitsize.js";
 
 export const CELEBRATE_EVENT = "linehound:celebrate";
 const COLORS = ["#2FD07A", "#7BF0B2", "#E0B24A", "#8FB8FF", "#FF8A96", "#EEF1F5"];
@@ -41,6 +43,11 @@ function format(parts, v) {
 /** Every paper account starts here (docs/BANKROLL.md); a bankroll figure counts from this, not from zero. */
 export const BANKROLL_START = 1000;
 
+/** The start a dollar figure counts from: the VIEWER's starting bankroll (web/js/unitsize.js), else the reference. */
+function bankrollStart() {
+  try { return getSizing().start_usd; } catch (err) { return BANKROLL_START; }
+}
+
 /** True while the tab is not on screen: nothing animates then, and a screenshot or a background tab must see the final number. */
 export function tabHidden() {
   try {
@@ -50,11 +57,11 @@ export function tabHidden() {
   }
 }
 
-/** Where a count starts: `data-count-from` if the element says, else $1,000 for a dollar figure, else zero. */
+/** Where a count starts: `data-count-from` if the element says, else the viewer's start for a dollar figure, else zero. */
 export function countFrom(el, parts) {
   const given = el && el.getAttribute ? Number(el.getAttribute("data-count-from")) : NaN;
   if (el && el.getAttribute && el.getAttribute("data-count-from") !== null && Number.isFinite(given)) return given;
-  return parts.prefix === "$" && !parts.neg ? BANKROLL_START : 0;
+  return parts.prefix === "$" && !parts.neg ? bankrollStart() : 0;
 }
 
 export function countUp(el, ms = 700) {

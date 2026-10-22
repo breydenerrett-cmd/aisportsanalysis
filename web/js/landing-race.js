@@ -18,11 +18,14 @@
 
 import { s, h, clearNode, isNum } from "./hounds-core.js";
 import { dogFace, poseOfHound, flashPose } from "./dog-avatar.js";
-import { bankrollNow, returnPctOf, fmtUsd, fmtPct, betsOf } from "./hounds-board.js";
+import { bankrollNow, bankrollOf, returnPctOf, fmtUsd, fmtPct, betsOf } from "./hounds-board.js";
+import { getSizing } from "./unitsize.js";
 import { seasonAgeText } from "./hounds-season.js";
 
 export const RACE_COLORS = ["#2FD07A", "#8FB8FF", "#E0B24A", "#C79BFF", "#F28ABF"];
+/** The reference account's start. The race draws the VIEWER's start (`startUsd()`), the same account at their sizing. */
 export const START_USD = 1000;
+const startUsd = () => getSizing().start_usd;
 export const THIN_SAMPLE_BETS = 30;
 
 const reduced = () => {
@@ -33,23 +36,25 @@ const reduced = () => {
 export function raceSeries(hound) {
   const now = bankrollNow(hound);
   if (!isNum(now)) return null;
-  const b = (hound && hound.bankroll) || {};
-  const start = isNum(b.start) ? b.start : START_USD;
+  const b = bankrollOf(hound) || {};
+  const start = isNum(b.start) ? b.start : startUsd();
   const spark = Array.isArray(hound.spark) ? hound.spark.filter(isNum) : [];
   if (spark.length < 2) return [start, now];
   const last = spark[spark.length - 1];
-  const scale = Math.abs(last) > 1e-9 ? (now - start) / last : (isNum(b.unit_usd) ? b.unit_usd : 10);
+  const scale = Math.abs(last) > 1e-9 ? (now - start) / last : (isNum(b.unit_usd) ? b.unit_usd : 0);       // percent sizing has no flat unit: a no-move line stays flat
   const out = spark.map((u) => start + u * scale);
   out[out.length - 1] = now;
   return out;
 }
 
-/** The y ticks and domain for a set of series: always includes the $1,000 line, padded, ticks on a round step. */
-export function yScale(all, start = START_USD) {
+/** The y ticks and domain for a set of series: always includes the start line, padded, ticks on a round step. */
+export function yScale(all, start = startUsd()) {
+  const scale = Math.max(1, start / START_USD);                    // a $2,500 start needs coarser ticks than a $1,000 one
   const flat = all.flat().concat([start]);
   let lo = Math.min(...flat), hi = Math.max(...flat);
-  const span = Math.max(hi - lo, 6);
-  const step = span <= 12 ? 5 : span <= 30 ? 10 : span <= 80 ? 20 : span <= 200 ? 50 : 100;
+  const span = Math.max(hi - lo, 6 * scale);
+  const base = span / scale;
+  const step = (base <= 12 ? 5 : base <= 30 ? 10 : base <= 80 ? 20 : base <= 200 ? 50 : 100) * scale;
   lo = Math.floor((lo - span * 0.12) / step) * step;
   hi = Math.ceil((hi + span * 0.12) / step) * step;
   const ticks = [];
@@ -89,7 +94,7 @@ export function layoutRace(racers, width) {
   const slotYs = spreadLabels(lines.map((l) => l.points[l.points.length - 1].y), face + 8, m.t + face / 2, H - m.b - face / 2);
   const slotX = W - m.r + 12;
   lines.forEach((l, i) => { l.labelY = slotYs[i]; l.slot = { x: slotX, y: slotYs[i] }; });
-  return { W, H, m, wide, face, sc, n, y, x, lines, slotX, baseY: y(START_USD) };
+  return { W, H, m, wide, face, sc, n, y, x, lines, slotX, baseY: y(startUsd()) };
 }
 
 const num = (v) => Math.round(v * 10) / 10;
@@ -114,7 +119,7 @@ const ease = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
 
 /** The text a screen reader gets for the whole picture. */
 export function raceLabel(racers) {
-  return `Paper bankroll by hound, each starting at $${START_USD.toLocaleString("en-US")}: ${racers.map((r) => `${r.name} ${fmtUsd(r.now)} on ${r.bets} ${r.bets === 1 ? "bet" : "bets"}`).join("; ")}.`;
+  return `Paper bankroll by hound, each starting at ${fmtUsd(startUsd())}: ${racers.map((r) => `${r.name} ${fmtUsd(r.now)} on ${r.bets} ${r.bets === 1 ? "bet" : "bets"}`).join("; ")}.`;
 }
 
 /**
@@ -142,7 +147,7 @@ export function renderRace(host, models, meta, today, opts = {}) {
   }
   host.setAttribute("data-state", "ready");
   const age = seasonAgeText(meta, today);
-  if (sub) sub.textContent = `Paper bankroll, every hound starts at $${START_USD.toLocaleString("en-US")}.${age ? ` ${age}.` : ""}`;
+  if (sub) sub.textContent = `Paper bankroll, every hound starts at ${fmtUsd(startUsd())}.${age ? ` ${age}.` : ""}`;
   if (note) {
     note.textContent = "Lines show where each paper account is right now. Past results do not promise future ones.";
   }
@@ -160,7 +165,7 @@ export function renderRace(host, models, meta, today, opts = {}) {
   }
   const by = num(geo.baseY);
   svg.appendChild(s("line", { x1: m.l, x2: W - m.r, y1: by, y2: by, class: "lbrace__base" }));
-  svg.appendChild(s("text", { x: m.l + 2, y: by + 15, class: "lbrace__start", text: "$1,000 start" }));
+  svg.appendChild(s("text", { x: m.l + 2, y: by + 15, class: "lbrace__start", text: `${fmtUsd(startUsd())} start` }));
   svg.appendChild(s("text", { x: m.l, y: H - 8, class: "lbrace__tick", text: "Season start" }));
   svg.appendChild(s("text", { x: W - m.r, y: H - 8, "text-anchor": "end", class: "lbrace__tick", text: "Latest" }));
 

@@ -194,9 +194,15 @@ class StakeAndSettleTime(unittest.TestCase):
             self.assertEqual(bk.stake_of(mine, kind), 1.0)
 
     def test_a_missing_or_nonsense_stake_is_one_unit(self):
-        for bad in (None, 0, -1, 3.01, 40, "3", True, float("nan")):
+        # 3.01 was the first nonsense value while the ceiling was 3 units; the owner widened the picker to 5
+        # (2026-10-21), so the first value over the ceiling is now 5.01 and 3.01 is merely off the picker.
+        for bad in (None, 0, -1, 5.01, 40, "3", True, float("nan")):
             with self.subTest(stake=bad):
                 self.assertEqual(bk.stake_of(ledgers.Bet(hound_id="u", stake_units=bad), "user"), 1.0)
+
+    def test_the_widened_picker_stakes_up_to_five_units(self):
+        for good in (0.5, 4.0, 5.0):
+            self.assertEqual(bk.stake_of(ledgers.Bet(hound_id="u", stake_units=good), "user"), good)
 
     def test_graded_utc_is_the_settle_time_and_a_missing_one_is_estimated_from_the_slate_day(self):
         stamped = ledgers.Bet(hound_id="u", date="2026-10-01", graded_utc="2026-10-02T08:30:00Z")
@@ -537,6 +543,19 @@ class Routes(unittest.TestCase):
                 self.assertIn(old, h)
         mine = next(h for h in body["hounds"] if h["id"] == "u-2")
         self.assertEqual((mine["bankroll"]["current"], mine["bankroll"]["return_pct"]), (1008.0, 0.8))
+
+    def test_leaderboard_list_leaves_the_bet_events_out_unless_asked(self):
+        """The units-only ``events`` list (what a percent-of-bankroll viewer compounds over) grows with the store, so the list
+        routes carry it only on ``?events=1``; nothing else in the payload, and no hound's place, changes."""
+        lean, full = self.get("/hounds?season=all"), self.get("/hounds?season=all&events=1")
+        self.assertTrue(all("events" not in h["bankroll"] for h in lean["hounds"]))
+        mine = next(h for h in full["hounds"] if h["id"] == "u-2")
+        self.assertEqual(len(mine["bankroll"]["events"]), mine["bankroll"]["bets"])
+        self.assertEqual([h["id"] for h in lean["hounds"]], [h["id"] for h in full["hounds"]])
+        strip = lambda hs: [{**h, "bankroll": {k: v for k, v in h["bankroll"].items() if k != "events"}} for h in hs]
+        self.assertEqual(lean["hounds"], strip(full["hounds"]))
+        self.assertIn("events", self.get("/hounds/u-2?season=all")["bankroll"])      # the one-hound route keeps them
+        self.assertTrue(all("events" not in h["bankroll"] for h in self.get("/hounds/graveyard")["hounds"]))
 
     def test_detail_and_series_routes(self):
         d = self.get("/hounds/u-2?season=all")

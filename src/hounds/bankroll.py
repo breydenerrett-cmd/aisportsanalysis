@@ -7,6 +7,11 @@ number a bettor reads first is the account balance and the % it moved. Nothing h
 a new price: it is a presentation of the bets ``src.hounds.stats`` already counts. Definitions and worked
 examples: docs/BANKROLL.md. Constants: config/bankroll.json.
 
+THE VIEWER'S LENS (owner 2026-10-21). Everything below is the REFERENCE account ($1,000 start, $10 unit): what is
+stored, graded and ranked, and the dollars of any copy with no viewer (the Discord feed, emails, share card). A viewer
+chooses their own unit size or a percent of bankroll (``src.hounds.unit_size``); ``block(..., sizing=)`` is that same
+account in their dollars, and the reference block carries ``events`` (units only) so the page can do it without asking.
+
 THE DEFINITIONS (each one is pinned by tests/test_hounds_bankroll.py)
   * ``unit_usd`` = ``starting_bankroll * unit_pct / 100`` = $10. FLAT: the unit never grows or shrinks with the
     balance (no compounding), so a $ profit is a plain sum over bets and 7d + earlier = season, to the cent.
@@ -44,10 +49,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable, Iterable, Optional
 
+from src.hounds import unit_size
 from src.paths import repo_root
 
 #: the largest paper stake a member dog can choose (``user_rules.STAKE_CHOICES``); a pinned test keeps the two equal
-MAX_STAKE_UNITS = 3.0
+#: (owner 2026-10-21 widened the picker to 0.5 ... 5 units so a unit size and a stake size are two separate choices)
+MAX_STAKE_UNITS = 5.0
 FLAT_STAKE_UNITS = 1.0
 
 #: what is used if config/bankroll.json is missing or unreadable (the owner's 2026-10-19 decision)
@@ -192,10 +199,10 @@ def _r(x: Optional[float], nd: int = 2) -> Optional[float]:
     return None if x is None else round(x + 0.0, nd)
 
 
-def _window(rows: list, p: Params) -> dict:
+def _window(rows: list, usd: dict, p: Params, start: float) -> dict:
     units = sum(e.units for e in rows)
-    pnl = units * p.unit_usd
-    return {"pnl_usd": _r(pnl), "return_pct": _r(pnl / p.start * 100.0), "units": _r(units),
+    pnl = sum(usd[id(e)][0] for e in rows)
+    return {"pnl_usd": _r(pnl), "return_pct": _r(pnl / start * 100.0), "units": _r(units),
             "bets": len(rows), "settled": sum(1 for e in rows if e.result in SETTLED)}
 
 
@@ -204,33 +211,42 @@ def _sort_key(e: Event):
 
 
 def block(evts: list, now: Optional[datetime] = None, basis: Optional[str] = None,
-          p: Optional[Params] = None) -> dict:
-    """The ``bankroll`` block of a summary for these events as of ``now`` (UTC; default the clock)."""
+          p: Optional[Params] = None, sizing: Optional[unit_size.Sizing] = None) -> dict:
+    """The ``bankroll`` block of a summary for these events as of ``now`` (UTC; default the clock).
+
+    ``sizing`` is a VIEWER's lens (``src.hounds.unit_size``): None is the site's reference account (one unit =
+    ``p.unit_usd``, flat), and that block alone carries ``events``, the units-only list the browser prices at the
+    viewer's own sizing. A block built WITH a sizing is the same figures in that viewer's dollars (the reference
+    the web client's port is tested against) and carries no ``events``."""
     p = p or params()
     now = now or datetime.now(timezone.utc)
+    reference = sizing is None
+    sizing = sizing or unit_size.fixed(p.unit_usd)
+    start = sizing.start_usd if not reference else p.start
     ordered = sorted(evts, key=_sort_key)
-    balance = peak = p.start
+    usd = {id(e): d for e, d in zip(ordered, unit_size.priced(ordered, sizing))}
+    balance = peak = start
     worst = worst_pct = 0.0
     for e in ordered:
-        balance += e.units * p.unit_usd
+        balance += usd[id(e)][0]
         peak = max(peak, balance)
         drop = peak - balance
         if drop > worst + 1e-9:
             worst, worst_pct = drop, drop / peak * 100.0
     units = sum(e.units for e in ordered)
-    pnl = units * p.unit_usd
+    pnl = sum(usd[id(e)][0] for e in ordered)
     decided = [e for e in ordered if e.result in DECIDED]
-    wagered = sum(e.stake for e in decided) * p.unit_usd
+    wagered = sum(usd[id(e)][1] for e in decided)
     settled = sum(1 for e in ordered if e.result in SETTLED)
     windows = {}
     for name, length in WINDOWS:
         cutoff = now - length
-        windows[name] = _window([e for e in ordered if e.settle is not None and e.settle > cutoff], p)
-    windows["season"] = _window(ordered, p)
-    return {
-        "start": p.start, "current": _r(p.start + pnl), "pnl_usd": _r(pnl), "return_pct": _r(pnl / p.start * 100.0),
+        windows[name] = _window([e for e in ordered if e.settle is not None and e.settle > cutoff], usd, p, start)
+    windows["season"] = _window(ordered, usd, p, start)
+    out = {
+        "start": start, "current": _r(start + pnl), "pnl_usd": _r(pnl), "return_pct": _r(pnl / start * 100.0),
         "units_total": _r(units), "units_flat": _r(sum(e.flat for e in ordered)),
-        "unit_usd": p.unit_usd, "unit_pct": p.unit_pct,
+        "unit_usd": sizing.unit_usd if sizing.mode == "fixed" else None, "unit_pct": p.unit_pct if reference else sizing.pct,
         "bets": len(ordered), "settled": settled, "small_sample": settled < p.small_sample_min,
         "small_sample_min": p.small_sample_min,
         "wagered_usd": _r(wagered), "yield_pct": _r(pnl / wagered * 100.0) if wagered > 0 else None,
@@ -240,6 +256,11 @@ def block(evts: list, now: Optional[datetime] = None, basis: Optional[str] = Non
         "windows": windows, "settle_estimated": sum(1 for e in ordered if e.estimated),
         "basis": basis, "currency": p.currency,
     }
+    if reference:
+        out["events"] = unit_size.wire_events(ordered)
+    else:
+        out["sizing"] = sizing.as_dict()
+    return out
 
 
 def attach(summary, evts: list, basis: Optional[str], now: Optional[datetime] = None) -> None:

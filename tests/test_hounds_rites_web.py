@@ -386,7 +386,10 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
                                                                     q("badge", hook("evolve-version")), q("line", hook("training-status")),
                                                                     q("flash", hook("evolve-flash"), "count")]),
             dict(do="wait", label="charge", wait=2400, capture=[q("phase", hook("evolve"), "attr", attr="data-phase"), q("card", hook("evolve-card"), "count"),
-                                                                 q("silhouettes", "[data-sil]", "count")]),
+                                                                 q("silhouettes", "[data-sil]", "count"),
+                                                                 # the NEW silhouette is the v2 hound (its bandana is drawn in it); the OLD one is the v1 hound (nothing worn)
+                                                                 q("newGear", ".ev-hound--new[data-sil] .dk-tier--bandana", "count"), q("oldGear", ".ev-hound--old[data-sil] .dk-tier--bandana", "count"),
+                                                                 q("newVno", ".ev-hound--new", "attr", attr="data-vno"), q("oldVno", ".ev-hound--old", "attr", attr="data-vno")]),
             dict(do="wait", label="card", wait=6200, capture=[q("phase", hook("evolve"), "attr", attr="data-phase"), q("card", hook("evolve-card"), "count"),
                                                                q("title", hook("evolve-title")), q("tier", hook("evolve-tier")),
                                                                q("stats", hook("evolve-stat"), "count")])], reduced=False)
@@ -400,6 +403,8 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
         self.assertTrue(caps["before"]["line"].startswith("Training changed:"), caps["before"]["line"])
         self.assertEqual((caps["charge"]["phase"], caps["charge"]["card"]), ("charge", 0))
         self.assertEqual(caps["charge"]["silhouettes"], 2)
+        self.assertEqual((caps["charge"]["oldVno"], caps["charge"]["newVno"]), ("1", "2"))
+        self.assertEqual((caps["charge"]["oldGear"], caps["charge"]["newGear"]), (0, 1), "the new silhouette carries the new tier's own gear, the old one does not")
         self.assertEqual((caps["card"]["phase"], caps["card"]["card"]), ("card", 1))
         self.assertEqual(caps["card"]["title"], "Underdog Gus became Underdog Gus v2!")
         self.assertEqual(caps["card"]["tier"], "v2 \u00b7 Bronze")

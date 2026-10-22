@@ -52,6 +52,15 @@ PAGES = {
 _tmp = None
 _counter = itertools.count()
 
+#: Where the page keeps the viewer's unit size (web/js/unitsize.js STORAGE_KEY).
+SIZING_KEY = "linehound.unit_size"
+#: PINNED ON PURPOSE (2026-10-21). Every pre-lens page test was written against the reference account ($1,000 start,
+#: $10 unit). The product default is now a $25 unit ($2,500), so those tests would all re-pin to different numbers for
+#: no reason that is about THEM. They run as a viewer who chose the $10 unit instead, which is the same account the
+#: payload fixtures describe; tests/test_unit_size_pages.py is where the $25 default and the other sizings are held.
+#: Pass ``viewer=None`` for the real default (nothing stored), or ``viewer={...}`` for any sizing.
+PIN_REFERENCE = {"mode": "fixed", "unit_usd": 10, "pct": None, "start_usd": 1000}
+
 
 def _workdir() -> Path:
     global _tmp
@@ -71,8 +80,12 @@ def _workdir() -> Path:
     return Path(_tmp.name)
 
 
-def run_page(page: str, **scenario) -> dict:
+def run_page(page: str, viewer=PIN_REFERENCE, **scenario) -> dict:
     html, module = PAGES[page]
+    if viewer is not None:
+        stored = dict(scenario.get("stored") or {})
+        stored.setdefault(SIZING_KEY, json.dumps(viewer))
+        scenario["stored"] = stored
     html = scenario.pop("page_html", html)
     work = _workdir()
     scenario["html"] = str(WEB / html)
@@ -91,12 +104,25 @@ def run_page(page: str, **scenario) -> dict:
     out = json.loads(lines[-1][2:])
     if out.get("crashed"):
         raise AssertionError(out["crashed"])
+    # the pinned viewer is the runner's, not the page's: a test that asks what the page stored must not see it
+    after = out.get("storedAfter")
+    if viewer is not None and isinstance(after, dict) and after.get(SIZING_KEY) == json.dumps(viewer):
+        after.pop(SIZING_KEY)
     return out
 
 
-def run_js(source: str) -> object:
-    """Evaluate a snippet that imports hounds-core.js / hounds-chart.js-free pure helpers and prints JSON."""
+def run_js(source: str, viewer=PIN_REFERENCE) -> object:
+    """Evaluate a snippet that imports hounds-core.js / hounds-chart.js-free pure helpers and prints JSON. The snippet
+    runs as a viewer who chose ``viewer`` (see PIN_REFERENCE); ``viewer=None`` leaves storage untouched."""
     work = _workdir()
+    if viewer is not None:
+        # the viewer's choice is read lazily, so a window defined after the imports is in time
+        marker = chr(10)
+        lines = source.split(marker)
+        at = max([i for i, ln in enumerate(lines) if ln.lstrip().startswith("import ")] + [-1]) + 1
+        pre = (f"globalThis.window = globalThis.window || {{}}; if (!globalThis.window.localStorage) "
+               f"globalThis.window.localStorage = {{ getItem: (k) => (k === {json.dumps(SIZING_KEY)} ? {json.dumps(json.dumps(viewer))} : null), setItem() {{}} }};")
+        source = marker.join(lines[:at] + [pre] + lines[at:])
     (work / "snippet.mjs").write_text(source, encoding="utf-8")
     proc = subprocess.run(["node", "snippet.mjs"], cwd=work, capture_output=True, text=True, encoding="utf-8", timeout=60)
     if proc.returncode != 0:

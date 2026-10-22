@@ -99,7 +99,7 @@ function compose(c, K, o) {
       ew: f(g.ew * sc), eh: f(g.eh * sc), edx: f(g.edx * sc), nrx: f(g.nrx * sc), nry: f(g.nry * sc), mw: f(g.mw * sc), hw: f(g.hw * sc), tilt: f(g.tilt * sc),
     });
   }
-  return { geo, back, head, front, coat: o.coat || null };
+  return { geo, back, head, front, coat: o.coat || null, ruff: !!o.ruff };
 }
 
 /** The rim light: a thin bright line just inside the upper-right rim of the skull (the key light is the upper left). */
@@ -445,6 +445,7 @@ const BREED = {
       cran: { top: 22, crown: 18, hw: 28, cheek: 54, jaw: 12, end: 96 },
       muz: { top: 45, w0: 8, w1: 11.4, mid: 86, chin: 106 },
       muzFill: mix(c.base, c.light, 0.4),
+      ruff: true,       // the ruff is drawn with the head (over the body), so what a trained hound wears is drawn over it, inside the head group
       ears: [...K.solid(ruff(60), WHITE, { rim: false }), ...earsOf(K, ear, mix(c.shade, c.base, 0.3), inside(c))],
       marks: [blaze(K, WHITE, { top: 24, end: 82, w: 4.4, tip: 4 }), K.flat("M40 76 C44 74 52 82 60 82 C68 82 76 74 80 76 C76 94 66 104 60 104 C54 104 44 94 40 76 Z", WHITE)].filter(Boolean),
       front: [],

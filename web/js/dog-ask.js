@@ -9,6 +9,7 @@
  * `mountAsk` is shared with the Training camp, which opens a small chat per dog.
  */
 
+import { getSizing } from "./unitsize.js";
 import { h, clearNode } from "./hounds-core.js";
 import { get, post, errorText, statusLine } from "./dog-common.js";
 import { voteRow } from "./dog-feedback.js";
@@ -78,7 +79,7 @@ export function mountAsk(box, { id, name, compact = false }) {
     thread.scrollTop = thread.scrollHeight;
     send.setAttribute("disabled", "");
     try {
-      const out = await post(`/hounds/${encodeURIComponent(id)}/ask`, { question: text });
+      const out = await post(`/hounds/${encodeURIComponent(id)}/ask`, { question: text, sizing: getSizing() });
       const hasCards = Array.isArray(out.cards) && out.cards.length > 0;
       const rows = hasCards && Array.isArray(out.ui_lines) && out.ui_lines.length ? out.ui_lines
         : (out.lines && out.lines.length ? out.lines : [out.answer]);

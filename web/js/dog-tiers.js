@@ -7,10 +7,16 @@
  * network. The same number always draws the same pieces, in every art style and at every size.
  *
  *   v1   the hound as it always was; nothing is added.
- *   v2   BRONZE    a bronze frame, a "v2" rank plate (top left), one chevron (top right), a bronze collar.
- *   v3   SILVER    a double silver frame, a plate, two chevrons, a silver collar, a star mark between the eyes, a soft halo.
- *   v4   GOLD      a double gold frame with corner studs, three chevrons, a gold collar and mark, a halo.
- *   v5+  PLATINUM  a bright frame with studs, four chevrons, the plate and mark, a halo, a twinkle either side of the head.
+ *   v2   BRONZE    the HOUND wears a bandana in the metal's colour; the tile gets a bronze frame, a "v2" rank plate (top left) and one chevron.
+ *   v3   SILVER    the hound also wears a vest with a chest strap, a bolder outline and a confident brow; a double silver frame, a plate,
+ *                  two chevrons, a star mark between the eyes, a soft halo.
+ *   v4   GOLD      shoulder plates and softly glowing eyes on top of that; a double gold frame with corner studs, three chevrons, a halo.
+ *   v5+  PLATINUM  a mantle (a cape over the shoulders) and an aura round the hound; a bright frame, four chevrons, a twinkle either side.
+ *
+ * It is the same hound grown up: the breed, coat and eyes never change, only what it wears and how it is drawn. Every piece is placed from
+ * the breed's anchors (dog-breeds.js), so it lines up on a Greyhound's blade and a Mastiff's block alike. The gear is built so each tier
+ * also changes the hound's OUTLINE (the bandana's tails, the shoulder plates, the mantle's wings), because the training evolution
+ * shows the old and new hound as white silhouettes and the morph has to read there.
  *
  * Versions past 5 keep the platinum look and the plate keeps counting ("v12"). A version that is not a whole number of at least
  * 1 (nothing was sent, a house hound) is v1: nothing is added and nothing is guessed.
@@ -20,8 +26,9 @@
  * frame, the plate block and the chevrons, and drops the numeral and the fine pieces.
  */
 
-import { INK, n, path, grp, ell, f } from "./dog-art.js";
+import { INK, n, path, grp, ell, f, mix } from "./dog-art.js";
 import { SPARKLE } from "./dog-defs.js";
+import { gearShapes, auraShapes } from "./dog-gear.js";
 
 export const MAX_TIER = 5;
 
@@ -31,10 +38,14 @@ export const MAX_TIER = 5;
  */
 export const TIERS = {
   1: { tier: 1, name: "Base" },
-  2: { tier: 2, name: "Bronze", flat: "#C98448", lit: "#EDB67F", dark: "#6E3F18", grad: "url(#lh-bronze)", chevrons: 1, rings: 1, studs: false, mark: false, halo: 0, twinkle: false },
-  3: { tier: 3, name: "Silver", flat: "#C9D0DA", lit: "#F4F7FB", dark: "#6B7685", grad: "url(#lh-silver)", chevrons: 2, rings: 2, studs: false, mark: true, halo: 1, twinkle: false },
-  4: { tier: 4, name: "Gold", flat: "#E0B24A", lit: "#FFF0B8", dark: "#8A6A1F", grad: "url(#lh-gold)", chevrons: 3, rings: 2, studs: true, mark: true, halo: 2, twinkle: false },
-  5: { tier: 5, name: "Platinum", flat: "#BFE7F2", lit: "#FFFFFF", dark: "#4C8CA0", grad: "url(#lh-platinum)", chevrons: 4, rings: 2, studs: true, mark: true, halo: 2, twinkle: true },
+  2: { tier: 2, name: "Bronze", flat: "#C98448", lit: "#EDB67F", dark: "#6E3F18", grad: "url(#lh-bronze)", chevrons: 1, rings: 1, studs: false, mark: false, halo: 0, twinkle: false,
+    vest: false, bold: false, pads: false, glow: false, mantle: false, aura: false },
+  3: { tier: 3, name: "Silver", flat: "#C9D0DA", lit: "#F4F7FB", dark: "#6B7685", grad: "url(#lh-silver)", chevrons: 2, rings: 2, studs: false, mark: true, halo: 1, twinkle: false,
+    vest: true, bold: true, pads: false, glow: false, mantle: false, aura: false },
+  4: { tier: 4, name: "Gold", flat: "#E0B24A", lit: "#FFF0B8", dark: "#8A6A1F", grad: "url(#lh-gold)", chevrons: 3, rings: 2, studs: true, mark: true, halo: 2, twinkle: false,
+    vest: true, bold: true, pads: true, glow: true, mantle: false, aura: false },
+  5: { tier: 5, name: "Platinum", flat: "#BFE7F2", lit: "#FFFFFF", dark: "#4C8CA0", grad: "url(#lh-platinum)", chevrons: 4, rings: 2, studs: true, mark: true, halo: 2, twinkle: true,
+    vest: true, bold: true, pads: true, glow: true, mantle: true, aura: true },
 };
 
 /** The whole-number version a value stands for, or 1. */
@@ -49,18 +60,30 @@ export function tierOf(version) {
 }
 
 /**
- * What a version looks like, as plain data: { version, tier, name, plate, chevrons, rings, studs, mark, halo, twinkle, parts }.
- * `parts` is the list of words the upgrade card shows ("Bronze frame", "Rank plate v2", ...), in the order they appear.
+ * What a version looks like, as plain data: { version, tier, name, plate, chevrons, rings, studs, mark, halo, twinkle, bandana, vest, bold,
+ * pads, glow, mantle, aura, parts }. `parts` is the list of words the upgrade card shows ("Bronze bandana", "Vest", ...), in the order
+ * they appear: what the hound wears first, then the tile.
  */
 export function versionTier(version) {
   const v = cleanVersion(version);
   const t = TIERS[tierOf(v)];
-  if (t.tier === 1) return { version: v, tier: 1, name: t.name, plate: false, chevrons: 0, rings: 0, studs: false, mark: false, halo: 0, twinkle: false, parts: [] };
-  const parts = [`${t.name} frame`, `Rank plate v${v}`, t.chevrons === 1 ? "1 chevron" : `${t.chevrons} chevrons`, `${t.name} collar`];
+  const none = { plate: false, chevrons: 0, rings: 0, studs: false, mark: false, halo: 0, twinkle: false, bandana: false, vest: false, bold: false, pads: false, glow: false, mantle: false, aura: false };
+  if (t.tier === 1) return Object.assign({ version: v, tier: 1, name: t.name, parts: [] }, none);
+  const parts = [`${t.name} bandana`];
+  if (t.vest) parts.push("Vest");
+  if (t.bold) parts.push("Bold brow");
+  if (t.pads) parts.push("Shoulder plates");
+  if (t.glow) parts.push("Glowing eyes");
+  if (t.mantle) parts.push("Mantle");
+  if (t.aura) parts.push("Aura");
+  parts.push(`${t.name} frame`, `Rank plate v${v}`, t.chevrons === 1 ? "1 chevron" : `${t.chevrons} chevrons`);
   if (t.mark) parts.push("Star mark");
   if (t.halo) parts.push("Halo");
   if (t.twinkle) parts.push("Twinkle");
-  return { version: v, tier: t.tier, name: t.name, plate: true, chevrons: t.chevrons, rings: t.rings, studs: t.studs, mark: t.mark, halo: t.halo, twinkle: t.twinkle, parts };
+  return {
+    version: v, tier: t.tier, name: t.name, plate: true, chevrons: t.chevrons, rings: t.rings, studs: t.studs, mark: t.mark, halo: t.halo, twinkle: t.twinkle,
+    bandana: true, vest: t.vest, bold: t.bold, pads: t.pads, glow: t.glow, mantle: t.mantle, aura: t.aura, parts,
+  };
 }
 
 /** What changed between two versions' looks, in the same words: the parts the newer one has that the older did not. */
@@ -77,20 +100,27 @@ export function collarFor(version, st) {
   return v.tier > 1 ? { band: metal(TIERS[v.tier], st), tag: TIERS[v.tier].lit, tagLine: TIERS[v.tier].dark } : null;
 }
 
+/** The art style a version is drawn in: from v3 the outline is a little bolder (the same hound, drawn with more confidence). */
+export function tierStyle(version, st) {
+  return versionTier(version).bold ? Object.assign({}, st, { ow: st.ow + 0.35, owSmall: st.owSmall + 0.25 }) : st;
+}
+
 /**
- * The pieces a version adds, as { back, mark, front }:
- *   back   drawn behind the hound inside the tile (the halo)
+ * The pieces a version adds, as { back, mark, front, cape, gear, brow, eyes }:
+ *   back   drawn behind the hound inside the tile (the halo, the aura)
  *   mark   drawn on the head (the star between the eyes)
  *   front  drawn over everything inside the tile (the plate, the chevrons, the studs) and the frame
- * `a` is the breed's anchors (dog-breeds.js), `K` the kit (dog-art.js `makeKit`), `st` the art style.
+ *   cape, gear, brow, eyes   what the hound wears (dog-gear.js): behind the torso, over it, on the head, inside the eyes group
+ * `a` is the breed's anchors (dog-breeds.js), `K` the kit (dog-art.js `makeKit`), `st` the art style, `geo` the breed's landmarks (its bulk).
  */
-export function tierShapes(version, a, K, st) {
+export function tierShapes(version, a, K, st, geo) {
   const v = versionTier(version);
-  if (v.tier === 1) return { back: [], mark: [], front: [], tier: v };
+  if (v.tier === 1) return { back: [], mark: [], front: [], cape: [], gear: [], brow: [], eyes: [], tier: v };
   const T = TIERS[v.tier];
   const fill = metal(T, st);
   const small = K.small;
-  const out = { back: [], mark: [], front: [], tier: v };
+  const out = Object.assign({ back: [], mark: [], front: [], tier: v }, gearShapes(v, T, fill, a, K, geo));
+  if (v.aura) out.back.push(auraShapes(T, K));
 
   // the halo behind the hound: a wide soft ring of the metal, so the tile glows from the middle
   if (v.halo) {

@@ -1,0 +1,42 @@
+/* The unit-size chip and its settings panel (web/js/unitchip.js). Paper dollars at the viewer's own unit size. */
+
+.us-chipwrap { position: relative; display: inline-block; vertical-align: middle; max-width: 100%; }
+.us-trigger {
+  display: inline-flex; align-items: center; gap: 2px; min-height: 28px; padding: 0 10px;
+  border: 1px solid var(--lh-line-2, rgba(255, 255, 255, .13)); border-radius: var(--lh-r-pill, 999px);
+  background: var(--lh-soft-2, rgba(255, 255, 255, .09)); color: var(--lh-ink, #F2F4F8);
+  font: 600 12px/1 var(--lh-font-text, system-ui, sans-serif); cursor: pointer; white-space: nowrap;
+}
+.us-trigger:hover, .us-trigger[aria-expanded="true"] { border-color: var(--lh-ink2, #C9D0DB); }
+.us-trigger:focus-visible, .us-chip:focus-visible, .us-input:focus-visible { outline: 2px solid var(--lh-ink, #F2F4F8); outline-offset: 2px; }
+
+/* the popover opens under the chip and never wider than the screen */
+.us-pop {
+  position: absolute; z-index: 30; left: 0; top: calc(100% + 6px);
+  width: min(320px, calc(100vw - 32px)); padding: var(--lh-s4, 16px);
+  border: 1px solid var(--lh-line-2, rgba(255, 255, 255, .13)); border-radius: var(--lh-r-md, 12px);
+  background: var(--lh-bg, #0B0D10); box-shadow: 0 12px 32px rgba(0, 0, 0, .5);
+}
+@media (max-width: 480px) { .us-pop { position: fixed; left: 16px; right: 16px; top: auto; bottom: 16px; width: auto; } }
+
+.us-panel { display: flex; flex-direction: column; gap: var(--lh-s3, 12px); min-width: 0; }
+.us-modes { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.us-mode { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--lh-ink, #F2F4F8); }
+.us-label { display: block; font-size: 12px; color: var(--lh-mute, #8D96A6); margin: 0 0 4px; padding: 0; }
+.us-pane { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.us-pane[hidden] { display: none; }
+.us-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.us-chip {
+  min-height: 32px; padding: 0 12px; border: 1px solid var(--lh-line-2, rgba(255, 255, 255, .13));
+  border-radius: var(--lh-r-pill, 999px); background: transparent; color: var(--lh-ink, #F2F4F8);
+  font: 600 13px/1 var(--lh-font-text, system-ui, sans-serif); cursor: pointer;
+}
+.us-chip[aria-pressed="true"] { background: var(--lh-ink, #F2F4F8); color: var(--lh-bg, #0B0D10); border-color: var(--lh-ink, #F2F4F8); }
+.us-input {
+  width: 100%; max-width: 100%; min-height: 36px; box-sizing: border-box; padding: 0 10px;
+  border: 1px solid var(--lh-line-2, rgba(255, 255, 255, .13)); border-radius: var(--lh-r-sm, 8px);
+  background: var(--lh-soft-2, rgba(255, 255, 255, .09)); color: var(--lh-ink, #F2F4F8); font: 14px var(--lh-font-text, system-ui, sans-serif);
+}
+.us-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.us-status { margin: 0; min-height: 1em; }
+.us-account { margin-top: var(--lh-s4, 16px); }

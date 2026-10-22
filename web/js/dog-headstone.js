@@ -9,6 +9,7 @@
  * Paper only. Nothing here is a claim about money: the bankroll is the paper account the dog finished with.
  */
 
+import { lensBlock, getSizing, UNITS_IN_START } from "./unitsize.js";
 import { h, isNum } from "./hounds-core.js";
 import { dogBadge, lookFor } from "./dog-avatar.js";
 import { fmtUsd } from "./hounds-board.js";
@@ -50,8 +51,14 @@ function bestWinText(win) {
 export function finalBankrollText(box) {
   const b = box || {};
   if (!isNum(b.final)) return "n/a";
-  const pct = isNum(b.return_pct) ? ` (${b.return_pct > 0 ? "+" : ""}${b.return_pct.toFixed(1)}%)` : "";
-  return `${fmtUsd(b.final)}${pct}`;
+  // A headstone is frozen at the reference account ($1,000 start, $10 unit). Its dollars are shown at the viewer's sizing:
+  // a stone buried after the lens carries the bet list (`events`) and is repriced exactly; an older stone scales in
+  // fixed mode and has no dollars to show in percent mode (the units on it are unchanged either way).
+  const seen = lensBlock({ current: b.final, start: b.start, pnl_usd: b.pnl_usd, return_pct: b.return_pct,
+    unit_usd: isNum(b.start) ? b.start / UNITS_IN_START : null, events: b.events }, getSizing(), Date.now() / 1000);
+  if (!seen || !isNum(seen.current)) return "n/a";
+  const pct = isNum(seen.return_pct) ? ` (${seen.return_pct > 0 ? "+" : ""}${seen.return_pct.toFixed(1)}%)` : "";
+  return `${fmtUsd(seen.current)}${pct}`;
 }
 
 /**

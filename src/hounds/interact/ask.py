@@ -59,6 +59,7 @@ class AskContext:
     earlier_fn: Optional[Callable[[], dict]] = None         # today's slate, each game at its decision time (hindsight)
     backtest_fn: Optional[Callable[[int], dict]] = None     # the drill for 7, 14 or 30 days
     now: Optional[datetime] = None                          # the clock the answer speaks in (tests inject it)
+    sizing: Optional[object] = None                         # the asker's unit_size.Sizing (their dollars); None = the reference account
 
 
 # ---------------------------------------------------------------------------
@@ -618,10 +619,30 @@ def _picks_earlier(ctx: AskContext, payload: Optional[dict], *, intro: bool = Tr
 def _money(units: Optional[float], unit_usd: float) -> str:
     if units is None:
         return "n/a"
-    usd = round(units * unit_usd, 2)
+    return _usd_words(round(units * unit_usd, 2))
+
+
+def _usd_words(usd: Optional[float]) -> str:
+    if usd is None:
+        return "n/a"
     if usd == 0:
         return "even, $0.00"
     return f"{'up' if usd > 0 else 'down'} ${abs(usd):,.2f}"
+
+
+def _asker(ctx: AskContext):
+    """The sizing this answer speaks in: the asker's own (``unit_size``) or, with none, the reference account."""
+    from src.hounds import bankroll, unit_size
+    if ctx.sizing is not None:
+        return ctx.sizing
+    p = bankroll.params()
+    return unit_size.Sizing("fixed", p.unit_usd, None, p.start)
+
+
+def _unit_phrase(sizing) -> str:
+    if sizing.mode == "fixed":
+        return f"one unit is ${sizing.unit_usd:,.0f} a bet, flat"
+    return f"one unit is {sizing.pct:g}% of the balance when the bet is placed, so it compounds"
 
 
 def _window_dates(kind: str, today: str) -> Optional[tuple]:
@@ -678,19 +699,35 @@ def _backtest(ctx: AskContext, question: str, result: Optional[dict], win: dict)
     else:
         wl = f"{rec.get('wins', 0)}-{rec.get('losses', 0)}" + (f"-{rec['pushes']}" if rec.get("pushes") else "")
         units = body.get("units_average_price")
-        pct = None if units is None else units * params.unit_usd / params.start * 100.0
-        lines.append(f"{graded} graded {'bet' if graded == 1 else 'bets'}: {wl}, {_money(units, params.unit_usd)} "
-                     f"on a ${params.start:,.0f} paper bankroll"
+        sizing = _asker(ctx)
+        picks_usd = {}
+        if sizing.mode == "fixed":
+            money_text = _money(units, sizing.unit_usd)
+            pct = None if units is None else units * sizing.unit_usd / sizing.start_usd * 100.0
+        else:
+            # percent of bankroll compounds: the replay's own bet list (stake-weighted), priced bet by bet
+            from src.hounds import unit_size
+            evts = unit_size.from_wire((body.get("bankroll") or {}).get("events"))
+            dollars = [d[0] for d in unit_size.priced(evts, sizing)] if evts else []
+            picks_usd = dict(enumerate(dollars))
+            total = round(sum(dollars), 2) if dollars else None
+            money_text = _usd_words(total)
+            pct = None if total is None else total / sizing.start_usd * 100.0
+        lines.append(f"{graded} graded {'bet' if graded == 1 else 'bets'}: {wl}, {money_text} "
+                     f"on a ${sizing.start_usd:,.0f} paper bankroll"
                      + (f", a {pct:+.1f}% return" if pct is not None else "")
-                     + f" (one unit is ${params.unit_usd:,.0f} a bet, flat).")
+                     + (" at your sizing" if sizing.mode == "percent" and pct is not None else "")
+                     + f" ({_unit_phrase(sizing)}).")
         unsettled = bets - graded
         if unsettled:
             lines.append(f"{unsettled} more {'bet is' if unsettled == 1 else 'bets are'} not graded yet.")
         for tag, items in (("Best", body.get("best") or []), ("Worst", body.get("worst") or [])):
             if items:
                 p = items[0]
+                worth = (_money(p.get("units_average_price"), sizing.unit_usd) if sizing.mode == "fixed"
+                         else _usd_words(round(picks_usd[p["ev"]], 2) if p.get("ev") in picks_usd else None))
                 lines.append(f"{tag} pick: {p['selection']} ({p['game']}, {_day(p['date'])}) at {_price(p['price_average'])}, "
-                             f"{_money(p.get('units_average_price'), params.unit_usd)}.")
+                             f"{worth}.")
         lines.append("That is a small sample, so wins and losses this few are mostly luck." if body.get("small_sample", True)
                      else "Even so, a rehearsal is not a forward result.")
     lines += notes
@@ -802,10 +839,24 @@ def _coach(ctx: AskContext) -> dict:
 # a betting term, the menu, and a question nobody recognised
 # ---------------------------------------------------------------------------
 
-def _glossary() -> dict:
+def _glossary(sizing=None) -> dict:
     from src.hounds import bankroll
     p = bankroll.params()
-    start, unit = f"${p.start:,.0f}", f"${p.unit_usd:,.0f}"
+    share = sizing is not None and sizing.mode == "percent"
+    if sizing is None:
+        start, unit = f"${p.start:,.0f}", f"${p.unit_usd:,.0f}"
+    elif share:
+        start, unit = f"${sizing.start_usd:,.0f}", f"{sizing.pct:g}% of the balance"
+    else:
+        start, unit = f"${sizing.start_usd:,.0f}", f"${sizing.unit_usd:,.0f}"
+    unit_line = (f"A unit is one standard stake. At your sizing one unit is {unit} when the bet is placed, so it grows and "
+                 f"shrinks with the balance, on a {start} start." if share else
+                 f"A unit is one standard stake. On my paper bankroll one unit is {unit}, 1% of the {start} start, "
+                 "and it never grows or shrinks with the balance.")
+    bank_line = (f"My paper bankroll starts at {start}, and every bet is {unit} per unit. Nothing real is "
+                 "ever staked: it is how the site keeps score." if share else
+                 f"My paper bankroll starts at {start}, and every bet is a flat unit of {unit}. Nothing real is "
+                 "ever staked: it is how the site keeps score.")
     return {
         "spread": ["A spread bet is on the margin of a game, not just who wins. A team at -1.5 has to win by two or more; "
                    "a team at +1.5 can lose by one and still count as a win. In baseball the spread is the run line."],
@@ -817,10 +868,8 @@ def _glossary() -> dict:
                   "The over wins on 9 or more; the under wins on 8 or fewer. A whole-number total can push."],
         "prop": ["A prop is a bet on one player's line rather than the game's result, such as a pitcher's strikeouts or "
                  "a batter's hits. Props are MLB only here, and dogs built with rules can use them."],
-        "unit": [f"A unit is one standard stake. On my paper bankroll one unit is {unit}, 1% of the {start} start, "
-                 "and it never grows or shrinks with the balance."],
-        "bankroll": [f"My paper bankroll starts at {start}, and every bet is a flat unit of {unit}. Nothing real is "
-                     "ever staked: it is how the site keeps score."],
+        "unit": [unit_line],
+        "bankroll": [bank_line],
         "vig": ["The vig (or juice) is the book's cut built into the price. Both sides of a -110 market pay less than even "
                 "money, which is why a coin-flip bet loses a little every time."],
         "parlay": ["A parlay ties several bets into one that pays only if every leg wins. I do not bet parlays; every pick "
@@ -843,7 +892,7 @@ def _glossary() -> dict:
 
 def _explain_market(ctx: AskContext, question: str) -> dict:
     term = ask_intents.glossary_term(ask_intents.normalize(question, _protect(ctx)))
-    lines = list(_glossary().get(term or "", []))
+    lines = list(_glossary(ctx.sizing).get(term or "", []))
     if not lines:
         return _help(ctx)
     lines.append("Ask about another term, or what I would take right now.")

@@ -34,6 +34,8 @@
  */
 
 import { apiGet } from "./api.js";
+import { unitSentence, sizingTag, lensSeriesUsd } from "./unitsize.js";
+import { unitChip } from "./unitchip.js";
 import {
   h, clearNode, monogram, categoryOf, houndColor, fmtRecord, fmtWhen, isNum, signed,
   normalizeSeries, pointsFor, hasForwardData, toChartPoints, segmentView, describeError, createPoller,
@@ -43,7 +45,7 @@ import {
 import { unitsOf, causeText, personaOf } from "./hounds-voice.js";
 import {
   NA, betsOf, fmtUnitsPlain, clvOf, statusOf, typeText, sportLabel, sportsOf, marketsText, recordText,
-  streakText, ungradedBetsOf, bankrollOf, bankrollRules, bankrollNow, windowOf, totalUnitsOf, yieldOf, drawdownOf,
+  streakText, ungradedBetsOf, bankrollOf, referenceBankrollOf, bankrollRules, bankrollNow, windowOf, totalUnitsOf, yieldOf, drawdownOf,
   isSmallSample, smallSampleTitle, settledOf, fmtUsd, fmtSignedUsd, fmtPct, WINDOW_LABELS, WINDOW_WORDS,
   basisOf, basisWords,
 } from "./hounds-board.js";
@@ -120,7 +122,8 @@ export function renderHeroFacts(hound) {
     h("span", { class: "hh-fact" }, [h("strong", { class: "hh-fact__big hd-num", "data-hook": "hero-record", text: bets > 0 ? recordText(hound) : "0-0" }),
       h("span", { class: "hh-fact__label", text: bets > 0 ? `record, ${bets} ${bets === 1 ? "bet" : "bets"}` : "record, no graded bets yet" })]),
     h("span", { class: "hh-fact" }, [h("strong", { class: "hh-fact__big hd-num", "data-hook": "hero-bankroll", text: now === null ? fmtUsd(bankrollRules(hound).start) : fmtUsd(now, true) }),
-      h("span", { class: "hh-fact__label", text: `paper bankroll${now === null ? ", nothing graded yet" : ""}${meta && meta.label ? `, ${meta.label}` : ""}` })]),
+      h("span", { class: "hh-fact__label", text: `paper bankroll${now === null ? ", nothing graded yet" : ""}${meta && meta.label ? `, ${meta.label}` : ""}` }),
+      unitChip()]),          // 1u = $25 ▾ -- the unit size, where the money shows
   ]));
   box.appendChild(h("p", { class: `hh-today hh-today--${today.tone}`, "data-hook": "hound-today-status", "data-today": today.key }, [
     h("span", { class: "hh-today__dot", "aria-hidden": "true" }), h("span", { class: "hh-today__label", text: "Today" }), h("span", { text: today.text })]));
@@ -294,7 +297,7 @@ function returnTile(hound) {
     bar.appendChild(h("button", { type: "button", role: "tab", class: "hd-kpitab", "data-window": key,
       "data-hook": `return-tab-${key}`, "aria-selected": "false", on: { click: () => show(key) } }, WINDOW_LABELS[key]));
   }
-  tile.appendChild(h("span", { class: "hd-kpi__label", text: "Return" }));
+  tile.appendChild(h("span", { class: "hd-kpi__label", text: sizingTag() ? `Return, ${sizingTag()}` : "Return" }));
   tile.appendChild(bar);
   tile.appendChild(big);
   tile.appendChild(small);
@@ -321,7 +324,7 @@ function bankrollTiles(hound) {
       toneOf(ret)),
     units: kpi("units", "Units", units === null ? NA : fmtUnitsPlain(units),
       units === null ? "nothing graded yet"
-        : `1 unit = ${fmtUsd(rules.unit)}${stake !== 1 ? `; this hound bets ${stake} units a bet` : ""}`, toneOf(units)),
+        : `${unitSentence()}${stake !== 1 ? `; this hound bets ${stake} units a bet` : ""}`, toneOf(units)),
     drawdown: kpi("drawdown", "Max drawdown", dd ? fmtUsd(dd.usd, true) : NA,
       dd ? (dd.usd === 0 ? "never below a previous high" : `${dd.pct === null ? "" : `${dd.pct.toFixed(1)}% `}below the peak at its worst`) : "nothing graded yet"),
     yield: kpi("yield", "Yield", fmtPct(yld), yld === null ? "" : "profit per $ bet", toneOf(yld)),
@@ -475,7 +478,10 @@ export function renderCharts() {
   const width = chartWidth(units);
   // The server's balance after each slate day. The chart draws dollars ABOVE the start, so its zero line is the
   // starting bankroll, and words every tick and tooltip as the balance (hounds-chart.js `offset`).
-  const balance = toChartPoints(pts, "bankroll_usd").map((p) => ({ ...p, value: p.value - rules.start }));
+  // Repriced at the viewer's sizing from the bankroll block's units-only events (web/js/unitsize.js); a payload from
+  // before the lens scales linearly in fixed mode and draws nothing in percent mode rather than a guess.
+  const priced = lensSeriesUsd(pts, referenceBankrollOf(state.hound));
+  const balance = priced === null ? [] : toChartPoints(pts.map((p, i) => ({ ...p, bankroll_usd: priced[i] })), "bankroll_usd").map((p) => ({ ...p, value: p.value - rules.start }));
   units.appendChild(renderLineChart({
     hook: "units-chart",
     series: [{ id: "bankroll", name: "Bankroll", color: houndColor(state.hound || {}), points: balance }],

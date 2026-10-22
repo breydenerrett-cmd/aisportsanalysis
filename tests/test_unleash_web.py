@@ -73,6 +73,21 @@ class TheRevealInTheStudio(unittest.TestCase):
         self.assertEqual(c["noboard"], ["New York Mets @ Atlanta Braves no board saved for this game"])
         self.assertEqual((c["working"], c["preview"], c["disabled"]), (0, 0, False))
 
+    def test_every_stake_is_in_the_viewers_sizing_never_the_servers_ten_dollar_unit(self):
+        """The payload carries units only. The picks and the before-list print the stake in the viewer's own terms: dollars at
+        their unit, or a share of their bankroll in percent mode (a pick has no balance of its own to turn into dollars)."""
+        data = payload()
+        self.assertTrue(all("stake_usd" not in p for p in data["picks"] + data["before"]))
+        for viewer, want in (({"mode": "fixed", "unit_usd": 50, "pct": None, "start_usd": 5000}, "Stake 1 unit ($50)"),
+                             ({"mode": "fixed", "unit_usd": 1000, "pct": None, "start_usd": 100000}, "Stake 1 unit ($1,000)"),
+                             ({"mode": "percent", "unit_usd": None, "pct": 2, "start_usd": 5000}, "Stake 1 unit (2% of bankroll)")):
+            with self.subTest(viewer=viewer):
+                out = run_page("kennel", viewer=viewer, routes=routes(data), **SIGNED, actions=[dict(OPEN, capture=[
+                    q("price", HOOK("unleash-pick-price"), "texts"), q("before", HOOK("unleash-before-item"), "texts")])])
+                c = out["captures"]["open"]
+                self.assertIn(want, c["price"][0])
+                self.assertTrue(all("$10" not in t for t in c["price"] + c["before"]), c)
+
     def test_while_the_request_runs_the_dog_sniffs_and_the_steps_wait_with_no_numbers_made_up(self):
         data = payload()
         out = run_page("kennel", routes=routes(data), delay={"POST /hounds/u-1/unleash": 500}, **SIGNED, actions=[

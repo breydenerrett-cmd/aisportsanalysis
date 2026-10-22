@@ -101,7 +101,8 @@ console.log(JSON.stringify({ same: a === b, bare, v1: Av.versionTier(1), tiers: 
         self.assertEqual(got["tiers"], [1, 2, 3, 4, 5, 5, 5, 5])
         self.assertEqual(got["names"], ["Base", "Bronze", "Silver", "Gold", "Platinum"])
         self.assertEqual(got["chevrons"], [0, 1, 2, 3, 4, 4])
-        self.assertEqual(got["parts2"], ["Bronze frame", "Rank plate v2", "1 chevron", "Bronze collar"])
+        self.assertEqual(got["parts2"], ["Bronze bandana", "Bronze frame", "Rank plate v2", "1 chevron"], "what the hound wears comes first")
+        self.assertEqual(got["parts3"][:3], ["Silver bandana", "Vest", "Bold brow"])
         self.assertIn("Star mark", got["parts3"])
         self.assertEqual(got["gain"], got["parts3"], "v3 shares none of v2's pieces")
         self.assertEqual(got["gain12"], ["Rank plate v6"], "past v5 only the plate's number is new")
@@ -134,6 +135,76 @@ console.log(JSON.stringify(out));''')
             self.assertEqual(row, [True, True, True])
         self.assertEqual(got["small"], [True, True], "a 32px badge still shows the tier")
         self.assertEqual(got["attrs"], [["1", "1"], ["2", "2"], ["7", "5"]])
+
+    def test_the_hound_itself_changes_with_its_version_and_stays_the_same_hound(self):
+        got = js('''
+const look = { coat: "golden", style: "mascot", breed: "retriever" };
+const svgOf = (v, extra) => Av.dogBadge({ ...look, ...(extra || {}) }, { size: 96, version: v, id: "x" });
+const gear = (v, size, style) => { const out = []; walk(Av.dogBadge({ ...look, style: style || "mascot" }, { size: size || 96, version: v, id: "x" }), (n) => { const m = /dk-tier--(bandana|vest|pads|mantle|brow|eyeglow|aura)/.exec(n.attrs.class || ""); if (m) out.push(m[1]); }); return out; };
+// the hound's own outline weight: the first stroked path in its head group (the ears)
+const outline = (v) => { let w = 0, got = false; walk(svgOf(v), (n) => { if (n.attrs.class === "dk-head") walk(n, (m) => { if (!got && m.tag === "path" && m.attrs["stroke-width"] !== undefined) { w = Number(m.attrs["stroke-width"]); got = true; } }); }); return w; };
+const same = (v) => { const s = svgOf(v); return [s.attrs["data-breed"], s.attrs["data-coat"], s.attrs["data-eyes"], s.attrs["data-style"]].join("/"); };
+console.log(JSON.stringify({
+  gear: [1, 2, 3, 4, 5, 9].map((v) => gear(v)), small: [2, 3, 4, 5].map((v) => gear(v, 32)), elite: [2, 5].map((v) => gear(v, 96, "elite")),
+  stable: [2, 3, 4, 5].map((v) => JSON.stringify(gear(v)) === JSON.stringify(gear(v))),
+  breed: [1, 2, 3, 4, 5, 12].map(same), outline: [1, 2, 3, 4, 5].map(outline) }));''')
+        self.assertEqual(got["gear"][0], [], "v1 wears nothing new")
+        names = lambda row: sorted(set(row))
+        self.assertEqual(names(got["gear"][1]), ["bandana"])
+        self.assertEqual(names(got["gear"][2]), ["bandana", "brow", "vest"])
+        self.assertEqual(names(got["gear"][3]), ["bandana", "brow", "eyeglow", "pads", "vest"])
+        self.assertEqual(names(got["gear"][4]), ["aura", "bandana", "brow", "eyeglow", "mantle", "pads", "vest"])
+        self.assertEqual(names(got["gear"][5]), names(got["gear"][4]), "past v5 only the plate's number changes")
+        for row, want in zip(got["small"], (["bandana"], ["bandana", "brow", "vest"], ["bandana", "brow", "eyeglow", "pads", "vest"], ["aura", "bandana", "brow", "eyeglow", "mantle", "pads", "vest"])):
+            self.assertEqual(names(row), want, "the gear still draws at 32px")
+        self.assertEqual(names(got["elite"][0]), ["bandana"])
+        self.assertEqual(names(got["elite"][1]), names(got["gear"][4]), "every art style wears it")
+        self.assertTrue(all(got["stable"]))
+        self.assertEqual(len(set(got["breed"])), 1, "the breed, coat, eyes and style are the hound's own at every version")
+        self.assertEqual(got["outline"][0], got["outline"][1], "v2 keeps the outline")
+        self.assertGreater(got["outline"][2], got["outline"][1], "v3 draws a bolder outline")
+
+    def test_the_gear_fits_every_breed(self):
+        got = js('''
+const bad = [];
+for (const breed of Av.BREEDS) for (const v of [2, 3, 4, 5]) for (const style of ["mascot", "street", "elite"]) {
+  const svg = Av.dogBadge({ coat: "tan", style, breed }, { size: 96, version: v, id: "x" });
+  const seen = new Set(); walk(svg, (n) => { const m = /dk-tier--([a-z]+)/.exec(n.attrs.class || ""); if (m) seen.add(m[1]); });
+  for (const need of ["bandana", ...(v >= 3 ? ["vest", "brow"] : []), ...(v >= 4 ? ["pads", "eyeglow"] : []), ...(v >= 5 ? ["mantle", "aura"] : [])]) if (!seen.has(need)) bad.push([breed, v, style, need]);
+  // every number in a path the gear draws is finite
+  walk(svg, (n) => { if (n.tag === "path" && /NaN|undefined|Infinity/.test(n.attrs.d || "")) bad.push([breed, v, style, "bad path"]); });
+}
+console.log(JSON.stringify(bad));''')
+        self.assertEqual(got, [])
+
+    def test_a_ruff_breed_wears_the_gear_over_the_ruff(self):
+        got = js('''
+const svg = Av.dogBadge({ coat: "tan", style: "mascot", breed: "collie" }, { size: 96, version: 3, id: "x" });
+const inside = (root, cls) => { let hit = null; walk(root, (n) => { if (n.attrs.class === cls) hit = n; }); return hit; };
+const head = inside(svg, "dk-head"), body = inside(svg, "dk-body");
+const has = (node, cls) => { let f = false; walk(node, (n) => { if ((n.attrs.class || "").includes(cls)) f = true; }); return f; };
+console.log(JSON.stringify({ headHasVest: has(head, "dk-tier--vest"), bodyHasVest: has(body, "dk-tier--vest") }));''')
+        self.assertEqual(got, {"headHasVest": True, "bodyHasVest": False})
+
+    def test_the_kennel_card_the_hound_page_and_the_kennel_room_draw_the_same_v3(self):
+        # the three call sites, as written in kennel.js (avatarOf), dog-kit.js (applyHeaderBadge) and room-scene.js (dogFace of the room's hound row)
+        got = js('''
+const row = { id: "u-new-3", root_id: "u-root", name: "Gus", version_no: 3, look: { coat: "grey", style: "elite", breed: "doberman" }, persona: { vibe: "grinder" } };
+const shape = (svg) => { const gear = []; walk(svg, (n) => { const m = /dk-tier--([a-z]+)/.exec(n.attrs.class || ""); if (m) gear.push(m[1]); }); return JSON.stringify({ gear, tier: svg.attrs["data-tier"], vno: svg.attrs["data-vno"], breed: svg.attrs["data-breed"], coat: svg.attrs["data-coat"], style: svg.attrs["data-style"] }); };
+const kennelCard = Av.dogBadge(row.look || Av.lookFor(row.root_id || row.id), { size: 72, mood: "idle", id: row.root_id || row.id, name: row.name, vibe: row.persona && row.persona.vibe, version: row.version_no });
+const houndPage = Av.dogBadge(row.look, { size: 72, id: row.root_id || row.id, name: row.name, vibe: row.vibe, version: row.version_no, mood: "idle" });
+const room = Av.dogFace(row, { size: 72, pose: "idle" });
+console.log(JSON.stringify({ kennelCard: shape(kennelCard), houndPage: shape(houndPage), room: shape(room) }));''')
+        self.assertEqual(got["kennelCard"], got["houndPage"])
+        self.assertEqual(got["kennelCard"], got["room"])
+        self.assertIn('"vno":"3"', got["room"])
+        self.assertIn("vest", got["room"])
+        self.assertIn("doberman", got["room"])
+        web = WEB / "js"
+        self.assertRegex((web / "kennel.js").read_text(encoding="utf-8"), r"version: dog\.version_no")
+        self.assertRegex((web / "dog-kit.js").read_text(encoding="utf-8"), r"version: dog\.version_no")
+        self.assertRegex((web / "room-adapter.js").read_text(encoding="utf-8"), r"rule: text\(hound\.rule_text\), hound,")
+        self.assertIn("dogFace(c.hound,", (web / "room-scene.js").read_text(encoding="utf-8"))
 
     def test_every_colour_in_a_tier_is_a_hex_or_one_of_the_shared_gradients(self):
         got = js('''
@@ -191,6 +262,40 @@ class NoWordOfTheSequenceSaysDog(unittest.TestCase):
         self.assertNotRegex(src, r"\.(png|jpe?g|gif|webp|mp3|wav|ogg)\b")
         self.assertIn('"aria-pressed": "false"', src)
         self.assertRegex(src, r"let on = false;")
+
+
+class TheSequencesLayout(unittest.TestCase):
+    css = (WEB / "css" / "evolve.css").read_text(encoding="utf-8")
+
+    def test_the_sound_toggle_is_a_corner_icon_and_never_over_the_title(self):
+        self.assertRegex(self.css, r"\.ev-top \{ position: absolute; top: 10px; right: 12px;")
+        self.assertRegex(self.css, r"\.ev-sound \{[^}]*width: 40px; height: 40px;")
+        # the title row keeps clear of the corner: room for the 40px button either side
+        self.assertRegex(self.css, r"\.rt-sheet__title \{ min-height: 40px; margin: 0; padding: 0 52px;")
+        src = (WEB / "js" / "dog-evolve.js").read_text(encoding="utf-8")
+        self.assertIn('"aria-label": "Sound off"', src)
+        self.assertNotIn('text: "Sound off"', src)
+
+    def test_the_version_is_shown_once_on_the_hound_and_once_as_the_chip(self):
+        # the big numeral is for the hound before it evolves: hidden for the burst and reveal, gone on the card
+        self.assertRegex(self.css, r'\[data-phase="burst"\], \[data-phase="reveal"\]\) \.ev-badge \{ visibility: hidden; \}')
+        self.assertRegex(self.css, r'\.ev\[data-phase="card"\] \.ev-badge')
+        src = (WEB / "js" / "dog-evolve.js").read_text(encoding="utf-8")
+        self.assertNotIn("data-popped", src)
+
+    def test_the_silhouette_keeps_what_the_hound_wears_and_drops_the_tiles_decoration(self):
+        block = self.css[self.css.index("/* the silhouette"):self.css.index(".ev-rays {")]
+        for worn in ("bandana", "vest", "pads", "mantle", "brow", "eyeglow"):
+            self.assertNotIn(f"dk-tier--{worn}", block, f"{worn} must stay in the silhouette so the morph reads")
+        for decoration in ("frame", "plate", "chevrons", "halo", "aura"):
+            self.assertIn(f"dk-tier--{decoration}", block)
+
+    def test_every_new_animation_for_the_gear_is_inside_the_no_preference_block(self):
+        head, _, motion = self.css.partition("@media (prefers-reduced-motion: no-preference) {")
+        self.assertNotIn("animation:", head)
+        for name in ("ev-unfurl", "ev-aura"):
+            self.assertIn(f"@keyframes {name}", motion)
+            self.assertNotIn(f"@keyframes {name}", head)
 
 
 class ServesTheNewFilesWhereTheyAreRead(unittest.TestCase):
@@ -253,8 +358,8 @@ class TheEvolutionFitsAPhoneAtEveryBeat(unittest.TestCase):
         cls.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), make_handler(routes))
         threading.Thread(target=cls.server.serve_forever, daemon=True).start()
         cls.base = f"http://127.0.0.1:{cls.server.server_address[1]}"
-        cls.play = staticmethod(lambda mode: json.loads([ln for ln in subprocess.run(
-            ["node", str(HERE / "evolve_390.mjs"), CHROME, cls.base, "-", mode], capture_output=True, text=True, encoding="utf-8", timeout=120).stdout.splitlines()
+        cls.play = staticmethod(lambda mode, width="390": json.loads([ln for ln in subprocess.run(
+            ["node", str(HERE / "evolve_390.mjs"), CHROME, cls.base, "-", mode, str(width)], capture_output=True, text=True, encoding="utf-8", timeout=120).stdout.splitlines()
             if ln.startswith("{")][-1]))
 
     @classmethod
@@ -266,7 +371,22 @@ class TheEvolutionFitsAPhoneAtEveryBeat(unittest.TestCase):
         self.assertEqual(out["errors"], [])
         for phase in ("before", "charge", "burst", "reveal", "card"):
             self.assertIn(phase, out["phases"])
-        bad = [s for s in out["samples"] if s["sw"] > s["iw"] + 1 or s["sheetSw"] > s["sheetCw"] + 1 or s["wide"]]
+        bad = [s for s in out["samples"] if s["sw"] > s["iw"] + 1 or s["sheetSw"] > s["sheetCw"] + 1 or s["wide"] or s["overlap"]]
+        self.assertEqual(bad, [], json.dumps(bad[:3]))
+
+    def test_every_beat_of_the_full_sequence_fits_375_too(self):
+        out = self.play("full", 375)
+        self.assertEqual(out["errors"], [])
+        for phase in ("before", "charge", "burst", "reveal", "card"):
+            self.assertIn(phase, out["phases"])
+        bad = [s for s in out["samples"] if s["sw"] > s["iw"] + 1 or s["sheetSw"] > s["sheetCw"] + 1 or s["wide"] or s["overlap"]]
+        self.assertEqual(bad, [], json.dumps(bad[:3]))
+
+    def test_the_reduced_motion_card_fits_375(self):
+        out = self.play("reduced", 375)
+        self.assertEqual(out["errors"], [])
+        self.assertIn("static", out["phases"])
+        bad = [s for s in out["samples"] if s["sw"] > s["iw"] + 1 or s["sheetSw"] > s["sheetCw"] + 1 or s["wide"] or s["overlap"]]
         self.assertEqual(bad, [], json.dumps(bad[:3]))
 
     def test_the_reduced_motion_card_fits_390(self):
@@ -274,7 +394,7 @@ class TheEvolutionFitsAPhoneAtEveryBeat(unittest.TestCase):
         self.assertEqual(out["errors"], [])
         self.assertIn("static", out["phases"])
         self.assertNotIn("charge", out["phases"])
-        bad = [s for s in out["samples"] if s["sw"] > s["iw"] + 1 or s["sheetSw"] > s["sheetCw"] + 1 or s["wide"]]
+        bad = [s for s in out["samples"] if s["sw"] > s["iw"] + 1 or s["sheetSw"] > s["sheetCw"] + 1 or s["wide"] or s["overlap"]]
         self.assertEqual(bad, [], json.dumps(bad[:3]))
 
 
