@@ -21,11 +21,13 @@ from tests.test_hounds_interact_web import HID, Payloads, dog_routes, hook, page
 class TheFirePanelSaysWhichGamesStarted(unittest.TestCase):
     def payload(self):
         out = Payloads.fire_payload()
+        started = [{"game": "Tampa Bay Rays @ Cleveland Guardians", "start_utc": "2026-10-21T00:10:00Z", "start_et": "8:10 pm ET"}]
         out["slate"] = {"today": "2026-10-20", "today_state": "started",
-                        "line": "Tonight's games already started: Tampa Bay Rays @ Cleveland Guardians (8:10 pm ET). "
-                                "Next games I can bet: Thursday.",
-                        "started": [{"game": "Tampa Bay Rays @ Cleveland Guardians", "start_utc": "2026-10-21T00:10:00Z",
-                                     "start_et": "8:10 pm ET"}], "in_window": [], "next_day_label": "Thursday", "days": []}
+                        # 2026-10-22: counts, never a game's name in the sentence; the game sits in the folded list
+                        "line": "Tonight's games already started (1). Next games I can bet: Thursday.",
+                        "counts": {"total": 1, "started": 1, "later": 0, "checked_now": 0}, "counts_line": "1 game today · 1 started",
+                        "groups": [{"key": "started", "label": "Started", "games": started, "more": 0}],
+                        "started": started, "in_window": [], "next_day_label": "Thursday", "days": []}
         out["picks"][0]["day_label"] = "Thursday"
         return out
 
@@ -35,8 +37,8 @@ class TheFirePanelSaysWhichGamesStarted(unittest.TestCase):
             q("slate", hook("fire-slate")), q("headline", hook("fire-headline")), q("day", hook("fire-day")),
             q("picks", hook("fire-pick"), "count"), q("order", ".dk-headline", "texts")])])
         c = out["captures"]["0"]
-        self.assertIn("Tonight's games already started: Tampa Bay Rays @ Cleveland Guardians (", c["slate"])
-        self.assertIn("Next games I can bet: Thursday.", c["slate"])
+        self.assertEqual(c["slate"], "Tonight's games already started (1). Next games I can bet: Thursday.")
+        self.assertNotIn("Cleveland", c["slate"])
         self.assertEqual(c["day"], "Thursday")
         self.assertEqual(c["picks"], 1)
         self.assertEqual(c["order"][0], c["slate"])                  # said first
@@ -48,8 +50,8 @@ class TheFirePanelSaysWhichGamesStarted(unittest.TestCase):
             q("slate", hook("fire-slate")), q("headline", hook("unleash-headline")), q("picks", hook("unleash-pick"), "count"),
             q("order", ".dk-headline", "texts")])])
         c = out["captures"]["0"]
-        self.assertIn("Tonight's games already started: Tampa Bay Rays @ Cleveland Guardians (", c["slate"])
-        self.assertIn("Next games I can bet: Thursday.", c["slate"])
+        self.assertEqual(c["slate"], "Tonight's games already started (1). Next games I can bet: Thursday.")
+        self.assertNotIn("Cleveland", c["slate"])
         self.assertEqual(c["picks"], 1)
         self.assertEqual(c["order"][0], c["slate"])
         self.assertEqual(c["order"][1], c["headline"])

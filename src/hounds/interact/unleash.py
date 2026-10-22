@@ -272,8 +272,11 @@ def unleash(dog: common.Dog, owner_user_id: int, *, now: Optional[datetime] = No
                                    have_picks=bool(picks))
         except Exception:  # noqa: BLE001 -- the day is complete without them
             lines = {}
+    if nxt:
+        lines = {**lines, "next_game": None}          # "Next game it checks" (``next_check``) says it once; the day does not say it twice
     return {
         **lines,
+        "day": day_block(games, spec, now),
         "dog_id": dog.id, "dog_name": dog.name, "mode": "unleash", "as_of": common.iso(now), "date": date,
         "already_running": already_running, "started_now": placed > 0,
         "games_on_board": len(games), "games_ahead": ahead, "games_before": len(games) - ahead,
@@ -294,6 +297,28 @@ WHY_NOT_PLACED = {
     "at_lock": "Placed when it locks",
     "past_lock": "Past its placing time; fits the newest board only",
 }
+
+
+def day_block(games: dict, spec: dict, now: datetime) -> dict:
+    """Today's games as COUNTS plus a folded list, for the compact day view (owner, 2026-10-22: the day printed every game by name).
+
+    Unleash weighs every game that has not started right now (``place_ahead``), so the two parts are the ones that mean something
+    here: ``started`` and ``checked_now``; ``later`` is 0 (a game on a later day is not in ``games``). ``groups`` carries the games
+    themselves, earliest first and capped (``fire.MAX_LISTED``), for the "See all games" fold. Never prose, never a name in a sentence."""
+    started, ahead = [], []
+    for game in games.values():
+        if game.commence is None:
+            continue
+        (started if game.commence <= now else ahead).append((f"{game.away_team} @ {game.home_team}", game.commence))
+    started.sort(key=lambda t: t[1])
+    ahead.sort(key=lambda t: t[1])
+    counts = {"total": len(started) + len(ahead), "started": len(started), "later": 0, "checked_now": len(ahead)}
+    groups = []
+    for key, label, items in (("started", "Started", started), ("checked_now", "Checked now", ahead)):
+        if items:
+            shown, more = fire._listed(items)
+            groups.append({"key": key, "label": label, "games": shown, "more": more})
+    return {"counts": counts, "counts_line": fire.counts_line(counts), "groups": groups}
 
 
 def _slate_seam(spec: dict, injected_rows: Optional[list], facts, index, prop_rows) -> Optional[Callable]:

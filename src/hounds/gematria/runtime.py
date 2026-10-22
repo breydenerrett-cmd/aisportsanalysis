@@ -72,8 +72,10 @@ def _inputs_hash(g: sig_mod.GameInputs) -> str:
 class Weighed:
     """One game's full result: the verdict, the signals and the evidence block that goes on a bet row."""
 
-    def __init__(self, verdict: decision_mod.Verdict, signals: Optional[sig_mod.Signals], block: Optional[dict]):
+    def __init__(self, verdict: decision_mod.Verdict, signals: Optional[sig_mod.Signals], block: Optional[dict],
+                 inputs: Optional[sig_mod.GameInputs] = None):
         self.verdict, self.signals, self.block = verdict, signals, block
+        self.inputs = inputs            # what the generator read (the analysis stream prints the names and ciphers from it)
 
 
 class GematriaRuntime:
@@ -96,6 +98,10 @@ class GematriaRuntime:
         past = self.source.past(ctx)
         home_t = self.facts.team(ctx.sport, ctx.home_name)
         away_t = self.facts.team(ctx.sport, ctx.away_name)
+        if self.rules.name_only_teams:
+            for t in (home_t, away_t):
+                if not t.known and t.name:
+                    t.texts["name"] = t.name      # rules v2: a team we hold no facts for is read by its name alone (its cipher values)
         home_in, away_in = sig_mod.TeamInputs(home_t), sig_mod.TeamInputs(away_t)
         series = None
         if past.available and past.home_id and past.away_id:
@@ -109,8 +115,13 @@ class GematriaRuntime:
 
     def weigh(self, ctx: base.Context, board: Mapping) -> Weighed:
         g = self.inputs(ctx)
-        known = bool(g.home.team.known and g.away.team.known)
-        sig = sig_mod.generate(g, self.rules) if (g.history_available and known) else None
+        if self.rules.name_only_teams:
+            known = bool(g.home.team.name_texts() and g.away.team.name_texts())
+            computable = known and (g.history_available or self.rules.static_fallback)
+        else:
+            known = bool(g.home.team.known and g.away.team.known)
+            computable = g.history_available and known
+        sig = sig_mod.generate(g, self.rules) if computable else None
         verdict = decision_mod.decide(sig, board, self.rules, history_available=g.history_available, teams_known=known)
         block = None
         if sig is not None:
@@ -131,7 +142,11 @@ class GematriaRuntime:
                 "price": verdict.price, "side": verdict.side, "confidence": verdict.confidence, "history": g.scope,
                 "inputs_hash": _inputs_hash(g),
             }
-        return Weighed(verdict, sig, block)
+            if self.rules.static_fallback:
+                # rules v2 only (a v1 block is byte-for-byte what it was): which evidence the scores rest on and how loud the game was
+                block.update({"basis": sig.basis, "z": sig.z, "noise_sd": sig.noise_sd, "min_z": self.rules.decision.min_z,
+                              "history": g.scope if sig.basis == "season" else "static evidence only (names, date, founding spans)"})
+        return Weighed(verdict, sig, block, g)
 
     # -- the log ------------------------------------------------------------------------------------
 

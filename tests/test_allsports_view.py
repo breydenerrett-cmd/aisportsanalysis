@@ -405,22 +405,24 @@ class TheEmptyBoardPathOfFireNow(unittest.TestCase):
     def test_nothing_today_names_the_next_game(self):
         view = fire.slate_view(self.TUESDAY, [], self.thursday_game())
         self.assertEqual(view["today_state"], "none")
-        self.assertEqual(view["line"], "No games today. Next slate: Thursday. "
-                                       "Next game: Boston Red Sox @ Seattle Mariners (7:10 pm ET).")
+        self.assertEqual(view["line"], "No games today. Next slate: Thursday.")      # the next game is said once, in the field
         self.assertEqual(view["next_game"]["game"], "Boston Red Sox @ Seattle Mariners")
+        self.assertEqual(view["next_game"]["text"], "Boston Red Sox @ Seattle Mariners (7:10 pm ET)")
         self.assertIsNone(view["other_live"])
 
     def test_and_says_what_is_live_in_other_sports(self):
         other = {"games": 7, "families": [], "text": "Live now in other sports: 7 games (tennis, cricket)."}
         view = fire.slate_view(self.TUESDAY, [], self.thursday_game(), other)
-        self.assertTrue(view["line"].endswith("Live now in other sports: 7 games (tennis, cricket)."), view["line"])
+        # the "Live now in other sports" words are a small link on the page now (``other_live`` / ``live_elsewhere``), not a sentence
+        self.assertNotIn("other sports", view["line"])
         self.assertEqual(view["other_live"]["games"], 7)
+        self.assertEqual(view["other_live"]["text"], "Live now in other sports: 7 games (tennis, cricket).")
 
     def test_with_no_game_on_file_at_all_it_still_names_what_is_live_elsewhere(self):
         other = {"games": 2, "families": [], "text": "Live now in other sports: 2 games (nba)."}
         view = fire.slate_view(self.TUESDAY, [], [], other)
-        self.assertEqual(view["line"], "No games today, and none are on the stored boards yet. "
-                                       "Live now in other sports: 2 games (nba).")
+        self.assertEqual(view["line"], "No games today, and none are on the stored boards yet.")
+        self.assertEqual(view["other_live"]["text"], "Live now in other sports: 2 games (nba).")
 
     def test_other_sports_are_not_mentioned_when_the_dog_has_games_today(self):
         today = [("A @ B", utc("2026-10-20T23:10:00Z"), utc("2026-10-20T21:10:00Z"))]
@@ -443,7 +445,8 @@ class TheEmptyBoardPathOfFireNow(unittest.TestCase):
         out = fire.fire_user(dog_of(), now=self.TUESDAY, rows_for=lambda date, sports: nfl_rows()
                              if date == "2026-10-22" else [], ledger=self.ledger, other_live=other_live)
         self.assertEqual(out["slate"]["today_state"], "none")
-        self.assertIn("Live now in other sports: 3 games (soccer).", out["slate"]["line"])
+        self.assertEqual(out["slate"]["other_live"]["text"], "Live now in other sports: 3 games (soccer).")
+        self.assertEqual(out["live_elsewhere"], "Live now in other sports: 3 games (soccer)")
         self.assertEqual(len(asked), 1)
 
     def test_an_unreadable_other_sports_board_is_never_fatal(self):

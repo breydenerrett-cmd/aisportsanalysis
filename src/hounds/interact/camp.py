@@ -53,6 +53,7 @@ def kit(dog: common.Dog, viewer_id: Optional[int], *, now: Optional[datetime] = 
         "manual": {"limit_per_day": manual.PER_DAY_LIMIT,
                    "remaining_today": manual.remaining_today(dog.id, now) if dog.kind == common.KIND_USER else 0},
         "builder_href": f"build-a-hound.html?from={dog.id}" if dog.kind == common.KIND_USER else None,
+        "gematria": _is_gematria(dog),          # the page then plays the hound's analysis while it works (web/js/dog-gematria-stream.js)
         "paper_only": True,
     }
     if viewer_id is not None:
@@ -61,6 +62,14 @@ def kit(dog: common.Dog, viewer_id: Optional[int], *, now: Optional[datetime] = 
         except Exception:  # noqa: BLE001
             out["my_votes"] = {}
     return out
+
+
+def _is_gematria(dog: common.Dog) -> bool:
+    try:
+        from src.hounds.interact import gematria_analysis
+        return gematria_analysis.is_gematria_dog(dog)
+    except Exception:  # noqa: BLE001 -- a flag never takes the kit down
+        return False
 
 
 def _trained_times(dog: common.Dog) -> int:

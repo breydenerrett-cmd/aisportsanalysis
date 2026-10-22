@@ -16,6 +16,10 @@ import { h, clearNode } from "./hounds-core.js";
 import { get, post, errorText, statusLine } from "./dog-common.js";
 import { voteRow } from "./dog-feedback.js";
 import { isUpgradeRefusal, upgradePrompt } from "./upgrade.js";
+import { runGematriaStream, gematriaAnalysis, analysisLog, reducedMotion } from "./dog-gematria-stream.js";
+
+/** Questions worth fetching the Gematria hound's analysis for as soon as they are asked (it is played when the answer is a pick answer). */
+const PICK_QUESTION = /\b(bet|pick|picks|play|take|taking|tonight|today|right now|games?|fire|unleash)\b/i;
 
 /** A collapsed "How I checked it": a title and lines the answer would otherwise print inline. */
 function checkedFold(details) {
@@ -67,7 +71,7 @@ function dogMessage(lines, intent, cards, cardsAt, details, fine) {
 /**
  * Mount a chat into `box`. `id` and `name` name the dog; `compact` trims the intro. Returns { ask(question) }.
  */
-export function mountAsk(box, { id, name, compact = false }) {
+export function mountAsk(box, { id, name, compact = false, gematria = false }) {
   clearNode(box);
   const thread = h("div", { class: "dk-thread", role: "log", "aria-live": "polite", "aria-label": `Conversation with ${name || "this model"}`, "data-hook": "ask-thread" });
   const chips = h("div", { class: "dk-chips", "data-hook": "ask-suggestions" });
@@ -93,7 +97,16 @@ export function mountAsk(box, { id, name, compact = false }) {
     thread.scrollTop = thread.scrollHeight;
     send.setAttribute("disabled", "");
     try {
+      // a Gematria hound's analysis is fetched beside a question that sounds like a pick request, and played before a pick answer
+      let analysis = null;
+      if (gematria && PICK_QUESTION.test(text)) { analysis = gematriaAnalysis(id); analysis.catch(() => null); }
       const out = await post(`/hounds/${encodeURIComponent(id)}/ask`, { question: text, sizing: getSizing() });
+      if (gematria && out.fire) {
+        const host = h("div", { class: "dk-msg dk-msg--dog gs-host", "data-hook": "ask-gematria" });
+        const played = await runGematriaStream({ body: host, load: () => analysis || gematriaAnalysis(id), reduced: reducedMotion(),
+          onStart: () => { thread.appendChild(host); thread.scrollTop = thread.scrollHeight; } });
+        if (played.ok) { clearNode(host); const fold = analysisLog(played.payload); if (fold) host.appendChild(fold); }
+      }
       const hasCards = Array.isArray(out.cards) && out.cards.length > 0;
       const rows = hasCards && Array.isArray(out.ui_lines) && out.ui_lines.length ? out.ui_lines
         : (out.lines && out.lines.length ? out.lines : [out.answer]);
@@ -120,7 +133,7 @@ export function mountAsk(box, { id, name, compact = false }) {
 }
 
 /** The Ask panel on a dog's page: loads the dog's greeting and the questions worth asking, or hides itself. */
-export async function bootAsk(section, { id, name }) {
+export async function bootAsk(section, { id, name, gematria = false }) {
   const body = section.querySelector("[data-hook='dog-ask']");
   if (!body) return;
   let hello = null;
@@ -129,7 +142,7 @@ export async function bootAsk(section, { id, name }) {
   } catch (err) {
     return;                                  // a server without the route: the panel stays hidden
   }
-  const chat = mountAsk(body, { id, name });
+  const chat = mountAsk(body, { id, name, gematria });
   const thread = body.querySelector("[data-hook='ask-thread']");
   thread.appendChild(dogMessage(hello.greeting, "hello"));
   const chips = body.querySelector("[data-hook='ask-suggestions']");

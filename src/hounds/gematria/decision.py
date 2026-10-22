@@ -13,6 +13,12 @@ Checked in this order, and the first failure is the logged reason (``code``):
 
 No price is used to CHOOSE a side; the price can only veto it. The module reads nothing after the lock: its inputs are the
 signals (built from lock-time history) and the lock board.
+
+RULES V2 (``rules.static_fallback``). Two changes, both aimed at the PICK RATE (how often the hound has something to say), never at
+outcomes. (1) ``no_history`` and ``thin_data`` do not stop a game: the signals were scored on STATIC evidence
+(``signals.static_world``) and the verdict says so (``basis``). (2) The margin is judged against the game's own noise: it must
+clear the floor ``min_margin`` AND be at least ``min_z`` times the noise (``signals.Signals.z``); a game with a huge search needs a
+bigger lead than a quiet one. Everything after the margin (the price band, never -200 or worse, one side per game) is unchanged.
 """
 
 from __future__ import annotations
@@ -39,6 +45,8 @@ class Verdict:
     margin: float = 0.0
     scores: dict = field(default_factory=dict)
     confidence: Optional[int] = None         # 1..5 from the margin, less one when the other side's case is nearly as strong (the posts' warning bullets)
+    basis: str = "season"                    # "season" | "static" (rules v2's fallback for thin counts / no stored results)
+    z: float = 0.0                           # the margin in units of the game's own noise (rules v2's rank key)
 
     @property
     def is_bet(self) -> bool:
@@ -50,20 +58,23 @@ def _pass(code: str, reason: str, sig: Optional[sig_mod.Signals] = None) -> Verd
     if sig is not None:
         v.margin = sig.margin
         v.scores = {"home": sig.home.score, "away": sig.away.score}
+        v.basis, v.z = sig.basis, sig.z
     return v
 
 
 def decide(sig: Optional[sig_mod.Signals], board: Mapping, rules: Rules, *, history_available: bool,
            teams_known: bool) -> Verdict:
     d = rules.decision
-    if not history_available:
+    if not rules.static_fallback and not history_available:
         return _pass("no_history", "no stored results for this sport, so no count can be made")
     if not teams_known:
         return _pass("no_facts", "a team is not in the facts layer")
     assert sig is not None
-    if min(sig.home.milestones, sig.away.milestones) < d.min_milestones_per_side:
+    if not rules.static_fallback and min(sig.home.milestones, sig.away.milestones) < d.min_milestones_per_side:
         return _pass("thin_data", f"only {sig.home.milestones} and {sig.away.milestones} counts for the two sides; "
                                   f"need {d.min_milestones_per_side} each", sig)
+    if sig.basis == "static" and min(sig.home.milestones, sig.away.milestones) == 0:
+        return _pass("thin_data", "one side has no names or numbers of its own to read", sig)
     hi, lo = max(sig.home.comparisons, sig.away.comparisons), min(sig.home.comparisons, sig.away.comparisons)
     if hi and (hi - lo) / hi > d.max_search_imbalance:
         return _pass("uneven_search", f"the two sides were searched {sig.home.comparisons} and {sig.away.comparisons} "
@@ -73,6 +84,9 @@ def decide(sig: Optional[sig_mod.Signals], board: Mapping, rules: Rules, *, hist
     margin = sig.margin
     if abs(margin) < d.min_margin:
         return _pass("small_margin", f"margin {abs(margin):g} is under the {d.min_margin:g} needed", sig)
+    if d.margin_mode == "noise_scaled" and sig.z < d.min_z:
+        return _pass("small_margin", f"margin {abs(margin):g} is only {sig.z:.2f} times this game's noise ({sig.noise_sd:g}); "
+                                     f"{d.min_z:g} needed", sig)
     side = "home" if margin > 0 else "away"
     info = base.side_info(board, "moneyline", side)
     if info is None or not isinstance(info.get("price_average"), (int, float)):
@@ -89,6 +103,7 @@ def decide(sig: Optional[sig_mod.Signals], board: Mapping, rules: Rules, *, hist
         conf -= 1
     verdict = Verdict("bet", "bet", f"the {side} side leads the count {sig.side(side).score:g} to "
                                  f"{sig.side(sig_mod.other(side)).score:g} (margin {abs(margin):g})",
-                   side=side, price=price, margin=margin, scores={"home": sig.home.score, "away": sig.away.score})
+                   side=side, price=price, margin=margin, scores={"home": sig.home.score, "away": sig.away.score},
+                   basis=sig.basis, z=sig.z)
     verdict.confidence = max(1, min(5, conf))
     return verdict

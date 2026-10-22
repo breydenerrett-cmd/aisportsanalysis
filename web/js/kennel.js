@@ -670,7 +670,7 @@ async function buildTab(tab) {
   } else if (tab === "ask") {
     const sec = section("dog-ask");
     host.appendChild(sec);
-    await bootAsk(sec, { id: dog.id, name: dog.name });
+    await bootAsk(sec, { id: dog.id, name: dog.name, gematria: !!kit.gematria });
   } else if (tab === "record") {
     await buildRecord(host, dog, kit);
   }

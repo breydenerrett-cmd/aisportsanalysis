@@ -6,6 +6,7 @@
  */
 @import url("evolve.css");   /* Send to training as an evolution (web/js/dog-evolve.js) */
 @import url("diagnose.css");   /* the coach's diagnosis before it (web/js/dog-diagnose.js) */
+@import url("gematria-stream.css");   /* the Gematria hound's analysis while it works (web/js/dog-gematria-stream.js) */
 
 /* ---- layout ------------------------------------------------------------------------------------------------ */
 .dk-top { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); margin: 0 0 18px; }
@@ -32,6 +33,18 @@
 
 /* ---- unleash (was fire now) ---------------------------------------------------------------------------------------------- */
 .dk-headline { font-size: 17px; font-weight: 650; margin: 12px 0 2px; }
+/* the day as counts, the games folded away (owner, 2026-10-22: the printout "looked sloppy") */
+.dk-counts { margin: 8px 0 0; font-size: 15px; font-weight: 600; color: var(--hd-text); overflow-wrap: anywhere; }
+.dk-day { margin-top: 6px; }
+.dk-games { margin-top: 6px; font-size: 14px; color: var(--hd-text-2); }
+.dk-games > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--hd-accent); }
+.dk-games__group { margin: 8px 0 0; }
+.dk-games__head { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--hd-mute); font-weight: 600; }
+.dk-games__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; max-height: 240px; overflow-y: auto; }
+.dk-games__item { overflow-wrap: anywhere; font-size: 13px; line-height: 1.35; }
+.dk-games__more { color: var(--hd-mute); }
+.dk-livelink { margin: 8px 0 0; }
+.dk-livelink__a { display: inline-flex; align-items: center; min-height: 44px; overflow-wrap: anywhere; }
 .dk-picks, .dk-misses, .dk-tickets { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
 .dk-pick, .dk-miss, .dk-ticket {
   padding: 10px 12px; background: var(--hd-card-2); border: 1px solid var(--hd-line); border-radius: 4px;

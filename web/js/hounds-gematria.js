@@ -40,6 +40,10 @@ export const KIND_WORDS = {
   triangular_link: "triangular-number link",
   special_33_47: "a count of 33 or 47",
   own_name_eq_date: "a name value equals a number of the date",
+  // rules v2's static evidence (no result involved): a team's own numbers against the date and each other
+  static_eq_date: "a team's own number equals a number of the date",
+  static_eq_static: "two facts about one team agree",
+  static_special_33_47: "a team's own number is 33 or 47",
 };
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);

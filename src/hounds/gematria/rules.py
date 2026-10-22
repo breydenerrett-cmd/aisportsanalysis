@@ -35,6 +35,15 @@ KINDS = (
     "own_name_eq_date",         # a side's own name value equals a number of the game date (no result needed)
 )
 
+#: Kinds only a v2 rules file may carry (static evidence). A v1 file names exactly ``KINDS``; a v2 file names ``KINDS`` and may
+#: add any of these. Kept separate so the frozen v1 file still loads with no change.
+STATIC_KINDS = (
+    "static_eq_date",           # a team's own number (state order, a founding span, a stored number) equals a number of the game date
+    "static_eq_static",         # two different facts of one team agree ("Cleveland = 33 FR" and "Guardians = 33 EO")
+    "static_special_33_47",     # a team's own number is 33 or 47
+)
+ALL_KINDS = KINDS + STATIC_KINDS
+
 DEFAULT_ACTIVE = "rules_v1.json"
 
 
@@ -53,6 +62,8 @@ class Decision:
     lock_minutes: int = 60
     confidence_bands: Tuple[float, ...] = (6.0, 10.0, 15.0, 22.0)      # margin needed for confidence 2, 3, 4, 5 (1 below the first)
     counter_signal_ratio: float = 0.85                               # a losing side this close to the winner costs one point of confidence
+    margin_mode: str = "fixed"                                       # "fixed": min_margin alone (v1) | "noise_scaled": min_margin is a floor AND margin / noise >= min_z
+    min_z: float = 0.0                                               # noise_scaled only: the margin in units of the game's own noise (signals.Signals.z)
 
 
 @dataclass(frozen=True)
@@ -72,6 +83,8 @@ class Rules:
     decision: Decision
     evidence_top_n: int
     headline_min_support: int = 3
+    static_fallback: bool = False        # v2: score thin-count / no-history games on static evidence instead of passing them
+    name_only_teams: bool = False        # v2: a team the facts layer does not hold is read by its name alone (cipher values), not passed as no_facts
     rules_hash: str = ""
     source: str = ""
 
@@ -80,9 +93,12 @@ class Rules:
         try:
             kw = data["kind_weights"]
             missing = [k for k in KINDS if k not in kw]
-            extra = [k for k in kw if k not in KINDS]
+            extra = [k for k in kw if k not in ALL_KINDS]
             if missing or extra:
-                raise RulesError(f"kind_weights must name exactly the known kinds; missing {missing}, unknown {extra}")
+                raise RulesError(f"kind_weights must name every known kind; missing {missing}, unknown {extra}")
+            static_fallback = bool(data.get("static_fallback", False))
+            if static_fallback and any(k not in kw for k in STATIC_KINDS):
+                raise RulesError(f"static_fallback needs weights for {list(STATIC_KINDS)}")
             ciphers = tuple(data["ciphers"])
             for c in ciphers:
                 if c not in gematria.CIPHERS:
@@ -98,7 +114,10 @@ class Rules:
                            max_search_imbalance=float(d["max_search_imbalance"]), price_band=(int(band[0]), int(band[1])),
                            max_picks_per_day=int(d["max_picks_per_day"]), lock_minutes=int(d["lock_minutes"]),
                            confidence_bands=tuple(float(x) for x in d.get("confidence_bands", (6.0, 10.0, 15.0, 22.0))),
-                           counter_signal_ratio=float(d.get("counter_signal_ratio", 0.85)))
+                           counter_signal_ratio=float(d.get("counter_signal_ratio", 0.85)),
+                           margin_mode=str(d.get("margin_mode", "fixed")), min_z=float(d.get("min_z", 0.0)))
+            if dec.margin_mode not in ("fixed", "noise_scaled"):
+                raise RulesError(f"unknown margin_mode {dec.margin_mode!r}")
             if dec.price_band[0] <= -200:
                 raise RulesError("the price band may never include -200 or worse")
             # Hashed with LF line endings: core.autocrlf turns the file CRLF on a Windows checkout, and the same rules
@@ -112,7 +131,8 @@ class Rules:
                        special_bonus=float(data["special_bonus"]), span_units=tuple(data["span_units"]),
                        span_inclusive=tuple(bool(x) for x in data["span_inclusive"]), decision=dec,
                        evidence_top_n=int(data["evidence_top_n"]),
-                       headline_min_support=int(data.get("headline_min_support", 3)), rules_hash=digest, source=source)
+                       headline_min_support=int(data.get("headline_min_support", 3)), static_fallback=static_fallback,
+                       name_only_teams=bool(data.get("name_only_teams", False)), rules_hash=digest, source=source)
         except KeyError as exc:
             raise RulesError(f"rules file is missing {exc}") from exc
 

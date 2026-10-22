@@ -13,7 +13,7 @@ from __future__ import annotations
 import os
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest import mock
 
 from src.hounds import user_engine as eng
@@ -85,9 +85,13 @@ class TonightsGamesStarted(Tmp):
         out = self.fire(self.NOW, standard_rows() + nfl_rows(), sports=["MLB", "NFL"])
         slate = out["slate"]
         self.assertEqual(slate["today_state"], "started")
-        self.assertEqual(slate["line"], f"Tonight's games already started: {AWAY} @ {HOME} (7:10 pm ET). "
-                                        "Next games I can bet: Thursday.")
+        # 2026-10-22: counts, never a game's name in the sentence (the games sit in ``started`` / ``groups``, folded on the page)
+        self.assertEqual(slate["line"], "Tonight's games already started (1). Next games I can bet: Thursday.")
+        self.assertEqual(slate["counts"], {"total": 1, "started": 1, "later": 0, "checked_now": 0})
+        self.assertEqual(slate["counts_line"], "1 game today \u00b7 1 started")
         self.assertEqual(slate["started"][0]["start_utc"], START)
+        self.assertEqual(slate["started"][0]["game"], f"{AWAY} @ {HOME}")
+        self.assertEqual([g["key"] for g in slate["groups"]], ["started"])
         self.assertEqual(slate["next_day_label"], "Thursday")
         self.assertEqual([d["label"] for d in slate["days"]], ["Thursday"])
 
@@ -99,8 +103,7 @@ class TonightsGamesStarted(Tmp):
 
     def test_with_no_later_game_on_file_it_says_so(self):
         out = self.fire(self.NOW, standard_rows())
-        self.assertEqual(out["slate"]["line"], f"Tonight's games already started: {AWAY} @ {HOME} (7:10 pm ET). "
-                                               "No later games are on the stored boards yet.")
+        self.assertEqual(out["slate"]["line"], "Tonight's games already started (1). No later games are on the stored boards yet.")
         self.assertEqual(out["picks"], [])
 
     def test_in_the_morning_it_is_todays_not_tonights(self):
@@ -109,8 +112,8 @@ class TonightsGamesStarted(Tmp):
         rows = board_rows("2026-10-20T16:00:00Z", event_id="evt0009", start="2026-10-20T17:05:00Z",
                           moneyline=[(b, -130, 110) for b in NFL_BOOKS])
         out = self.fire("2026-10-20T19:00:00Z", rows)
-        self.assertTrue(out["slate"]["line"].startswith("Today's games already started:"), out["slate"]["line"])
-        self.assertIn("(1:05 pm ET)", out["slate"]["line"])
+        self.assertTrue(out["slate"]["line"].startswith("Today's games already started (1)"), out["slate"]["line"])
+        self.assertEqual(out["slate"]["started"][0]["start_et"], "1:05 pm ET")
 
     def test_a_game_that_started_yesterday_is_not_named_as_todays(self):
         out = self.fire("2026-10-21T14:00:00Z", standard_rows())      # Wednesday 10 am; the game began Tuesday 7:10 pm
@@ -123,9 +126,10 @@ class NothingOnTheBoardToday(Tmp):
     def test_no_games_today_names_the_next_slate_day(self):
         out = self.fire("2026-10-20T14:00:00Z", nfl_rows(), sports=["MLB", "NFL"])      # Tuesday 10 am
         self.assertEqual(out["slate"]["today_state"], "none")
-        self.assertEqual(out["slate"]["line"], "No games today. Next slate: Thursday. "
-                                               "Next game: New England Patriots @ Chicago Bears (8:15 pm ET).")
+        # the next game is said once, by ``next_game`` (and the Unleash day's "Next game it checks"), not again in the sentence
+        self.assertEqual(out["slate"]["line"], "No games today. Next slate: Thursday.")
         self.assertEqual(out["slate"]["next_game"]["game"], "New England Patriots @ Chicago Bears")
+        self.assertEqual(out["slate"]["next_game"]["text"], "New England Patriots @ Chicago Bears (8:15 pm ET)")
 
     def test_no_games_at_all_says_that_too(self):
         out = self.fire(self.NOW, [])
@@ -135,8 +139,8 @@ class NothingOnTheBoardToday(Tmp):
 
     def test_tomorrow_is_called_tomorrow(self):
         out = self.fire("2026-10-20T14:00:00Z", wednesday_rows())     # Tuesday 10 am; the game is Wednesday evening
-        self.assertEqual(out["slate"]["line"], "No games today. Next slate: Tomorrow. "
-                                               "Next game: Tampa Bay Rays @ Cleveland Guardians (7:10 pm ET).")
+        self.assertEqual(out["slate"]["line"], "No games today. Next slate: Tomorrow.")
+        self.assertEqual(out["slate"]["next_game"]["text"], "Tampa Bay Rays @ Cleveland Guardians (7:10 pm ET)")
         self.assertEqual([d["label"] for d in out["slate"]["days"]], ["Tomorrow"])
 
 
@@ -150,15 +154,55 @@ class GamesStillAheadToday(Tmp):
     def test_some_started_and_some_still_ahead_says_both(self):
         out = self.fire("2026-10-21T00:40:00Z", standard_rows() + late_rows())
         self.assertEqual(out["slate"]["today_state"], "open")
-        self.assertEqual(out["slate"]["line"], f"Already started today: {AWAY} @ {HOME} (7:10 pm ET). "
-                                               "Still ahead today: 1 game. Inside my placing window now: "
-                                               "Texas Rangers @ Houston Astros (10:10 pm ET).")
+        self.assertEqual(out["slate"]["line"], "1 started today. 1 game still ahead today. 1 inside my placing window now.")
+        self.assertEqual(out["slate"]["counts"], {"total": 2, "started": 1, "later": 0, "checked_now": 1})
+        self.assertEqual(out["slate"]["counts_line"], "2 games today \u00b7 1 started \u00b7 1 checked now")
+        self.assertEqual([g["key"] for g in out["slate"]["groups"]], ["started", "checked_now"])
 
     def test_a_game_inside_the_placing_window_is_named(self):
         out = self.fire("2026-10-20T21:30:00Z", standard_rows())      # lock was 21:10, the game starts 23:10
         self.assertEqual(out["slate"]["today_state"], "open")
-        self.assertEqual(out["slate"]["line"], f"Inside my placing window now: {AWAY} @ {HOME} (7:10 pm ET).")
+        self.assertEqual(out["slate"]["line"], "1 inside my placing window now.")
         self.assertEqual(out["slate"]["in_window"][0]["game"], f"{AWAY} @ {HOME}")
+
+
+class TheDayIsCountsNotAPrintout(unittest.TestCase):
+    """Owner, 2026-10-22: the day view dumped every game by name ("Already started today: Belinda Bencic @ ... (11:20 PM PDT), ..." and a
+    30-game "Inside my placing window now" list) and "looked sloppy". The sentence is counts; the games are data for a folded list."""
+    NOW = utc("2026-10-21T00:40:00Z")           # Tuesday 8:40 pm Eastern
+
+    def slate(self, n_started=12, n_window=14, n_later=34):
+        started = [(f"Away{i} @ Home{i}", self.NOW - timedelta(minutes=30 + i)) for i in range(n_started)]
+        upcoming = [(f"WinA{i} @ WinH{i}", self.NOW + timedelta(minutes=20 + i), self.NOW - timedelta(minutes=5)) for i in range(n_window)]
+        upcoming += [(f"LateA{i} @ LateH{i}", self.NOW + timedelta(minutes=130 + i), self.NOW + timedelta(minutes=10 + i)) for i in range(n_later)]
+        return fire.slate_view(self.NOW, started, upcoming)
+
+    def test_no_sentence_names_a_game(self):
+        view = self.slate()
+        for text in (view["line"], view["counts_line"]):
+            self.assertNotRegex(text, r"@|Away|Home|WinA|LateA")
+
+    def test_the_counts_add_up_and_the_line_is_one_tidy_block(self):
+        view = self.slate()
+        c = view["counts"]
+        self.assertEqual(c, {"total": 60, "started": 12, "later": 34, "checked_now": 14})
+        self.assertEqual(c["started"] + c["later"] + c["checked_now"], c["total"])
+        self.assertEqual(view["counts_line"], "60 games today \u00b7 12 started \u00b7 34 later \u00b7 14 checked now")
+
+    def test_the_groups_hold_every_game_once_and_are_capped(self):
+        view = self.slate(n_started=50, n_window=3, n_later=2)
+        groups = {g["key"]: g for g in view["groups"]}
+        self.assertEqual(len(groups["started"]["games"]), fire.MAX_LISTED)
+        self.assertEqual(groups["started"]["more"], 50 - fire.MAX_LISTED)
+        self.assertEqual((len(groups["checked_now"]["games"]), groups["checked_now"]["more"]), (3, 0))
+        names = [g["game"] for grp in view["groups"] for g in grp["games"]]
+        self.assertEqual(len(names), len(set(names)))
+        self.assertEqual(view["counts"]["total"], 55)
+
+    def test_a_zero_part_is_left_out_and_an_empty_day_has_no_block(self):
+        self.assertEqual(fire.counts_line({"total": 3, "started": 3, "later": 0, "checked_now": 0}), "3 games today \u00b7 3 started")
+        self.assertEqual(fire.counts_line({"total": 1, "started": 0, "later": 1, "checked_now": 0}), "1 game today \u00b7 1 later")
+        self.assertEqual(fire.counts_line({"total": 0, "started": 0, "later": 0, "checked_now": 0}), "")
 
 
 class TheViewIsPureAndKeepsTheOldFields(unittest.TestCase):
@@ -175,6 +219,8 @@ class TheViewIsPureAndKeepsTheOldFields(unittest.TestCase):
                                      ledger=os.path.join(tmp, "l.jsonl"))
         for key in ("picks", "closest_misses", "recorded", "headline", "notes", "preview_note", "slate", "as_of"):
             self.assertIn(key, out)
+        for key in ("counts", "counts_line", "groups"):
+            self.assertIn(key, out["slate"])
 
 
 class HouseDogsSayItToo(unittest.TestCase):
@@ -202,8 +248,8 @@ class HouseDogsSayItToo(unittest.TestCase):
         slate = out["slate"]
         self.assertEqual(slate["today_state"], "started")
         self.assertEqual(len(slate["started"]), 1)
-        self.assertIn("already started:", slate["line"])
-        self.assertIn(" ET)", slate["line"])
+        self.assertIn("already started (1)", slate["line"])
+        self.assertEqual(slate["counts"]["started"], 1)
 
     def test_a_house_pick_before_the_start_carries_its_day(self):
         from datetime import timedelta
