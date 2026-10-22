@@ -3,14 +3,17 @@
  * Pokemon games"). Unleash sits beside them.
  *
  *   Unleash            POST /hounds/{id}/unleash    starts the hound betting today, on paper (dog-fire.js; a visitor's read-only preview is POST /fire)
- *   Send to training   POST /hounds/{id}/train      the dog studies its own settled bets and comes back as a new version
+ *   Send to training   POST /hounds/{id}/train      the dog studies its own settled bets and comes back as a new version, but only
+ *                      after Apply: the diagnosis, then the proposal (POST .../train/propose) and its review (Apply / Veto / Tweak,
+ *                      dog-review.js). Retune from the Ask chat is the same flow (startRetune) without the diagnosis.
  *   Take them out back POST /hounds/{id}/out-back   the dog is buried, its record frozen and public (destructive)
  *
  * TAKE THEM OUT BACK ASKS TWICE. Tap, then a sheet ("This is permanent. Your hound is buried and its record is frozen."),
  * then a second sheet, and only that second button sends the request, with {"confirm": true} (the server refuses
  * without it). Cancel is the default focus of both sheets. SEND TO TRAINING asks once (nothing is lost: the old
- * version keeps its record), then plays the evolution (dog-evolve.js: charge, flash, the new version, the upgrade card) while the
- * server works. The card never says the new version is better: it says its new record starts now.
+ * version keeps its record), shows the proposal for review, then, after Apply, plays the evolution (dog-evolve.js: charge, flash, the new version, the upgrade card) while the
+ * server works. The card never says the new version is better: it says its new record starts now. EVERY TRAINING IS REVIEWED FIRST
+ * (owner ruling 2026-10-22): nothing is written until the owner taps Apply; Veto changes nothing and does not count.
  *
  * MOTION. The evolution and the burial reveal move only when the person has not asked for reduced motion
  * (`reducedMotion()`, and every keyframe is inside prefers-reduced-motion: no-preference in css/evolve.css and css/dog-kit.css).
@@ -25,6 +28,7 @@ import { post, errorText, errorCode, nextId } from "./dog-common.js";
 import { headstoneCard, recordText, trainedBadge, FROZEN_NOTE } from "./dog-headstone.js";
 import { runEvolution } from "./dog-evolve.js";
 import { runDiagnosis } from "./dog-diagnose.js";
+import { reviewProposal } from "./dog-review.js";
 
 const SLOW = 90000;
 
@@ -223,6 +227,7 @@ export function trainingCard(result) {
       " ", trainedBadge(fresh.trained_times)]),
     h("p", { class: "rt-card__headline", "data-hook": "training-headline", text: r.headline || "" }),
     r.light_note ? h("p", { class: "hd-muted", "data-hook": "training-light-note", text: r.light_note }) : null,
+    r.lineage ? h("p", { class: "hd-fine", "data-hook": "training-lineage", text: `Marked in its lineage: ${r.lineage}` }) : null,
     coachBlock(r.coach),
     h("h3", { class: "hd-h3", text: "What changed and why" }),
     h("ul", { class: "rt-changes", "data-hook": "training-changes" }, (r.changes || []).map((c, i) => changeItem(c, i))),
@@ -230,24 +235,37 @@ export function trainingCard(result) {
     h("dl", { class: "rt-records" }, [
       h("div", {}, [h("dt", { text: `Version ${old.version_no} (frozen)` }), h("dd", { "data-hook": "training-old-record", text: isNum(frozen.wins) ? recordText(frozen) : "0-0" })]),
       h("div", {}, [h("dt", { text: `Version ${fresh.version_no} (starts now)` }), h("dd", { "data-hook": "training-new-record", text: "0-0" })])]),
+    r.honesty && (r.mode === "retune" || r.mode === "loosen" || r.mode === "owner") ? h("p", { class: "hd-fine", "data-hook": "training-honesty", text: r.honesty }) : null,
     r.next_training ? h("p", { class: "hd-fine", "data-hook": "training-next", text: r.next_training }) : null]);
 }
 
 /**
- * One confirmation, then the evolution (dog-evolve.js) while the server works, then the upgrade card. `dog` is { id, name } plus,
- * when the page knows them, version_no, root_id and look (the evolution draws the hound at its real version). `onTrained(result)`
- * runs when the person leaves the card with "Back to My Kennel" (unless `backHref` sends them there as a link). Resolves with the
- * result, or null when the person backed out or the server refused.
+ * Send to training, and Retune from the Ask chat, are ONE flow with the same three beats (owner ruling 2026-10-22: the owner may veto
+ * or tweak any training, and nothing is written until Apply):
+ *
+ *   1 DIAGNOSE  (Send to training only) the coach reads the settled record, line by line (dog-diagnose.js). Read only.
+ *   2 REVIEW    the server's proposal card: each change old -> new with its reason, today's board, Apply / Veto / Tweak (dog-review.js).
+ *               A Retune starts here, from the owner's lines in the Ask chat. Read only.
+ *   3 EVOLVE    only after Apply: the request that makes the version runs beside the evolution (dog-evolve.js), then the upgrade card.
+ *
+ * `dog` is { id, name } plus, when the page knows them, version_no, root_id and look (the evolution draws the hound at its real
+ * version). `onTrained(result)` runs when the person leaves the card with "Back to My Kennel" (unless `backHref` sends them there as
+ * a link). Resolves with the result, or null when the person backed out, said no, or the server refused.
  */
-export function startTraining(dog, { opener = null, onTrained = null, backHref = null } = {}) {
+function trainingFlow(dog, { opener = null, onTrained = null, backHref = null, retune = null } = {}) {
   return new Promise((resolve) => {
     let done = false;
     const finish = (value) => { if (!done) { done = true; resolve(value); } };
-    const sheet = openSheet({ title: `Send ${dog.name} to training?`, hook: "training-confirm", opener, onClose: () => finish(null) });
+    const origin = retune ? "chat" : null;
+    const chat = retune && Array.isArray(retune.chat) ? retune.chat.filter((x) => typeof x === "string").slice(-6) : [];
+    const sheet = openSheet({ title: retune ? `Retune ${dog.name}` : `Send ${dog.name} to training?`, hook: retune ? "retune-running" : "training-confirm",
+      opener, onClose: () => finish(null), locked: !!retune });
+    const base = `/hounds/${encodeURIComponent(dog.id)}/train`;
+    const titleOf = () => sheet.el.querySelector("[data-hook='rites-title']");
 
     const ask = () => {
       clearNode(sheet.body);
-      sheet.body.appendChild(h("p", { class: "rt-note", "data-hook": "training-warning", text: `${dog.name} studies its own settled bets, then comes back as the next version with the changes the coach made. Its current record is frozen and the new version starts fresh.` }));
+      sheet.body.appendChild(h("p", { class: "rt-note", "data-hook": "training-warning", text: `${dog.name} studies its own settled bets and proposes changes to itself. You see them first and can say no, change them, or apply them. Nothing changes until you apply. Its current record is frozen when you do, and the new version starts fresh.` }));
       sheet.body.appendChild(h("p", { class: "hd-muted", text: "It can be sent again once the new version has 5 new settled bets. It cannot go while it has an open ticket." }));
       sheet.body.appendChild(actionsRow([
         button("Not now", "training-cancel", "quiet", () => sheet.close()),
@@ -256,9 +274,10 @@ export function startTraining(dog, { opener = null, onTrained = null, backHref =
     };
 
     // refused (too few new bets, an open ticket) or failed: the title stops saying it is in training, and the server's sentence is shown
-    const showTrainingRefusal = (e, layer, titleEl) => {
+    const showTrainingRefusal = (e, layer) => {
       if (layer && layer.removeAttribute) { layer.removeAttribute("data-evolve"); layer.removeAttribute("data-phase"); layer.removeAttribute("data-diagnose"); }
       sheet.el.setAttribute("data-hook", "training-refused-sheet");
+      const titleEl = titleOf();
       if (titleEl) titleEl.textContent = `${dog.name} stays as it is`;
       clearNode(sheet.body);
       sheet.body.appendChild(h("p", { class: "rt-refused", role: "alert", "data-hook": "training-refused", "data-code": errorCode(e),
@@ -267,24 +286,58 @@ export function startTraining(dog, { opener = null, onTrained = null, backHref =
       focusIn(sheet.body, "rites-close");
     };
 
+    // the owner said no: nothing was changed and it does not count
+    const showVeto = (layer) => {
+      if (layer && layer.removeAttribute) { layer.removeAttribute("data-evolve"); layer.removeAttribute("data-phase"); layer.removeAttribute("data-diagnose"); }
+      sheet.el.setAttribute("data-hook", "training-vetoed");
+      const titleEl = titleOf();
+      if (titleEl) titleEl.textContent = `${dog.name} stays as it is`;
+      clearNode(sheet.body);
+      sheet.body.appendChild(h("p", { class: "rt-note", role: "status", "data-hook": "training-vetoed-note",
+        text: "Nothing was changed. This does not count as a training." }));
+      sheet.body.appendChild(actionsRow([button("Close", "rites-close", "primary", () => sheet.close())]));
+      focusIn(sheet.body, "rites-close");
+    };
+
     const go = async () => {
       sheet.setBusy(true);
-      sheet.el.setAttribute("data-hook", "training-running");
-      const titleEl = sheet.el.querySelector("[data-hook='rites-title']");
-      if (titleEl) titleEl.textContent = `${dog.name} is in training`;
+      sheet.el.setAttribute("data-hook", retune ? "retune-running" : "training-running");
+      const titleEl = titleOf();
+      if (titleEl) titleEl.textContent = retune ? `Retune ${dog.name}` : `${dog.name} is in training`;
       const layer = sheet.el.parentNode;
+      if (layer && layer.setAttribute && !retune) layer.setAttribute("data-evolve", "1");
+      // The diagnosis comes first for a training: the coach reads the whole record, line by line, and asks Claude Haiku for its read
+      // (dog-diagnose.js). Both steps are real requests and write nothing. A refusal the server means ends it here; a diagnosis that
+      // cannot be had is skipped and the proposal goes on without it. A retune has none: the owner's own words are its reason.
+      if (!retune) {
+        const diag = await runDiagnosis({ body: sheet.body, dog, reduced: reducedMotion(), layer,
+          steps: { diagnose: () => post(`${base}/diagnose`, {}, SLOW), assess: () => post(`${base}/assess`, {}, SLOW) } });
+        if (diag && diag.refused) { sheet.setBusy(false); showTrainingRefusal(diag.e, layer); return; }
+        if (layer && layer.removeAttribute) layer.removeAttribute("data-diagnose");
+      }
+      // THE PROPOSAL: read only. The same checks as the training itself, so an open ticket or a wait is said here, before any choice.
+      clearNode(sheet.body);
+      sheet.body.appendChild(h("p", { class: "rt-status", role: "status", "aria-live": "polite", "data-hook": "training-proposing",
+        text: retune ? "Reading what you said and what today's board shows..." : "Preparing the proposal..." }));
+      const propose = (extra = {}) => post(`${base}/propose`, Object.assign(origin ? { origin, chat } : {}, extra), SLOW);
+      let first;
+      try { first = await propose(); } catch (e) { sheet.setBusy(false); showTrainingRefusal(e, layer); return; }
+      // THE REVIEW: Apply, Veto or Tweak. Nothing has been written yet.
+      if (layer && layer.removeAttribute) layer.removeAttribute("data-evolve");
+      sheet.setBusy(false);
+      sheet.el.setAttribute("data-hook", "training-review-sheet");
+      if (titleEl) titleEl.textContent = retune ? `Retune ${dog.name}?` : `Review ${dog.name}'s training`;
+      const decision = await reviewProposal({ body: sheet.body, sheet, first, propose,
+        veto: () => post(`${base}/veto`, {}, SLOW), coachBlock });
+      if (decision.action === "veto") { showVeto(layer); return; }
+      // APPLY: the only call that writes. The evolution is the show, not the work: the request is started here, runs beside it, and
+      // nothing is drawn as an upgrade until the server has answered. A refusal ends the show at once (no charge, no new hound).
+      sheet.setBusy(true);
+      sheet.el.setAttribute("data-hook", retune ? "retune-running" : "training-running");
+      if (titleEl) titleEl.textContent = `${dog.name} is in training`;
       if (layer && layer.setAttribute) layer.setAttribute("data-evolve", "1");
-      const base = `/hounds/${encodeURIComponent(dog.id)}/train`;
-      // The diagnosis comes first: the coach reads the whole record, line by line, and asks Claude Haiku for its read (dog-diagnose.js).
-      // Both steps are real requests and write nothing. A refusal the server means ends it here; a diagnosis that cannot be had is
-      // skipped and the training goes on without it.
-      const diag = await runDiagnosis({ body: sheet.body, dog, reduced: reducedMotion(), layer,
-        steps: { diagnose: () => post(`${base}/diagnose`, {}, SLOW), assess: () => post(`${base}/assess`, {}, SLOW) } });
-      if (diag && diag.refused) { sheet.setBusy(false); showTrainingRefusal(diag.e, layer, titleEl); return; }
-      if (layer && layer.removeAttribute) layer.removeAttribute("data-diagnose");
-      // The evolution is the show, not the work: the request is the caller's, runs beside it, and nothing is drawn as an upgrade
-      // until the server has answered. A refusal ends the show at once (no charge, no new hound).
-      const request = post(base, { confirm: true }, SLOW).then((r) => ({ ok: true, r }), (e) => ({ ok: false, e }));
+      const request = post(base, Object.assign({ confirm: true, picks: decision.picks }, decision.basis ? { basis: decision.basis } : {}, origin ? { origin } : {}), SLOW)
+        .then((r) => ({ ok: true, r }), (e) => ({ ok: false, e }));
       // "Back to My Kennel": on the kennel page it closes the sheet and the page redraws; elsewhere (the hound page) it goes to `backHref`
       const leave = (result) => () => {
         finish(result); sheet.close();
@@ -295,18 +348,33 @@ export function startTraining(dog, { opener = null, onTrained = null, backHref =
         body: sheet.body, dog, request, reduced: reducedMotion(), layer,
         onBack: () => { if (result) leave(result)(); }, renderWhy: trainingCard });
       sheet.setBusy(false);
-      if (!outcome.ok) { showTrainingRefusal(outcome.e, layer, titleEl); return; }
+      if (!outcome.ok) { showTrainingRefusal(outcome.e, layer); return; }
       result = outcome.result;
       // the card cites the coach's top reasons: open the fold that holds them when the server sent a read
       const fold = sheet.body.querySelector ? sheet.body.querySelector("[data-hook='evolve-why']") : null;
       if (fold && result.coach && Array.isArray(result.coach.reasons) && result.coach.reasons.length) fold.setAttribute("open", "");
       sheet.el.setAttribute("data-hook", "training-reveal");
-      if (titleEl) titleEl.textContent = result.light_adjustment ? "A light adjustment" : `${dog.name} is back`;
+      const titleNow = titleOf();
+      if (titleNow) titleNow.textContent = result.light_adjustment ? "A light adjustment" : result.mode === "retune" ? `${dog.name} is retuned` : `${dog.name} is back`;
       focusIn(sheet.body, "training-open-new");
     };
 
-    ask();
+    if (retune) go(); else ask();
   });
+}
+
+/** Send to training: one confirmation, the diagnosis, the proposal and its review, then (only after Apply) the evolution and the upgrade card. */
+export function startTraining(dog, opts = {}) {
+  return trainingFlow(dog, opts);
+}
+
+/**
+ * Retune from the Ask chat (owner request 2026-10-22): the hound has said what its rule did on today's board, and the owner tapped
+ * "Retune me". `chat` is the owner's own lines in that conversation. It goes straight to the proposal (their words are the reason),
+ * the same review (Apply / Veto / Tweak) and the same evolution after Apply. Nothing changes before Apply.
+ */
+export function startRetune(dog, { chat = [], opener = null, onTrained = null, backHref = null } = {}) {
+  return trainingFlow(dog, { opener, onTrained, backHref, retune: { chat } });
 }
 
 // ---- the menu ---------------------------------------------------------------------------------------------------

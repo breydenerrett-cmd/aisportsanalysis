@@ -63,6 +63,8 @@ STATUSES = (STATUS_RUNNING, STATUS_BENCHED, STATUS_RETIRED, STATUS_BURIED)
 EVENT_BURIED = "buried"
 EVENT_TRAINED = "trained"
 EVENT_KINDS = (EVENT_BURIED, EVENT_TRAINED)
+ORIGIN_RETUNE_CHAT = "owner_retune_chat"          # the only origin today; ``retune.ORIGIN_CHAT`` is this value
+ORIGIN_LABELS = {ORIGIN_RETUNE_CHAT: "owner retune (from chat)"}
 BURIED_REASON = "buried by its owner"
 
 # What the kennel's "Remove from my kennel" button records. A removal is a RETIREMENT, never a delete: the
@@ -129,6 +131,11 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
     hound_cols = {r[1] for r in conn.execute("PRAGMA table_info(hounds)").fetchall()}
     if "coached_from" not in hound_cols:
         conn.execute("ALTER TABLE hounds ADD COLUMN coached_from TEXT")
+    # Additive migration (Retune from chat): HOW a version came to be when it was not an ordinary edit. NULL for everything
+    # that existed before; ``ORIGIN_RETUNE_CHAT`` for a version the owner had the hound make of itself from the Ask chat.
+    # The leaderboard and the kennel read it so a retune is never mistaken for a hand edit or a coach's training.
+    if "origin" not in hound_cols:
+        conn.execute("ALTER TABLE hounds ADD COLUMN origin TEXT")
     conn.execute("""
         CREATE TABLE IF NOT EXISTS hound_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -199,6 +206,7 @@ def _row_to_hound(row: sqlite3.Row) -> dict:
         "root_id": row["root_id"], "version_no": row["version_no"],
         "copied_from": row["copied_from"], "coach_opt_in": bool(row["coach_opt_in"]),
         "coached_from": row["coached_from"],
+        "origin": row["origin"] if "origin" in row.keys() else None,
     }
 
 
@@ -304,7 +312,7 @@ def suggest_copy_name(source_name: str, *, db: Optional[Path] = None) -> str:
 # ---------------------------------------------------------------------------
 
 def _insert(conn, *, hound_id, owner, spec, status, created_at, version_of, root_id, version_no,
-            copied_from, coach_opt_in, coached_from=None) -> None:
+            copied_from, coach_opt_in, coached_from=None, origin=None) -> None:
     # The Houndmaster coach proposes version-1 specs and diffs their fixed fields; it has no way to
     # read or narrow a rule set. A version-2 hound therefore cannot be opted in (the one place that
     # enforces it, so a copy, an edit or a direct call all land the same way).
@@ -312,11 +320,11 @@ def _insert(conn, *, hound_id, owner, spec, status, created_at, version_of, root
         coach_opt_in = False
     conn.execute(
         "INSERT INTO hounds (id, owner_user_id, name, name_key, tagline, spec_json, spec_hash, "
-        "status, created_at, version_of, root_id, version_no, copied_from, coach_opt_in, coached_from) "
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "status, created_at, version_of, root_id, version_no, copied_from, coach_opt_in, coached_from, origin) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (hound_id, owner, spec["name"], user_spec._fold(spec["name"]), spec["tagline"],
          json.dumps(spec, sort_keys=True), user_spec.spec_hash(spec), status, created_at,
-         version_of, root_id, version_no, copied_from, 1 if coach_opt_in else 0, coached_from))
+         version_of, root_id, version_no, copied_from, 1 if coach_opt_in else 0, coached_from, origin))
 
 
 def _require_account(conn, user_id: int) -> None:
@@ -368,7 +376,8 @@ def create_version(old_id: str, raw_spec: Mapping, *, actor: str, reason: str,
                    now: Optional[datetime] = None, db: Optional[Path] = None,
                    extra_real_names: Optional[Mapping[str, str]] = None,
                    coached_from: Optional[str] = None,
-                   event: Optional[Mapping] = None) -> dict:
+                   event: Optional[Mapping] = None,
+                   origin: Optional[str] = None) -> dict:
     """A changed rule is a NEW hound: insert version n+1 (`version_of` = old id) and retire the old
     one. The old row's spec and every bet recorded against it stay exactly as they were. The new
     version inherits the owner and the coach opt-in; it keeps the lineage's name (the name is not
@@ -376,7 +385,10 @@ def create_version(old_id: str, raw_spec: Mapping, *, actor: str, reason: str,
 
     ``coached_from`` (Send to training) stamps the new version with the version it was trained from.
     ``event`` ({"kind", "payload"}) is written to ``hound_events`` in the SAME transaction, with the new
-    version's id added to the payload, so a training that is recorded is a training that happened."""
+    version's id added to the payload, so a training that is recorded is a training that happened.
+
+    ``origin`` marks a version that came about some way other than an edit or a training the coach chose (``ORIGIN_RETUNE_CHAT``:
+    the owner had the hound change itself from the Ask chat); it is stored on the new row and nowhere else is it inferred."""
     created = _iso(_now(now))
     with _connect(db) as conn:
         conn.execute("BEGIN IMMEDIATE")
@@ -403,7 +415,7 @@ def create_version(old_id: str, raw_spec: Mapping, *, actor: str, reason: str,
         _insert(conn, hound_id=hound_id, owner=owner, spec=spec,
                 status=STATUS_RUNNING if was_running else STATUS_BENCHED, created_at=created,
                 version_of=old_id, root_id=old["root_id"], version_no=(newest or 1) + 1,
-                copied_from=None, coach_opt_in=bool(old["coach_opt_in"]), coached_from=coached_from)
+                copied_from=None, coach_opt_in=bool(old["coach_opt_in"]), coached_from=coached_from, origin=origin)
         if event is not None:
             _insert_event(conn, kind=event["kind"], hound_id=old_id, root_id=old["root_id"], owner=owner,
                           created_at=created, payload={**dict(event.get("payload") or {}), "new_hound_id": hound_id})

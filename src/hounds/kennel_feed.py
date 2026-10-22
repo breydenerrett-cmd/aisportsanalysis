@@ -157,9 +157,10 @@ def rite_events(rows: Iterable[Mapping]) -> list:
             changes = payload.get("changes") or []
             made = "; ".join(f"{rss.clean(c.get('label'))} from {rss.clean(c.get('old_text'))} to {rss.clean(c.get('new_text'))}"
                              for c in changes if isinstance(c, Mapping)).replace("@", "")
-            light = payload.get("mode") == "light"
+            light = payload.get("mode") in ("light", "loosen")
+            retuned = payload.get("origin") == "owner_retune_chat"          # the owner had it change itself from the Ask chat
             title = (f"\U0001F3CB {name} went to training and came back as version {payload.get('to_version')}"
-                     + (" (a light adjustment)" if light else ""))
+                     + (" (owner retune from chat)" if retuned else " (a light adjustment)" if light else ""))
             why = _sentence((f"Changed: {made}. " if made else "") + "Its old record is frozen and the new version's record starts now")
             target = payload.get("new_hound_id") or row["hound_id"]
             ev = _event(KIND_TRAINED, f"kennel:{KIND_TRAINED}:{target}", when, target, title, why)

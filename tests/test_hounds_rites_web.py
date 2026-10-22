@@ -48,15 +48,26 @@ class World(RitesCase):
             hound = w.dog("Rusty Pup", sports=["MLB", "NFL"])
             trained = training.train(w.resolve(hound["id"]), w.owner.id, confirmed=True, now=NOW, rows=rows_for(hound["id"], MIXED),
                                      env={}, background=False)
-            light = training.train(w.resolve(w.dog("Young Pup", sports=["MLB", "NFL"])["id"]), w.owner.id, confirmed=True, now=NOW,
-                                   rows=[], env={}, background=False)
+            young = w.dog("Young Pup", sports=["MLB", "NFL"])
+            light = training.train(w.resolve(young["id"]), w.owner.id, confirmed=True, now=NOW,
+                                   rows=rows_for(young["id"], [(2, dict(result="LOSS"))]), env={}, background=False)
+            reviewed = w.dog("Review Pup", sports=["MLB", "NFL"])
+            proposal = training.review(w.resolve(reviewed["id"]), w.owner.id, now=NOW, rows=rows_for(reviewed["id"], MIXED))
+            idle = w.dog("Idle Pup", price_min=100, price_max=110)
+            retune_proposal = training.review(w.resolve(idle["id"]), w.owner.id, origin="chat", chat=["I don't like that you won't take a single bet"],
+                                              now=NOW, rows=[], router=None, env={})
+            retuned = training.train(w.resolve(idle["id"]), w.owner.id, confirmed=True, now=NOW, rows=[], env={}, background=False,
+                                     picks=["widen_band:up"], origin="chat")
+            veto = training.veto(w.resolve(reviewed["id"]), w.owner.id)
             gone = w.dog("Steam Pup", side_rule="market_moved_toward")
             buried = outback.bury(w.resolve(gone["id"]), w.owner.id, confirmed=True, now=NOW,
                                   rows=rows_for(gone["id"], [(7, dict(result="LOSS", side="away", price=150)), (3, dict(result="WIN", side="away", price=150)),
                                                              (2, dict(result="LOSS", side="home", price=-110))]))
             second = w.dog("Other Pup", owner=w.other)
             other = outback.bury(w.resolve(second["id"]), w.other.id, confirmed=True, now=NOW, rows=[])
-            return {k: json.loads(json.dumps(v)) for k, v in {"trained": trained, "light": light, "buried": buried, "other": other}.items()}
+            return {k: json.loads(json.dumps(v)) for k, v in {"trained": trained, "light": light, "buried": buried, "other": other,
+                                                              "proposal": proposal, "retune_proposal": retune_proposal, "retuned": retuned,
+                                                              "veto": veto}.items()}
         finally:
             w.doCleanups()
 
@@ -85,6 +96,8 @@ def kennel_routes(dogs, **over):
     r = kennel_tests.TheStudio().routes(dogs)
     r["POST /hounds/u-1/out-back"] = [200, payloads()["buried"]]
     r["POST /hounds/u-1/train"] = [200, payloads()["trained"]]
+    r["POST /hounds/u-1/train/propose"] = [200, payloads()["proposal"]]
+    r["POST /hounds/u-1/train/veto"] = [200, payloads()["veto"]]
     r.update(over)
     return r
 
@@ -306,13 +319,15 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
                 q("next", hook("training-next")), q("open", hook("training-open-new"), "attr", attr="href"), q("kind", ".rt-sheet", "attr", attr="data-hook")]
         out = self.run_flow(routes, [
             click(self.OPEN, "ask", capture=sheet_caps()),
-            click(hook("training-go"), "card", wait=400, capture=card)])
+            click(hook("training-go"), "card_review", wait=250), click(hook("review-apply"), "card", wait=400, capture=card)])
         ask, got = out["captures"]["ask"], out["captures"]["card"]
         self.assertEqual((ask["kind"], ask["title"]), ("training-confirm", "Send Underdog Gus to training?"))
         self.assertEqual(ask["buttons"], ["Not now", "Send to training"])
         # the diagnosis step is asked first; this fixture has no route for it, so the phase is skipped and the training goes on
-        self.assertEqual([p["url"] for p in out["posts"]], ["/hounds/u-1/train/diagnose", "/hounds/u-1/train"])
-        self.assertEqual(out["posts"][1]["body"], {"confirm": True})
+        # every training is reviewed first: the diagnosis, the proposal (read only), and only then the apply with the ticked changes
+        self.assertEqual([p["url"] for p in out["posts"]], ["/hounds/u-1/train/diagnose", "/hounds/u-1/train/propose", "/hounds/u-1/train"])
+        self.assertEqual(out["posts"][1]["body"], {})
+        self.assertEqual(out["posts"][2]["body"], {"confirm": True, "picks": payloads()["proposal"]["picks"], "basis": payloads()["proposal"]["basis"]})
         data = payloads()["trained"]
         self.assertEqual(got["kind"], "training-reveal")
         self.assertEqual((got["label"], got["version"]), ("Trained", "Version 2"))
@@ -328,7 +343,7 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
         self.assertIn("5 new settled bets", got["next"])
 
     def test_the_card_never_says_the_new_version_is_better(self):
-        out = self.run_flow(kennel_routes([dog("u-1")]), [click(self.OPEN, "a"), click(hook("training-go"), "b", wait=400,
+        out = self.run_flow(kennel_routes([dog("u-1")]), [click(self.OPEN, "a"), click(hook("training-go"), "b_review", wait=250), click(hook("review-apply"), "b", wait=400,
                                                                                        capture=[q("card", hook("training-card"))])])
         text = out["captures"]["b"]["card"]
         self.assertIsNone(re.search(r"\b(better|improve\w*|stronger|smarter|profit\w*|will win)\b", text, re.I), text)
@@ -336,7 +351,7 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
 
     def test_a_light_adjustment_is_clearly_labelled(self):
         routes = kennel_routes([dog("u-1")], **{"POST /hounds/u-1/train": [200, payloads()["light"]]})
-        out = self.run_flow(routes, [click(self.OPEN, "a"), click(hook("training-go"), "b", wait=400,
+        out = self.run_flow(routes, [click(self.OPEN, "a"), click(hook("training-go"), "b_review", wait=250), click(hook("review-apply"), "b", wait=400,
                                                                   capture=[q("label", hook("training-label")), q("note", hook("training-light-note")),
                                                                            q("title", hook("rites-title")), q("mode", hook("training-card"), "attr", attr="data-mode")])])
         cap = out["captures"]["b"]
@@ -350,7 +365,7 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
     def test_a_refusal_is_shown_in_the_servers_words(self):
         refusal = [409, {"detail": {"error": "training_too_soon", "message": "Underdog Gus needs 5 new settled bets on version 2 before it can train again. It has 2."}}]
         out = self.run_flow(kennel_routes([dog("u-1")], **{"POST /hounds/u-1/train": refusal}), [
-            click(self.OPEN, "a"), click(hook("training-go"), "b", wait=400, capture=sheet_caps() + [q("card", hook("training-card"), "count")])])
+            click(self.OPEN, "a"), click(hook("training-go"), "b_review", wait=250), click(hook("review-apply"), "b", wait=400, capture=sheet_caps() + [q("card", hook("training-card"), "count")])])
         cap = out["captures"]["b"]
         self.assertEqual(cap["trefused"], "Underdog Gus needs 5 new settled bets on version 2 before it can train again. It has 2.")
         self.assertEqual((cap["card"], cap["buttons"]), (0, ["Close"]))
@@ -359,7 +374,7 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
         # rebuild QA 2026-10-20: the refusal sheet kept the montage's title, "<name> is in training", above "needs 5 new settled bets"
         refusal = [409, {"detail": {"error": "training_too_soon", "message": "Underdog Gus needs 5 new settled bets on version 2 before it can train again. It has 2."}}]
         out = self.run_flow(kennel_routes([dog("u-1")], **{"POST /hounds/u-1/train": refusal}), [
-            click(self.OPEN, "a"), click(hook("training-go"), "b", wait=400, capture=sheet_caps())])
+            click(self.OPEN, "a"), click(hook("training-go"), "b_review", wait=250), click(hook("review-apply"), "b", wait=400, capture=sheet_caps())])
         cap = out["captures"]["b"]
         self.assertNotIn("is in training", cap["title"])
         self.assertTrue(cap["title"].endswith("stays as it is"), cap["title"])
@@ -368,7 +383,7 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
     def test_with_reduced_motion_the_card_is_there_at_once_and_the_sheet_says_so(self):
         out = self.run_flow(kennel_routes([dog("u-1", version_no=1)]), [
             click(self.OPEN, "a", capture=[q("motion", ".rt-sheet", "attr", attr="data-motion")]),
-            click(hook("training-go"), "b", wait=120, capture=[q("card", hook("training-card"), "count"), q("phase", hook("evolve"), "attr", attr="data-phase"),
+            click(hook("training-go"), "b_review", wait=250), click(hook("review-apply"), "b", wait=120, capture=[q("card", hook("training-card"), "count"), q("phase", hook("evolve"), "attr", attr="data-phase"),
                                                               q("pair", hook("evolve-pair") + " figcaption", "texts"), q("skip", hook("evolve-skip"), "count"),
                                                               q("stats", hook("evolve-stat"), "count"), q("title", hook("evolve-title"))])])
         self.assertEqual(out["captures"]["a"]["motion"], "reduced")
@@ -382,7 +397,7 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
         # before, charge, burst, reveal (about seven seconds), then the upgrade card; the request has long since finished
         out = self.run_flow(kennel_routes([dog("u-1", version_no=1)]), [
             click(self.OPEN, "a", capture=[q("motion", ".rt-sheet", "attr", attr="data-motion")]),
-            click(hook("training-go"), "before", wait=300, capture=[q("phase", hook("evolve"), "attr", attr="data-phase"), q("card", hook("evolve-card"), "count"),
+            click(hook("training-go"), "before_review", wait=250), click(hook("review-apply"), "before", wait=300, capture=[q("phase", hook("evolve"), "attr", attr="data-phase"), q("card", hook("evolve-card"), "count"),
                                                                     q("badge", hook("evolve-version")), q("line", hook("training-status")),
                                                                     q("flash", hook("evolve-flash"), "count")]),
             dict(do="wait", label="charge", wait=2400, capture=[q("phase", hook("evolve"), "attr", attr="data-phase"), q("card", hook("evolve-card"), "count"),
@@ -413,7 +428,7 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
     def test_a_tap_after_the_first_second_skips_to_the_card_and_a_tap_before_does_not(self):
         out = self.run_flow(kennel_routes([dog("u-1", version_no=1)]), [
             click(self.OPEN, "a"),
-            click(hook("training-go"), "early", wait=200),
+            click(hook("training-go"), "early_review", wait=250), click(hook("review-apply"), "early", wait=200),
             click(hook("evolve-stage"), "tapped_early", wait=100, capture=[q("phase", hook("evolve"), "attr", attr="data-phase"), q("card", hook("evolve-card"), "count")]),
             dict(do="wait", label="later", wait=1000),
             click(hook("evolve-skip"), "skipped", wait=150, capture=[q("phase", hook("evolve"), "attr", attr="data-phase"), q("card", hook("evolve-card"), "count"),
@@ -423,7 +438,7 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
         self.assertEqual((caps["skipped"]["phase"], caps["skipped"]["card"], caps["skipped"]["skipped"]), ("card", 1, "1"))
 
     def test_the_old_what_changed_and_why_card_is_folded_under_the_upgrade_card(self):
-        out = self.run_flow(kennel_routes([dog("u-1")]), [click(self.OPEN, "a"), click(hook("training-go"), "b", wait=300,
+        out = self.run_flow(kennel_routes([dog("u-1")]), [click(self.OPEN, "a"), click(hook("training-go"), "b_review", wait=250), click(hook("review-apply"), "b", wait=300,
                                                                                        capture=[q("fold", hook("evolve-why") + " " + hook("training-card"), "count"),
                                                                                                 q("see", hook("training-open-new"), "texts"), q("back", hook("training-done"), "texts")])])
         cap = out["captures"]["b"]
@@ -434,7 +449,7 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
         refusal = [409, {"detail": {"error": "training_too_soon", "message": "Underdog Gus needs 5 new settled bets on version 1 before it can train again. It has 2."}}]
         out = self.run_flow(kennel_routes([dog("u-1", version_no=1)], **{"POST /hounds/u-1/train": refusal}), [
             click(self.OPEN, "a"),
-            click(hook("training-go"), "b", wait=250, capture=[q("evolve", hook("evolve"), "count"), q("card", hook("evolve-card"), "count"),
+            click(hook("training-go"), "b_review", wait=250), click(hook("review-apply"), "b", wait=250, capture=[q("evolve", hook("evolve"), "count"), q("card", hook("evolve-card"), "count"),
                                                               q("new", ".ev-hound--new", "count"), q("refused", hook("training-refused")),
                                                               q("title", hook("rites-title")), q("kind", ".rt-sheet", "attr", attr="data-hook")]),
             dict(do="wait", label="later", wait=2600, capture=[q("card", hook("evolve-card"), "count"), q("evolve", hook("evolve"), "count"), q("refused", hook("training-refused"))])],
@@ -450,7 +465,7 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
     def test_the_sequence_waits_for_a_slow_server_and_draws_no_upgrade_before_it_answers(self):
         out = self.run_flow(kennel_routes([dog("u-1", version_no=1)]), [
             click(self.OPEN, "a"),
-            click(hook("training-go"), "b", wait=2600, capture=[q("phase", hook("evolve"), "attr", attr="data-phase"), q("card", hook("evolve-card"), "count"),
+            click(hook("training-go"), "b_review", wait=250), click(hook("review-apply"), "b", wait=2600, capture=[q("phase", hook("evolve"), "attr", attr="data-phase"), q("card", hook("evolve-card"), "count"),
                                                                 q("new", ".ev-hound--new", "count"), q("badge", hook("evolve-version"))])],
             reduced=False, delay={"/hounds/u-1/train": 4000})
         cap = out["captures"]["b"]
@@ -460,7 +475,7 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
     def test_done_redraws_the_kennel_with_the_new_version_and_its_badge(self):
         trained_card = dog("u-9", "Underdog Gus", version_no=2, trained_times=1)
         routes = kennel_routes([dog("u-1")])
-        out = self.run_flow(routes, [click(self.OPEN, "a"), click(hook("training-go"), "b", wait=400),
+        out = self.run_flow(routes, [click(self.OPEN, "a"), click(hook("training-go"), "b_review", wait=250), click(hook("review-apply"), "b", wait=400),
                                       click(hook("training-done"), "done", wait=500, capture=[q("layers", hook("rites-layer"), "count"),
                                                                                                q("badge", "[data-hook='kennel-dog'] [data-hook='trained-badge']", "texts"),
                                                                                                q("status", hook("kennel-status"))])],
@@ -515,7 +530,8 @@ class TheOwnersHoundMenuOnTheDogPage(unittest.TestCase):
     def test_training_from_the_dog_page_goes_to_the_new_version(self):
         routes = dog_routes(kit=owner_kit())
         routes[f"POST /hounds/{HID}/train"] = [200, payloads()["trained"]]
-        out = page(routes, reducedMotion=True, actions=[click(hook("menu-train"), "a"), click(hook("training-go"), "b", wait=300,
+        routes[f"POST /hounds/{HID}/train/propose"] = [200, payloads()["proposal"]]
+        out = page(routes, reducedMotion=True, actions=[click(hook("menu-train"), "a"), click(hook("training-go"), "b_review", wait=250), click(hook("review-apply"), "b", wait=300,
                                                                                             capture=[q("see", hook("training-open-new"), "attr", attr="href")]),
                                                          click(hook("training-done"), "c", wait=200)])
         # "See v2" is a link to the new version; "Back to My Kennel" leaves the hound page for the kennel
@@ -532,7 +548,8 @@ class TheOwnersHoundMenuOnTheDogPage(unittest.TestCase):
         refusal = [409, {"detail": {"error": "open_tickets", "message": "Closer has 1 open ticket. Wait until its open tickets settle."}}]
         routes = dog_routes(kit=owner_kit())
         routes[f"POST /hounds/{HID}/train"] = refusal
-        out = page(routes, reducedMotion=True, actions=[click(hook("menu-train"), "a"), click(hook("training-go"), "b", wait=300,
+        routes[f"POST /hounds/{HID}/train/propose"] = [200, payloads()["proposal"]]
+        out = page(routes, reducedMotion=True, actions=[click(hook("menu-train"), "a"), click(hook("training-go"), "b_review", wait=250), click(hook("review-apply"), "b", wait=300,
                                                                                             capture=[q("msg", hook("training-refused"))])])
         self.assertEqual(out["captures"]["b"]["msg"], "Closer has 1 open ticket. Wait until its open tickets settle.")
 

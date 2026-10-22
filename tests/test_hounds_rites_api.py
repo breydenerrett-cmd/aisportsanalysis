@@ -49,7 +49,15 @@ class RouteCase(RitesCase):
         return self.api.take_out_back(hound_id, Response(), body=body, current_user=user, _rl=None)
 
     def train(self, hound_id, user, confirm=True):
-        body = self.api.RiteRequest(confirm=confirm) if confirm is not None else None
+        """Send to training as the page does it: the proposal card first, then Apply with the picks it offered. A proposal the
+        route refuses (someone else's dog, an open ticket, too soon) leaves no picks, and the Apply then gets that same refusal."""
+        picks = basis = None
+        try:
+            card = self.api.training_proposal(hound_id, Response(), body=None, current_user=user, _rl=None)
+            picks, basis = card["picks"], card["basis"]
+        except HTTPException:
+            pass
+        body = self.api.TrainRequest(confirm=confirm, picks=picks, basis=basis) if confirm is not None else None
         return self.api.send_to_training(hound_id, Response(), body=body, current_user=user, _rl=None)
 
 
@@ -183,7 +191,13 @@ class OnTheRealApp(RouteCase):
         stranger = {"Authorization": f"Bearer {self.other_token}"}
         self.assertEqual(client.post(f"/hounds/{hound['id']}/train", json={"confirm": True}, headers=stranger).status_code, 404)
         self.assertEqual(client.post(f"/hounds/{hound['id']}/out-back", json={}, headers=mine).status_code, 400)
-        trained = client.post(f"/hounds/{hound['id']}/train", json={"confirm": True}, headers=mine)
+        one_tap = client.post(f"/hounds/{hound['id']}/train", json={"confirm": True}, headers=mine)
+        self.assertEqual((one_tap.status_code, one_tap.json()["detail"]["error"]), (409, "review_required"), one_tap.text)
+        self.assertEqual(len(user_store.lineage(hound["id"])), 1)
+        card = client.post(f"/hounds/{hound['id']}/train/propose", json={}, headers=mine)
+        self.assertEqual(card.status_code, 200, card.text)
+        trained = client.post(f"/hounds/{hound['id']}/train", json={"confirm": True, "picks": card.json()["picks"],
+                                                                    "basis": card.json()["basis"]}, headers=mine)
         self.assertEqual(trained.status_code, 200, trained.text)
         v2 = trained.json()["new"]["id"]
         buried = client.post(f"/hounds/{v2}/out-back", json={"confirm": True}, headers=mine)
