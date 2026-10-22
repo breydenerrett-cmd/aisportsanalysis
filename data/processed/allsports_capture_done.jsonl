@@ -1379,3 +1379,4 @@
 {"commence_utc": "2026-10-22T11:00:00Z", "event_id": "e08ebf78ffa7cff3ba4d5f58846854c2", "kind": "phase", "observed_utc": "2026-10-22T05:02:30.180147Z", "phase": "t6h", "rows": 7, "sport_key": "tennis_wta_ningbo_open"}
 {"commence_utc": "2026-10-23T05:00:00Z", "event_id": "f5c4465f64797dcb67aa1b42fd45292e", "kind": "phase", "observed_utc": "2026-10-22T05:02:30.180147Z", "phase": "t24h", "rows": 6, "sport_key": "tennis_wta_ningbo_open"}
 {"call_kind": "pregame", "credits": 1, "events": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T05:02:30.180147Z", "regions": ["us"], "rows": 41, "sport_key": "tennis_wta_ningbo_open", "stored": 41}
+{"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T05:15:03.205224Z", "regions": ["us"], "rows": 56, "sport_key": "soccer_mexico_ligamx", "stored": 6}
