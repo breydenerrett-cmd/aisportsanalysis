@@ -144,26 +144,27 @@ class TheBacktestTabOnADogPage(unittest.TestCase):
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
 class TheCopyOnTheDogPage(unittest.TestCase):
-    def test_the_button_loading_text_and_result_heading(self):
-        routes = dog_routes()
+    def test_the_visitors_button_loading_text_and_result_heading(self):
+        routes = dog_routes(owner=False)
         out = page(routes, captureInitial=[q("btn", hook("fire-btn")), q("section", "#fire-h")], actions=[
             dict(do="click", sel=hook("fire-btn"), wait=150, capture=[q("btn", hook("fire-btn")), q("title", hook("fire-title"))])])
-        self.assertEqual(out["captures"]["initial"]["btn"], "Unleash")
-        self.assertEqual(out["captures"]["initial"]["section"], "Unleash")
+        self.assertEqual(out["captures"]["initial"]["btn"], "See what it would pick")
+        self.assertEqual(out["captures"]["initial"]["section"], "See what it would pick")
         c = out["captures"]["0"]
-        self.assertEqual(c["btn"], "Unleash again")
+        self.assertEqual(c["btn"], "See what it would pick again")
         self.assertEqual(c["title"], "Closer's picks right now")
 
-    def test_the_loading_text_names_the_dog(self):
+    def test_the_loading_text_names_the_hound(self):
         """The status line is set before the request leaves and cleared when it returns, so the page test cannot catch
         it; the source of both places that say it is pinned instead."""
         fire = (WEB / "js" / "dog-fire.js").read_text(encoding="utf-8")
         camp = (WEB / "js" / "dog-camp.js").read_text(encoding="utf-8")
-        self.assertIn('`Unleashing ${name || "this dog"}...`', fire)
+        self.assertIn('`Looking at the boards for ${name || "this hound"}...`', fire)
         self.assertIn('`Unleashing ${d.name}...`', camp)
 
-    def test_the_hooks_and_the_route_keep_the_old_word(self):
-        out = page(dog_routes(), actions=[dict(do="click", sel=hook("fire-btn"), wait=150)], queries=[q("sec", hook("dog-fire-section"), "count")])
+    def test_the_hooks_and_the_routes_keep_the_old_word(self):
+        # a visitor's preview is still POST /fire; the owner's Unleash is POST /unleash (tests/test_hounds_interact_web.py)
+        out = page(dog_routes(owner=False), actions=[dict(do="click", sel=hook("fire-btn"), wait=150)], queries=[q("sec", hook("dog-fire-section"), "count")])
         self.assertEqual(out["final"]["sec"], 1)
         self.assertEqual([p["url"] for p in out["posts"]], [f"/hounds/{HID}/fire"])
 

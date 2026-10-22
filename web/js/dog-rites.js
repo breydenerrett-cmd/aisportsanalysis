@@ -1,8 +1,8 @@
 /**
  * The owner's hound menu and its two rites: Send to training and Take them out back (owner ruling 2026-10-20, "like
- * Pokemon games"). Unleash, the run-it-now preview that used to be called Take them out back, sits beside them.
+ * Pokemon games"). Unleash sits beside them.
  *
- *   Unleash            POST /hounds/{id}/fire       what the rule would pick on the newest boards, read only (dog-fire.js)
+ *   Unleash            POST /hounds/{id}/unleash    starts the hound betting today, on paper (dog-fire.js; a visitor's read-only preview is POST /fire)
  *   Send to training   POST /hounds/{id}/train      the dog studies its own settled bets and comes back as a new version
  *   Take them out back POST /hounds/{id}/out-back   the dog is buried, its record frozen and public (destructive)
  *
@@ -312,7 +312,7 @@ export function startTraining(dog, { opener = null, onTrained = null, backHref =
 // ---- the menu ---------------------------------------------------------------------------------------------------
 
 /**
- * Unleash, Send to training and Take them out back, together. `unleash` is the page's own way of running the preview (the
+ * Unleash, Send to training and Take them out back, together. `unleash` is the page's own way of running the real Unleash (the
  * dog page scrolls to its Unleash panel and runs it; the kennel card opens the studio on it). Take them out back is styled as
  * the destructive action it is. Only the owner of a live member dog gets this (the kit says so; the server checks again).
  */
@@ -342,7 +342,7 @@ export function mountRites(section, { id, name, kit, unleash }) {
     unleash, canTrain: !!kit.can_train, canOutBack: !!kit.can_out_back, backHref: "kennel.html",
     onTrained: (result) => { try { window.location.href = (result.new && result.new.page_href) || `hound.html?id=${encodeURIComponent(id)}`; } catch (err) { here(); } },
     onBuried: () => { try { window.location.href = `hound.html?id=${encodeURIComponent(id)}`; } catch (err) { here(); } }}));
-  body.appendChild(h("p", { class: "hd-fine", text: "Unleash shows what the rule would pick right now. Send to training makes a new version from what the hound got wrong. Take them out back buries it for good." }));
+  body.appendChild(h("p", { class: "hd-fine", text: "Unleash starts the hound betting today, on paper. Send to training makes a new version from what the hound got wrong. Take them out back buries it for good." }));
   section.removeAttribute("hidden");
   return dog;
 }

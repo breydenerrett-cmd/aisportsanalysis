@@ -25,6 +25,7 @@ their ledgers.
 
 PAPER_ONLY = True
 
-NOT_ADVICE = ("Paper only, not advice. Every hound makes simulated one-unit "
-              "bets; no money is staked and nothing here tells anyone what "
-              "to bet.")
+# No stake is named here on purpose: a hound bets 0.5 to 5 units and a viewer sizes a unit themselves, so any "one unit"
+# line is false (live 2026-10-22, GET /hounds/live/status). The house hounds' own flat unit is said where it is true.
+NOT_ADVICE = ("Paper only, not advice. Hounds make simulated bets; no money "
+              "is staked and nothing here tells anyone what to bet.")

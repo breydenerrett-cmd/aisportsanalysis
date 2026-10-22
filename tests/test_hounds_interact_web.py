@@ -63,6 +63,15 @@ class Payloads:
         return base
 
 
+UNLEASH_DAY = {"headline": "Closer is unleashed. It placed 1 pick on today's board.", "placed_now": 1, "games_on_board": 12, "already_running": False,
+               "picks": [{"event_id": "e1", "market": "moneyline", "market_label": "Moneyline", "selection": "Boston Red Sox to win",
+                          "game": "Boston Red Sox @ Tampa Bay Rays", "price_average": 120, "stake_units": 1.0, "placed_now": True,
+                          "start_utc": "2026-10-20T23:10:00Z", "started": False, "live": False}],
+               "before": [{"event_id": "e0", "selection": "Chicago Cubs to win", "price_average": 110, "game": "Chicago Cubs @ Reds", "stake_units": 1.0,
+                           "outcome": "Would have won", "result": "won", "state": "final"}],
+               "no_board": [], "open_tickets": [], "other_picks": [], "before_label": "Before you unleashed. Not on its record.", "paper_only": True}
+
+
 def dog_routes(*, owner=True, signed_in=True, kind="user", kit=None, fire_payload=None, status=200):
     r = {k: list(v) for k, v in F.routes(True, 12).items()}
     detail = F.detail(HID, True, 12)
@@ -74,6 +83,8 @@ def dog_routes(*, owner=True, signed_in=True, kind="user", kit=None, fire_payloa
         r[f"/hounds/{HID}/kit"] = [200, kit if kit is not None else Payloads.kit(owner=owner, signed_in=signed_in)]
     payload = fire_payload if fire_payload is not None else Payloads.fire_payload(owner=owner)
     r[f"POST /hounds/{HID}/fire"] = [200, payload]
+    # the owner's Unleash (dog-fire.js `today`) starts the hound: the same route and answer shape the kennel studio draws
+    r[f"POST /hounds/{HID}/unleash"] = [200, UNLEASH_DAY]
     ctx = context(dog_id=HID, name="Closer")
     r[f"/hounds/{HID}/ask"] = [200, {"dog_id": HID, "dog_name": "Closer", "greeting": ask.answer("who are you", ctx)["lines"],
                                      "suggestions": ask.suggestions(ctx), "warming": False}]
@@ -115,12 +126,15 @@ class TheKitOnADogPage(unittest.TestCase):
         self.assertFalse(f["note"])                      # the "not written by an AI model" line is gone (not true of every answer)
         self.assertIn("/hounds/closer/kit", out["gets"])
 
-    def test_fire_now_draws_the_picks_the_checks_and_the_manual_button_for_the_owner(self):
-        out = page(dog_routes(), actions=[dict(do="click", sel=hook("fire-btn"), wait=80, capture=[
+    def test_the_preview_draws_the_picks_and_the_checks_for_a_visitor_under_its_own_name(self):
+        out = page(dog_routes(owner=False), captureInitial=[q("btn", hook("fire-btn")), q("head", "#fire-h")], actions=[dict(do="click", sel=hook("fire-btn"), wait=80, capture=[
             q("headline", hook("fire-headline")), q("picks", hook("fire-pick"), "count"),
             q("sel", ".dk-pick__sel"), q("price", ".dk-pick__price"), q("reason", hook("pick-reason")),
             q("checks", ".dk-checks li", "count"), q("record", hook("record-manual"), "count"),
             q("note", hook("fire-preview-note")), q("btn", hook("fire-btn"))])])
+        # "Unleash" is the owner's real button (it bets today); the visitor's read-only run is "See what it would pick"
+        self.assertEqual(out["captures"]["initial"]["btn"], "See what it would pick")
+        self.assertEqual(out["captures"]["initial"]["head"], "See what it would pick")
         c = out["captures"]["0"]
         self.assertEqual(c["headline"], "1 pick qualifies on the latest stored boards.")
         self.assertEqual(c["picks"], 1)
@@ -129,25 +143,29 @@ class TheKitOnADogPage(unittest.TestCase):
         self.assertIn("5 books quoting", c["price"])
         self.assertIn("Rule: the underdog", c["reason"])
         self.assertEqual(c["checks"], 5)
-        self.assertEqual(c["record"], 1)
+        self.assertEqual(c["record"], 0)
         self.assertIn("preview", c["note"].lower())
-        self.assertEqual(c["btn"], "Unleash again")
-        self.assertEqual([p["url"] for p in out["posts"]], [f"/hounds/{HID}/fire"])
+        self.assertEqual(c["btn"], "See what it would pick again")
+        self.assertEqual([p["url"] for p in out["posts"]], [f"/hounds/{HID}/fire"])      # read only: nothing is recorded
 
-    def test_recording_a_manual_pick_posts_only_which_pick_and_never_a_price(self):
-        out = page(dog_routes(), actions=[
-            dict(do="click", sel=hook("fire-btn"), wait=80),
-            dict(do="click", sel=hook("record-manual"), wait=80, capture=[
-                q("done", hook("manual-recorded")), q("btn", hook("record-manual"), "count")])])
-        post = [p for p in out["posts"] if p["url"].endswith("/manual")][0]
-        self.assertEqual(post["method"], "POST")
-        self.assertEqual(set(post["body"]), {"event_id", "market"})
-        self.assertEqual(post["body"]["market"], "moneyline")
-        c = out["captures"]["1"]
-        self.assertIn("Recorded as a manual pick at +120", c["done"])
-        self.assertIn("sits apart from the rule's record", c["done"])
-        self.assertIn("4 left today", c["done"])
-        self.assertEqual(c["btn"], 0)
+    def test_the_owners_unleash_on_the_hound_page_is_the_real_one_the_studio_runs(self):
+        """Live QA 2026-10-22: the hound page's Unleash was the nothing-is-recorded preview while the studio's bet today. The owner
+        gets the studio's component (dog-fire.js `today`): POST /unleash, never /fire, and the day it answers with."""
+        out = page(dog_routes(), captureInitial=[q("btn", hook("fire-btn")), q("head", "#fire-h"), q("intro", hook("dog-fire"))],
+                   actions=[dict(do="click", sel=hook("fire-btn"), wait=120, capture=[
+                       q("title", hook("unleash-title")), q("headline", hook("unleash-headline")), q("picks", hook("unleash-pick"), "count"),
+                       q("before", hook("unleash-before-item"), "count"), q("label", hook("unleash-before-label")),
+                       q("preview", hook("fire-preview-note"), "count"), q("record", hook("record-manual"), "count")])])
+        self.assertEqual(out["captures"]["initial"]["btn"], "Unleash")
+        self.assertEqual(out["captures"]["initial"]["head"], "Unleash")
+        self.assertIn("starts Closer betting today", out["captures"]["initial"]["intro"])
+        self.assertNotIn("Nothing is recorded", out["captures"]["initial"]["intro"])
+        c = out["captures"]["0"]
+        self.assertEqual(c["title"], "Closer's day")
+        self.assertIn("placed 1 pick", c["headline"])
+        self.assertEqual((c["picks"], c["before"], c["preview"], c["record"]), (1, 1, 0, 0))
+        self.assertIn("Not on its record", c["label"])
+        self.assertEqual([p["url"] for p in out["posts"]], [f"/hounds/{HID}/unleash"])
 
     def test_a_visitor_who_is_not_the_owner_gets_the_preview_without_the_button(self):
         routes = dog_routes(owner=False)
@@ -158,22 +176,13 @@ class TheKitOnADogPage(unittest.TestCase):
         self.assertEqual(out["captures"]["0"]["record"], 0)
         self.assertTrue(out["final"]["locker"])                         # the locker room is the owner's alone
 
-    def test_a_blocked_pick_says_why_instead_of_hiding_the_button(self):
-        payload = Payloads.fire_payload()
-        payload["picks"][0]["manual"] = {"can_record": False, "blocked": "the newest board is more than 75 minutes old"}
-        payload["picks"][0]["stale"] = True
-        out = page(dog_routes(fire_payload=payload), actions=[dict(do="click", sel=hook("fire-btn"), wait=80, capture=[
-            q("blocked", hook("manual-blocked")), q("chip", ".dk-chip--warn", "texts")])])
-        self.assertIn("Cannot record this one: the newest board is more than 75 minutes old.", out["captures"]["0"]["blocked"])
-        self.assertIn("Old board", out["captures"]["0"]["chip"])
-
     def test_nothing_qualifies_lists_the_closest_misses_with_their_numbers(self):
         with tempfile.TemporaryDirectory() as tmp:
             with mock.patch.object(eng, "ledger_path", lambda p=None: p or os.path.join(tmp, "u.jsonl")):
                 dog = dog_of(hid=HID, price_min=150, price_max=250)
                 data = fire.fire_user(dog, now=NOW, rows_for=rows_for(standard_rows()), ledger=os.path.join(tmp, "u.jsonl"))
                 payload = camp.decorate_fire(dog, data, OWNER, now=NOW)
-        out = page(dog_routes(fire_payload=payload), actions=[dict(do="click", sel=hook("fire-btn"), wait=80, capture=[
+        out = page(dog_routes(owner=False, fire_payload=payload), actions=[dict(do="click", sel=hook("fire-btn"), wait=80, capture=[
             q("headline", hook("fire-headline")), q("misses", hook("fire-misses") + " li", "count"),
             q("first", hook("fire-misses") + " li"), q("picks", hook("fire-pick"), "count")])])
         c = out["captures"]["0"]

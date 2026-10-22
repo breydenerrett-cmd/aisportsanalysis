@@ -514,8 +514,28 @@ _SIDE_PHRASE = {
 SPORT_PHRASE_LABELS = {
     "NCAAF": "college football", "GRIDIRON": "CFL and UFL", "NCAAB": "college basketball", "BASKETBALL": "other basketball",
     "HOCKEY": "other hockey", "BASEBALL": "other baseball", "SOCCER": "soccer", "TENNIS": "tennis", "CRICKET": "cricket",
-    "RUGBY": "rugby", "AFL": "Aussie rules",
+    "RUGBY": "rugby", "AFL": "Aussie rules", "BOXING": "boxing",
 }
+
+#: A stand-alone ALL-CAPS internal sport key (GRIDIRON, BASKETBALL ...). Only the keys that read badly are listed (MLB, NFL, NBA,
+#: WNBA, NHL, MMA pass through as the names people use). Case-sensitive on purpose: "tennis" or "Soccer" in a sentence is already prose.
+_RAW_SPORT_KEY = re.compile(r"(?<![A-Za-z0-9_])(" + "|".join(sorted(SPORT_PHRASE_LABELS, key=len, reverse=True)) + r")(?![A-Za-z0-9_])")
+
+
+def plain_sport_keys(text: Any) -> str:
+    """``text`` with every raw sport key replaced by its label ("GRIDIRON, NBA and 4 more sports" reads "CFL and UFL, NBA and 4 more
+    sports"). A ticket's rule reason is written ONCE, at bet time, into an append-only ledger, and rows written before
+    ``sports_phrase`` learned the labels carry the internal keys (live 2026-10-22: "GRIDIRON, NBA, WNBA and 4 more sports" on a
+    tennis ticket). The ledger is never rewritten, so the fix is here: every reason is mapped on its way to a page. A label that opens
+    a sentence is capitalised; text with no raw key comes back unchanged."""
+    out = str(text or "")
+
+    def swap(m: "re.Match") -> str:
+        label = SPORT_PHRASE_LABELS[m.group(1)]
+        before = out[:m.start()].rstrip()
+        return label[:1].upper() + label[1:] if (not before or before.endswith((".", ":", "!", "?"))) else label
+
+    return _RAW_SPORT_KEY.sub(swap, out) if out else ""
 
 
 def sport_words(code: str) -> str:

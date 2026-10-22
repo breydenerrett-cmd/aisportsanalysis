@@ -57,7 +57,7 @@ export function unitsPairText(rec) {
 }
 
 export const UNITS_EXPLAINER =
-  "Ranked by paper units this season (1 unit a bet, average price).";
+  "Ranked by paper units this season (each bet at the units its hound stakes, average price).";
 
 /** What each status means, a bit longer than the one-liner on the leaderboard. Keyed on the referee's label. */
 export const VERDICT_MEANING = {
