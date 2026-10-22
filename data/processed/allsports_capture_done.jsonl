@@ -1259,3 +1259,5 @@
 {"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 5, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T00:43:24.797604Z", "regions": ["us"], "rows": 5, "sport_key": "icehockey_ahl", "stored": 5}
 {"call_kind": "inplay", "credits": 1, "events": 14, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T00:43:24.797604Z", "regions": ["us"], "rows": 117, "sport_key": "icehockey_nhl", "stored": 117}
 {"call_kind": "inplay", "credits": 1, "events": 65, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T00:43:24.797604Z", "regions": ["us"], "rows": 587, "sport_key": "americanfootball_ncaaf", "stored": 40}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T00:57:46.970515Z", "regions": ["us"], "rows": 7, "sport_key": "basketball_wnba", "stored": 7}
+{"call_kind": "inplay", "credits": 1, "events": 27, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-22T00:57:46.970515Z", "regions": ["us"], "rows": 177, "sport_key": "soccer_usa_mls", "stored": 7}
