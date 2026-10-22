@@ -172,13 +172,21 @@ def _hour(value, what: str) -> Optional[int]:
     return hour
 
 
-def _zone_ok(name: str) -> bool:
+def zone(name: str):
+    """A tzinfo for ``name``, or None when it is unknown. A machine with no tz database (a Windows laptop, the test
+    image) still knows Eastern, through the written-out US daylight rules in src/data/eastern.py."""
     try:
         from zoneinfo import ZoneInfo
-        ZoneInfo(name)
-        return True
+        return ZoneInfo(name)
     except Exception:  # noqa: BLE001 -- an unknown zone, or no tz database on the machine
-        return False
+        if name == DEFAULT_TZ:
+            from src.data.eastern import EASTERN_FALLBACK
+            return EASTERN_FALLBACK
+        return None
+
+
+def _zone_ok(name: str) -> bool:
+    return zone(name) is not None
 
 
 def update_prefs(user_id: int, patch: Mapping, *, now: Optional[datetime] = None) -> dict:
@@ -388,7 +396,7 @@ def _owner_of(hound_id: str) -> Optional[tuple]:
 
 def emit_placed(row: Mapping, *, now: Optional[datetime] = None) -> bool:
     """One 'bet placed' event for a freshly written bet row. True when an event was written."""
-    if row.get("kind") not in (None, "bet") or row.get("provenance") == "replay" or row.get("role"):
+    if row.get("kind") not in (None, "hound_user_bet") or row.get("provenance") == "replay" or row.get("role"):
         return False
     if not _price_ok(row.get("price")):
         return False
@@ -402,7 +410,7 @@ def emit_placed(row: Mapping, *, now: Optional[datetime] = None) -> bool:
 
 def emit_settled(bet: Mapping, graded: Mapping, *, now: Optional[datetime] = None) -> bool:
     """One 'bet settled' event (win, loss or push; a void is not reported)."""
-    result = graded.get("result")
+    result = str(graded.get("result") or "").lower()          # the grader writes WIN / LOSS / PUSH / VOID
     if result not in SETTLED_RESULTS or bet.get("role"):
         return False
     found = _owner_of(bet["hound_id"])

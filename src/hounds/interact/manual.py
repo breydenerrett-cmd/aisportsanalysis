@@ -40,6 +40,8 @@ from src.hounds import one_side, user_engine, user_rules, user_spec
 from src.hounds.contract import ticket_status
 from src.hounds.interact import ask_eval, common, fire
 from src.ledger.chain import HashChainLedger
+from src.notify import alerts
+
 
 LEDGER_NAME = user_engine.MANUAL_LEDGER_NAME      # one name, read by the engine's one-side guard too
 ENV_LEDGER = user_engine.MANUAL_LEDGER_ENV
@@ -226,6 +228,7 @@ def record(dog: common.Dog, user_id: int, event_id: str, market: str, *, now: Op
         if used >= PER_DAY_LIMIT:
             raise ManualError("rate_limited", f"{PER_DAY_LIMIT} manual picks a day is the limit for one dog", 429)
         store.append(row)
+    alerts.emit_placed_safe(row)                      # after the ledger write; can never fail the pick
     return ticket_view(row, None, now=now)
 
 

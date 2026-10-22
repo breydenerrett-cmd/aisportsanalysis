@@ -59,6 +59,8 @@ from src.appstate import card_ledger
 from src.core import odds as odds_math
 from src.hounds import user_engine, user_rules
 from src.ledger.chain import HashChainLedger
+from src.notify import alerts
+
 from src.pipeline import allsports_scores
 
 KIND_GRADED = "hound_user_graded"
@@ -369,6 +371,7 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
                         "profit_stake_units": None if avg_units is None else round(avg_units * stake, 4),
                         "profit_stake_units_best": None if best_units is None else round(best_units * stake, 4)})
         store.append(row)
+        alerts.emit_settled_safe(bet, row)         # after the ledger write; can never fail the grade
         report["graded"] += 1
         report["by_result"][outcome] = report["by_result"].get(outcome, 0) + 1
     return report

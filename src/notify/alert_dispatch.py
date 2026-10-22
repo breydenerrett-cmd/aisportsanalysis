@@ -64,11 +64,7 @@ def in_quiet_hours(prefs: Mapping, now: datetime) -> bool:
     start, end = prefs.get("quiet_start"), prefs.get("quiet_end")
     if start is None or end is None or start == end:
         return False
-    try:
-        from zoneinfo import ZoneInfo
-        hour = now.astimezone(ZoneInfo(prefs.get("tz") or alerts.DEFAULT_TZ)).hour
-    except Exception:  # noqa: BLE001
-        hour = now.astimezone(timezone.utc).hour
+    hour = now.astimezone(alerts.zone(prefs.get("tz") or alerts.DEFAULT_TZ) or timezone.utc).hour
     return (start <= hour < end) if start < end else (hour >= start or hour < end)
 
 
@@ -178,15 +174,19 @@ def _process(user, prefs, channel: str, *, http, env, now, paid_check, sleep, co
             events = _candidates(conn, user.id, channel, kinds, now)
             if not events:
                 return
-            group = next(iter(_groups(events)))
+            groups = list(_groups(events))
+            group = groups[0]
             if not _ready(group, now):
                 counts["held_settling"] = counts.get("held_settling", 0) + 1
                 return
-            if _sent_last_hour(conn, user.id, channel, now) >= cap:
+            room = cap - _sent_last_hour(conn, user.id, channel, now)
+            if room <= 0:
                 counts["held_rate_cap"] = counts.get("held_rate_cap", 0) + 1
                 return
-            # over-cap backlog goes out as ONE message once there is room: take every ready event, not just the window
-            group = events if len(events) > len(group) and _backlog(events, now) else group
+            # More waiting windows than messages left this hour: send them all as ONE message instead of
+            # dropping any or breaking the cap.
+            if len(groups) > room:
+                group = events
             won = _claim(conn, channel, group, now)
         if not won:
             return
@@ -205,12 +205,6 @@ def _process(user, prefs, channel: str, *, http, env, now, paid_check, sleep, co
         counts[final] = counts.get(final, 0) + len(won)
         if final != ch.S_SENT:
             return
-
-
-def _backlog(events: list, now: datetime) -> bool:
-    """True when the queue is older than one window (it built up behind the cap or quiet hours): send it as one."""
-    first = alerts.parse_iso(events[0]["created_utc"])
-    return (now - first).total_seconds() > BATCH_WINDOW_S * 2
 
 
 def prune(now: datetime) -> None:

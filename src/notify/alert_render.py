@@ -25,11 +25,8 @@ SMS_MAX = 300                  # two segments; a longer burst is summarised with
 
 
 def _zone(name: str):
-    try:
-        from zoneinfo import ZoneInfo
-        return ZoneInfo(name or "America/New_York")
-    except Exception:  # noqa: BLE001
-        return timezone.utc
+    from src.notify import alerts
+    return alerts.zone(name or alerts.DEFAULT_TZ) or timezone.utc
 
 
 def start_text(value, tz: str) -> str:
