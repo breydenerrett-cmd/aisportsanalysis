@@ -13,8 +13,8 @@ scouting without a board that was read, never celebrating without a graded win. 
 - **Code.**
   - `web/js/room-adapter.js`: input rows -> character states. Pure (no DOM, no fetch, no clock of its own); also runs under node.
   - `web/js/room-data.js`: the requests only. It assembles the adapter's input and decides no state.
-  - `web/js/room-layout.js`: where a hound's label (pick bubble, settled units) sits: one line, two heights for neighbours, slid whole into
-    the slice a phone shows. Pure (runs under node).
+  - `web/js/room-layout.js`: where each hound stands (the zone bands, the seats across, the rows, "+K more", who is drawn first) and where its
+    label (pick bubble, settled units) sits: one line, two heights for neighbours, slid whole into the slice a phone shows. Pure (runs under node).
   - `web/js/room-scene.js`: draws the room and the hounds (pure SVG / CSS / DOM, no image file, no `innerHTML`), the card, the roster, polling,
     sound. `mountRoom` (the public room) and `mountKennelRoom` (the fold).
   - `web/css/room.css`, `web/js/room-page.js` (the 3-line boot of `room.html`).
@@ -99,13 +99,35 @@ Notes on the rules:
 ## Behaviour
 
 - **Movement.** A state change walks the hound to its new zone (a 2.4 s `left` / `top` transition). Hounds keep their seat while they stay in a
-  zone; a full zone spills onto the spare floor. The hound elements are kept between reads, so a move is a transition and not a redraw.
+  zone and the seat still exists. The hound elements are kept between reads, so a move is a transition and not a redraw.
+- **Crowding: the room scales from 0 to 40 hounds** (`planRoom` in `room-layout.js`; `RoomCrowding` and `PlanTheRoom` in `tests/test_kennel_room.py`).
+  The real pack is 35 hounds with the Claude Hound and the Gematria Hound; the first version had twelve desks, four floor seats and eight spare
+  places, which overlapped at that size (hounds on each other, names colliding, the scouting row running into the GYM).
+  - **Zones are bands, top to bottom:** the floor (scouting), the water bowl (just lost), the desks (an open pick, just won), the gym (fresh from
+    training), the beds (naps, sleep). A band is the full width of the room. Only the desks and the beds are always drawn (an honest empty room shows
+    empty desks and beds); the others appear when a hound is in them. The GYM and BEDS signs are the first thing in their band, above the first row.
+  - **Seats across follow the stage's width** (`columnsFor`): as many as fit at 108 px or more each (7 on the 860 px a phone pans inside, 8 at 1000,
+    9 at 1124, never more than 10). Seats are `890 / cols` view units apart.
+  - **A zone with more hounds than seats wraps into more rows**, at most 3 (floor, beds), 2 (desks), 1 (bowl, gym), and the room gets taller (the
+    stage's `aspect-ratio` is set from the rows; 600 view units is the least). Past that the zone shows its first N and its last seat is
+    **"+K more"**, a button that lists that zone's hounds in the status list under the room ("On the floor: 14 of 35", with **Show everyone**).
+    The list always holds every hound, from the same adapter state; only the first N are drawn.
+  - **Who is drawn first** (`orderCharacters`): the season leader, then the most recent activity (a settled result, newest first; then a game that is
+    live; then the soonest first pitch among open tickets), then the most open tickets and settled bets, then name and id, so the same input always
+    gives the same room. A hound keeps its seat while it stays visible in its zone; a new one takes the first free seat.
+  - **Nothing can overlap.** Rows are 112 to 172 view units apart (a hound is at most 92 tall, its crown 16 more; a desk row leaves room above for both
+    heights of a bubble), seats are a whole seat apart, bands never share a place. A name tag is a seat less 18 px wide (a pacing hound sways 6 px) and
+    truncates with an ellipsis, the whole name in its `title`. A bubble is at most two seats less a gap (`labelMax`, and no wider than the room at the
+    end seats), so labelled neighbours alternating on two heights can never touch. On a phone, labels that cannot stand side by side inside the visible
+    slice share it (`--rm-fit`; the pick is cut with an ellipsis, `+N more` never).
+  - **Each zone's boundary is an invisible rect** (`rect.rm-zone[data-zone]` in the room's SVG); the render check measures every sprite, name tag,
+    bubble, units float, "+K more" and sign against it and against each other.
 - **Labels.** A pick bubble is one line: the pick truncates with an ellipsis (the card has it whole), `+N more` never does. Labelled neighbours in
-  a row take turns on two heights (the second sits just under the front desk row's edge, or raised when there is a second desk row), so two labels at
-  one height are two seats apart. On a phone a label of a hound in view slides sideways until it is whole inside the visible slice (and clear of the
-  label beside it); a label whose hound is out of view and would be cut by the edge is not drawn. The settled-units float on a win moves a few px, not up the wall.
-- **Zones read at a glance.** The GYM sign sits on the gym mat; the BEDS sign sits over the first row of beds (the second row appears only when it is
-  used). Napping hounds settle into a bed. `data-zone` and `data-label` on each hound and on each list entry come from the same adapter state, and
+  a row take turns on two heights (assignTiers, from the labels' measured widths), so two labels at one height are two seats apart. On a phone a label of a
+  hound in view slides sideways until it is whole inside the visible slice (and clear of the label beside it); a label whose hound is out of view and
+  would be cut by the edge is not drawn. The settled-units float on a win moves a few px, not up the wall.
+- **Zones read at a glance.** The GYM sign sits at the top of the gym band, on the gym mat; the BEDS sign at the top of the beds band. Napping hounds
+  settle into a bed. `data-zone` and `data-label` on each hound and on each list entry come from the same adapter state, and
   `tests/test_kennel_room.py` (`ZoneAndListSayTheSame`) pins it.
 - **Phone first.** The stage keeps a minimum width (860 px) inside its frame and pans there (the frame, not the page, scrolls sideways); it
   opens centred on where the hounds are. Under it, a list of every hound with its state (a tap opens the card) is the phone's main way in
@@ -116,7 +138,7 @@ Notes on the rules:
   polls (a first load is silent). WebAudio synthesis, no files.
 - **My Kennel fold.** Open on a wide screen, folded on a phone, until the member chooses (kept in `localStorage`, `linehound.kennel-room.open`, in a
   try/catch). A member with no active hound has no room. A public kennel (`?u=`) has none. It carries no paper line of its own (the page has one).
-- **Text.** Every string is set with `textContent`; nothing a hound is named reaches markup. A name is clipped to fit its tag (the card shows it whole).
+- **Text.** Every string is set with `textContent`; nothing a hound is named reaches markup. A name truncates with an ellipsis inside its tag (a seat less 18 px; the tag's `title` and the card have it whole).
 - **Copy.** No emoji, no profit or edge words, no Bet Check. One short paper line under the public room ("Paper bets only. Units are the
   scoreboard, not money.") and the compliance footer once (21+, paper bets, bet at your own risk, `tel:` 1-800-GAMBLER).
 

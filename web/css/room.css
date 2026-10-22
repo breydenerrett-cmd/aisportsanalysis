@@ -54,7 +54,10 @@
   overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin;
 }
 .rm[data-empty="true"] .rm-frame { display: none; }
-.rm-stage { position: relative; width: max(100%, 860px); aspect-ratio: 1000 / 600; container-type: inline-size; }
+.rm-stage { position: relative; width: max(100%, 860px); aspect-ratio: 1000 / 600; container-type: inline-size; --rm-pitch: 110; --rm-bmax: 200; }
+/* The room is 1000 view units across and as tall as its rows (room-scene.js sets the aspect-ratio, --rm-pitch (one seat's width) and --rm-bmax (the widest
+   label: two seats less a gap) from room-layout.js planRoom). 1 view unit = .1cqw. Each zone's band is an invisible rect: its boundary. */
+.rm-zone { fill: none; stroke: none; pointer-events: none; }
 .rm-set, .rm-crowd { position: absolute; inset: 0; }
 .rm-crowd { pointer-events: none; }
 .rm-bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -111,7 +114,8 @@
 .rm-dog { display: block; line-height: 0; transform-origin: 50% 100%; }
 .rm-dog svg { display: block; width: clamp(54px, 7.3cqw, 86px); height: clamp(54px, 7.3cqw, 86px); border-radius: 22%; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .55)); }
 .rm-name {
-  display: block; margin-top: -6px; position: relative; padding: 1px 9px; border-radius: 999px; white-space: nowrap;
+  display: block; box-sizing: border-box; max-width: calc(var(--rm-pitch, 110) * .1cqw - 18px); overflow: hidden; text-overflow: ellipsis;
+  margin-top: -6px; position: relative; padding: 1px 9px; border-radius: 999px; white-space: nowrap;
   background: rgba(11, 13, 16, .86); border: 1px solid var(--rm-line-2); color: var(--rm-ink);
   font: 600 clamp(10px, 1.3cqw, 13px)/1.55 var(--rm-font);
 }
@@ -124,11 +128,12 @@
 .rm-crown svg { width: 100%; height: 100%; display: block; }
 .rm-crown__body { fill: var(--rm-gold); stroke: #7A5A12; stroke-width: 1; } .rm-crown__band { fill: #C48F25; }
 
-/* A bubble is ONE line: the pick truncates with an ellipsis (the card has it whole), "+N more" never does. --rm-shift / --rm-tail are set by
-   room-scene.js keepInView(): on a phone a bubble slides sideways until it is whole inside the visible slice of the room. */
+/* A bubble is ONE line: the pick truncates with an ellipsis (the card has it whole), "+N more" never does. --rm-shift / --rm-tail / --rm-fit are set by
+   room-scene.js keepInView(): on a phone a bubble slides sideways until it is whole inside the visible slice of the room, and two that cannot stand side by
+   side in the slice share it (--rm-fit, the pick is cut with an ellipsis). */
 .rm-bubble {
   position: absolute; bottom: calc(100% + 6px); left: 50%; margin-left: var(--rm-shift, 0px); transform: translateX(-50%); z-index: 4; pointer-events: none;
-  display: flex; align-items: baseline; box-sizing: border-box; width: max-content; max-width: min(23cqw, 210px); padding: 4px 9px; border-radius: 9px;
+  display: flex; align-items: baseline; box-sizing: border-box; width: max-content; max-width: min(calc(var(--rm-bmax, 200) * .1cqw), 210px, var(--rm-fit, 999px)); padding: 4px 9px; border-radius: 9px;
   white-space: nowrap; background: var(--rm-panel); border: 1px solid var(--rm-line-2); color: var(--rm-ink);
   font: 600 clamp(10px, 1.3cqw, 12.5px)/1.3 var(--rm-font); font-variant-numeric: tabular-nums;
 }
@@ -187,8 +192,21 @@
 .rm-hound[data-state="pending"] .rm-name { border-color: rgba(242, 184, 75, .45); }
 .rm-hound[data-state="won"] .rm-name { border-color: rgba(91, 227, 154, .55); }
 
+/* "+K more": the last seat of a zone that has more hounds than seats; it opens the list under the room filtered to that zone */
+.rm-more {
+  position: absolute; transform: translate(-50%, calc(-100% - 22px)); box-sizing: border-box; max-width: calc(var(--rm-pitch, 110) * .1cqw - 18px); pointer-events: auto; cursor: pointer;
+  appearance: none; padding: 4px 10px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: var(--rm-panel); border: 1px solid var(--rm-line-2); color: var(--rm-ink); font: 700 clamp(11px, 1.3cqw, 13px)/1.3 var(--rm-font);
+}
+.rm-more:hover { border-color: var(--rm-accent); color: var(--rm-accent); }
+.rm-more:focus-visible { outline: 2px solid var(--rm-accent); outline-offset: 2px; }
+
 /* ---- the roster under the room ---- */
 .rm-roster { list-style: none; margin: var(--sp-4, 12px) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 2px var(--sp-4, 12px); }
+.rm-roster__head { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4, 12px); padding: 4px; color: var(--rm-ink-2); font: 600 var(--fs-small, 14px)/1.3 var(--rm-font); }
+.rm-roster__all { appearance: none; border: 1px solid var(--rm-line-2); background: none; color: var(--rm-ink); border-radius: 999px; padding: 6px 12px; min-height: 36px; cursor: pointer; font: 600 13px/1.2 var(--rm-font); }
+.rm-roster__all:hover { background: rgba(255, 255, 255, .06); }
+.rm-roster__all:focus-visible { outline: 2px solid var(--rm-accent); outline-offset: 2px; }
 .rm-roster__btn {
   appearance: none; background: none; border: 0; width: 100%; text-align: left; cursor: pointer; padding: 6px 4px; border-radius: 8px;
   display: flex; align-items: center; gap: 8px; color: var(--rm-ink); font: 500 var(--fs-small, 14px)/1.3 var(--rm-font); min-height: 36px;
@@ -258,7 +276,7 @@
   .rm-fold__summary::after { transition: transform .2s ease; }
 
   .rm-hound[data-state="pending"] .rm-dog { animation: rm-talk 2.6s ease-in-out infinite; }
-  .rm-hound[data-state="scouting"] .rm-walk { animation: rm-pace 7s ease-in-out infinite alternate; }
+  .rm-hound[data-state="scouting"] .rm-walk { animation: rm-pace 7s ease-in-out infinite alternate; }   /* a sway of 6px: a seat has no room for more (name tags are a seat less 18px) */
   .rm-hound[data-state="scouting"] .rm-dog { animation: rm-sniff 1.4s ease-in-out infinite; }
   .rm-hound[data-state="won"] .rm-dog { animation: rm-jump 0.95s cubic-bezier(.3, .7, .4, 1) infinite; }
   .rm-hound[data-state="won"] .rm-fx--confetti i { animation: rm-fall 2.2s ease-in infinite; }
@@ -277,7 +295,7 @@
   .rm-sheet { animation: rm-sheet-in .24s var(--lh-ease, cubic-bezier(.2, .7, .2, 1)); }
 }
 @keyframes rm-talk { 0%, 100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-2px) rotate(-1.5deg); } 60% { transform: translateY(0) rotate(1.5deg); } }
-@keyframes rm-pace { from { transform: translateX(-3.4cqw); } to { transform: translateX(3.4cqw); } }
+@keyframes rm-pace { from { transform: translateX(-6px); } to { transform: translateX(6px); } }
 @keyframes rm-sniff { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(3px) rotate(3deg); } }
 @keyframes rm-jump { 0%, 100% { transform: translateY(0) scale(1, 1); } 18% { transform: translateY(0) scale(1.06, .93); } 50% { transform: translateY(-1.8cqw) scale(.97, 1.04); } 80% { transform: translateY(0) scale(1.04, .95); } }
 @keyframes rm-fall { 0% { transform: translateY(-4px) rotate(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(34px) rotate(260deg); opacity: 0; } }

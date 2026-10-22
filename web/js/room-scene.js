@@ -20,28 +20,18 @@
 import { h, s, clearNode, isNum, houndHref } from "./hounds-core.js";
 import { dogFace, setPose } from "./dog-avatar.js";
 import { build, fmtUnits, inText } from "./room-adapter.js";
-import { bubbleParts, assignTiers, placeLabels } from "./room-layout.js";
+import { bubbleParts, assignTiers, placeLabels, planRoom, columnsFor, labelMax, ZONE_NAME, VIEW_W, MIN_H } from "./room-layout.js";
 import { loadHouse, loadKennel, POLL_MS } from "./room-data.js";
 import { trainedBadge } from "./dog-headstone.js";
 
-export const VIEW = { w: 1000, h: 600 };
-
-/** Feet positions in view units (x 0-1000, y 0-600) for each zone, in the order hounds take them. */
-export const SLOTS = {
-  desk: [[110, 478], [216, 478], [322, 478], [428, 478], [534, 478], [640, 478], [110, 562], [216, 562], [322, 562], [428, 562], [534, 562], [640, 562]],
-  floor: [[130, 322], [240, 322], [350, 322], [460, 322]],
-  bowl: [[540, 352], [610, 352], [680, 352]],
-  bed: [[775, 478], [860, 478], [945, 478], [775, 562], [860, 562], [945, 562]],
-  gym: [[790, 338], [890, 338]],
-};
-/** Where a hound goes when its zone is full: spare floor, left to right. */
-export const SPARE = [[100, 404], [210, 404], [320, 404], [430, 404], [540, 404], [650, 404], [760, 404], [870, 404]];
+export const VIEW = { w: VIEW_W, h: MIN_H };     // the room is VIEW.w across and at least VIEW.h tall: room-layout.js planRoom() sets the height from the rows
 
 const SHEET_LINKS = { board: "hounds.html", tv: "live.html", door: "kennel.html", stone: "graveyard.html" };
 
 const pct = (v, total) => `${Math.round((v / total) * 10000) / 100}%`;
-const place = (x, y) => `left:${pct(x, VIEW.w)};top:${pct(y, VIEW.h)}`;
+const place = (x, y, H) => `left:${pct(x, VIEW.w)};top:${pct(y, H)}`;
 const clip = (str, n) => { const t = String(str == null ? "" : str); return t.length > n ? `${t.slice(0, n - 1).trimEnd()}…` : t; };
+const r1 = (v) => Math.round(v * 10) / 10;
 
 // ---- the room around the hounds ---------------------------------------------------------------------------
 
@@ -53,45 +43,57 @@ function defs() {
   ]);
 }
 
-function backdrop(usedDesks, usedBeds) {
+/**
+ * The furniture, drawn from the plan (room-layout.js planRoom): one invisible rect per zone band (the zone's boundary, which a hound and its labels
+ * stay inside), a desk under every desk seat of a drawn row, a bed under every bed seat, a bowl under a hound that just lost, the gym mat, the signs.
+ * The first row of desks and of beds is always there (an honest empty room shows empty desks and beds).
+ */
+function backdrop(plan) {
+  const { H, cols, pitch, zones } = plan;
+  const k = Math.min(1, (pitch - 8) / 102);                          // the furniture narrows when the seats do
+  const seatX = (i) => r1(55 + pitch * ((i % cols) + 0.5));
   const seams = [];
-  for (let i = 0; i < 15; i++) seams.push(s("line", { class: "rm-seam", x1: 70 * i + (i % 2 ? 20 : 45), y1: 256, x2: 70 * i + (i % 2 ? 20 : 45) - 24, y2: 600 }));
-  [310, 372, 440, 518].forEach((y) => seams.push(s("line", { class: "rm-seam rm-seam--h", x1: 0, y1: y, x2: 1000, y2: y })));
-  const desks = SLOTS.desk.filter((_, i) => i < 6 || usedDesks.has(i)).map(([x, y]) => s("g", { class: "rm-desk" }, [
-    s("rect", { class: "rm-desk__front", x: x - 46, y: y + 6, width: 92, height: 30, rx: 5 }),
-    s("rect", { class: "rm-desk__top", x: x - 51, y: y - 4, width: 102, height: 11, rx: 4 }),
-    s("rect", { class: "rm-desk__phone", x: x + 33, y: y - 17, width: 11, height: 15, rx: 2 }),
-    s("rect", { class: "rm-desk__screen", x: x + 35, y: y - 15, width: 7, height: 10, rx: 1 })]));
-  // the first row of beds is always there (an honest empty room shows empty beds); the second row only when a hound is in it
-  const beds = SLOTS.bed.filter((_, i) => i < 3 || usedBeds.has(i)).map(([x, y]) => s("g", { class: "rm-bed" }, [
-    s("ellipse", { class: "rm-bed__rim", cx: x, cy: y + 9, rx: 52, ry: 20 }),
-    s("ellipse", { class: "rm-bed__fill", cx: x, cy: y + 6, rx: 41, ry: 13 })]));
-  return s("svg", { class: "rm-bg", viewBox: `0 0 ${VIEW.w} ${VIEW.h}`, preserveAspectRatio: "xMidYMid slice", "aria-hidden": "true", focusable: "false" }, [
+  for (let i = 0; i < 15; i++) seams.push(s("line", { class: "rm-seam", x1: 70 * i + (i % 2 ? 20 : 45), y1: 256, x2: 70 * i + (i % 2 ? 20 : 45) - 24, y2: H }));
+  for (let y = 310; y < H - 20; y += y < 520 ? 66 : 80) seams.push(s("line", { class: "rm-seam rm-seam--h", x1: 0, y1: y, x2: 1000, y2: y }));
+  const seats = (z) => { const d = zones[z]; const out = []; if (d) for (let i = 0; i < d.rows * cols; i++) out.push([seatX(i), d.feet + Math.floor(i / cols) * d.step, i]); return out; };
+  const desks = seats("desk").map(([x, y]) => s("g", { class: "rm-desk" }, [
+    s("rect", { class: "rm-desk__front", x: r1(x - 46 * k), y: y + 6, width: r1(92 * k), height: 30, rx: 5 }),
+    s("rect", { class: "rm-desk__top", x: r1(x - 51 * k), y: y - 4, width: r1(102 * k), height: 11, rx: 4 }),
+    s("rect", { class: "rm-desk__phone", x: r1(x + 33 * k), y: y - 17, width: 11, height: 15, rx: 2 }),
+    s("rect", { class: "rm-desk__screen", x: r1(x + 35 * k), y: y - 15, width: 7, height: 10, rx: 1 })]));
+  const beds = seats("bed").map(([x, y]) => s("g", { class: "rm-bed" }, [
+    s("ellipse", { class: "rm-bed__rim", cx: x, cy: y + 9, rx: r1(52 * k), ry: 20 }),
+    s("ellipse", { class: "rm-bed__fill", cx: x, cy: y + 6, rx: r1(41 * k), ry: 13 })]));
+  const bowls = seats("bowl").filter(([, , i]) => zones.bowl.used.has(i)).map(([x, y]) => s("g", { class: "rm-bowl" }, [
+    s("ellipse", { class: "rm-bowl__rim", cx: x, cy: y + 12, rx: r1(34 * k), ry: 11 }), s("ellipse", { class: "rm-bowl__water", cx: x, cy: y + 10, rx: r1(26 * k), ry: 7 })]));
+  const bands = [];
+  for (const [z, d] of Object.entries(zones)) bands.push(s("rect", { class: "rm-zone", "data-zone": z, x: 0, y: d.top, width: 1000, height: d.bottom - d.top }));
+  const gym = [];
+  if (zones.gym) {
+    const d = zones.gym;
+    gym.push(s("g", { class: "rm-gym" }, [
+      s("rect", { class: "rm-gym__mat", x: 40, y: d.feet - 28, width: 920, height: 50, rx: 10 }),
+      s("rect", { class: "rm-gym__bar", x: 472, y: d.feet - 6, width: 56, height: 4, rx: 2 }),
+      s("rect", { class: "rm-gym__plate", x: 464, y: d.feet - 15, width: 8, height: 22, rx: 2 }), s("rect", { class: "rm-gym__plate", x: 528, y: d.feet - 15, width: 8, height: 22, rx: 2 })]));
+    gym.push(s("text", { class: "rm-label", "data-sign": "gym", x: 62, y: d.top + 16, "text-anchor": "start", text: "GYM" }));
+  }
+  const signs = zones.bed ? [s("text", { class: "rm-label", "data-sign": "bed", x: 62, y: zones.bed.top + 16, "text-anchor": "start", text: "BEDS" })] : [];
+  return s("svg", { class: "rm-bg", viewBox: `0 0 ${VIEW.w} ${H}`, preserveAspectRatio: "xMidYMid slice", "aria-hidden": "true", focusable: "false" }, [
     defs(),
     s("rect", { class: "rm-wall", x: 0, y: 0, width: 1000, height: 256, fill: "url(#rm-g-wall)" }),
-    s("rect", { class: "rm-floor", x: 0, y: 256, width: 1000, height: 344, fill: "url(#rm-g-floor)" }),
-    s("rect", { class: "rm-glow", x: 0, y: 0, width: 1000, height: 600, fill: "url(#rm-g-glow)" }),
+    s("rect", { class: "rm-floor", x: 0, y: 256, width: 1000, height: H - 256, fill: "url(#rm-g-floor)" }),
+    s("rect", { class: "rm-glow", x: 0, y: 0, width: 1000, height: H, fill: "url(#rm-g-glow)" }),
     s("rect", { class: "rm-baseboard", x: 0, y: 248, width: 1000, height: 10 }),
     s("g", {}, seams),
-    s("ellipse", { class: "rm-rug", cx: 295, cy: 334, rx: 270, ry: 36 }),
-    ...desks,
-    ...beds,
-    // the water bowl
-    s("g", { class: "rm-bowl" }, [s("ellipse", { class: "rm-bowl__rim", cx: 610, cy: 372, rx: 34, ry: 11 }), s("ellipse", { class: "rm-bowl__water", cx: 610, cy: 370, rx: 26, ry: 7 })]),
-    // the gym mat, the dumbbell and the sign
-    s("g", { class: "rm-gym" }, [
-      s("rect", { class: "rm-gym__mat", x: 730, y: 310, width: 220, height: 50, rx: 10 }),
-      s("rect", { class: "rm-gym__bar", x: 822, y: 332, width: 56, height: 4, rx: 2 }),
-      s("rect", { class: "rm-gym__plate", x: 814, y: 323, width: 8, height: 22, rx: 2 }), s("rect", { class: "rm-gym__plate", x: 878, y: 323, width: 8, height: 22, rx: 2 }),
-      s("text", { class: "rm-label", x: 740, y: 302, "text-anchor": "start", text: "GYM" })]),
-    s("text", { class: "rm-label", x: 775, y: 384, "text-anchor": "start", text: "BEDS" }),
+    ...(zones.floor ? [s("ellipse", { class: "rm-rug", cx: 500, cy: r1((zones.floor.top + zones.floor.bottom) / 2), rx: 470, ry: r1((zones.floor.bottom - zones.floor.top) / 2 - 8) })] : []),
+    ...desks, ...beds, ...bowls, ...gym, ...signs, ...bands,
   ]);
 }
 
 /** A prop that is a link (anchor) or, with no href, a button. Its box is in view units. */
-function prop(kind, box, attrs, art, kids) {
+function prop(kind, box, attrs, art, kids, H) {
   const [x, y, w, hh] = box;
-  const style = `left:${pct(x, VIEW.w)};top:${pct(y, VIEW.h)};width:${pct(w, VIEW.w)};height:${pct(hh, VIEW.h)}`;
+  const style = `left:${pct(x, VIEW.w)};top:${pct(y, H)};width:${pct(w, VIEW.w)};height:${pct(hh, H)}`;
   const base = Object.assign({ class: `rm-prop rm-prop--${kind}`, style, "data-hook": `room-${kind}` }, attrs);
   const svg = s("svg", { viewBox: `0 0 ${w} ${hh}`, preserveAspectRatio: "none", "aria-hidden": "true", focusable: "false" }, art);
   return h(attrs.href ? "a" : "button", attrs.href ? base : Object.assign(base, { type: "button" }), [svg, ...(kids || [])]);
@@ -101,7 +103,7 @@ function textLine(x, y, str, cls, extra) {
   return s("text", Object.assign({ class: cls, x, y, text: str }, extra || {}));
 }
 
-function whiteboard(model) {
+function whiteboard(model, H) {
   const rows = model.whiteboard.map((r, i) => [
     textLine(16, 62 + i * 34, String(i + 1), "rm-t rm-t--rank"),
     textLine(36, 62 + i * 34, clip(r.name, 15), "rm-t rm-t--name"),
@@ -113,10 +115,10 @@ function whiteboard(model) {
     textLine(16, 28, "LEADERBOARD", "rm-t rm-t--title"),
     ...(rows.length ? rows.flat() : [textLine(16, 66, `Ranked at ${model.minRanked} settled bets.`, "rm-t rm-t--sub"), textLine(16, 90, "Tap for the full table.", "rm-t rm-t--sub")]),
     s("rect", { class: "rm-board__tray", x: 20, y: 166, width: 200, height: 6, rx: 3 })];
-  return prop("board", [40, 34, 240, 172], { href: "hounds.html", "aria-label": "Leaderboard: the full table of every hound" }, art);
+  return prop("board", [40, 34, 240, 172], { href: "hounds.html", "aria-label": "Leaderboard: the full table of every hound" }, art, null, H);
 }
 
-function tv(model) {
+function tv(model, H) {
   const t = model.ticker;
   const facts = [`${t.open} open ${t.open === 1 ? "ticket" : "tickets"}`, t.live ? `${t.live} ${t.live === 1 ? "hound" : "hounds"} with a game live` : "", t.games !== null ? `${t.games} ${t.games === 1 ? "game" : "games"} left on today's board` : ""].filter(Boolean);
   const art = [
@@ -127,10 +129,10 @@ function tv(model) {
     ...facts.slice(0, 3).map((f, i) => textLine(20, 62 + i * 26, clip(f, 34), "rm-t rm-t--tv")),
     s("rect", { class: "rm-tv__strip", x: 8, y: 118, width: 304, height: 24, rx: 4 }),
     textLine(18, 134, "Every ticket is paper and graded in public", "rm-t rm-t--tick", { "data-hook": "room-tick" })];
-  return prop("tv", [320, 40, 320, 150], { href: "live.html", "aria-label": `Live: what is on right now. ${facts.join(", ")}` }, art);
+  return prop("tv", [320, 40, 320, 150], { href: "live.html", "aria-label": `Live: what is on right now. ${facts.join(", ")}` }, art, null, H);
 }
 
-function bulletin() {
+function bulletin(H) {
   const art = [
     s("rect", { class: "rm-cork__frame", x: 0, y: 0, width: 120, height: 172, rx: 8 }),
     s("rect", { class: "rm-cork__face", x: 6, y: 6, width: 108, height: 160, rx: 5 }),
@@ -139,10 +141,10 @@ function bulletin() {
     textLine(60, 66, "Daily recap", "rm-t rm-t--paper", { "text-anchor": "middle" }),
     textLine(60, 86, "No recap pinned", "rm-t rm-t--paper-sub", { "text-anchor": "middle" }),
     textLine(60, 100, "yet", "rm-t rm-t--paper-sub", { "text-anchor": "middle" })];
-  return prop("bulletin", [670, 40, 120, 172], { "aria-label": "Bulletin board: the daily recap", "data-sheet": "bulletin" }, art);
+  return prop("bulletin", [670, 40, 120, 172], { "aria-label": "Bulletin board: the daily recap", "data-sheet": "bulletin" }, art, null, H);
 }
 
-function door() {
+function door(H) {
   const art = [
     s("rect", { class: "rm-door__frame", x: 0, y: 0, width: 110, height: 236, rx: 6 }),
     s("rect", { class: "rm-door__leaf", x: 8, y: 8, width: 94, height: 228, rx: 3 }),
@@ -151,21 +153,21 @@ function door() {
     s("circle", { class: "rm-door__knob", cx: 84, cy: 130, r: 5 }),
     s("rect", { class: "rm-door__plaque", x: 18, y: 4, width: 74, height: 16, rx: 3 }),
     textLine(55, 16, "MY KENNEL", "rm-t rm-t--plaque", { "text-anchor": "middle" })];
-  return prop("door", [850, 18, 110, 236], { href: "kennel.html", "aria-label": "My Kennel: your hounds" }, art);
+  return prop("door", [850, 18, 110, 236], { href: "kennel.html", "aria-label": "My Kennel: your hounds" }, art, null, H);
 }
 
-function stone(model) {
+function stone(model, H) {
   const art = [
     s("path", { class: "rm-stone__body", d: "M4 56V22a16 16 0 0 1 32 0v34z" }),
     s("path", { class: "rm-stone__cross", d: "M20 14v20M13 22h14" }),
     s("rect", { class: "rm-stone__base", x: 0, y: 54, width: 40, height: 6, rx: 3 })];
   const n = model.headstones;
-  return prop("stone", [18, 268, 40, 60], { href: "graveyard.html", "aria-label": `Graveyard: ${n} ${n === 1 ? "headstone" : "headstones"}`, "data-count": String(n) }, art);
+  return prop("stone", [18, 268, 40, 60], { href: "graveyard.html", "aria-label": `Graveyard: ${n} ${n === 1 ? "headstone" : "headstones"}`, "data-count": String(n) }, art, null, H);
 }
 
-function props(model) {
-  const list = [whiteboard(model), tv(model), bulletin(), door()];
-  if (model.headstones > 0) list.push(stone(model));
+function props(model, H) {
+  const list = [whiteboard(model, H), tv(model, H), bulletin(H), door(H)];
+  if (model.headstones > 0) list.push(stone(model, H));
   return list;
 }
 
@@ -213,17 +215,18 @@ function ariaFor(c) {
   return bits.join(", ");
 }
 
-function paintHound(view, c, slot) {
+function paintHound(view, c, slot, H) {
   const n = view.nodes.get(c.id).nodes, root = view.nodes.get(c.id).root, btn = view.nodes.get(c.id).btn;
   root.setAttribute("data-state", c.state);
   root.setAttribute("data-zone", c.zone);
-  root.setAttribute("style", `${place(slot[0], slot[1])};z-index:${Math.round(slot[1])}`);
+  root.setAttribute("style", `${place(slot[0], slot[1], H)};z-index:${Math.round(slot[1])}`);
   root.setAttribute("data-live", c.live ? "true" : "false");
   root.setAttribute("data-label", c.label);                 // the same words the list under the room says: both come from the adapter's state
   root.setAttribute("data-slot", `${Math.round(slot[0])},${Math.round(slot[1])}`);
   btn.setAttribute("aria-label", ariaFor(c));
   setPose(n.dog, c.pose);
-  n.name.textContent = clip(c.name, 14);
+  n.name.textContent = c.name;                              // the whole name: the tag truncates it with an ellipsis to fit its seat (css), the title has it whole
+  n.name.setAttribute("title", c.name);
   const showBubble = !!c.bubble && (c.state === "pending" || c.state === "won" || c.state === "lost");
   n.bubble.hidden = !showBubble;
   const [main, more] = bubbleParts(showBubble ? c.bubble : null);
@@ -237,30 +240,6 @@ function paintHound(view, c, slot) {
   n.trained.hidden = !(c.trained > 0);
   n.trained.textContent = c.trained > 0 ? `×${c.trained}` : "";
   if (c.trained > 0) n.trained.setAttribute("title", `Trained ×${c.trained}`);
-}
-
-/** Sticky slots: a hound keeps its seat while it stays in a zone; a new arrival takes the first free one; a full zone spills onto spare floor. */
-export function assignSlots(chars, previous) {
-  const taken = {}, spare = new Set();
-  const out = new Map();
-  const free = (zone) => { const used = taken[zone] || (taken[zone] = new Set()); let i = 0; while (used.has(i)) i += 1; return i; };
-  for (const c of chars) {                                   // keep the seat a hound already has in this zone
-    const prev = previous.get(c.id);
-    const used = taken[c.zone] || (taken[c.zone] = new Set());
-    if (prev && prev.zone === c.zone && !prev.spare && prev.i < SLOTS[c.zone].length && !used.has(prev.i)) {
-      used.add(prev.i);
-      out.set(c.id, { zone: c.zone, i: prev.i, xy: SLOTS[c.zone][prev.i] });
-    }
-  }
-  for (const c of chars) {
-    if (out.has(c.id)) continue;
-    const i = free(c.zone);
-    if (i < SLOTS[c.zone].length) { taken[c.zone].add(i); out.set(c.id, { zone: c.zone, i, xy: SLOTS[c.zone][i] }); continue; }
-    let k = 0; while (spare.has(k)) k += 1;
-    spare.add(k);
-    out.set(c.id, { zone: c.zone, i: k, spare: true, xy: SPARE[k % SPARE.length] });
-  }
-  return out;
 }
 
 // ---- the card ----------------------------------------------------------------------------------------------
@@ -355,7 +334,7 @@ const reduced = () => { try { return !!(window.matchMedia && window.matchMedia("
  */
 export function mountRoom(host, opts = {}) {
   const scope = opts.scope === "kennel" ? "kennel" : "house";
-  const view = { nodes: new Map(), slots: new Map(), model: null, prev: new Map(), timer: null, active: true, firstPaint: true, sheetFor: null, sheetSig: "", setSig: "", rosterSig: "", opener: null, busy: false, lastOk: 0, known: opts.data || null };
+  const view = { nodes: new Map(), slots: new Map(), plan: null, more: new Map(), filter: null, model: null, prev: new Map(), timer: null, active: true, firstPaint: true, sheetFor: null, sheetSig: "", setSig: "", rosterSig: "", opener: null, busy: false, lastOk: 0, known: opts.data || null };
   const sound = makeSound();
 
   const status = h("p", { class: "rm-status hd-fine", role: "status", "aria-live": "polite", "data-hook": "room-status" });
@@ -427,46 +406,92 @@ export function mountRoom(host, opts = {}) {
     if (retry) message.appendChild(h("button", { type: "button", class: "lh-btn lh-btn--soft", "data-hook": "room-retry", text: "Try again", on: { click: () => refresh() } }));
   }
 
+  /** The stage's width on screen, px (0 where nothing is laid out: a fake DOM, a folded block). */
+  function stageWidth() {
+    try { return stage.offsetWidth || 0; } catch (err) { return 0; }
+  }
+
+  /** The status list under the room: everyone, or (after a tap on a zone's "+K more") only that zone, with a way back to everyone. */
+  function paintRoster(model) {
+    let list = model.characters;
+    if (view.filter) {
+      list = list.filter((c) => c.zone === view.filter);
+      if (!list.length) { view.filter = null; list = model.characters; }
+    }
+    const rosterSig = JSON.stringify([view.filter, list.map((c) => [c.id, c.name, c.state, c.label])]);
+    if (rosterSig === view.rosterSig) return;
+    view.rosterSig = rosterSig;
+    clearNode(roster);
+    if (view.filter) {
+      roster.appendChild(h("li", { class: "rm-roster__head", "data-hook": "room-roster-filter" }, [
+        h("span", { text: `${ZONE_NAME[view.filter]}: ${list.length} of ${model.characters.length}` }),
+        h("button", { type: "button", class: "rm-roster__all", "data-hook": "room-roster-all", text: "Show everyone",
+          on: { click: () => { view.filter = null; paintRoster(view.model); } } })]));
+    }
+    for (const c of list) {
+      roster.appendChild(h("li", {}, [h("button", { type: "button", class: "rm-roster__btn", "data-state": c.state, "data-hook": "room-roster-btn",
+        "data-zone": c.zone, "data-label": c.label, "aria-label": `${c.name}, ${c.label}. Open card.`, on: { click: (e) => openSheet(c.id, e.currentTarget) } }, [
+        h("i", { class: "rm-dot", "aria-hidden": "true" }), h("span", { class: "rm-roster__name", text: c.name }), h("span", { class: "rm-roster__state", text: c.label })])]));
+    }
+  }
+
+  /** "+K more": the last seat of a zone that has more hounds than seats. A tap lists that zone's hounds under the room. */
+  function paintMore(plan) {
+    for (const [zone, el] of [...view.more]) if (!(plan.zones[zone] && plan.zones[zone].more)) { if (el.parentNode) el.parentNode.removeChild(el); view.more.delete(zone); }
+    for (const [zone, d] of Object.entries(plan.zones)) {
+      if (!d.more) continue;
+      let el = view.more.get(zone);
+      if (!el) {
+        el = h("button", { type: "button", class: "rm-more", "data-hook": "room-more", "data-zone": zone, on: { click: () => {
+          view.filter = zone; view.rosterSig = ""; if (view.model) paintRoster(view.model);
+          try { roster.scrollIntoView({ block: "nearest" }); const first = roster.querySelector("[data-hook='room-roster-btn']"); if (first && first.focus) first.focus({ preventScroll: true }); } catch (err) { /* no layout */ }
+        } } });
+        view.more.set(zone, el);
+        crowd.appendChild(el);
+      }
+      const word = ZONE_NAME[zone].toLowerCase();
+      el.textContent = `+${d.more.k} more`;
+      el.setAttribute("title", `${d.more.k} more hounds ${word}. Show them in the list.`);
+      el.setAttribute("aria-label", `${d.more.k} more hounds ${word}. Show them in the list.`);
+      el.setAttribute("style", `${place(d.more.xy[0], d.more.xy[1], plan.H)};z-index:${Math.round(d.more.xy[1])}`);
+    }
+  }
+
   function render(model) {
     view.model = model;
-    const ids = new Set(model.characters.map((c) => c.id));
-    for (const [id, n] of [...view.nodes]) if (!ids.has(id)) { if (n.root.parentNode) n.root.parentNode.removeChild(n.root); view.nodes.delete(id); view.slots.delete(id); }
-    view.slots = assignSlots(model.characters, view.slots);
+    root.setAttribute("data-empty", model.characters.length ? "false" : "true");     // first: an empty room has no frame, and a frame with no width has no seats
+    const plan = planRoom(model.characters, { width: stageWidth(), previous: view.slots });
+    view.plan = plan;
+    view.slots = plan.seats;
+    const seated = model.characters.filter((c) => plan.seats.has(c.id));
+    for (const [id, n] of [...view.nodes]) if (!plan.seats.has(id)) { if (n.root.parentNode) n.root.parentNode.removeChild(n.root); view.nodes.delete(id); }
+    // the room is as tall as its rows; the name tags and the labels are as wide as a seat (css reads --rm-pitch and --rm-bmax, in view units)
+    stage.setAttribute("style", `aspect-ratio:${VIEW.w} / ${plan.H};--rm-pitch:${r1(plan.pitch)};--rm-bmax:${labelMax(plan.pitch)}`);
     // the set and the list are redrawn only when what they show changed, so a keyboard user's focus is not pulled out from under them every poll
-    const desks = [...view.slots.values()].filter((v) => v.zone === "desk" && !v.spare).map((v) => v.i);
-    const beds = [...view.slots.values()].filter((v) => v.zone === "bed" && !v.spare).map((v) => v.i);
-    const setSig = JSON.stringify([model.whiteboard, model.ticker, model.headstones, model.minRanked, desks.filter((i) => i >= 6).sort(), beds.filter((i) => i >= 3).sort()]);
+    const geo = Object.entries(plan.zones).map(([z, d]) => [z, d.top, d.rows, [...d.used].sort((a, b) => a - b)]);
+    const setSig = JSON.stringify([model.whiteboard, model.ticker, model.headstones, model.minRanked, plan.H, plan.cols, geo]);
     if (setSig !== view.setSig) {
       view.setSig = setSig;
       clearNode(setLayer);
-      setLayer.appendChild(backdrop(new Set(desks), new Set(beds)));
-      for (const p of props(model)) setLayer.appendChild(p);
+      setLayer.appendChild(backdrop(plan));
+      for (const p of props(model, plan.H)) setLayer.appendChild(p);
       const bull = setLayer.querySelector("[data-hook='room-bulletin']");
       if (bull) bull.addEventListener("click", () => openSheet("bulletin", bull));
     }
-    const tiers = assignTiers(model.characters, view.slots);
-    const row2 = [...view.slots.values()].some((v) => v.zone === "desk" && v.xy[1] !== SLOTS.desk[0][1]);
-    for (const c of model.characters) {
+    for (const c of seated) {
       if (!view.nodes.has(c.id)) view.nodes.set(c.id, houndNode(c, (id) => openSheet(id, view.nodes.get(id).btn)));
-      const slot = view.slots.get(c.id);
-      paintHound(view, c, slot.xy);
+      paintHound(view, c, view.slots.get(c.id).xy, plan.H);
       const node = view.nodes.get(c.id).root;
-      node.setAttribute("data-tier", String(tiers.get(c.id) || 0));
-      // the front desk row's second height sits just under the desk's lip (nothing there but the desk); a second desk row is in the way, so it goes up
-      node.setAttribute("data-dir", slot.zone === "desk" && slot.xy[1] === SLOTS.desk[0][1] && !row2 ? "down" : "up");
+      node.setAttribute("data-dir", "up");
       if (node.parentNode !== crowd) crowd.appendChild(node);
     }
-    // the roster: everyone, by name, for a phone and a screen reader
-    const rosterSig = JSON.stringify(model.characters.map((c) => [c.id, c.name, c.state, c.label]));
-    if (rosterSig !== view.rosterSig) {
-      view.rosterSig = rosterSig;
-      clearNode(roster);
-      for (const c of model.characters) {
-        roster.appendChild(h("li", {}, [h("button", { type: "button", class: "rm-roster__btn", "data-state": c.state, "data-hook": "room-roster-btn",
-          "data-zone": c.zone, "data-label": c.label, "aria-label": `${c.name}, ${c.label}. Open card.`, on: { click: (e) => openSheet(c.id, e.currentTarget) } }, [
-          h("i", { class: "rm-dot", "aria-hidden": "true" }), h("span", { class: "rm-roster__name", text: c.name }), h("span", { class: "rm-roster__state", text: c.label })])]));
-      }
-    }
+    paintMore(plan);
+    // labelled neighbours in a row take turns on two heights: worked out from the labels' real widths (a guess where nothing is laid out)
+    const sw = stageWidth(), unit = sw ? sw / VIEW.w : 0, widths = new Map();
+    if (unit) for (const c of seated) { const nd = view.nodes.get(c.id).nodes; const el = c.state === "pending" ? nd.bubble : nd.burst; if (el.setAttribute) el.setAttribute("style", ""); const w = el.hidden ? 0 : el.offsetWidth; if (w) widths.set(c.id, w / unit); }
+    const tiers = assignTiers(seated, view.slots, { widths });
+    for (const c of seated) view.nodes.get(c.id).root.setAttribute("data-tier", String(tiers.get(c.id) || 0));
+    paintRoster(model);
     // a card that is open follows the new state
     if (view.sheetFor && view.sheetFor !== "bulletin" && !fillSheet(view.sheetFor)) ctl.closeSheet();
     // sound: only a CHANGE between two real reads
@@ -479,7 +504,6 @@ export function mountRoom(host, opts = {}) {
     view.prev = new Map(model.characters.map((c) => [c.id, c.state]));
     if (view.firstPaint) { view.firstPaint = false; centre(model); }
     keepInView();
-    root.setAttribute("data-empty", model.characters.length ? "false" : "true");
     if (!model.characters.length) say(scope === "kennel" ? "No hounds in your kennel yet." : "No hounds are in the room right now.", false);
     else say("", false);
   }
@@ -490,7 +514,8 @@ export function mountRoom(host, opts = {}) {
       const active = model.characters.filter((c) => c.state !== "asleep" && c.state !== "nap");
       const list = active.length ? active : model.characters;
       if (!list.length || !frame.scrollWidth || frame.scrollWidth <= frame.clientWidth) return;
-      const xs = list.map((c) => (view.slots.get(c.id) || { xy: [500] }).xy[0]);
+      const xs = list.filter((c) => view.slots.has(c.id)).map((c) => view.slots.get(c.id).xy[0]);
+      if (!xs.length) return;
       const mid = xs.reduce((a, b) => a + b, 0) / xs.length;
       frame.scrollLeft = Math.max(0, (mid / VIEW.w) * frame.scrollWidth - frame.clientWidth / 2);
     } catch (err) { /* a fake DOM has no layout */ }
@@ -501,33 +526,41 @@ export function mountRoom(host, opts = {}) {
    * each one slides sideways until it is whole (placeLabels, room-layout.js); one whose hound is out of view and would be cut is not drawn. Worked
    * out from where the hound WILL stand, so it holds mid-walk too. Runs after each read and while the frame pans.
    */
-  const shifts = new WeakMap();
   function keepInView() {
     try {
       const cw = frame.clientWidth, sw = stage.offsetWidth;
       if (!cw || !sw) return;
-      const pad = 4, lo = frame.scrollLeft + pad, hi = frame.scrollLeft + cw - pad;
-      const items = [], els = [];
+      const pad = 6, lo = frame.scrollLeft + pad, hi = frame.scrollLeft + cw - pad;
+      const labels = [];
       for (const [id, v] of view.nodes) {
         const slot = view.slots.get(id);
         if (!slot) continue;
-        const owner = (slot.xy[0] / VIEW.w) * sw;
         for (const el of [v.nodes.bubble, v.nodes.burst]) {
-          if (el.hidden) { el.setAttribute("style", ""); shifts.set(el, 0); continue; }
-          const w = el.offsetWidth;
-          if (!w) continue;
-          const dx = el.offsetLeft - (shifts.get(el) || 0);              // where the label's centre sits from its hound, before any slide
-          items.push({ group: `${slot.zone}|${slot.xy[1]}|${v.root.getAttribute("data-tier")}`, c: owner + dx, w, owner });
-          els.push(el);
+          el.setAttribute("style", "");                                  // measured as it sits by itself: no slide, no cut (the next lines put both back)
+          if (!el.hidden) labels.push({ el, v, slot });
         }
       }
+      const items = [], els = [];
+      for (const { el, v, slot } of labels) {
+        const w = el.offsetWidth;
+        if (!w) continue;
+        const owner = (slot.xy[0] / VIEW.w) * sw;
+        items.push({ group: `${slot.zone}|${slot.xy[1]}|${v.root.getAttribute("data-tier")}`, c: owner + el.offsetLeft, w, owner });   // offsetLeft: the label's centre from its hound
+        els.push(el);
+      }
       placeLabels(items, lo, hi).forEach((r, k) => {
-        const el = els[k], w = items[k].w;
+        const el = els[k];
+        const shown = r.fit || items[k].w;                               // two labels that cannot stand side by side in the slice share it: the pick is cut with an ellipsis
         const shift = Math.round(r.shift);
-        const reach = Math.max(0, w / 2 - 12);
+        const reach = Math.max(0, shown / 2 - 12);
         const tail = Math.max(-reach, Math.min(reach, -shift));
-        shifts.set(el, shift);
-        el.setAttribute("style", r.hidden ? "visibility:hidden" : shift ? `--rm-shift:${shift}px;--rm-tail:${Math.round(tail)}px` : "");
+        const style = [];
+        if (r.hidden) style.push("visibility:hidden");
+        else {
+          if (shift) style.push(`--rm-shift:${shift}px`, `--rm-tail:${Math.round(tail)}px`);
+          if (r.fit && el.getAttribute("data-hook") === "room-bubble") style.push(`--rm-fit:${r.fit}px`);
+        }
+        el.setAttribute("style", style.join(";"));
       });
     } catch (err) { /* a fake DOM has no layout */ }
   }
@@ -535,7 +568,11 @@ export function mountRoom(host, opts = {}) {
   const onPan = () => {
     if (panQueued) return;
     panQueued = true;
-    const run = () => { panQueued = false; keepInView(); };
+    const run = () => {
+      panQueued = false;
+      const w = stageWidth();                                           // the stage got wider or narrower: the seats across change, so the room is laid out again
+      if (w && view.plan && view.model && columnsFor(w) !== view.plan.cols) render(view.model); else keepInView();
+    };
     if (typeof requestAnimationFrame === "function") requestAnimationFrame(run); else run();
   };
   frame.addEventListener("scroll", onPan);

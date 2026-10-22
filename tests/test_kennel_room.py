@@ -6,6 +6,8 @@ on kennel.html). docs/design/KENNEL_ROOM.md is the state table; every row of it 
   RENDER    room.html and the kennel fold, run for real in the node harness's fake DOM: one hound element per hound, the state on each, the text escaped,
             no "undefined" / "NaN" / "null" anywhere, every tap target pointing where the brief says, polling paused while the tab is hidden.
   STATIC    footer compliance once, no inline script, no Bet Check, no profit or edge wording, every animation inside prefers-reduced-motion.
+  CROWDING  the room from 0 to 40 hounds at 375 / 390 / 800 / 1024 / 1440 px in a real Chrome (RoomCrowding): no two sprites, name tags, labels or signs
+            overlap, nothing crosses its zone's boundary, the zones never collide, a full zone says "+K more". The seat plan itself (PlanTheRoom) runs under node.
 
 Skipped without node where a page is run; the static checks need none.
 """
@@ -336,6 +338,45 @@ def routes_house(extra=None):
     return out
 
 
+CROWD_NAMES = ["The Weather Network Hound", "Chalk Chihuahua", "F The Sharp", "Numerology Newfie", "Dartboard Dalmatian", "Coin-Flip Collie", "The Grinder",
+               "Kelly the Kelly Hound", "Gridiron Greyhound", "Bargain Bloodhound", "Lunar Labrador", "The Historian", "Gematria Hound", "Claude Hound", "Home Dog Harrier",
+               "Contrary Corgi", "The Square Spaniel", "The Fader", "Almanac Akita", "The Desk"]
+
+
+def crowd_routes(n, mode="mixed"):
+    """The house room with `n` hounds. mixed: the states take turns (an open pick, two open picks, just won, just lost, scouting x2, benched, the gym); scouts: every
+    hound idle with games on the board (it scouts by day and sleeps by night); naps: every hound benched. The first hound is the season leader (a crown)."""
+    hounds, stream = [], []
+    for i in range(n):
+        hid = f"c{i:02d}"
+        name = CROWD_NAMES[i % len(CROWD_NAMES)] + ("" if i < len(CROWD_NAMES) else f" {i}")
+        turn = i % 8 if mode == "mixed" else None
+        over = {}
+        if i == 0:
+            over = dict(wins=14, losses=6, units=4.2, open_bets=1)
+        if mode == "naps":
+            hounds.append(hound(hid, name, status="benched", **over))
+        elif turn in (0, 1) or i == 0:
+            hounds.append(hound(hid, name, **dict(dict(wins=3, losses=2, units=0.5, open_bets=turn + 1 if turn is not None else 1), **over)))
+            stream.append(dict(open_bet(hid, f"{CROWD_NAMES[(i + 3) % len(CROWD_NAMES)].split()[0]} Bullpens to win", price=135 + i, start=60 + i), hound_name=name))
+            if turn == 1:
+                stream.append(dict(open_bet(hid, "Over 8.5", market="total", price=-105, start=200 + i), hound_name=name))
+        elif turn == 2:
+            hounds.append(hound(hid, name, wins=4, losses=1, units=2))
+            stream.append(dict(graded_bet(hid, "win", 1.3, ago=25), hound_name=name))
+        elif turn == 3:
+            hounds.append(hound(hid, name, wins=1, losses=4, units=-2))
+            stream.append(dict(graded_bet(hid, "loss", -1, ago=50), hound_name=name))
+        elif turn == 6:
+            hounds.append(hound(hid, name, status="benched"))
+        elif turn == 7:
+            hounds.append(hound(hid, name, status="training"))
+        else:
+            hounds.append(hound(hid, name, wins=2, losses=2))
+    return routes_house({"/hounds": [200, {"as_of": "2026-10-20", "hounds": hounds, "season": {"id": "s2", "min_ranked_bets": 10}}],
+                         "/hounds/stream": [200, {"items": stream, "page": 1, "total": len(stream)}]})
+
+
 @unittest.skipUnless(HAS_NODE, "node not installed")
 class PublicRoomRenders(unittest.TestCase):
     QS = [q("hounds", "[data-hook='room-hound']", "count"), q("states", "[data-hook='room-hound']", "attrs", attr="data-state"),
@@ -590,11 +631,15 @@ class RenderedInChrome(unittest.TestCase):
         threading.Thread(target=cls.server.serve_forever, daemon=True).start()
         base = f"http://127.0.0.1:{cls.server.server_address[1]}"
         script = str(Path(__file__).resolve().parent / "room_render_check.mjs")
-        proc = subprocess.run(["node", script, CHROME, base, "/web/room.html", "/web/kennel.html", "/web/kennel.html?pref=open"], capture_output=True, text=True, encoding="utf-8", timeout=420)
-        lines = [ln for ln in proc.stdout.splitlines() if ln.startswith("[")]
-        if proc.returncode != 0 or not lines:
-            raise AssertionError(f"render check failed ({proc.returncode}): {proc.stderr[-1500:]}")
-        cls.results = json.loads(lines[-1])
+        for _ in range(3):             # a machine busy with other work can leave a page unmounted past the check's own wait: try again
+            proc = subprocess.run(["node", script, CHROME, base, "/web/room.html", "/web/kennel.html", "/web/kennel.html?pref=open"], capture_output=True, text=True, encoding="utf-8", timeout=420)
+            lines = [ln for ln in proc.stdout.splitlines() if ln.startswith("[")]
+            if proc.returncode != 0 or not lines:
+                raise AssertionError(f"render check failed ({proc.returncode}): {proc.stderr[-1500:]}")
+            cls.results = json.loads(lines[-1])
+            # the public room is whole when it drew its hounds and read the stream (a read that failed under load leaves the just-won and just-lost hounds scouting)
+            if all(r["hounds"] > 0 and r["states"].get("won") and r["states"].get("lost") for r in cls.results if r["path"] == "/web/room.html"):
+                break
 
     @classmethod
     def tearDownClass(cls):
@@ -645,7 +690,7 @@ class RenderedInChrome(unittest.TestCase):
 
     def test_every_hound_stands_inside_the_stage_and_the_states_are_the_real_ones(self):
         for r in self.rows("/web/room.html"):
-            self.assertEqual(r["hounds"], 5)
+            self.assertEqual(r["hounds"], 5, r.get("msg"))
             self.assertEqual(r["outside"], 0)
             for state in ("pending", "won", "lost"):
                 self.assertGreaterEqual(r["states"].get(state, 0), 1, (state, r["states"]))
@@ -669,8 +714,285 @@ class RenderedInChrome(unittest.TestCase):
 
     def test_the_whiteboard_text_is_real_numbers(self):
         for r in self.rows("/web/room.html"):
-            self.assertRegex(r["svgText"], r"LEADERBOARD")
+            self.assertRegex(r["svgText"], r"LEADERBOARD", r.get("msg"))
             self.assertRegex(r["svgText"], r"[+-]\d+(\.\d+)?u")
+
+
+# ---------------------------------------------------------------------------------------------------
+# the seat plan: where each hound stands, from 0 to 40 hounds (room-layout.js planRoom, pure)
+# ---------------------------------------------------------------------------------------------------
+
+def plan_of(chars, width=1000, previous=None):
+    src = ('import { planRoom } from "./room-layout.js";\n'
+           f"const chars = {json.dumps(chars)}; const prev = new Map(Object.entries({json.dumps(previous or {})}));\n"
+           f"const plan = planRoom(chars, {{ width: {width}, previous: prev }});\n"
+           "console.log(JSON.stringify({ cols: plan.cols, pitch: plan.pitch, H: plan.H, zones: Object.fromEntries(Object.entries(plan.zones).map(([z, d]) => [z, { ...d, used: [...d.used] }])),\n"
+           "  seats: Object.fromEntries(plan.seats), hidden: Object.fromEntries(plan.hidden) }));")
+    return run_js(src)
+
+
+def zoned(n, mix):
+    """n characters; mix = {zone: share}."""
+    zones = [z for z, k in mix.items() for _ in range(k)]
+    return [{"id": f"h{i:02d}", "name": f"Hound {i:02d}", "zone": zones[i % len(zones)], "state": "x", "record": {"settled": i}} for i in range(n)]
+
+
+MIXES = [{"desk": 1, "floor": 1, "bowl": 1, "gym": 1, "bed": 1}, {"floor": 1}, {"bed": 1}, {"desk": 1}, {"gym": 1}, {"bowl": 1},
+         {"floor": 3, "desk": 2, "bed": 3}, {"desk": 5, "bowl": 1, "gym": 1, "bed": 1}]
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class PlanTheRoom(unittest.TestCase):
+    WIDTHS = [860, 1000, 1046, 1124]            # the stage is never narrower than 860 px: a phone pans inside its frame
+
+    def test_the_seats_across_follow_the_width_and_never_leave_a_seat_narrower_than_108px(self):
+        out = run_js('import { columnsFor } from "./room-layout.js";\nconsole.log(JSON.stringify([860, 1000, 1046, 1124, 2000, 0, undefined, 300].map(columnsFor)));')
+        self.assertEqual(out, [7, 8, 8, 9, 10, 8, 8, 4])
+        for w, cols in zip([860, 1000, 1046, 1124], out):
+            self.assertGreaterEqual(0.89 * w / cols, 108, "a seat is at least 108 px wide")
+
+    def test_from_0_to_40_hounds_every_hound_has_its_own_seat_inside_its_zone_and_no_two_seats_collide(self):
+        for width in self.WIDTHS:
+            for n in (0, 1, 12, 24, 40):
+                for mix in MIXES:
+                    with self.subTest(width=width, n=n, mix=mix):
+                        chars = zoned(n, mix)
+                        plan = plan_of(chars, width)
+                        zones, seats, hidden = plan["zones"], plan["seats"], plan["hidden"]
+                        self.assertEqual(len(seats) + sum(len(v) for v in hidden.values()), n, "every hound is seated or behind a +K more")
+                        self.assertIn("desk", zones)
+                        self.assertIn("bed", zones)                       # an honest empty room has empty desks and beds
+                        # the bands are stacked, in order, and never share a place
+                        bands = sorted(zones.values(), key=lambda d: d["top"])
+                        for a, b in zip(bands, bands[1:]):
+                            self.assertLessEqual(a["bottom"], b["top"], "two zones never share a place")
+                        self.assertGreaterEqual(plan["H"], 600)
+                        self.assertGreaterEqual(plan["H"], bands[-1]["bottom"])
+                        taken = set()
+                        for hid, v in seats.items():
+                            z = zones[v["zone"]]
+                            x, y = v["xy"]
+                            self.assertNotIn((x, y), taken, "no two hounds on one seat")
+                            taken.add((x, y))
+                            self.assertTrue(z["top"] <= y - 92 and y <= z["bottom"], f"{hid} stands inside the {v['zone']} band")
+                            self.assertLess(v["i"], z["cap"] - (1 if z["more"] else 0), "the last seat of a full zone is the +K more")
+                        # two seats in one row are a whole seat apart, two rows a whole step apart: a sprite (<= 73 units) and a tag never meet
+                        for a in seats.values():
+                            for b in seats.values():
+                                if a is b:
+                                    continue
+                                if a["xy"][1] == b["xy"][1]:
+                                    self.assertGreaterEqual(abs(a["xy"][0] - b["xy"][0]), plan["pitch"] - 0.01)
+                                elif a["zone"] == b["zone"]:
+                                    self.assertGreaterEqual(abs(a["xy"][1] - b["xy"][1]), 112)
+                        for zone, ids in hidden.items():
+                            z = zones[zone]
+                            self.assertEqual(z["more"]["k"], len(ids))
+                            self.assertEqual(z["shown"] + z["more"]["k"], z["n"])
+                            self.assertEqual(z["shown"], z["cap"] - 1)
+                            self.assertNotIn(tuple(z["more"]["xy"]), taken, "the +K more has a seat of its own")
+
+    def test_a_full_zone_shows_the_season_leader_then_the_most_recent_activity_and_the_rest_are_behind_a_more_seat(self):
+        chars = [{"id": f"s{i:02d}", "name": f"S{i:02d}", "zone": "floor", "state": "scouting", "record": {"settled": i}} for i in range(30)]
+        chars[17]["crown"] = True                                                 # the leader
+        chars[22]["lastSettle"] = {"ageMin": 5}                                    # a result five minutes ago
+        chars[9]["lastSettle"] = {"ageMin": 200}                                   # one three hours ago
+        chars[4].update(live=True, openCount=1)                                    # a game live now
+        plan = plan_of(chars, 860)                                                 # 7 across, 3 rows: 21 seats, the last one the +K more
+        self.assertEqual(plan["cols"], 7)
+        self.assertEqual(plan["zones"]["floor"]["cap"], 21)
+        shown = sorted(plan["seats"], key=lambda k: plan["seats"][k]["i"])
+        self.assertEqual(len(shown), 20)
+        self.assertEqual(plan["zones"]["floor"]["more"]["k"], 10)
+        self.assertEqual(shown[:4], ["s17", "s22", "s09", "s04"], "leader, newest result, older result, live game come first")
+        # the same input gives the same plan, in any input order
+        again = plan_of(list(reversed(chars)), 860)
+        self.assertEqual({k: v["xy"] for k, v in again["seats"].items()}, {k: v["xy"] for k, v in plan["seats"].items()})
+
+    def test_a_hound_keeps_its_seat_while_it_stays_in_its_zone_and_a_new_one_takes_the_first_free_seat(self):
+        chars = zoned(6, {"floor": 1})
+        first = plan_of(chars, 1000)
+        prev = {k: {"zone": v["zone"], "i": v["i"]} for k, v in first["seats"].items()}
+        later = [c for c in chars if c["id"] != "h02"] + [{"id": "new", "name": "New", "zone": "floor", "state": "x", "record": {"settled": 99}}]
+        second = plan_of(later, 1000, prev)
+        for hid, v in first["seats"].items():
+            if hid != "h02":
+                self.assertEqual(second["seats"][hid]["xy"], v["xy"], f"{hid} did not move")
+        self.assertEqual(second["seats"]["new"]["xy"], first["seats"]["h02"]["xy"], "the new hound takes the seat that was freed")
+
+    def test_the_room_grows_taller_with_its_rows_and_the_empty_room_keeps_its_desks_and_beds(self):
+        empty = plan_of([], 1000)
+        self.assertEqual(sorted(empty["zones"]), ["bed", "desk"])
+        self.assertEqual(empty["seats"], {})
+        crowded = plan_of(zoned(40, {"floor": 1, "desk": 1, "bed": 1}), 860)
+        self.assertGreater(crowded["H"], empty["H"])
+        self.assertEqual([crowded["zones"][z]["rows"] for z in ("floor", "desk", "bed")], [2, 2, 2], "13 or 14 a zone, 7 across")
+        self.assertEqual(plan_of(zoned(40, {"floor": 1}), 860)["zones"]["floor"]["rows"], 3, "a zone wraps into at most three rows")
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class CrowdedRoomInTheFakeDom(unittest.TestCase):
+    """40 hounds drawn by room-scene.js in the node harness: a full zone says "+K more", a tap on it lists that zone, and the list always has everyone."""
+
+    QS = [q("hounds", "[data-hook='room-hound']", "count"), q("more", "[data-hook='room-more']", "texts"), q("morezone", "[data-hook='room-more']", "attrs", attr="data-zone"),
+          q("roster", "[data-hook='room-roster-btn']", "count"), q("names", "[data-hook='room-name']", "texts"), q("titles", "[data-hook='room-name']", "attrs", attr="title")]
+
+    def page(self, routes, **kw):
+        kw.setdefault("now", NOW)
+        return run_page("room", routes=routes, tz="UTC", settleMs=250, **SIGNED, **kw)
+
+    def test_forty_idle_hounds_fill_the_floor_and_the_rest_are_behind_a_more_seat_and_in_the_list(self):
+        out = self.page(crowd_routes(40, "scouts"), queries=self.QS)["final"]
+        self.assertEqual(out["roster"], 40, "the list holds everyone")
+        self.assertEqual(len(out["more"]), 1)
+        k = int(re.search(r"\+(\d+) more", out["more"][0]).group(1))
+        self.assertEqual(out["hounds"] + k, 40, "drawn + behind the +K more = everyone")
+        self.assertEqual(out["morezone"], ["floor"])
+
+    def test_a_name_tag_has_the_whole_name_in_its_title(self):
+        out = self.page(crowd_routes(12), queries=self.QS)["final"]
+        self.assertIn("The Weather Network Hound", out["names"])
+        self.assertIn("The Weather Network Hound", out["titles"])
+
+    def test_a_tap_on_a_more_seat_lists_only_that_zone_with_a_way_back_to_everyone(self):
+        qs = [q("roster", "[data-hook='room-roster-btn']", "count"), q("zones", "[data-hook='room-roster-btn']", "attrs", attr="data-zone"),
+              q("head", "[data-hook='room-roster-filter']"), q("all", "[data-hook='room-roster-all']", "count")]
+        out = self.page(crowd_routes(40, "scouts"), queries=qs, actions=[
+            {"do": "click", "sel": "[data-hook='room-more']", "index": 0, "capture": qs},
+            {"do": "click", "sel": "[data-hook='room-roster-all']", "index": 0, "capture": qs}])
+        filtered = out["captures"]["0"]
+        self.assertEqual(filtered["all"], 1)
+        self.assertTrue(all(z == "floor" for z in filtered["zones"]), "only the floor's hounds")
+        self.assertRegex(filtered["head"], r"On the floor: \d+ of 40")
+        back = out["captures"]["1"]
+        self.assertEqual(back["roster"], 40)
+        self.assertEqual(back["all"], 0)
+
+    def test_a_room_under_capacity_has_no_more_seat(self):
+        out = self.page(crowd_routes(12), queries=self.QS)["final"]
+        self.assertEqual(out["more"], [])
+        self.assertEqual((out["hounds"], out["roster"]), (12, 12))
+
+
+# ---------------------------------------------------------------------------------------------------
+# the room from 0 to 40 hounds, laid out for real, at five widths
+# ---------------------------------------------------------------------------------------------------
+
+CROWD_FIXTURES = [(0, "mixed"), (12, "mixed"), (24, "mixed"), (40, "mixed"), (40, "scouts"), (40, "naps")]
+CROWD_WIDTHS = [375, 390, 800, 1024, 1440]
+
+
+@unittest.skipUnless(_chrome_available(), "node and a Chrome/Chromium binary are needed")
+class RoomCrowding(unittest.TestCase):
+    """The defect: with the real pack (35 hounds) the scouting row ran into the GYM, hounds overlapped and the names collided; the fixtures only had a dozen.
+    Each fixture is the public room at 375 / 390 / 800 / 1024 / 1440 px, in a real Chrome with reduced motion (the resting rects): every sprite, name tag,
+    bubble, units float, "+K more" and sign is measured. No two may overlap (0 px allowed), none may cross its zone's boundary, the zone bands never overlap."""
+
+    @classmethod
+    def setUpClass(cls):
+        import concurrent.futures
+        import http.server
+        import subprocess
+        import threading
+        from pathlib import Path
+        from tests.test_no_horizontal_overflow import CHROME, make_handler
+        script = str(Path(__file__).resolve().parent / "room_render_check.mjs")
+        cls.servers, cls.results = [], {}
+        jobs = {}
+        with live_clock():
+            for n, mode in CROWD_FIXTURES:
+                api = {k: tuple(v) for k, v in crowd_routes(n, mode).items()}
+                api["/sports/now"] = (200, {"families": [{"code": "MLB", "live": [{"event_id": "a"}], "upcoming_24h": [{"start_utc": iso(120)}]}]})
+                server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), make_handler(api))
+                threading.Thread(target=server.serve_forever, daemon=True).start()
+                cls.servers.append(server)
+                jobs[(n, mode)] = f"http://127.0.0.1:{server.server_address[1]}"
+
+        def run(base, n):
+            # a machine busy with other work can leave the page unmounted past the check's own wait: a row with no hound where there should be some is tried again
+            rows = []
+            for _ in range(3):
+                proc = subprocess.run(["node", script, "--reduced", "--daytime", "--widths=" + ",".join(map(str, CROWD_WIDTHS)), CHROME, base, "/web/room.html"],
+                                      capture_output=True, text=True, encoding="utf-8", timeout=420)
+                lines = [ln for ln in proc.stdout.splitlines() if ln.startswith("[")]
+                if proc.returncode != 0 or not lines:
+                    raise AssertionError(f"render check failed ({proc.returncode}): {proc.stderr[-1500:]}")
+                rows = json.loads(lines[-1])
+                if all(r["hounds"] > 0 for r in rows) or n == 0:
+                    break
+            return rows
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            futures = {key: pool.submit(run, base, key[0]) for key, base in jobs.items()}
+            for key, fut in futures.items():
+                cls.results[key] = fut.result()
+
+    @classmethod
+    def tearDownClass(cls):
+        for server in cls.servers:
+            server.shutdown()
+
+    def each(self):
+        for key, rows in self.results.items():
+            for r in rows:
+                yield key, r
+
+    def test_every_fixture_was_rendered_at_every_width_without_a_script_error(self):
+        for key, rows in self.results.items():
+            self.assertEqual([r["width"] for r in rows], CROWD_WIDTHS, key)
+            for r in rows:
+                self.assertEqual(r["errors"], [], (key, r["width"]))
+
+    def test_every_hound_is_drawn_or_behind_a_more_seat_and_always_in_the_list(self):
+        for (n, mode), r in self.each():
+            with self.subTest(n=n, mode=mode, width=r["width"]):
+                g = r["geom"]
+                behind = sum(int(re.search(r"\+(\d+) more", m).group(1)) for m in g["more"])
+                self.assertEqual(r["hounds"] + behind, n, r["msg"])
+                self.assertEqual(g["rosterCount"], n, "the list under the room holds everyone")
+                self.assertEqual(g["kinds"].get("sprite", 0), r["hounds"])
+
+    def test_no_two_sprites_name_tags_labels_tokens_or_signs_overlap(self):
+        for (n, mode), r in self.each():
+            with self.subTest(n=n, mode=mode, width=r["width"]):
+                self.assertEqual(r["geom"]["overlaps"], [], f"{r['geom']['overlapCount']} overlapping pairs")
+
+    def test_nothing_crosses_its_zones_boundary_and_the_zones_never_collide(self):
+        for (n, mode), r in self.each():
+            with self.subTest(n=n, mode=mode, width=r["width"]):
+                g = r["geom"]
+                self.assertEqual(g["outside"], [], f"{g['outsideCount']} pieces cross their zone")
+                self.assertEqual(g["signsOut"], [])
+                self.assertEqual(g["zoneOverlaps"], [])
+                self.assertIn("desk", g["zones"])
+                self.assertIn("bed", g["zones"])
+
+    def test_a_name_tag_that_is_cut_by_its_seat_carries_the_whole_name_in_its_title(self):
+        cut = 0
+        for (n, mode), r in self.each():
+            with self.subTest(n=n, mode=mode, width=r["width"]):
+                self.assertEqual(r["geom"]["tagsCutNoTitle"], 0)
+                cut += r["geom"]["tagsCut"]
+        self.assertGreater(cut, 0, "the fixture has names longer than a seat (The Weather Network Hound), so the ellipsis is exercised")
+
+    def test_the_page_never_scrolls_sideways(self):
+        for (n, mode), r in self.each():
+            with self.subTest(n=n, mode=mode, width=r["width"]):
+                self.assertLessEqual(r["sw"], r["iw"] + 1)
+
+    def test_a_full_zone_is_what_the_forty_idle_hounds_hit(self):
+        for key in ((40, "scouts"), (40, "naps")):
+            for r in self.results[key]:
+                self.assertEqual(len(r["geom"]["more"]), 1, (key, r["width"], r["geom"]["more"]))
+                self.assertLess(r["hounds"], 40)
+
+    def test_the_room_is_taller_when_it_is_fuller_and_empty_when_empty(self):
+        heights = {key: [r["geom"]["stageH"] for r in rows] for key, rows in self.results.items()}
+        for r in self.results[(0, "mixed")]:
+            self.assertEqual(r["hounds"], 0)
+        for i, width in enumerate(CROWD_WIDTHS):
+            self.assertGreater(heights[(40, "scouts")][i], heights[(0, "mixed")][i], width)
+            self.assertGreater(heights[(40, "naps")][i], heights[(0, "mixed")][i], width)
 
 
 # ---------------------------------------------------------------------------------------------------
@@ -779,7 +1101,12 @@ class ZoneAndListSayTheSame(unittest.TestCase):
               q("rzones", "[data-hook='room-roster-btn']", "attrs", attr="data-zone"), q("rlabels", "[data-hook='room-roster-btn']", "attrs", attr="data-label"),
               q("rwords", ".rm-roster__state", "texts"), q("rnames", ".rm-roster__name", "texts"), q("names", "[data-hook='room-name']", "texts")]
         f = run_page("room", routes=self.fixture(), tz="UTC", settleMs=250, now=NOW, queries=qs, **SIGNED)["final"]
-        slots = run_js('import { SLOTS, SPARE } from "./room-scene.js";\nconsole.log(JSON.stringify({ SLOTS, SPARE }));')
+        chars = json.dumps([{"id": i, "zone": z, "name": i} for i, z in zip(f["ids"], f["zones"])])
+        seats = run_js('import { planRoom } from "./room-layout.js";\n'
+                       f"const chars = {chars};\n"
+                       "const plan = planRoom(chars, {});\n"
+                       "const out = {}; for (const [id, v] of plan.seats) out[id] = [v.zone, v.xy[0], v.xy[1]];\n"
+                       "console.log(JSON.stringify(out));")
         self.assertEqual(len(f["ids"]), 8)
         seen = {}
         for i, hid in enumerate(f["ids"]):
@@ -790,7 +1117,8 @@ class ZoneAndListSayTheSame(unittest.TestCase):
             self.assertEqual(f["rzones"][i], f["zones"][i], f"{who}: the list and the room put it in the same zone")
             self.assertEqual(ZONE_OF_LABEL[f["labels"][i]], f["zones"][i], f"{who}: {f['labels'][i]} belongs in the {ZONE_OF_LABEL[f['labels'][i]]}, not the {f['zones'][i]}")
             x, y = (int(v) for v in f["slots"][i].split(","))
-            self.assertIn([x, y], slots["SLOTS"][f["zones"][i]], f"{who} stands on a {f['zones'][i]} seat")
+            zone_seats = sorted((round(v[1]), round(v[2])) for v in seats.values() if v[0] == f["zones"][i])
+            self.assertIn((x, y), zone_seats, f"{who} stands on a {f['zones'][i]} seat")
             seen[f["labels"][i]] = f["zones"][i]
         self.assertEqual({k: seen[k] for k in ("No games left", "Idle", "Not started", "Resting")}, {"No games left": "bed", "Idle": "bed", "Not started": "bed", "Resting": "bed"},
                          "no games / done / idle hounds nap in the beds, never at the gym")
@@ -803,14 +1131,17 @@ class ZoneAndListSayTheSame(unittest.TestCase):
         self.assertEqual(out["ZONE_OF"]["asleep"], "bed")
         self.assertEqual(out["ZONE_OF"]["training"], "gym")
 
-    def test_the_gym_sign_is_on_the_gym_mat_and_the_beds_sign_is_over_the_beds(self):
-        src = read("js/room-scene.js")
-        gy = int(re.search(r'y: (\d+), "text-anchor": "start", text: "GYM"', src).group(1))
-        by = int(re.search(r'y: (\d+), "text-anchor": "start", text: "BEDS"', src).group(1))
-        out = run_js('import { SLOTS } from "./room-scene.js";\nconsole.log(JSON.stringify(SLOTS));')
-        self.assertLess(gy, 340, "the GYM sign sits on the gym mat, above the gym seats' feet")
-        self.assertGreater(by, 360, "the BEDS sign is under the gym mat")
-        self.assertLess(by, out["bed"][0][1] - 70, "and just above the first row of beds (the hounds' heads)")
+    def test_the_gym_and_beds_signs_sit_in_their_band_above_the_first_row_of_hounds(self):
+        """A zone's sign is the first thing in its band; the hounds (and the crown on a hound's head, 16 units) start below it."""
+        out = run_js('import { planRoom } from "./room-layout.js";\n'
+                     'const chars = [{ id: "g", zone: "gym", name: "g" }, { id: "b", zone: "bed", name: "b" }];\n'
+                     "const plan = planRoom(chars, {});\n"
+                     "console.log(JSON.stringify({ gym: plan.zones.gym, bed: plan.zones.bed, hound: 92, crown: 16 }));")
+        for zone in ("gym", "bed"):
+            band = out[zone]
+            sign_baseline = band["top"] + 16
+            self.assertGreater(band["feet"] - out["hound"] - out["crown"], sign_baseline + 3, f"the {zone.upper()} sign is clear of the first row's heads and crowns")
+        self.assertGreaterEqual(out["bed"]["top"], out["gym"]["bottom"], "the beds band starts where the gym band ends")
 
 
 # ---------------------------------------------------------------------------------------------------
@@ -865,6 +1196,17 @@ class LabelLayout(unittest.TestCase):
         items = [{"group": "g", "c": 120, "w": 170, "owner": 120}, {"group": "g", "c": 560, "w": 170, "owner": 560}]
         out = self.js(f"console.log(JSON.stringify(placeLabels({json.dumps(items)}, 4, 1040)));")
         self.assertEqual([(o["shift"], o["hidden"]) for o in out], [(0, False), (0, False)])
+
+    def test_a_name_tag_is_a_seat_less_18px_and_a_pacing_hound_sways_inside_that(self):
+        css = re.sub(r"/\*.*?\*/", "", read("css/room.css"), flags=re.S)
+        name = re.search(r"\.rm-name \{([^}]*)\}", css).group(1)
+        self.assertRegex(name, r"max-width: calc\(var\(--rm-pitch, 110\) \* \.1cqw - 18px\)")
+        self.assertIn("text-overflow: ellipsis", name)
+        sway = [int(n) for n in re.findall(r"translateX\((-?\d+)px\)", re.search(r"@keyframes rm-pace \{([^}]*\}[^}]*)\}", css).group(1))]
+        self.assertTrue(sway, "the pace is a few px, not a share of the room")
+        # two neighbours swaying towards each other close the 18 px between their tags by at most 2 x the sway: some air stays
+        self.assertLess(2 * max(abs(v) for v in sway), 18)
+        self.assertNotRegex(css, r"rm-pace \{[^}]*cqw")
 
     def test_the_css_keeps_a_bubble_to_one_line_and_a_loss_off_the_wall(self):
         css = re.sub(r"/\*.*?\*/", "", read("css/room.css"), flags=re.S)
