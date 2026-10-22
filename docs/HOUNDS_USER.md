@@ -205,3 +205,35 @@ closing-line value, can promote it (as a new version, below). It cannot do anyth
 
 Why the limits: a reference auto-coach rewrote rules 29 times in 11 days, was never undone, and its
 review called it statistical malpractice. Rate, evidence, fresh records and undo are the answer.
+
+## Unleash finds plays, and "Also bet games in play" (2026-10-22)
+
+**What was wrong (2026-10-21, hound DRAKEO).** Unleash said "Checked 60 games - Nothing to lock yet" and showed no tickets.
+Three faults: (1) a hound with any bet on record was only *shown*, never evaluated; (2) a hound created after a game's lock
+skipped that game for good, so games starting within the lock window were passed over; (3) the day view listed only rows of
+the slate date and gave no reason per game. Replaying DRAKEO's rule over the stored boards for 2026-10-22 04:40Z reproduces
+"Checked 60 games" and shows why nothing fit: 54 had no board fresh enough yet (far-off games are captured every few hours;
+the runner checks them at their lock), 1 fewer books than needed, 3 price outside the band, 1 rule not met, 1 placed.
+
+**Now.** Every Unleash evaluates today's not-yet-started games (idempotent bet id, daily limit, one side per game, -200 cap
+unchanged). The response carries `open_tickets` (every ticket still waiting for a result, any recent day), `why` (one bucket
+per game: `src/hounds/interact/unleash_why.py`, the furthest test the game got through) and `next_check` (the next game the
+runner will check, and when).
+
+**Also bet games in play** (`bet_in_play` on a version-2 spec; default off; absent from the spec and the rule hash when off).
+When on, Unleash and the runner evaluate a game that has started, inside its sport's live window, on the newest in-play
+capture of the multibook store (the store the Live page reads) observed at or before the evaluation instant. A later capture
+is never read. A live capture older than `LIVE_MAX_AGE_MINUTES` (5; the runner passes every 15 minutes, so most live bets
+come from Unleash taps or a fresh capture) is skipped as `live_price_too_old`; no capture at all is `no_live_board`. Bets
+carry `live: true` and `live_price_observed_utc`; tickets read "Live bet - price at HH:MM". Props are never bet live. The
+Gematria style refuses the setting. In-play prices move fast: bet at your own risk, paper only.
+
+**What a ticket's `lock_utc` means (checker round, 2026-10-22).** It is the instant of the board the bet read. The runner and a
+hound that existed at the lock: the lock. A hound born after a game's lock that is unleashed before the game starts is priced on
+the newest board at or before the tap, never the lock-time board and never a later one: its row is stamped with that tap
+instant, carries `placed_after_lock: true`, and its "Why this bet" says so. An in-play bet is stamped with its evaluation
+instant. Without this the public "verified" check compared the price taken with a board from before the bet's own board.
+An in-play bet is graded like any other, but it has **no closing-line value** (`close_price`/`clv_pts` stay null): its price
+was taken after the pre-game close. The live label is in UTC, "Live bet - price at HH:MM UTC", like the recorded time beside it.
+The leaderboard's Bets figure counts open tickets beside the settled ones ("5 (5 open)"). There is no results lookup behind
+"already ended": a game is bet live only inside its sport's live window and on a capture under 5 minutes old.

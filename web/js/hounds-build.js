@@ -542,6 +542,11 @@ function globalsGrid(onChange, grid = clearNode(q("globals-grid")), gem = false)
     }, { "data-hook": "g-stake" }), m.stake_note);
   stakeField.appendChild(stakeLine);
   grid.appendChild(stakeField);
+  // "Also bet games in play": off by default. The words come from the server's menu (user_spec.IN_PLAY_NOTE).
+  const ip = m.bet_in_play || { label: "Also bet games in play", note: "In-play prices move fast. Bet at your own risk. Paper only." };
+  if (!gem) grid.appendChild(field(ip.label, selectOf([{ value: "off", label: "Off" }, { value: "on", label: "On" }],
+    S.spec.bet_in_play === true ? "on" : "off", (v) => { if (v === "on") S.spec.bet_in_play = true; else delete S.spec.bet_in_play; onChange(); },
+    { "data-hook": "g-inplay" }), ip.note));
   if (!gem) grid.appendChild(field("If more picks qualify than the cap, take", selectOf(m.rank_by.map((r) => ({ value: r.value, label: r.label })),
     S.spec.rank_by, (v) => { S.spec.rank_by = v; onChange(); }, { "data-hook": "g-rank" }), m.ranking_note));
 }
@@ -730,7 +735,7 @@ function previewBody() {
  * without its derived keys, and `V2_RULE_KEYS`; tests/test_hounds_edit_save_visible.py fails if they drift apart). The validator
  * REFUSES an unknown key, so a saved dog that carries one the editor never shows would be refused on every save, forever.
  */
-const SPEC_KEYS = ["version", "name", "tagline", "color", "badge", "lock_minutes", "max_bets_per_day", "stake_units", "rank_by", "rules", "style", "gematria"];
+const SPEC_KEYS = ["version", "name", "tagline", "color", "badge", "lock_minutes", "max_bets_per_day", "stake_units", "rank_by", "rules", "bet_in_play", "style", "gematria"];
 const RULE_KEYS = ["label", "sports", "markets", "side", "price_min", "price_max", "line_min", "line_max", "min_books", "when"];
 
 /** Send only what the server's menu knows: empty optionals become absent, empty condition groups vanish, and a field the
@@ -749,6 +754,7 @@ function cleanSpec(spec) {
     return out;
   });
   for (const key of Object.keys(spec)) if (!SPEC_KEYS.includes(key)) delete spec[key];
+  if (spec.bet_in_play !== true) delete spec.bet_in_play;      // off is the default and is simply absent, so an untouched dog's spec is unchanged
   if (spec.style !== GEMATRIA) { delete spec.style; delete spec.gematria; }
   else if (spec.rules.length) spec.sports = spec.rules[0].sports;      // the style's one fixed rule covers the hound's sports
   return spec;

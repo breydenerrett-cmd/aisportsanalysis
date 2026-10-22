@@ -193,7 +193,7 @@ class TheLeaderboardList(unittest.TestCase):
     def test_the_sample_sits_beside_every_record(self):
         out = self.go()["final"]
         self.assertTrue(out["inline"])
-        self.assertTrue(all(re.fullmatch(r"\d+ bets?", t) for t in out["inline"]), out["inline"])
+        self.assertTrue(all(re.fullmatch(r"\d+ bets?( \(\d+ open\))?", t) for t in out["inline"]), out["inline"])
 
     def test_the_list_is_compact_until_all_stats_is_pressed(self):
         out = self.go(actions=[dict(do="click", sel=hook("view-toggle"), label="full",

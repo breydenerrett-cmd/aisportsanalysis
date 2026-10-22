@@ -523,7 +523,7 @@ class TheModelPageSeasons(unittest.TestCase):
             q("live", "[data-hook='forward-facts']")])])
         self.assertIn("/hounds/closer?season=s1", out["gets"])
         cap = out["captures"]["s1"]
-        self.assertIn("Bets 7", cap["bets"])
+        self.assertIn("7 settled", cap["bets"])
         self.assertEqual(cap["roi"], f"{1.5 / 7 * 100:+.1f}%")                       # the yield tile, "profit per $ bet"
         self.assertIn("$1,015.00", cap["bank"])                                      # the season's own account
         self.assertEqual(cap["pressed"], ["false", "true", "false"])

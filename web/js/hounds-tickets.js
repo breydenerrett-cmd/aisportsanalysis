@@ -59,6 +59,7 @@ export function ticketCard(ticket, { showModel = false, name = "", flip = false 
   const graded = state !== "pending" && state !== "ungraded";
   const line2 = [h("span", { class: "hd-card__game", text: t.game || NOT_REPORTED }),
     h("span", { class: "hd-card__mkt", text: marketLabel(t.market) })];
+  if (t.live_price_at_utc) line2.push(liveTag(t));
   if (showModel && model) {
     line2.push(t.hound_id !== undefined
       ? h("a", { class: "hd-card__model", href: houndHref(t.hound_id), text: model })
@@ -124,6 +125,16 @@ export function recordedCell(ticket) {
  * One ticket as a list row. `showModel` adds the model's name (the cross-model feed); the model's own pages
  * leave it off. The row is a grid: when, the game and pick, the price, the record line and the result.
  */
+/** "Live bet · price at 20:14 UTC": an in-play ticket's label (the capture time of the live price it took, in UTC like the
+ *  "recorded" time on the same ticket). null on every ordinary ticket. */
+export function liveTag(t) {
+  if (!t || !t.live_price_at_utc) return null;
+  const at = new Date(t.live_price_at_utc);
+  const pad = (v) => String(v).padStart(2, "0");
+  const when = Number.isNaN(at.getTime()) ? "" : ` · price at ${pad(at.getUTCHours())}:${pad(at.getUTCMinutes())} UTC`;
+  return h("span", { class: "hd-ticket__live", "data-hook": "ticket-live", text: `Live bet${when}` });
+}
+
 export function ticketItem(ticket, { showModel = true, name = "" } = {}) {
   const t = ticket || {};
   const status = ticketState(t);
@@ -142,6 +153,7 @@ export function ticketItem(ticket, { showModel = true, name = "" } = {}) {
       h("span", { class: "hd-ticket__pick" }, [
         h("strong", { text: pickOf(t) }),
         h("span", { class: "hd-ticket__mkt", text: marketLabel(t.market) }),
+        liveTag(t),
       ]),
     ]),
     h("div", { class: "hd-ticket__price" }, [priceCell(t)]),
@@ -188,7 +200,7 @@ export function ticketTable(tickets, { graded = false, hook = "tickets-table", c
     const cells = [
       h("td", { class: "hd-num hd-nowrap", text: shortDate(t.date) || NA }),
       h("td", { text: t.game || NOT_REPORTED }),
-      h("td", {}, [h("strong", { text: pickOf(t) }), h("small", { class: "hd-aux", text: marketLabel(t.market) })]),
+      h("td", {}, [h("strong", { text: pickOf(t) }), h("small", { class: "hd-aux", text: marketLabel(t.market) }), liveTag(t)]),
       h("td", { class: "hd-num" }, [priceCell(t)]),
     ];
     if (graded) cells.push(h("td", { class: "hd-num", "data-hook": "ticket-clv", text: clv }));

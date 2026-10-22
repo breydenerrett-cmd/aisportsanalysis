@@ -338,7 +338,8 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
             report["pending"] += 1
             continue
         close = None
-        if not is_prop:         # no closing prop board is read: a prop's CLV stays null, never a guess
+        if not is_prop and not bet.get("live"):   # a prop's CLV stays null, never a guess; neither does an in-play bet's: its price
+                                                  # was taken after the close, so the pre-game close is not a line it can beat
             try:
                 close = close_fn(bet)
             except Exception as exc:  # noqa: BLE001 -- no close price leaves CLV null

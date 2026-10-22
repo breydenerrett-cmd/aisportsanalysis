@@ -430,6 +430,21 @@ def validate_spec(raw: Mapping, *, taken_names: Iterable[str] = (),
 
 RULE_FIELDS_V2 = ("rules", "lock_minutes", "max_bets_per_day", "stake_units", "rank_by")
 
+# "Also bet games in play" (2026-10-22). OFF unless the owner turns it on. It is stored on the spec only when it is True,
+# so a hound that never used it keeps its exact stored spec and its rule hash; when True it is part of the rule (it
+# changes what the hound bets) and of the hash.
+IN_PLAY_FIELD = "bet_in_play"
+LIVE_MAX_AGE_MINUTES = 5             # an in-play bet needs a live capture this fresh at evaluation (src/hounds/user_engine.py)
+IN_PLAY_LABEL = "Also bet games in play"
+IN_PLAY_NOTE = ("In-play prices move fast. When this is on, the hound may also bet a game that has already started, at the "
+                "price on the live board at the moment it checks, and only if that price is under a few minutes old. "
+                "Bet at your own risk. Paper only.")
+
+
+def bets_in_play(spec: Mapping) -> bool:
+    """True only for a spec that opted in. Missing, False or anything that is not exactly True reads as off."""
+    return isinstance(spec, Mapping) and spec.get(IN_PLAY_FIELD) is True
+
 
 def is_gematria(spec: Mapping) -> bool:
     """True for a version-2 spec with the member Gematria style (``src/hounds/user_gematria.py``)."""
@@ -440,6 +455,8 @@ def rule_fields(spec: Mapping) -> dict:
     """The fields that make a hound's RULE (everything except its name, tagline, colour and badge)."""
     if spec.get("version") == SPEC_VERSION_V2:
         out = {"v": SPEC_VERSION_V2, **{k: spec[k] for k in RULE_FIELDS_V2}}
+        if bets_in_play(spec):
+            out[IN_PLAY_FIELD] = True
         if is_gematria(spec):
             # the style and the rules stamp it was made under are part of the rule; an ordinary hound's hash is unchanged
             out["style"], out["gematria"] = STYLE_GEMATRIA, spec["gematria"]
@@ -587,7 +604,7 @@ V2_RULE_KEYS = ("label", "sports", "markets", "side", "price_min", "price_max", 
 # and never part of the rule hash.
 V2_DERIVED_KEYS = ("sports", "markets", "side_rule")
 V2_TOP_KEYS = ("version", "name", "tagline", "color", "badge", "lock_minutes", "max_bets_per_day",
-               "stake_units", "rank_by", "rules") + V2_DERIVED_KEYS
+               "stake_units", "rank_by", "rules", "bet_in_play") + V2_DERIVED_KEYS
 # The base style (src/hounds/user_gematria.py): "rules" is every ordinary hound (the key is simply absent), "gematria" is the
 # member Gematria style, whose pick logic is the house Gematria Hound's. `gematria` is its creation stamp (rules version + hash).
 STYLE_RULES, STYLE_GEMATRIA = "rules", "gematria"
@@ -751,6 +768,11 @@ def _validate_v2(raw: Mapping, *, taken_names: Iterable[str], extra_real_names) 
     rank = raw.get("rank_by", "earliest_lock")
     if rank not in R.RANK_RULES:
         errors["rank_by"] = f"choose one of {', '.join(R.RANK_RULES)}"
+    in_play = raw.get(IN_PLAY_FIELD, False)
+    if not isinstance(in_play, bool):
+        errors[IN_PLAY_FIELD] = "must be true or false"
+    elif in_play and style == STYLE_GEMATRIA:
+        errors[IN_PLAY_FIELD] = "the Gematria style bets before the start only"
 
     rules_raw = raw.get("rules") if fixed is None else fixed["rules"]
     rules: list = []
@@ -776,6 +798,8 @@ def _validate_v2(raw: Mapping, *, taken_names: Iterable[str], extra_real_names) 
     }
     if fixed is not None:
         out["style"], out["gematria"] = STYLE_GEMATRIA, fixed["stamp"]
+    if in_play is True:
+        out[IN_PLAY_FIELD] = True
     return out
 
 
@@ -843,6 +867,7 @@ def builder_menu() -> dict:
                       "default_game": DEFAULT_MIN_BOOKS_GAME, "default_prop": DEFAULT_MIN_BOOKS_PROP},
         "max_bets_per_day": {"min": MAX_BETS_RANGE[0], "max": MAX_BETS_RANGE[1], "default": 2},
         "stake_units": {"choices": list(R.STAKE_CHOICES), "default": 1.0},
+        "bet_in_play": {"default": False, "label": IN_PLAY_LABEL, "note": IN_PLAY_NOTE},
         "lock_minutes": {"choices": list(LOCK_CHOICES), "default": LOCK_CHOICES[1]},
         "rank_by": [{"value": r, "label": R.RANK_LABELS[r]} for r in R.RANK_RULES],
         "colors": [{"value": c[0], "label": c[1], "hex": c[2]} for c in R.COLORS],

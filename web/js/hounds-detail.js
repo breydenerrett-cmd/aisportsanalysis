@@ -398,7 +398,7 @@ export function renderScoreboard(hound) {
       kpi("record", "Record", recordText(hound), bets > 0 ? "wins-losses" + (rec.pushes ? "-pushes" : "") : "no graded bets"),
       money.drawdown,
       money.yield,
-      kpi("bets", "Bets", String(bets), [open > 0 ? `${open} open` : "", ungraded > 0 ? `${ungraded} ungraded` : ""].filter(Boolean).join(", ")
+      kpi("bets", "Bets", String(bets + open), [open > 0 ? `${open} open` : "", bets > 0 ? `${bets} settled` : "", ungraded > 0 ? `${ungraded} ungraded` : ""].filter(Boolean).join(", ")
         || ""),
       kpi("clv", "CLV", clvBig, clvSmall),
       kpi("streak", "Streak", streak || NA, streak ? (streak.startsWith("W") ? "wins in a row" : "losses in a row") : "no graded bets"),

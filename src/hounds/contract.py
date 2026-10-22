@@ -258,6 +258,9 @@ class BetRow:
     # "OPEN" | "GRADED" | "UNGRADED" (``ticket_status``), stamped when a payload is built, not when the book is
     # cached, so the 36-hour line is exact at the moment of the request. "" until stamped and on a refusal.
     status: str = ""
+    # An in-play ticket (a hound that opted in to bets in play): the capture time of the live price it took. None on every
+    # ordinary ticket. The lists label it "Live bet · price at HH:MM".
+    live_price_at_utc: Optional[str] = None
 
 
 @dataclass

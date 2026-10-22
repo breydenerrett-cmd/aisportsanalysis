@@ -105,6 +105,13 @@ export function openBetsOf(hound) {
   return isNum(n) && n > 0 ? n : 0;
 }
 
+/** The Bets figure on a row: every bet the hound has made, open ones included, with the open count beside it ("5 (5 open)").
+ *  `record.bets` counts SETTLED bets only, so printing it alone read "0" beside a hound holding five open tickets. */
+export function betsShown(hound) {
+  const open = openBetsOf(hound);
+  return open > 0 ? `${betsOf(hound) + open} (${open} open)` : String(betsOf(hound));
+}
+
 /** Forward tickets more than 36 hours past their start with no grade (never counted as open). */
 export function ungradedBetsOf(hound) {
   const n = hound && hound.ungraded_bets;
@@ -428,7 +435,7 @@ export const COLUMNS = [
   { key: "d7", label: "7d", numeric: true, first: "desc", get hint() { return `Return on the ${startText()} start from bets settled in the last 7 days`; } },
   { key: "h24", label: "24h", numeric: true, first: "desc", get hint() { return `Return on the ${startText()} start from bets settled in the last 24 hours`; } },
   { key: "units", label: "Units", numeric: true, first: "desc", get hint() { return `Total units won or lost (${unitWords()}; member dogs bet the units they chose)`; } },
-  { key: "bets", label: "Bets", numeric: true, first: "desc", hint: "Graded bets" },
+  { key: "bets", label: "Bets", numeric: true, first: "desc", hint: "Every bet made, with the open ones (not settled yet) counted beside it. The record and the rank use settled bets only." },
   { key: "price", label: "Avg price", numeric: true, first: "desc", hint: "The typical price taken" },
   { key: "clv", label: "CLV", numeric: true, first: "desc", hint: "Share of bets that beat the close, and the average points" },
   { key: "last10", label: "Last 10", numeric: true, first: "desc", hint: "Wins in the last ten decided bets" },

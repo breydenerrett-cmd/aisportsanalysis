@@ -132,6 +132,15 @@ const avatarOf = (dog, size, mood) => dogBadge(dog.look || lookFor(dog.root_id |
 
 // ---- cards ------------------------------------------------------------------------------------------------
 
+/** The "Bets" figure: every bet the hound has made, open ones included, with the open count beside it ("5 (5 open)").
+ *  `record.bets` counts SETTLED bets only, so printing it alone read "Bets 0" next to "5 open". */
+export function betsText(dog) {
+  const rec = (dog && dog.record) || {};
+  const open = Number.isFinite(dog && dog.open_bets) ? dog.open_bets : 0;
+  const total = (Number.isFinite(rec.bets) ? rec.bets : 0) + open;
+  return open > 0 ? `${total} (${open} open)` : String(total);
+}
+
 function stat(label, value, extra = {}) {
   return h("div", { class: "kn-stat" }, [h("dt", { text: label }), h("dd", Object.assign({ text: value }, extra))]);
 }
@@ -177,7 +186,7 @@ function dogCard(dog, { mine }, index) {
         stat("Record", recordText(rec), { "data-hook": "dog-record" }),
         stat("Bankroll", bankrollText(dog), Object.assign({ "data-hook": "dog-bankroll", "data-count": "1" }, small)),
         stat("Return", returnText(dog), Object.assign({ "data-hook": "dog-return" }, small)),
-        stat("Bets", String(rec.bets || 0), { "data-hook": "dog-bets", "data-count": "1" })]),
+        stat("Bets", betsText(dog), { "data-hook": "dog-bets" })]),
       h("p", { class: "kn-card__last", "data-hook": "dog-last", text: lastPickText(dog) }),
       h("div", { class: "kn-card__actions" }, actions)]),
   ]);
@@ -670,7 +679,7 @@ async function buildRecord(host, dog, kit) {
   const rec = dog.record || {};
   host.appendChild(h("dl", { class: "kn-stats kn-stats--wide", "data-hook": "studio-record-stats" }, [
     stat("Record", recordText(rec)), stat("Bankroll", bankrollText(dog)), stat("Return", returnText(dog)),
-    stat("Bets", String(rec.bets || 0)),
+    stat("Bets", betsText(dog), { "data-hook": "studio-bets" }),
     stat("Open", String(dog.open_bets || 0))]));
   host.appendChild(h("p", { class: "hd-fine", text: `${state.data.season && state.data.season.label ? state.data.season.label : "This season"}, a paper account that started with ${startText()} (${unitSentence()}), bets settled at the average price.` }));
   const tickets = h("div", { "data-hook": "studio-tickets" });

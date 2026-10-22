@@ -91,6 +91,7 @@ class Bet:
     result: Optional[str] = None            # win|loss|push|void, None = ungraded
     units: Optional[float] = None           # source-given units, if any
     who_decided: str = "rule"
+    live_price_at_utc: Optional[str] = None   # set only on an in-play bet (user_engine ``live``)
     reason: str = ""
     selection_text: str = ""
     game_text: str = ""
@@ -602,6 +603,8 @@ def pack_rows(rows: Iterable) -> tuple:
             bet.start_utc = row.get("start_utc") or row.get("commence_time")
         if row.get("reason"):
             bet.reason = str(row["reason"])
+        if row.get("live") is True and row.get("live_price_observed_utc"):
+            bet.live_price_at_utc = str(row["live_price_observed_utc"])
         who = str(row.get("who_decided") or "").lower()
         who = WHO_ALIASES.get(who, who)
         if who in ("code", "model", "rule"):

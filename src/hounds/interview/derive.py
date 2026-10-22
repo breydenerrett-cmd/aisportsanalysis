@@ -50,8 +50,9 @@ from src.hounds.interview import topics as T
 PLACEHOLDER_NAME = "Interview hound"
 # "no opinion" values: they never contradict a stated one
 WEAK = {"side": "either", "role": "any"}
-LIVE_REASON = ("Live and in-game bets are not available. A hound locks 60 to 180 minutes before the start and "
-               "uses only what was known by then.")
+LIVE_REASON = ("A rule that reads the game as it unfolds (an inning, a quarter, the score) is not available: a hound "
+               "decides 60 to 180 minutes before the start. To also bet games already in play, turn on \"Also bet "
+               "games in play\" in the builder; it bets the live price under the same rules.")
 LINE_TIMING_REASON = ("A hound is priced at its lock time, as the average across books. It cannot take the opening "
                       "or the closing line.")
 KIND_NOUN = {"ml_spread": "the game bet", "total": "the game total", "prop": "the player prop"}

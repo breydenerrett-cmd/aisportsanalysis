@@ -271,14 +271,18 @@ def rule_candidates(rule: Mapping, index: int, spec: Mapping, game: "E.GameBoard
         max_age = user_spec.MAX_PROP_BOARD_AGE_MINUTES
     else:
         found = game.board_at(market, as_of)
-        max_age = E.MAX_BOARD_AGE_MINUTES
+        max_age = game.board_max_age()
+    live = game.board_floor is not None
+    if live and kind == "prop":
+        skipped["no_live_board"] += 1            # props are captured twice a game: there is no live prop price to bet
+        return out
     if found is None:
-        skipped["no_board_at_lock"] += 1
+        skipped["no_live_board" if live else "no_board_at_lock"] += 1
         return out
     observed, board = found
     age = (as_of - observed).total_seconds() / 60.0
     if age > max_age:
-        skipped["board_too_old"] += 1
+        skipped["live_price_too_old" if live else "board_too_old"] += 1
         return out
 
     if kind == "prop":
@@ -313,7 +317,7 @@ def rule_candidates(rule: Mapping, index: int, spec: Mapping, game: "E.GameBoard
                 noun = R.PROP_NOUN[market]
                 out.append({
                     "side": side, "line": pb["line"], "price": avg, "best_price": best, "best_book": best_book,
-                    "n_books": len(prices), "board_observed_utc": E._iso(observed), "board_age_minutes": round(age, 1),
+                    "n_books": len(prices), "board_observed_utc": E._iso(observed), "as_of_utc": E._iso(as_of), "board_age_minutes": round(age, 1),
                     "selection": f"{player} {side.title()} {pb['line']:g} {noun}", "player": player,
                     "rule_index": index, "steam_pts": steam})
         return out
@@ -365,9 +369,9 @@ def rule_candidates(rule: Mapping, index: int, spec: Mapping, game: "E.GameBoard
         best, best_book = E.best_price(prices)
         out.append({
             "side": side, "line": line, "price": avg, "best_price": best, "best_book": best_book,
-            "n_books": board["n_books"], "board_observed_utc": E._iso(observed), "board_age_minutes": round(age, 1),
+            "n_books": board["n_books"], "board_observed_utc": E._iso(observed), "as_of_utc": E._iso(as_of), "board_age_minutes": round(age, 1),
             "selection": E._selection_text(game, market, side, selection_line), "player": None,
-            "rule_index": index, "steam_pts": steam})
+            "rule_index": index, "steam_pts": steam, **({"live": True} if live else {})})
     return out
 
 
@@ -422,16 +426,25 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, facts, date:
         elif mode == "live":
             t = clock()
             if t >= commence:
-                skipped["game_started"] += 1
-                continue
-            if t < lock_utc:
-                if not ahead:
-                    skipped["not_locked_yet"] += 1
+                # started: bet only by a hound that opted in to in-play bets, on a live capture at or before now
+                game, code = E.live_game(game, spec, t)
+                if game is None:
+                    skipped[code] += 1
                     continue
                 as_of = t
-            if created is not None and created > lock_utc:
-                skipped["hound_created_after_lock"] += 1
-                continue
+            else:
+                if t < lock_utc:
+                    if not ahead:
+                        skipped["not_locked_yet"] += 1
+                        continue
+                    as_of = t
+                if created is not None and created > lock_utc:
+                    if not ahead:
+                        skipped["hound_created_after_lock"] += 1
+                        continue
+                    # Unleash: a hound born after the lock never had a lock-time price; it is priced NOW on the newest
+                    # board at or before now (flagged and stamped in ``run``), never a later one.
+                    as_of = t
         considered.setdefault(hound["id"], set()).add(event_id)
         game_pk = None
         if game_pk_index:

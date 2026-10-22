@@ -202,7 +202,8 @@ class TheLeaderboardTable(unittest.TestCase):
         want = sorted(self.graded(), key=lambda h: (-h["bankroll"]["current"], -h["record"]["bets"], h["name"]))
         self.assertEqual(f["ids"], [h["id"] for h in want])
         self.assertEqual(f["units"], [f"{h['bankroll']['units_total']:+.2f}" for h in want])
-        self.assertEqual(f["bets"], [str(h["record"]["bets"]) for h in want])
+        self.assertEqual(f["bets"], [f"{h['record']['bets'] + h['open_bets']} ({h['open_bets']} open)" if h.get("open_bets") else str(h["record"]["bets"])
+                                     for h in want])               # every bet made, open ones counted beside the settled
         for h, bank, ret in zip(want, f["bank"], f["ret"]):
             self.assertTrue(bank.startswith(f"${h['bankroll']['current']:,.0f}"), bank)
             self.assertEqual(ret, f"{h['bankroll']['return_pct']:+.1f}%")
@@ -669,7 +670,7 @@ class TheModelPage(unittest.TestCase):
         self.assertIn("profit per $ bet", f["yield"])
         self.assertIn(f"${b['max_drawdown_usd']:,.2f}", f["dd"])
         self.assertRegex(f["record"], r"Record \d+-\d+-1 wins-losses-pushes")
-        self.assertIn("Bets 41 2 open", f["bets"])
+        self.assertIn("Bets 43 2 open, 41 settled", f["bets"])
         self.assertIn("% beat", f["clv"])
         self.assertIn("measurable bets", f["clv"])
         self.assertRegex(f["streak"], r"Streak [WL]\d (wins|losses) in a row")
