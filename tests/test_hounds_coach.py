@@ -183,6 +183,18 @@ class ACitationThatIsNotRealIsDropped(Setup):
                 self.assertEqual(read["source"], "rules", words)
                 self.assertEqual(read["dropped"][0]["why"], "promises or forecasts")
 
+    def test_softer_forecasts_numbers_in_words_links_and_bet_instructions_are_dropped_too(self):
+        # checker finding 2026-10-21: the first filter caught "will" and "improve" but let these through
+        real = self.table["ranked"][0]
+        for words in ("It should bounce back.", "It is due to turn around.", "Expect a rebound.", "It'll recover.",
+                      "Likely to recover soon.", "The new version is expected to do well.", "Keep an eye on it next week.",
+                      "Lost three of its first four.", "About half of them lost.", "See http://evil.example/x.",
+                      "Email me at a@b.com.", "Take the other side of these."):
+            with self.subTest(words=words):
+                read, _a, _r = self.ask(self.reply(lambda p: [{"factors": [real], "text": words, "confidence": "low"}]))
+                self.assertEqual(read["source"], "rules", words)
+                self.assertTrue(read["dropped"], words)
+
     def test_a_reason_that_states_a_number_its_factors_do_not_contain_is_dropped(self):
         real = self.table["ranked"][0]
         read, _a, _r = self.ask(self.reply(lambda p: [{"factors": [real], "text": "It went 17-2 with 94 percent of picks.", "confidence": "high"}]))

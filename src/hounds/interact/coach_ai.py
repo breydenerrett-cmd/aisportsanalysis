@@ -114,8 +114,17 @@ ASSESS_SCHEMA = {
 
 # Words that promise or forecast. A reason or summary that uses one is not shown (see the module docstring).
 _FORECAST = re.compile(
-    r"\b(will|won't|going to|going forward|next time|from now on|guarantee\w*|certain(?:ly)?|surely|sure thing|should win|"
-    r"improv\w*|fix(?:es|ed)?|edge|profit\w*|better|bet check|lock|can't lose|cannot lose)\b", re.IGNORECASE)
+    r"\b(will|won't|shall|would|should|could|might|may|going to|going forward|next (?:time|week|month|run|version|slate)|"
+    r"from now on|in future|in the future|soon|expect\w*|likely|unlikely|probabl\w*|predict\w*|forecast\w*|project\w*|"
+    r"due (?:to|for)|overdue|rebound\w*|bounce\w*|recover\w*|turn(?:s|ed)? around|pay(?:s|ing)? off|regress\w*|"
+    r"rise|rises|climb\w*|guarantee\w*|certain(?:ly)?|surely|sure thing|"
+    r"improv\w*|fix(?:es|ed)?|edge|profit\w*|better|bet check|lock|can't lose|cannot lose)\b|'ll\b", re.IGNORECASE)
+# Not a reading of the table: a link, an address, or an instruction to place a bet.
+_NOT_A_READING = re.compile(r"@|https?:|www\.|\.(?:com|net|org|io)\b|\b(?:bet|wager|take|play|back|hammer|fade|tail)\s+(?:on|the)\b",
+                            re.IGNORECASE)
+# A number said in words is held to the same rule as one in digits: the table's figures are printed beside the sentence.
+_NUMBER_WORDS = re.compile(r"\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|fifty|hundred|"
+                           r"half|double|triple|dozen|zero|none|every single)\b", re.IGNORECASE)
 _DOG = re.compile(r"\bdogs?\b", re.IGNORECASE)
 _NUMBER = re.compile(r"\d+(?:\.\d+)?")
 _LEVEL_RANK = {"too_few": 0, "low": 1, "medium": 2, "high": 3}
@@ -180,6 +189,14 @@ def vet_reasons(raw: Sequence[Mapping], diagnosis: Mapping) -> tuple:
                 problem = "cites nothing that lost units"
             elif _FORECAST.search(text):
                 problem = "promises or forecasts"
+            elif _NOT_A_READING.search(text):
+                problem = "is not a reading of the table"
+            elif _NUMBER_WORDS.search(text):
+                problem = "states a number its factors do not contain"
+            elif _NOT_A_READING.search(text):
+                problem = "is not a reading of the table"
+            elif _NUMBER_WORDS.search(text):
+                problem = "states a number its factors do not contain"      # a number in words is checked as strictly as digits
             elif any(n not in allowed for n in _NUMBER.findall(text)):
                 problem = "states a number its factors do not contain"
         if problem:
@@ -202,7 +219,7 @@ def _vet_summary(text: Any, diagnosis: Mapping) -> Optional[str]:
     if not isinstance(text, str):
         return None
     text = _clean_words(text)
-    if not text or _FORECAST.search(text) or any(n not in _all_numbers(diagnosis) for n in _NUMBER.findall(text)):
+    if not text or _FORECAST.search(text) or _NOT_A_READING.search(text) or _NUMBER_WORDS.search(text) or any(n not in _all_numbers(diagnosis) for n in _NUMBER.findall(text)):
         return None
     return text
 
