@@ -2498,3 +2498,8 @@
 {"commence_utc": "2026-10-24T15:00:00Z", "event_id": "40c73eacfe39333531ece107096a26f5", "kind": "phase", "observed_utc": "2026-10-23T15:03:13.046685Z", "phase": "t24h", "rows": 13, "sport_key": "soccer_austria_bundesliga"}
 {"commence_utc": "2026-10-24T15:00:00Z", "event_id": "ec64d752823a384ef2ec8d5a44a0b932", "kind": "phase", "observed_utc": "2026-10-23T15:03:13.046685Z", "phase": "t24h", "rows": 13, "sport_key": "soccer_austria_bundesliga"}
 {"call_kind": "pregame", "credits": 2, "events": 12, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T15:03:13.046685Z", "regions": ["us"], "rows": 100, "sport_key": "soccer_austria_bundesliga", "stored": 52}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-23T16:10:00Z", "observed_utc": "2026-10-23T15:19:18.464338Z", "sport_key": "basketball_wnba"}
+{"commence_utc": "2026-10-24T15:05:00Z", "event_id": "5030a1f50b70648b4c9a2237204ed9fe", "kind": "phase", "observed_utc": "2026-10-23T15:19:18.464338Z", "phase": "t24h", "rows": 21, "sport_key": "soccer_saudi_arabia_pro_league"}
+{"call_kind": "pregame", "credits": 2, "events": 12, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T15:19:18.464338Z", "regions": ["eu"], "rows": 191, "sport_key": "soccer_saudi_arabia_pro_league", "stored": 135}
+{"commence_utc": "2026-10-24T15:15:00Z", "event_id": "974e5129b9b81586ec6097f045c1ab0c", "kind": "phase", "observed_utc": "2026-10-23T15:19:18.464338Z", "phase": "t24h", "rows": 15, "sport_key": "soccer_italy_serie_b"}
+{"call_kind": "pregame", "credits": 2, "events": 20, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T15:19:18.464338Z", "regions": ["us"], "rows": 168, "sport_key": "soccer_italy_serie_b", "stored": 118}
