@@ -195,9 +195,11 @@ class WhichKeysToPoll(unittest.TestCase):
     def test_a_key_polled_recently_waits_for_the_interval(self):
         cap = config()["capture"]
         done = [self.done("k_a", "e1", NOW - timedelta(hours=5))]
-        polled = [{"kind": "poll", "sport_key": "k_a", "observed_utc": iso(NOW - timedelta(hours=2))}]
+        # polled half an interval ago: it waits; a full interval later it is due (the interval is config-driven, 2h since 2026-10-22)
+        gap = timedelta(hours=float(cap["scores_poll_interval_hours"]))
+        polled = [{"kind": "poll", "sport_key": "k_a", "observed_utc": iso(NOW - gap / 2)}]
         self.assertEqual(S.keys_to_poll(done, polled, NOW, cap), [])
-        self.assertEqual(S.keys_to_poll(done, polled, NOW + timedelta(hours=7), cap), [("k_a", 1)])
+        self.assertEqual(S.keys_to_poll(done, polled, NOW + gap, cap), [("k_a", 1)])
 
 
 class RunPolls(unittest.TestCase):

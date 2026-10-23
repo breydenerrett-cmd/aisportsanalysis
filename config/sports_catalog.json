@@ -16,7 +16,7 @@
     "events_lookahead_hours": 25,
     "dark_after_empty_captures": 2,
     "dark_retry_hours": 24,
-    "scores_poll_interval_hours": 8,
+    "scores_poll_interval_hours": 2,
     "scores_days_from": 3,
     "free_results_poll_interval_hours": 1,
     "void_after_hours": 72,
