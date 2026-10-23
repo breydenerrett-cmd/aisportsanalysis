@@ -2094,3 +2094,15 @@
 {"events": 12, "kind": "peek", "next_check_utc": "2026-10-23T10:53:50.839756Z", "observed_utc": "2026-10-23T04:53:50.839756Z", "sport_key": "soccer_spl"}
 {"events": 6, "kind": "peek", "next_check_utc": "2026-10-23T10:53:50.839756Z", "observed_utc": "2026-10-23T04:53:50.839756Z", "sport_key": "soccer_switzerland_superleague"}
 {"events": 8, "kind": "peek", "next_check_utc": "2026-10-23T10:53:50.839756Z", "observed_utc": "2026-10-23T04:53:50.839756Z", "sport_key": "soccer_uefa_nations_league"}
+{"commence_utc": "2026-10-23T11:00:00Z", "event_id": "af18854b3c532d504418cd5e5b28ddf2", "kind": "phase", "observed_utc": "2026-10-23T05:04:04.588864Z", "phase": "t6h", "rows": 7, "sport_key": "tennis_wta_ningbo_open"}
+{"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T05:04:04.588864Z", "regions": ["us"], "rows": 28, "sport_key": "tennis_wta_ningbo_open", "stored": 28}
+{"commence_utc": "2026-10-24T05:00:00Z", "event_id": "3e01f46f75094aabf3f27ec4df31f307", "kind": "phase", "observed_utc": "2026-10-23T05:04:04.588864Z", "phase": "t24h", "rows": 13, "sport_key": "soccer_japan_j_league"}
+{"call_kind": "pregame", "credits": 2, "events": 10, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T05:04:04.588864Z", "regions": ["us"], "rows": 130, "sport_key": "soccer_japan_j_league", "stored": 65}
+{"commence_utc": "2026-10-24T05:00:00Z", "event_id": "06d3673605160b608edcf31fb5ef3823", "kind": "phase", "observed_utc": "2026-10-23T05:04:04.588864Z", "phase": "t24h", "rows": 12, "sport_key": "soccer_korea_kleague1"}
+{"commence_utc": "2026-10-24T05:00:00Z", "event_id": "f8f206a0dc5a909df1c33b6c070be638", "kind": "phase", "observed_utc": "2026-10-23T05:04:04.588864Z", "phase": "t24h", "rows": 12, "sport_key": "soccer_korea_kleague1"}
+{"commence_utc": "2026-10-24T05:00:00Z", "event_id": "15421f69c30e6198dcf41b4680639567", "kind": "phase", "observed_utc": "2026-10-23T05:04:04.588864Z", "phase": "t24h", "rows": 12, "sport_key": "soccer_korea_kleague1"}
+{"commence_utc": "2026-10-24T05:00:00Z", "event_id": "6e8dc00b2115daf0c57be3527785d321", "kind": "phase", "observed_utc": "2026-10-23T05:04:04.588864Z", "phase": "t24h", "rows": 12, "sport_key": "soccer_korea_kleague1"}
+{"commence_utc": "2026-10-24T05:00:00Z", "event_id": "1e7d46ae46dedac0f506212b941d6ce8", "kind": "phase", "observed_utc": "2026-10-23T05:04:04.588864Z", "phase": "t24h", "rows": 12, "sport_key": "soccer_korea_kleague1"}
+{"commence_utc": "2026-10-24T05:00:00Z", "event_id": "201249d9b63dd5000b7ab47d58b1c241", "kind": "phase", "observed_utc": "2026-10-23T05:04:04.588864Z", "phase": "t24h", "rows": 12, "sport_key": "soccer_korea_kleague1"}
+{"call_kind": "pregame", "credits": 2, "events": 6, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T05:04:04.588864Z", "regions": ["us"], "rows": 72, "sport_key": "soccer_korea_kleague1", "stored": 72}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T05:04:04.588864Z", "regions": ["us"], "rows": 25, "sport_key": "icehockey_nhl", "stored": 25}
