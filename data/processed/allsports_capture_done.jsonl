@@ -2059,3 +2059,4 @@
 {"events": 0, "kind": "peek", "next_check_utc": "2026-10-23T08:43:49.688517Z", "observed_utc": "2026-10-23T02:43:49.688517Z", "sport_key": "soccer_conmebol_copa_libertadores"}
 {"commence_utc": "2026-10-24T02:30:00Z", "event_id": "027c66400a752f72c7a21ce15a3b1743", "kind": "phase", "observed_utc": "2026-10-23T02:43:49.688517Z", "phase": "t24h", "rows": 33, "sport_key": "americanfootball_ncaaf"}
 {"call_kind": "pregame", "credits": 3, "events": 69, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-23T02:43:49.688517Z", "regions": ["us"], "rows": 1687, "sport_key": "americanfootball_ncaaf", "stored": 192}
+{"call_kind": "inplay", "credits": 1, "events": 18, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T02:56:00.129181Z", "regions": ["us"], "rows": 147, "sport_key": "basketball_nba", "stored": 133}
