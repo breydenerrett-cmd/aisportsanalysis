@@ -5569,3 +5569,5 @@
 {"fetched_utc": "2026-10-23T20:41:25.875272+00:00", "game_date": "2026-10-23", "poll": true}
 {"category": "other", "date": "2026-10-23", "first_seen_utc": "2026-10-23T20:41:25.875272+00:00", "player": "Chad Patrick", "player_id": 694477, "team": "MIL", "transaction_id": 946893}
 {"category": "il_activation", "date": "2026-10-23", "first_seen_utc": "2026-10-23T20:41:25.875272+00:00", "player": "Brandon Woodruff", "player_id": 605540, "team": "MIL", "transaction_id": 946894}
+{"fetched_utc": "2026-10-23T21:02:30.729364+00:00", "game_date": "2026-10-23", "poll": true}
+{"fetched_utc": "2026-10-23T21:02:31.909284+00:00", "game_date": "2026-10-23", "poll": true}
