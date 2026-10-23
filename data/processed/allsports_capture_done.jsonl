@@ -2077,3 +2077,4 @@
 {"commence_utc": "2026-10-24T04:05:00Z", "event_id": "759774dbc9853873bd688f17b0a69923", "kind": "phase", "observed_utc": "2026-10-23T04:14:48.345295Z", "phase": "t24h", "rows": 14, "sport_key": "aussierules_aflw"}
 {"call_kind": "pregame", "credits": 3, "events": 9, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-23T04:14:48.345295Z", "regions": ["au"], "rows": 138, "sport_key": "aussierules_aflw", "stored": 74}
 {"call_kind": "inplay", "credits": 1, "events": 18, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T04:14:48.345295Z", "regions": ["us"], "rows": 141, "sport_key": "basketball_nba", "stored": 127}
+{"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T04:28:57.434705Z", "regions": ["us"], "rows": 31, "sport_key": "icehockey_nhl", "stored": 31}
