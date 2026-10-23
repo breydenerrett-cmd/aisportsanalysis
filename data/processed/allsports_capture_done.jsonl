@@ -2084,3 +2084,13 @@
 {"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T04:41:08.722901Z", "regions": ["us"], "rows": 28, "sport_key": "tennis_wta_ningbo_open", "stored": 28}
 {"commence_utc": "2026-10-23T10:36:00Z", "event_id": "856a84116cd062a17d59af0e50727a7a", "kind": "phase", "observed_utc": "2026-10-23T04:41:08.722901Z", "phase": "t6h", "rows": 3, "sport_key": "basketball_nbl"}
 {"call_kind": "pregame", "credits": 3, "events": 3, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-23T04:41:08.722901Z", "regions": ["us"], "rows": 9, "sport_key": "basketball_nbl", "stored": 6}
+{"events": 36, "kind": "peek", "next_check_utc": "2026-10-23T10:53:50.839756Z", "observed_utc": "2026-10-23T04:53:50.839756Z", "sport_key": "boxing_boxing"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-23T06:30:00Z", "observed_utc": "2026-10-23T04:53:50.839756Z", "sport_key": "soccer_china_superleague"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-23T10:53:50.839756Z", "observed_utc": "2026-10-23T04:53:50.839756Z", "sport_key": "soccer_england_efl_cup"}
+{"events": 13, "kind": "peek", "next_check_utc": "2026-10-23T10:30:00Z", "observed_utc": "2026-10-23T04:53:50.839756Z", "sport_key": "soccer_england_league2"}
+{"events": 16, "kind": "peek", "next_check_utc": "2026-10-23T10:53:50.839756Z", "observed_utc": "2026-10-23T04:53:50.839756Z", "sport_key": "soccer_germany_dfb_pokal"}
+{"events": 21, "kind": "peek", "next_check_utc": "2026-10-23T10:53:50.839756Z", "observed_utc": "2026-10-23T04:53:50.839756Z", "sport_key": "soccer_greece_super_league"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-23T10:53:50.839756Z", "observed_utc": "2026-10-23T04:53:50.839756Z", "sport_key": "soccer_norway_eliteserien"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-10-23T10:53:50.839756Z", "observed_utc": "2026-10-23T04:53:50.839756Z", "sport_key": "soccer_spl"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-10-23T10:53:50.839756Z", "observed_utc": "2026-10-23T04:53:50.839756Z", "sport_key": "soccer_switzerland_superleague"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-23T10:53:50.839756Z", "observed_utc": "2026-10-23T04:53:50.839756Z", "sport_key": "soccer_uefa_nations_league"}
