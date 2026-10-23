@@ -1166,3 +1166,4 @@
 {"credits": 2, "days_from": 3, "events": 16, "kind": "poll", "observed_utc": "2026-10-23T13:08:19.529173+00:00", "sport_key": "soccer_saudi_arabia_pro_league"}
 {"credits": 2, "days_from": 3, "events": 17, "kind": "poll", "observed_utc": "2026-10-23T13:08:19.529173+00:00", "sport_key": "soccer_uefa_europa_conference_league"}
 {"errors": [], "events": 1, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 1, "observed_utc": "2026-10-23T13:08:20.617881Z", "source": "espn_tennis", "unmatched": 0, "unmatched_ids": [], "void": 0, "written": 0}
+{"credits": 2, "days_from": 3, "events": 8, "kind": "poll", "observed_utc": "2026-10-23T13:35:02.603840+00:00", "sport_key": "aussierules_aflw"}
