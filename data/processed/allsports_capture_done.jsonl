@@ -2219,3 +2219,5 @@
 {"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T10:32:42.921246Z", "regions": ["us"], "rows": 135, "sport_key": "soccer_poland_ekstraklasa", "stored": 90}
 {"commence_utc": "2026-10-24T10:30:00Z", "event_id": "dc96970d397d25e8cf9b68ad9eacebc6", "kind": "phase", "observed_utc": "2026-10-23T10:32:42.921246Z", "phase": "t24h", "rows": 13, "sport_key": "soccer_turkey_super_league"}
 {"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T10:32:42.921246Z", "regions": ["us"], "rows": 113, "sport_key": "soccer_turkey_super_league", "stored": 52}
+{"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T10:42:43.105838Z", "regions": ["us"], "rows": 3, "sport_key": "basketball_nbl", "stored": 2}
+{"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T10:42:43.105838Z", "regions": ["us"], "rows": 34, "sport_key": "soccer_australia_aleague", "stored": 22}
