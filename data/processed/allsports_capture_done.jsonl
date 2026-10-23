@@ -2013,3 +2013,8 @@
 {"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T00:33:51.081754Z", "regions": ["us"], "rows": 28, "sport_key": "tennis_wta_ningbo_open", "stored": 28}
 {"commence_utc": "2026-10-24T00:30:00Z", "event_id": "2e2ae6a759029288a93488e0805aa9f3", "kind": "phase", "observed_utc": "2026-10-23T00:33:51.081754Z", "phase": "t24h", "rows": 33, "sport_key": "americanfootball_ncaaf"}
 {"call_kind": "pregame", "credits": 3, "events": 70, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-23T00:33:51.081754Z", "regions": ["us"], "rows": 1716, "sport_key": "americanfootball_ncaaf", "stored": 224}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-10-23T06:46:45.730059Z", "observed_utc": "2026-10-23T00:46:45.730059Z", "sport_key": "soccer_finland_veikkausliiga"}
+{"commence_utc": "2026-10-23T01:10:00Z", "event_id": "7e4df53f515e77bc6555279eb5d6946a", "kind": "phase", "observed_utc": "2026-10-23T00:46:45.730059Z", "phase": "t30m", "rows": 30, "sport_key": "icehockey_nhl"}
+{"commence_utc": "2026-10-23T01:10:00Z", "event_id": "8a951cc95f91e5df49f7aad4219c40e0", "kind": "phase", "observed_utc": "2026-10-23T00:46:45.730059Z", "phase": "t30m", "rows": 30, "sport_key": "icehockey_nhl"}
+{"call_kind": "pregame", "credits": 3, "events": 14, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-23T00:46:45.730059Z", "regions": ["us"], "rows": 329, "sport_key": "icehockey_nhl", "stored": 329}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T00:46:45.730059Z", "regions": ["us"], "rows": 2, "sport_key": "soccer_conmebol_copa_libertadores", "stored": 2}
