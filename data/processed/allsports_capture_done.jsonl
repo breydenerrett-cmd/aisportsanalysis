@@ -2133,3 +2133,5 @@
 {"commence_utc": "2026-10-24T02:00:00Z", "event_id": "a4a6ea0bccbf8bdd9e6ada5dc47c636e", "kind": "phase", "observed_utc": "2026-10-23T06:18:09.802941Z", "phase": "t24h", "rows": 3, "sport_key": "icehockey_ahl"}
 {"call_kind": "pregame", "credits": 3, "events": 11, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-23T06:18:09.802941Z", "regions": ["us"], "rows": 33, "sport_key": "icehockey_ahl", "stored": 30}
 {"events": 1, "kind": "peek", "next_check_utc": "2026-10-23T12:38:11.885778Z", "observed_utc": "2026-10-23T06:38:11.885778Z", "sport_key": "soccer_conmebol_copa_sudamericana"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-10-23T10:00:00Z", "observed_utc": "2026-10-23T06:48:41.179113Z", "sport_key": "soccer_finland_veikkausliiga"}
+{"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T06:48:41.179113Z", "regions": ["us"], "rows": 25, "sport_key": "tennis_wta_ningbo_open", "stored": 25}
