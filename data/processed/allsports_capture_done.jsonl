@@ -2159,3 +2159,6 @@
 {"commence_utc": "2026-10-24T07:30:00Z", "event_id": "a0a6c590f6763ae2e1550a345b3045ee", "kind": "phase", "observed_utc": "2026-10-23T07:41:21.705074Z", "phase": "t24h", "rows": 12, "sport_key": "soccer_china_superleague"}
 {"commence_utc": "2026-10-24T07:30:00Z", "event_id": "468b90bc15227ea33c3fe54166735d14", "kind": "phase", "observed_utc": "2026-10-23T07:41:21.705074Z", "phase": "t24h", "rows": 11, "sport_key": "soccer_china_superleague"}
 {"call_kind": "pregame", "credits": 2, "events": 8, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T07:41:21.705074Z", "regions": ["us"], "rows": 95, "sport_key": "soccer_china_superleague", "stored": 95}
+{"events": 29, "kind": "peek", "next_check_utc": "2026-10-23T13:55:57.652283Z", "observed_utc": "2026-10-23T07:55:57.652283Z", "sport_key": "soccer_usa_mls"}
+{"commence_utc": "2026-10-23T08:15:00Z", "event_id": "794299bf5d4c6d8219e366874152be68", "kind": "phase", "observed_utc": "2026-10-23T07:55:57.652283Z", "phase": "t30m", "rows": 19, "sport_key": "aussierules_aflw"}
+{"call_kind": "pregame", "credits": 3, "events": 9, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-23T07:55:57.652283Z", "regions": ["au"], "rows": 147, "sport_key": "aussierules_aflw", "stored": 79}
