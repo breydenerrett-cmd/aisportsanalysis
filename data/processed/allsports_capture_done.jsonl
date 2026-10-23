@@ -2106,3 +2106,6 @@
 {"commence_utc": "2026-10-24T05:00:00Z", "event_id": "201249d9b63dd5000b7ab47d58b1c241", "kind": "phase", "observed_utc": "2026-10-23T05:04:04.588864Z", "phase": "t24h", "rows": 12, "sport_key": "soccer_korea_kleague1"}
 {"call_kind": "pregame", "credits": 2, "events": 6, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T05:04:04.588864Z", "regions": ["us"], "rows": 72, "sport_key": "soccer_korea_kleague1", "stored": 72}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T05:04:04.588864Z", "regions": ["us"], "rows": 25, "sport_key": "icehockey_nhl", "stored": 25}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-23T06:03:02.548196Z", "observed_utc": "2026-10-23T05:33:02.548196Z", "sport_key": "cricket_international_t20"}
+{"commence_utc": "2026-10-23T11:30:00Z", "event_id": "d642d88020e7ce9d602d0354b3856fec", "kind": "phase", "observed_utc": "2026-10-23T05:33:02.548196Z", "phase": "t6h", "rows": 1, "sport_key": "cricket_odi"}
+{"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T05:33:02.548196Z", "regions": ["us"], "rows": 3, "sport_key": "cricket_odi", "stored": 2}
