@@ -2056,3 +2056,6 @@
 {"events": 1, "kind": "peek", "next_check_utc": "2026-10-23T08:27:54.507741Z", "observed_utc": "2026-10-23T02:27:54.507741Z", "sport_key": "cricket_test_match"}
 {"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 7, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T02:27:54.507741Z", "regions": ["us"], "rows": 64, "sport_key": "icehockey_nhl", "stored": 64}
 {"call_kind": "inplay", "credits": 1, "events": 69, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T02:27:54.507741Z", "regions": ["us"], "rows": 565, "sport_key": "americanfootball_ncaaf", "stored": 67}
+{"events": 0, "kind": "peek", "next_check_utc": "2026-10-23T08:43:49.688517Z", "observed_utc": "2026-10-23T02:43:49.688517Z", "sport_key": "soccer_conmebol_copa_libertadores"}
+{"commence_utc": "2026-10-24T02:30:00Z", "event_id": "027c66400a752f72c7a21ce15a3b1743", "kind": "phase", "observed_utc": "2026-10-23T02:43:49.688517Z", "phase": "t24h", "rows": 33, "sport_key": "americanfootball_ncaaf"}
+{"call_kind": "pregame", "credits": 3, "events": 69, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-23T02:43:49.688517Z", "regions": ["us"], "rows": 1687, "sport_key": "americanfootball_ncaaf", "stored": 192}
