@@ -17134,3 +17134,7 @@
 {"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 93745, "credits_used_last": 2, "utc": "2026-10-23T13:08:19.529173Z"}
 {"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 93743, "credits_used_last": 2, "utc": "2026-10-23T13:08:19.529173Z"}
 {"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 93741, "credits_used_last": 2, "utc": "2026-10-23T13:08:19.529173Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 93741, "credits_used_last": 0, "utc": "2026-10-23T13:20:22.654806Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 93741, "credits_used_last": 0, "utc": "2026-10-23T13:20:25.958380Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 93741, "credits_used_last": 0, "utc": "2026-10-23T13:20:26.479509Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 93738, "credits_used_last": 3, "utc": "2026-10-23T13:21:06.004684Z"}
