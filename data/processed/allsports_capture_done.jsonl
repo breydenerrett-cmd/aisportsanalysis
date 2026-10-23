@@ -2194,3 +2194,5 @@
 {"commence_utc": "2026-10-23T15:30:00Z", "event_id": "4b149cdf49f5d677fe57fed9173b28fe", "kind": "phase", "observed_utc": "2026-10-23T09:40:00.687043Z", "phase": "t6h", "rows": 21, "sport_key": "soccer_saudi_arabia_pro_league"}
 {"call_kind": "pregame", "credits": 2, "events": 10, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T09:40:00.687043Z", "regions": ["eu"], "rows": 184, "sport_key": "soccer_saudi_arabia_pro_league", "stored": 143}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T09:40:00.687043Z", "regions": ["us"], "rows": 13, "sport_key": "tennis_wta_ningbo_open", "stored": 13}
+{"commence_utc": "2026-10-24T09:45:00Z", "event_id": "e0e0791995927a8af1bbef4c724cff03", "kind": "phase", "observed_utc": "2026-10-23T09:53:01.615091Z", "phase": "t24h", "rows": 6, "sport_key": "soccer_russia_premier_league"}
+{"call_kind": "pregame", "credits": 2, "events": 8, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T09:53:01.615091Z", "regions": ["us"], "rows": 45, "sport_key": "soccer_russia_premier_league", "stored": 28}
