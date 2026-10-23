@@ -2177,3 +2177,4 @@
 {"call_kind": "pregame", "credits": 2, "events": 12, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T08:47:58.855646Z", "regions": ["us"], "rows": 60, "sport_key": "soccer_australia_aleague", "stored": 40}
 {"commence_utc": "2026-10-23T11:00:00Z", "event_id": "af18854b3c532d504418cd5e5b28ddf2", "kind": "phase", "observed_utc": "2026-10-23T09:01:23.150112Z", "phase": "t2h", "rows": 7, "sport_key": "tennis_wta_ningbo_open"}
 {"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T09:01:23.150112Z", "regions": ["us"], "rows": 17, "sport_key": "tennis_wta_ningbo_open", "stored": 17}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-23T15:14:10.999287Z", "observed_utc": "2026-10-23T09:14:10.999287Z", "sport_key": "basketball_wnba"}
