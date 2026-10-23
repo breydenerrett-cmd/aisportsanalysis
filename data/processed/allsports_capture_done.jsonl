@@ -2162,3 +2162,7 @@
 {"events": 29, "kind": "peek", "next_check_utc": "2026-10-23T13:55:57.652283Z", "observed_utc": "2026-10-23T07:55:57.652283Z", "sport_key": "soccer_usa_mls"}
 {"commence_utc": "2026-10-23T08:15:00Z", "event_id": "794299bf5d4c6d8219e366874152be68", "kind": "phase", "observed_utc": "2026-10-23T07:55:57.652283Z", "phase": "t30m", "rows": 19, "sport_key": "aussierules_aflw"}
 {"call_kind": "pregame", "credits": 3, "events": 9, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-23T07:55:57.652283Z", "regions": ["au"], "rows": 147, "sport_key": "aussierules_aflw", "stored": 79}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-10-23T12:15:00Z", "observed_utc": "2026-10-23T08:20:37.687155Z", "sport_key": "icehockey_sweden_hockey_league"}
+{"commence_utc": "2026-10-24T08:15:00Z", "event_id": "f312e0eeeddb0669edbcc1c1cd2b0411", "kind": "phase", "observed_utc": "2026-10-23T08:20:37.687155Z", "phase": "t24h", "rows": 15, "sport_key": "aussierules_aflw"}
+{"call_kind": "pregame", "credits": 3, "events": 9, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-23T08:20:37.687155Z", "regions": ["au"], "rows": 145, "sport_key": "aussierules_aflw", "stored": 77}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T08:20:37.687155Z", "regions": ["us"], "rows": 19, "sport_key": "tennis_wta_ningbo_open", "stored": 19}
