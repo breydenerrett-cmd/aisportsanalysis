@@ -2169,3 +2169,9 @@
 {"events": 1, "kind": "peek", "next_check_utc": "2026-10-23T14:32:10.421300Z", "observed_utc": "2026-10-23T08:32:10.421300Z", "sport_key": "cricket_test_match"}
 {"commence_utc": "2026-10-23T09:00:00Z", "event_id": "5e77ee16efd0edd49a9b41f083d5226f", "kind": "phase", "observed_utc": "2026-10-23T08:32:10.421300Z", "phase": "t30m", "rows": 10, "sport_key": "soccer_australia_aleague"}
 {"call_kind": "pregame", "credits": 2, "events": 12, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T08:32:10.421300Z", "regions": ["us"], "rows": 60, "sport_key": "soccer_australia_aleague", "stored": 40}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-23T14:47:58.855646Z", "observed_utc": "2026-10-23T08:47:58.855646Z", "sport_key": "soccer_conmebol_copa_libertadores"}
+{"commence_utc": "2026-10-23T10:36:00Z", "event_id": "856a84116cd062a17d59af0e50727a7a", "kind": "phase", "observed_utc": "2026-10-23T08:47:58.855646Z", "phase": "t2h", "rows": 3, "sport_key": "basketball_nbl"}
+{"commence_utc": "2026-10-24T08:36:00Z", "event_id": "3dc7ff3e6237c4e698be589ac1a267c5", "kind": "phase", "observed_utc": "2026-10-23T08:47:58.855646Z", "phase": "t24h", "rows": 3, "sport_key": "basketball_nbl"}
+{"call_kind": "pregame", "credits": 3, "events": 4, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-23T08:47:58.855646Z", "regions": ["us"], "rows": 12, "sport_key": "basketball_nbl", "stored": 9}
+{"commence_utc": "2026-10-24T08:40:00Z", "event_id": "cdcc70e4016ef48fdd9feb623255d0d2", "kind": "phase", "observed_utc": "2026-10-23T08:47:58.855646Z", "phase": "t24h", "rows": 10, "sport_key": "soccer_australia_aleague"}
+{"call_kind": "pregame", "credits": 2, "events": 12, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T08:47:58.855646Z", "regions": ["us"], "rows": 60, "sport_key": "soccer_australia_aleague", "stored": 40}

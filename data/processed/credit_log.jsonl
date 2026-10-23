@@ -16967,3 +16967,13 @@
 {"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 93959, "credits_used_last": 0, "utc": "2026-10-23T08:31:44.350503Z"}
 {"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 93959, "credits_used_last": 0, "utc": "2026-10-23T08:31:44.733289Z"}
 {"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 93957, "credits_used_last": 2, "utc": "2026-10-23T08:32:10.421300Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 93957, "credits_used_last": 0, "utc": "2026-10-23T08:47:18.073940Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 93957, "credits_used_last": 0, "utc": "2026-10-23T08:47:20.406842Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 93957, "credits_used_last": 0, "utc": "2026-10-23T08:47:20.714065Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 93954, "credits_used_last": 3, "utc": "2026-10-23T08:47:58.855646Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 93952, "credits_used_last": 2, "utc": "2026-10-23T08:47:58.855646Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 93950, "credits_used_last": 2, "utc": "2026-10-23T08:48:03.271167Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 93950, "credits_used_last": 0, "utc": "2026-10-23T08:48:03.271167Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 93948, "credits_used_last": 2, "utc": "2026-10-23T08:48:03.271167Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 93946, "credits_used_last": 2, "utc": "2026-10-23T08:48:03.271167Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 93944, "credits_used_last": 2, "utc": "2026-10-23T08:48:03.271167Z"}
