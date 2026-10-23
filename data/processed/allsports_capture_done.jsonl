@@ -2382,3 +2382,5 @@
 {"call_kind": "pregame", "credits": 2, "events": 18, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T13:34:54.784388Z", "regions": ["us"], "rows": 215, "sport_key": "soccer_germany_bundesliga", "stored": 112}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T13:34:54.784388Z", "regions": ["us"], "rows": 3, "sport_key": "cricket_odi", "stored": 2}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T13:34:54.784388Z", "regions": ["us"], "rows": 10, "sport_key": "tennis_wta_ningbo_open", "stored": 10}
+{"commence_utc": "2026-10-23T19:45:00Z", "event_id": "629ee06c459b20ed4d8beb8ad3bf23b9", "kind": "phase", "observed_utc": "2026-10-23T13:47:07.939896Z", "phase": "t6h", "rows": 15, "sport_key": "soccer_portugal_primeira_liga"}
+{"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T13:47:07.939896Z", "regions": ["us"], "rows": 131, "sport_key": "soccer_portugal_primeira_liga", "stored": 60}
