@@ -131,10 +131,10 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-10-23 (8:30 am PT run): Thursday night Patriots at Bears brief graded; it is now the public sample brief.",
-    "Next brief: World Series Game 1, Rays at Brewers, Fri Oct 23 5:00 pm PT.",
-    "CI was red overnight on four new Australian book keys in the odds feed; labels added, fix pushed this run.",
-    "Production is up; billing is live (founding $14.99, standard $19.99).",
+    "2026-10-23 (1:30 pm PT run): World Series Game 1 brief, Rays at Brewers, published before first pitch (5:00 pm PT); every market a pass.",
+    "Public sample stays on the graded Thursday night Patriots at Bears brief until Game 1 is graded.",
+    "Production is up; billing is live (founding $14.99, standard $19.99). Site odds were 19.5 hours old at 1:40 pm PT.",
+    "Daily loop on the default branch is still red; tests on the working branch are green.",
     "Public MLB value picks remain paused. Sends 0, replies 0, testers 0."
   ],
   "next_customer_action": "Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.",

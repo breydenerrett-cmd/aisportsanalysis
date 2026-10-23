@@ -1,0 +1,933 @@
+{
+ "summary": "We pass on every market. Milwaukee is the favourite, with the best moneyline price at -180, and the books' own number for MIL sits near 0.6301. The Milwaukee starter has the better season numbers, with an ERA of 1.8034 against 3.1 for the TB starter, but that gap is what the favourite price already reflects, so the market is probably right and there is no reason to fight it. The run line on TB +1.5 and the game total are priced almost as coin flips, and nothing in the data pushes us to either side.\n\nThe player props are all passes. The quotes are old, only a few books are posting each one, and the data gives nothing about how the TB or Milwaukee hitters match up beyond the price and LineHound's own model. The missing inputs that matter most are fresh starter stats, since ours run through 2026-10-19, any bullpen record for Milwaukee, and newer prop prices. A late lineup or starter change could change the picture.",
+ "calls": [
+  {
+   "slot_id": "moneyline",
+   "market": "moneyline",
+   "selection": "MIL",
+   "verdict": "PASS",
+   "price": -180,
+   "book": "lowvig",
+   "fair_estimate": 0.63,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "Milwaukee is the favourite and the books agree on it; their own de-vigged number for MIL is close to what the price implies, so the market is probably right.",
+     "evidence": [
+      {
+       "path": "markets.moneyline.options[0].best.price",
+       "value": -180
+      },
+      {
+       "path": "markets.moneyline.options[0].fair_probability",
+       "value": 0.6301
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The Milwaukee starter has the better season numbers, which is already what the favourite price reflects.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.home_sp_era",
+       "value": 1.8034
+      },
+      {
+       "path": "sections.starters.values.away_sp_era",
+       "value": 3.1
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The starter numbers are four days old and the Milwaukee bullpen shows no recorded appearances, so the data is thin on how late innings may go.",
+     "evidence": [
+      {
+       "path": "missing[5].reason",
+       "value": "starters stats run only through 2026-10-19, 4 days before the game"
+      },
+      {
+       "path": "sections.bullpen.values.MIL.reliever_count",
+       "value": 0
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": -170,
+   "what_would_change_it": "A confirmed change to either starter or a Milwaukee bullpen update would move this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "run_line",
+   "market": "run_line",
+   "selection": "TB +1.5",
+   "verdict": "PASS",
+   "price": -141,
+   "book": "betrivers",
+   "fair_estimate": 0.57,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own number for TB +1.5 is already above a coin flip and the price is steep, so the market has the likely outcome priced in.",
+     "evidence": [
+      {
+       "path": "markets.run_line.options[0].best.price",
+       "value": -141
+      },
+      {
+       "path": "markets.run_line.options[0].fair_probability",
+       "value": 0.5698
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Nothing in the data separates this spread from the moneyline view; it is the same starter gap with a cushion on the other side.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.home_sp_era",
+       "value": 1.8034
+      },
+      {
+       "path": "sections.starters.values.away_sp_era",
+       "value": 3.1
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": -133,
+   "what_would_change_it": "A fresh bullpen report for Milwaukee or a lineup change would be worth a second look.",
+   "case_against": null
+  },
+  {
+   "slot_id": "total",
+   "market": "total",
+   "selection": "Over 6.5",
+   "verdict": "PASS",
+   "price": -106,
+   "book": "betrivers",
+   "fair_estimate": 0.5,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The over and under are priced almost the same, so the books see this as a toss-up and the data gives no reason to disagree.",
+     "evidence": [
+      {
+       "path": "markets.total.options[0].fair_probability",
+       "value": 0.5075
+      },
+      {
+       "path": "markets.total.options[1].fair_probability",
+       "value": 0.4925
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The Milwaukee starter has a very low ERA while the TB starter's recent ERA is higher, which pulls in opposite directions for run totals.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.home_sp_era",
+       "value": 1.8034
+      },
+      {
+       "path": "sections.starters.values.away_sp_recent_era",
+       "value": 5.2683
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": -110,
+   "what_would_change_it": "A confirmed wind shift or roof decision, or a late scratch of a starter, would change the view.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_01",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -350,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own de-vigged number for this side and LineHound's own model are the only inputs the data gives for this prop, and neither makes a strong enough case to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_01.options[0].fair_probability",
+       "value": 0.7399
+      },
+      {
+       "path": "markets.prop_01.context.repo_model_probability",
+       "value": 0.7015
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price on this side is already short, so the market has the likely outcome built in and a bet would risk a lot to win a little.",
+     "evidence": [
+      {
+       "path": "markets.prop_01.options[0].best.price",
+       "value": -350
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop quotes are old and only a couple of books are quoting this player, so the price may have moved since.",
+     "evidence": [
+      {
+       "path": "missing[2].reason",
+       "value": "the newest player-prop quote is 1000 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot for this player together with fresh quotes from more books would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_02",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -275,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own de-vigged number for this side and LineHound's own model are the only inputs the data gives for this prop, and neither makes a strong enough case to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_02.options[0].fair_probability",
+       "value": 0.6905
+      },
+      {
+       "path": "markets.prop_02.context.repo_model_probability",
+       "value": 0.701
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price on this side is already short, so the market has the likely outcome built in and a bet would risk a lot to win a little.",
+     "evidence": [
+      {
+       "path": "markets.prop_02.options[0].best.price",
+       "value": -275
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop quotes are old and only a couple of books are quoting this player, so the price may have moved since.",
+     "evidence": [
+      {
+       "path": "missing[2].reason",
+       "value": "the newest player-prop quote is 1000 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot for this player together with fresh quotes from more books would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_03",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -300,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own de-vigged number for this side and LineHound's own model are the only inputs the data gives for this prop, and neither makes a strong enough case to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_03.options[0].fair_probability",
+       "value": 0.7111
+      },
+      {
+       "path": "markets.prop_03.context.repo_model_probability",
+       "value": 0.6851
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price on this side is already short, so the market has the likely outcome built in and a bet would risk a lot to win a little.",
+     "evidence": [
+      {
+       "path": "markets.prop_03.options[0].best.price",
+       "value": -300
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop quotes are old and only a couple of books are quoting this player, so the price may have moved since.",
+     "evidence": [
+      {
+       "path": "missing[2].reason",
+       "value": "the newest player-prop quote is 1000 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot for this player together with fresh quotes from more books would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_04",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -210,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own de-vigged number for this side and LineHound's own model are the only inputs the data gives for this prop, and neither makes a strong enough case to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_04.options[0].fair_probability",
+       "value": 0.6361
+      },
+      {
+       "path": "markets.prop_04.context.repo_model_probability",
+       "value": 0.6809
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price on this side is already short, so the market has the likely outcome built in and a bet would risk a lot to win a little.",
+     "evidence": [
+      {
+       "path": "markets.prop_04.options[0].best.price",
+       "value": -210
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop quotes are old and only a couple of books are quoting this player, so the price may have moved since.",
+     "evidence": [
+      {
+       "path": "missing[2].reason",
+       "value": "the newest player-prop quote is 1000 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot for this player together with fresh quotes from more books would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_05",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -248,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own de-vigged number for this side and LineHound's own model are the only inputs the data gives for this prop, and neither makes a strong enough case to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_05.options[0].fair_probability",
+       "value": 0.6774
+      },
+      {
+       "path": "markets.prop_05.context.repo_model_probability",
+       "value": 0.6649
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price on this side is already short, so the market has the likely outcome built in and a bet would risk a lot to win a little.",
+     "evidence": [
+      {
+       "path": "markets.prop_05.options[0].best.price",
+       "value": -248
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop quotes are old and only a couple of books are quoting this player, so the price may have moved since.",
+     "evidence": [
+      {
+       "path": "missing[2].reason",
+       "value": "the newest player-prop quote is 1000 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot for this player together with fresh quotes from more books would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_06",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -274,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own de-vigged number for this side and LineHound's own model are the only inputs the data gives for this prop, and neither makes a strong enough case to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_06.options[0].fair_probability",
+       "value": 0.6848
+      },
+      {
+       "path": "markets.prop_06.context.repo_model_probability",
+       "value": 0.6642
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price on this side is already short, so the market has the likely outcome built in and a bet would risk a lot to win a little.",
+     "evidence": [
+      {
+       "path": "markets.prop_06.options[0].best.price",
+       "value": -274
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop quotes are old and only a couple of books are quoting this player, so the price may have moved since.",
+     "evidence": [
+      {
+       "path": "missing[2].reason",
+       "value": "the newest player-prop quote is 1000 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot for this player together with fresh quotes from more books would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_07",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -148,
+   "book": "williamhill_us",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own de-vigged number for this side and LineHound's own model are the only inputs the data gives for this prop, and neither makes a strong enough case to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_07.options[0].fair_probability",
+       "value": 0.5606
+      },
+      {
+       "path": "markets.prop_07.context.repo_model_probability",
+       "value": 0.6594
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price on this side is already short, so the market has the likely outcome built in and a bet would risk a lot to win a little.",
+     "evidence": [
+      {
+       "path": "markets.prop_07.options[0].best.price",
+       "value": -148
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop quotes are old and only a couple of books are quoting this player, so the price may have moved since.",
+     "evidence": [
+      {
+       "path": "missing[2].reason",
+       "value": "the newest player-prop quote is 1000 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot for this player together with fresh quotes from more books would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_08",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -400,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own de-vigged number for this side and LineHound's own model are the only inputs the data gives for this prop, and neither makes a strong enough case to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_08.options[0].fair_probability",
+       "value": 0.7534
+      },
+      {
+       "path": "markets.prop_08.context.repo_model_probability",
+       "value": 0.6589
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price on this side is already short, so the market has the likely outcome built in and a bet would risk a lot to win a little.",
+     "evidence": [
+      {
+       "path": "markets.prop_08.options[0].best.price",
+       "value": -400
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop quotes are old and only a couple of books are quoting this player, so the price may have moved since.",
+     "evidence": [
+      {
+       "path": "missing[2].reason",
+       "value": "the newest player-prop quote is 1000 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot for this player together with fresh quotes from more books would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_09",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -165,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own de-vigged number for this side and LineHound's own model are the only inputs the data gives for this prop, and neither makes a strong enough case to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_09.options[0].fair_probability",
+       "value": 0.5889
+      },
+      {
+       "path": "markets.prop_09.context.repo_model_probability",
+       "value": 0.6548
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price on this side is already short, so the market has the likely outcome built in and a bet would risk a lot to win a little.",
+     "evidence": [
+      {
+       "path": "markets.prop_09.options[0].best.price",
+       "value": -165
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop quotes are old and only a couple of books are quoting this player, so the price may have moved since.",
+     "evidence": [
+      {
+       "path": "missing[2].reason",
+       "value": "the newest player-prop quote is 1000 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot for this player together with fresh quotes from more books would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_10",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -204,
+   "book": "betonlineag",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own de-vigged number for this side and LineHound's own model are the only inputs the data gives for this prop, and neither makes a strong enough case to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_10.options[0].fair_probability",
+       "value": 0.6376
+      },
+      {
+       "path": "markets.prop_10.context.repo_model_probability",
+       "value": 0.6474
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price on this side is already short, so the market has the likely outcome built in and a bet would risk a lot to win a little.",
+     "evidence": [
+      {
+       "path": "markets.prop_10.options[0].best.price",
+       "value": -204
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop quotes are old and only a couple of books are quoting this player, so the price may have moved since.",
+     "evidence": [
+      {
+       "path": "missing[2].reason",
+       "value": "the newest player-prop quote is 1000 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot for this player together with fresh quotes from more books would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_11",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -145,
+   "book": "williamhill_us",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own de-vigged number for this side and LineHound's own model are the only inputs the data gives for this prop, and neither makes a strong enough case to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_11.options[0].fair_probability",
+       "value": 0.5599
+      },
+      {
+       "path": "markets.prop_11.context.repo_model_probability",
+       "value": 0.6415
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price on this side is already short, so the market has the likely outcome built in and a bet would risk a lot to win a little.",
+     "evidence": [
+      {
+       "path": "markets.prop_11.options[0].best.price",
+       "value": -145
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop quotes are old and only a couple of books are quoting this player, so the price may have moved since.",
+     "evidence": [
+      {
+       "path": "missing[2].reason",
+       "value": "the newest player-prop quote is 1000 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot for this player together with fresh quotes from more books would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_12",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -195,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own de-vigged number for this side and LineHound's own model are the only inputs the data gives for this prop, and neither makes a strong enough case to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_12.options[0].fair_probability",
+       "value": 0.6413
+      },
+      {
+       "path": "markets.prop_12.context.repo_model_probability",
+       "value": 0.6382
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price on this side is already short, so the market has the likely outcome built in and a bet would risk a lot to win a little.",
+     "evidence": [
+      {
+       "path": "markets.prop_12.options[0].best.price",
+       "value": -195
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop quotes are old and only a couple of books are quoting this player, so the price may have moved since.",
+     "evidence": [
+      {
+       "path": "missing[2].reason",
+       "value": "the newest player-prop quote is 1000 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot for this player together with fresh quotes from more books would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_13",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -135,
+   "book": "betonlineag",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own de-vigged number for this side and LineHound's own model are the only inputs the data gives for this prop, and neither makes a strong enough case to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_13.options[0].fair_probability",
+       "value": 0.5411
+      },
+      {
+       "path": "markets.prop_13.context.repo_model_probability",
+       "value": 0.6376
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price on this side is already short, so the market has the likely outcome built in and a bet would risk a lot to win a little.",
+     "evidence": [
+      {
+       "path": "markets.prop_13.options[0].best.price",
+       "value": -135
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop quotes are old and only a couple of books are quoting this player, so the price may have moved since.",
+     "evidence": [
+      {
+       "path": "missing[2].reason",
+       "value": "the newest player-prop quote is 1000 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot for this player together with fresh quotes from more books would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_14",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -275,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own de-vigged number for this side and LineHound's own model are the only inputs the data gives for this prop, and neither makes a strong enough case to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_14.options[0].fair_probability",
+       "value": 0.7024
+      },
+      {
+       "path": "markets.prop_14.context.repo_model_probability",
+       "value": 0.637
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price on this side is already short, so the market has the likely outcome built in and a bet would risk a lot to win a little.",
+     "evidence": [
+      {
+       "path": "markets.prop_14.options[0].best.price",
+       "value": -275
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop quotes are old and only a couple of books are quoting this player, so the price may have moved since.",
+     "evidence": [
+      {
+       "path": "missing[2].reason",
+       "value": "the newest player-prop quote is 1000 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot for this player together with fresh quotes from more books would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_15",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -162,
+   "book": "williamhill_us",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own de-vigged number for this side and LineHound's own model are the only inputs the data gives for this prop, and neither makes a strong enough case to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_15.options[0].fair_probability",
+       "value": 0.5848
+      },
+      {
+       "path": "markets.prop_15.context.repo_model_probability",
+       "value": 0.6369
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price on this side is already short, so the market has the likely outcome built in and a bet would risk a lot to win a little.",
+     "evidence": [
+      {
+       "path": "markets.prop_15.options[0].best.price",
+       "value": -162
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop quotes are old and only a couple of books are quoting this player, so the price may have moved since.",
+     "evidence": [
+      {
+       "path": "missing[2].reason",
+       "value": "the newest player-prop quote is 1000 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot for this player together with fresh quotes from more books would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_16",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -219,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' own de-vigged number for this side and LineHound's own model are the only inputs the data gives for this prop, and neither makes a strong enough case to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_16.options[0].fair_probability",
+       "value": 0.6649
+      },
+      {
+       "path": "markets.prop_16.context.repo_model_probability",
+       "value": 0.6326
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price on this side is already short, so the market has the likely outcome built in and a bet would risk a lot to win a little.",
+     "evidence": [
+      {
+       "path": "markets.prop_16.options[0].best.price",
+       "value": -219
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop quotes are old and only a couple of books are quoting this player, so the price may have moved since.",
+     "evidence": [
+      {
+       "path": "missing[2].reason",
+       "value": "the newest player-prop quote is 1000 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot for this player together with fresh quotes from more books would let us revisit it.",
+   "case_against": null
+  }
+ ],
+ "summary_derived": []
+}

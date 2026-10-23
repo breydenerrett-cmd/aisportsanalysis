@@ -1,0 +1,1011 @@
+{
+ "summary": "I pass on every market in this game. MIL is a clear favorite and I understand why: the home starter has an ERA of 1.8034 against 3.1 for the TB starter, and the books' own fair number for MIL is 0.6301. But that gap is already in the price, and the data cannot show me a mistake in it. The starters' stats only run through 2026-10-19, MIL has been off for 8 days with a long trip behind it, and the home bullpen section is empty, so I do not want to move off the market. The run line and the total look close to fair as well, with the over at 0.5075 by the books' number. On the player props, the prices are many hours old, only a few books quote them, and several sit at -200 or worse, which I will not take. Where LineHound's own model leans away from the books, the gap rests on little more than a season rate. What would change my mind is a late lineup or starter change, a fresher set of prop prices, or a clearly better number on MIL.",
+ "calls": [
+  {
+   "slot_id": "moneyline",
+   "market": "moneyline",
+   "selection": "MIL",
+   "verdict": "PASS",
+   "price": -180,
+   "book": "lowvig",
+   "fair_estimate": 0.63,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The home starter has the far better season line, an ERA of 1.8034 against 3.1 for the visiting starter, which is why the books make MIL the clear favorite.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.home_sp_era",
+       "value": 1.8034
+      },
+      {
+       "path": "sections.starters.values.away_sp_era",
+       "value": 3.1
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The books' own fair number for MIL is already 0.6301, so the starter edge looks priced in, and the stats only run through 2026-10-19.",
+     "evidence": [
+      {
+       "path": "markets.moneyline.options[0].fair_probability",
+       "value": 0.6301
+      },
+      {
+       "path": "sections.starters.as_of",
+       "value": "2026-10-19"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "MIL has not played in 8 days and is on a long eastward trip, which the data cannot translate into a number, and the home bullpen section is empty.",
+     "evidence": [
+      {
+       "path": "sections.travel.values.MIL.days_since_last_game",
+       "value": 8
+      },
+      {
+       "path": "sections.bullpen.values.MIL.reliever_count",
+       "value": 0
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": -170,
+   "what_would_change_it": "A price on MIL better than -170, or news that either starter is scratched, would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "run_line",
+   "market": "run_line",
+   "selection": "TB +1.5",
+   "verdict": "PASS",
+   "price": -141,
+   "book": "betrivers",
+   "fair_estimate": 0.57,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for TB +1.5 is 0.5698, close to the price, and the data gives nothing about margin of victory beyond that.",
+     "evidence": [
+      {
+       "path": "markets.run_line.options[0].fair_probability",
+       "value": 0.5698
+      },
+      {
+       "path": "markets.run_line.options[0].best.price",
+       "value": -141
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The visiting team has been scoring 4.479 runs a game and allowing 3.964, so a one-run game is plausible, but the price already reflects it.",
+     "evidence": [
+      {
+       "path": "sections.teams.values.away_runs_scored_pg",
+       "value": 4.479
+      },
+      {
+       "path": "sections.teams.values.away_runs_allowed_pg",
+       "value": 3.964
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": -133,
+   "what_would_change_it": "A price on TB +1.5 near -133 or better would be worth a second look.",
+   "case_against": null
+  },
+  {
+   "slot_id": "total",
+   "market": "total",
+   "selection": "Over 6.5",
+   "verdict": "PASS",
+   "price": -106,
+   "book": "betrivers",
+   "fair_estimate": 0.5,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The market is split almost evenly at 6.5, with the books' fair number for the over at 0.5075.",
+     "evidence": [
+      {
+       "path": "markets.total.options[0].fair_probability",
+       "value": 0.5075
+      },
+      {
+       "path": "markets.total.options[0].line",
+       "value": 6.5
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The home starter's strikeout rate and low home run rate point toward fewer runs, but the visiting lineup and bullpen details are thin.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.home_sp_k9",
+       "value": 12.9847
+      },
+      {
+       "path": "sections.starters.values.home_sp_hr9",
+       "value": 0.7214
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Weather is mild with light wind and no rain, so it adds little either way.",
+     "evidence": [
+      {
+       "path": "sections.weather.values.wind_mph",
+       "value": 4.3
+      },
+      {
+       "path": "sections.weather.values.precip_probability_pct",
+       "value": 0
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed roof status or a late lineup change could move this, as could a better price on the under.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_01",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -350,
+   "book": "betmgm",
+   "fair_estimate": 0.7399,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side is 0.7399 and LineHound's own model has 0.7015, so there is no clear gap to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_01.options[0].fair_probability",
+       "value": 0.7399
+      },
+      {
+       "path": "markets.prop_01.context.repo_model_probability",
+       "value": 0.7015
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop prices were captured many hours before this analysis, so they may have moved.",
+     "evidence": [
+      {
+       "path": "markets.prop_01.as_of",
+       "value": "2026-10-23T04:01:14Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "This player is not in the posted visiting lineup, so the bet may not have action, and the data does not explain why.",
+     "evidence": [
+      {
+       "path": "markets.prop_01.context.expected_pa",
+       "value": 2.9
+      },
+      {
+       "path": "sections.lineups.values.away.batters[8].name",
+       "value": "Taylor Walls"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot or a fresh price move would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_02",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -275,
+   "book": "betmgm",
+   "fair_estimate": 0.6905,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side is 0.6905 and LineHound's own model has 0.701, so there is no clear gap to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_02.options[0].fair_probability",
+       "value": 0.6905
+      },
+      {
+       "path": "markets.prop_02.context.repo_model_probability",
+       "value": 0.701
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop prices were captured many hours before this analysis, so they may have moved.",
+     "evidence": [
+      {
+       "path": "markets.prop_02.as_of",
+       "value": "2026-10-23T04:01:14Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "He bats eighth for the home side, which limits his plate appearances, and the price at -275 already reflects it.",
+     "evidence": [
+      {
+       "path": "markets.prop_02.context.batting_slot",
+       "value": 8
+      },
+      {
+       "path": "markets.prop_02.context.expected_pa",
+       "value": 3.623
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot or a fresh price move would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_03",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -300,
+   "book": "betmgm",
+   "fair_estimate": 0.7111,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side is 0.7111 and LineHound's own model has 0.6851, so there is no clear gap to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_03.options[0].fair_probability",
+       "value": 0.7111
+      },
+      {
+       "path": "markets.prop_03.context.repo_model_probability",
+       "value": 0.6851
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop prices were captured many hours before this analysis, so they may have moved.",
+     "evidence": [
+      {
+       "path": "markets.prop_03.as_of",
+       "value": "2026-10-23T04:01:14Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "He bats fifth and the model sits below the books' number, so there is no reason to lean on this.",
+     "evidence": [
+      {
+       "path": "markets.prop_03.context.batting_slot",
+       "value": 5
+      },
+      {
+       "path": "markets.prop_03.context.expected_pa",
+       "value": 4.105
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot or a fresh price move would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_04",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -210,
+   "book": "betmgm",
+   "fair_estimate": 0.6361,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side is 0.6361 and LineHound's own model has 0.6809, so there is no clear gap to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_04.options[0].fair_probability",
+       "value": 0.6361
+      },
+      {
+       "path": "markets.prop_04.context.repo_model_probability",
+       "value": 0.6809
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop prices were captured many hours before this analysis, so they may have moved.",
+     "evidence": [
+      {
+       "path": "markets.prop_04.as_of",
+       "value": "2026-10-23T04:01:14Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "At -210 the over is priced at -200 or worse, which this analysis never takes, even though LineHound's own model is a few points higher.",
+     "evidence": [
+      {
+       "path": "markets.prop_04.options[0].best.price",
+       "value": -210
+      },
+      {
+       "path": "markets.prop_04.context.season_rate",
+       "value": 0.6875
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot or a fresh price move would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_05",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -248,
+   "book": "draftkings",
+   "fair_estimate": 0.6774,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side is 0.6774 and LineHound's own model has 0.6649, so there is no clear gap to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_05.options[0].fair_probability",
+       "value": 0.6774
+      },
+      {
+       "path": "markets.prop_05.context.repo_model_probability",
+       "value": 0.6649
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop prices were captured many hours before this analysis, so they may have moved.",
+     "evidence": [
+      {
+       "path": "markets.prop_05.as_of",
+       "value": "2026-10-23T04:01:14Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The best price is -248, in the range this analysis does not take, and the model is below the books.",
+     "evidence": [
+      {
+       "path": "markets.prop_05.options[0].best.price",
+       "value": -248
+      },
+      {
+       "path": "markets.prop_05.context.season_rate",
+       "value": 0.7059
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot or a fresh price move would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_06",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -274,
+   "book": "draftkings",
+   "fair_estimate": 0.6848,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side is 0.6848 and LineHound's own model has 0.6642, so there is no clear gap to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_06.options[0].fair_probability",
+       "value": 0.6848
+      },
+      {
+       "path": "markets.prop_06.context.repo_model_probability",
+       "value": 0.6642
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop prices were captured many hours before this analysis, so they may have moved.",
+     "evidence": [
+      {
+       "path": "markets.prop_06.as_of",
+       "value": "2026-10-23T04:01:14Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The model is a couple of points below the books on this under, so there is no edge to point to.",
+     "evidence": [
+      {
+       "path": "markets.prop_06.context.batting_slot",
+       "value": 7
+      },
+      {
+       "path": "markets.prop_06.context.expected_pa",
+       "value": 3.753
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot or a fresh price move would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_07",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -148,
+   "book": "williamhill_us",
+   "fair_estimate": 0.5606,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side is 0.5606 and LineHound's own model has 0.6594, so there is no clear gap to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_07.options[0].fair_probability",
+       "value": 0.5606
+      },
+      {
+       "path": "markets.prop_07.context.repo_model_probability",
+       "value": 0.6594
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop prices were captured many hours before this analysis, so they may have moved.",
+     "evidence": [
+      {
+       "path": "markets.prop_07.as_of",
+       "value": "2026-10-23T04:01:14Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "LineHound's own model is well above the books on this over, but the data has no matchup detail for him beyond a season rate of 0.6562, so the gap is not enough to act on alone.",
+     "evidence": [
+      {
+       "path": "markets.prop_07.context.season_rate",
+       "value": 0.6562
+      },
+      {
+       "path": "markets.prop_07.options[0].best.price",
+       "value": -148
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot or a fresh price move would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_08",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -400,
+   "book": "betmgm",
+   "fair_estimate": 0.7534,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side is 0.7534 and LineHound's own model has 0.6589, so there is no clear gap to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_08.options[0].fair_probability",
+       "value": 0.7534
+      },
+      {
+       "path": "markets.prop_08.context.repo_model_probability",
+       "value": 0.6589
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop prices were captured many hours before this analysis, so they may have moved.",
+     "evidence": [
+      {
+       "path": "markets.prop_08.as_of",
+       "value": "2026-10-23T04:01:14Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "At -400 the price is too steep and the model is well below the books' number, so this under is not worth taking.",
+     "evidence": [
+      {
+       "path": "markets.prop_08.options[0].best.price",
+       "value": -400
+      },
+      {
+       "path": "markets.prop_08.context.batting_slot",
+       "value": 9
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot or a fresh price move would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_09",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -165,
+   "book": "betmgm",
+   "fair_estimate": 0.5889,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side is 0.5889 and LineHound's own model has 0.6548, so there is no clear gap to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_09.options[0].fair_probability",
+       "value": 0.5889
+      },
+      {
+       "path": "markets.prop_09.context.repo_model_probability",
+       "value": 0.6548
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop prices were captured many hours before this analysis, so they may have moved.",
+     "evidence": [
+      {
+       "path": "markets.prop_09.as_of",
+       "value": "2026-10-23T04:01:14Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "LineHound's own model is above the books but the best price of -165 leaves little room, and the data holds nothing more on this hitter.",
+     "evidence": [
+      {
+       "path": "markets.prop_09.context.season_rate",
+       "value": 0.7222
+      },
+      {
+       "path": "markets.prop_09.options[0].best.price",
+       "value": -165
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot or a fresh price move would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_10",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -204,
+   "book": "betonlineag",
+   "fair_estimate": 0.6376,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side is 0.6376 and LineHound's own model has 0.6474, so there is no clear gap to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_10.options[0].fair_probability",
+       "value": 0.6376
+      },
+      {
+       "path": "markets.prop_10.context.repo_model_probability",
+       "value": 0.6474
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop prices were captured many hours before this analysis, so they may have moved.",
+     "evidence": [
+      {
+       "path": "markets.prop_10.as_of",
+       "value": "2026-10-23T04:01:14Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The best price is -204, which this analysis does not take, and the model is within a point of the books.",
+     "evidence": [
+      {
+       "path": "markets.prop_10.options[0].best.price",
+       "value": -204
+      },
+      {
+       "path": "markets.prop_10.context.season_rate",
+       "value": 0.6875
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot or a fresh price move would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_11",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -145,
+   "book": "williamhill_us",
+   "fair_estimate": 0.5599,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side is 0.5599 and LineHound's own model has 0.6415, so there is no clear gap to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_11.options[0].fair_probability",
+       "value": 0.5599
+      },
+      {
+       "path": "markets.prop_11.context.repo_model_probability",
+       "value": 0.6415
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop prices were captured many hours before this analysis, so they may have moved.",
+     "evidence": [
+      {
+       "path": "markets.prop_11.as_of",
+       "value": "2026-10-23T04:01:14Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "He bats seventh and has no history against this starter in the data, so the model gap rests on a season rate of 0.7 alone.",
+     "evidence": [
+      {
+       "path": "markets.prop_11.context.season_rate",
+       "value": 0.7
+      },
+      {
+       "path": "markets.prop_11.context.batting_slot",
+       "value": 7
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot or a fresh price move would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_12",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -195,
+   "book": "draftkings",
+   "fair_estimate": 0.6413,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side is 0.6413 and LineHound's own model has 0.6382, so there is no clear gap to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_12.options[0].fair_probability",
+       "value": 0.6413
+      },
+      {
+       "path": "markets.prop_12.context.repo_model_probability",
+       "value": 0.6382
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop prices were captured many hours before this analysis, so they may have moved.",
+     "evidence": [
+      {
+       "path": "markets.prop_12.as_of",
+       "value": "2026-10-23T04:01:14Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The books and the model agree almost exactly, and the best price of -195 is close to the line this analysis will not cross.",
+     "evidence": [
+      {
+       "path": "markets.prop_12.options[0].best.price",
+       "value": -195
+      },
+      {
+       "path": "markets.prop_12.context.season_rate",
+       "value": 0.8276
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot or a fresh price move would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_13",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -135,
+   "book": "betonlineag",
+   "fair_estimate": 0.5411,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side is 0.5411 and LineHound's own model has 0.6376, so there is no clear gap to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_13.options[0].fair_probability",
+       "value": 0.5411
+      },
+      {
+       "path": "markets.prop_13.context.repo_model_probability",
+       "value": 0.6376
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop prices were captured many hours before this analysis, so they may have moved.",
+     "evidence": [
+      {
+       "path": "markets.prop_13.as_of",
+       "value": "2026-10-23T04:01:14Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "His season rate is only 0.5, well below the model's number, so the model's lean is hard to trust.",
+     "evidence": [
+      {
+       "path": "markets.prop_13.context.season_rate",
+       "value": 0.5
+      },
+      {
+       "path": "markets.prop_13.options[0].best.price",
+       "value": -135
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot or a fresh price move would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_14",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -275,
+   "book": "betmgm",
+   "fair_estimate": 0.7024,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side is 0.7024 and LineHound's own model has 0.637, so there is no clear gap to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_14.options[0].fair_probability",
+       "value": 0.7024
+      },
+      {
+       "path": "markets.prop_14.context.repo_model_probability",
+       "value": 0.637
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop prices were captured many hours before this analysis, so they may have moved.",
+     "evidence": [
+      {
+       "path": "markets.prop_14.as_of",
+       "value": "2026-10-23T04:01:14Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The model is well below the books on this under, and he bats ninth, so the market may be right here.",
+     "evidence": [
+      {
+       "path": "markets.prop_14.context.batting_slot",
+       "value": 9
+      },
+      {
+       "path": "markets.prop_14.context.expected_pa",
+       "value": 3.461
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot or a fresh price move would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_15",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -162,
+   "book": "williamhill_us",
+   "fair_estimate": 0.5848,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side is 0.5848 and LineHound's own model has 0.6369, so there is no clear gap to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_15.options[0].fair_probability",
+       "value": 0.5848
+      },
+      {
+       "path": "markets.prop_15.context.repo_model_probability",
+       "value": 0.6369
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop prices were captured many hours before this analysis, so they may have moved.",
+     "evidence": [
+      {
+       "path": "markets.prop_15.as_of",
+       "value": "2026-10-23T04:01:14Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The model is a few points above the books, but with no detail beyond a season rate of 0.6333 the gap is not enough to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_15.context.season_rate",
+       "value": 0.6333
+      },
+      {
+       "path": "markets.prop_15.options[0].best.price",
+       "value": -162
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot or a fresh price move would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_16",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -219,
+   "book": "draftkings",
+   "fair_estimate": 0.6649,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side is 0.6649 and LineHound's own model has 0.6326, so there is no clear gap to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_16.options[0].fair_probability",
+       "value": 0.6649
+      },
+      {
+       "path": "markets.prop_16.context.repo_model_probability",
+       "value": 0.6326
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The prop prices were captured many hours before this analysis, so they may have moved.",
+     "evidence": [
+      {
+       "path": "markets.prop_16.as_of",
+       "value": "2026-10-23T04:01:14Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The best price of -219 is worse than -200, which this analysis never takes.",
+     "evidence": [
+      {
+       "path": "markets.prop_16.options[0].best.price",
+       "value": -219
+      },
+      {
+       "path": "markets.prop_16.context.season_rate",
+       "value": 0.3438
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot or a fresh price move would change this.",
+   "case_against": null
+  }
+ ],
+ "summary_derived": []
+}
