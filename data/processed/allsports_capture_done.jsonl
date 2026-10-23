@@ -2166,3 +2166,6 @@
 {"commence_utc": "2026-10-24T08:15:00Z", "event_id": "f312e0eeeddb0669edbcc1c1cd2b0411", "kind": "phase", "observed_utc": "2026-10-23T08:20:37.687155Z", "phase": "t24h", "rows": 15, "sport_key": "aussierules_aflw"}
 {"call_kind": "pregame", "credits": 3, "events": 9, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-23T08:20:37.687155Z", "regions": ["au"], "rows": 145, "sport_key": "aussierules_aflw", "stored": 77}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T08:20:37.687155Z", "regions": ["us"], "rows": 19, "sport_key": "tennis_wta_ningbo_open", "stored": 19}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-23T14:32:10.421300Z", "observed_utc": "2026-10-23T08:32:10.421300Z", "sport_key": "cricket_test_match"}
+{"commence_utc": "2026-10-23T09:00:00Z", "event_id": "5e77ee16efd0edd49a9b41f083d5226f", "kind": "phase", "observed_utc": "2026-10-23T08:32:10.421300Z", "phase": "t30m", "rows": 10, "sport_key": "soccer_australia_aleague"}
+{"call_kind": "pregame", "credits": 2, "events": 12, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T08:32:10.421300Z", "regions": ["us"], "rows": 60, "sport_key": "soccer_australia_aleague", "stored": 40}
