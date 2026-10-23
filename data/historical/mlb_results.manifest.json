@@ -8279,6 +8279,22 @@
    "skipped_game_type": 0,
    "stored": 0,
    "total": 0
+  },
+  "2026-10-23": {
+   "cancelled": 0,
+   "final": 0,
+   "game_types": [
+    "D",
+    "F",
+    "L",
+    "P",
+    "R",
+    "W"
+   ],
+   "pending": 1,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 1
   }
  }
 }
