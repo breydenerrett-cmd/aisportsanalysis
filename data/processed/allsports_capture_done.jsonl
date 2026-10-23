@@ -3066,3 +3066,5 @@
 {"call_kind": "pregame", "credits": 2, "events": 29, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T21:37:04.025144Z", "regions": ["us"], "rows": 298, "sport_key": "soccer_usa_mls", "stored": 252}
 {"call_kind": "inplay", "credits": 1, "events": 30, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T21:37:04.025144Z", "regions": ["us"], "rows": 156, "sport_key": "soccer_argentina_primera_division", "stored": 52}
 {"call_kind": "inplay", "credits": 1, "events": 54, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T21:37:04.025144Z", "regions": ["us"], "rows": 153, "sport_key": "americanfootball_ncaaf_fcs", "stored": 153}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-24T03:59:15.759394Z", "observed_utc": "2026-10-23T21:59:15.759394Z", "sport_key": "soccer_uefa_champs_league"}
+{"call_kind": "inplay", "credits": 1, "events": 17, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T21:59:15.759394Z", "regions": ["us"], "rows": 140, "sport_key": "basketball_nba", "stored": 126}
