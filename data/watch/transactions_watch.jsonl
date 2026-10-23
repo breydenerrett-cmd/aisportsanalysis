@@ -5536,3 +5536,7 @@
 {"fetched_utc": "2026-10-23T14:51:13.827173+00:00", "game_date": "2026-10-23", "poll": true}
 {"fetched_utc": "2026-10-23T15:02:41.638213+00:00", "game_date": "2026-10-23", "poll": true}
 {"fetched_utc": "2026-10-23T15:18:36.963798+00:00", "game_date": "2026-10-23", "poll": true}
+{"fetched_utc": "2026-10-23T15:39:31.998503+00:00", "game_date": "2026-10-23", "poll": true}
+{"category": "other", "date": "2026-10-23", "first_seen_utc": "2026-10-23T15:39:31.998503+00:00", "player": "Brody Hopkins", "player_id": 811315, "team": "TB", "transaction_id": 946891}
+{"category": "il_activation", "date": "2026-10-23", "first_seen_utc": "2026-10-23T15:39:31.998503+00:00", "player": "Garrett Cleavinger", "player_id": 664076, "team": "TB", "transaction_id": 946892}
+{"fetched_utc": "2026-10-23T15:39:33.578095+00:00", "game_date": "2026-10-23", "poll": true}
