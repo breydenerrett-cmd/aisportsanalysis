@@ -2018,3 +2018,4 @@
 {"commence_utc": "2026-10-23T01:10:00Z", "event_id": "8a951cc95f91e5df49f7aad4219c40e0", "kind": "phase", "observed_utc": "2026-10-23T00:46:45.730059Z", "phase": "t30m", "rows": 30, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 14, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-23T00:46:45.730059Z", "regions": ["us"], "rows": 329, "sport_key": "icehockey_nhl", "stored": 329}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T00:46:45.730059Z", "regions": ["us"], "rows": 2, "sport_key": "soccer_conmebol_copa_libertadores", "stored": 2}
+{"call_kind": "inplay", "credits": 1, "events": 41, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T00:57:18.147262Z", "regions": ["us"], "rows": 175, "sport_key": "basketball_nba", "stored": 135}
