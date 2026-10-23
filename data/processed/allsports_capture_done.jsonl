@@ -2276,3 +2276,5 @@
 {"call_kind": "pregame", "credits": 2, "events": 13, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T11:34:11.679010Z", "regions": ["us"], "rows": 171, "sport_key": "soccer_england_league2", "stored": 154}
 {"commence_utc": "2026-10-24T11:30:00Z", "event_id": "aca5dd297dbee71f576f7641569fe578", "kind": "phase", "observed_utc": "2026-10-23T11:34:11.679010Z", "phase": "t24h", "rows": 18, "sport_key": "soccer_epl"}
 {"call_kind": "pregame", "credits": 2, "events": 21, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-23T11:34:11.679010Z", "regions": ["us"], "rows": 271, "sport_key": "soccer_epl", "stored": 90}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T11:45:41.927294Z", "regions": ["us"], "rows": 3, "sport_key": "cricket_odi", "stored": 2}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-23T11:45:41.927294Z", "regions": ["us"], "rows": 16, "sport_key": "tennis_wta_ningbo_open", "stored": 16}
