@@ -2,22 +2,22 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2026.jsonl": {
-   "bytes": 14056,
-   "newest": "2026-10-23T18:30:55Z",
-   "records": 25,
-   "sha256": "2b28a7cf0d1a8ad84c54bb205827749365303d36e68ddd65bcfcc27ca7c7245e"
+   "bytes": 14619,
+   "newest": "2026-10-23T21:37:26Z",
+   "records": 26,
+   "sha256": "52f445fce1566d803b42578d6e35fa40d33d4d128dd79d59a9bc110ba4a9148c"
   },
   "standings_2026.jsonl": {
-   "bytes": 10860,
-   "newest": "2026-10-21T20:11:21Z",
-   "records": 26,
-   "sha256": "1d189d513ab9ac938ec3cbe1624dc8b2be4e9afc0d1f48b7de26a91f6e3b6cc3"
+   "bytes": 11730,
+   "newest": "2026-10-23T21:37:28Z",
+   "records": 28,
+   "sha256": "4738f8bb8fefffe4abb4928402dc046da51bdaac2a8724126211281da791a0c0"
   },
   "team_games_2026.jsonl": {
-   "bytes": 3419,
-   "newest": "2026-10-21T20:11:20Z",
-   "records": 4,
-   "sha256": "e8586a491715300a2d20d810e4a7f1812cce37bc566f6f6d2deb85b2937b8df6"
+   "bytes": 5124,
+   "newest": "2026-10-23T21:37:28Z",
+   "records": 6,
+   "sha256": "93a555403c95c7f079e8c079a3fced69fffca9620589043c2abf5376d2e2d87c"
   },
   "teams.jsonl": {
    "bytes": 6579,
@@ -26,8 +26,8 @@
    "sha256": "6ab9c94da745cdafcb8857703920a1f4f9330bec177d98ee4180ba29628d8246"
   }
  },
- "generated_utc": "2026-10-23T18:30:56Z",
+ "generated_utc": "2026-10-23T21:37:28Z",
  "league": "laliga",
- "refreshed_utc": "2026-10-23T18:30:56Z",
+ "refreshed_utc": "2026-10-23T21:37:28Z",
  "title": "La Liga"
 }
