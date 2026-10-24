@@ -109,6 +109,17 @@ class TheLimits(Train):
         new = user_store.get_hound(out["new"]["id"])["spec"]
         self.assertEqual(new["max_bets_per_day"], 3)
 
+    def test_a_hound_with_settled_bets_and_no_candidate_today_is_never_narrowed(self):
+        """Owner report: a hound with 2 settled bets and nothing on today's board was offered "Most bets a day" cut. A rule that
+        finds nothing today is not held back by its daily limit, so the proposal may only loosen (or say nothing sensible)."""
+        dog = self.dog("Quiet Pup", sports=["MLB", "NFL"], max_bets_per_day=3)
+        rows = rows_for(dog["id"], [(2, dict(result="LOSS"))])
+        empty_board = lambda spec: {"games": 4, "candidates": 0, "with_candidate": 0, "failed": {}, "failed_total": 0}
+        # Nothing loosening adds a game to an empty board, so the honest answer is "nothing sensible" (a refusal, nothing changes).
+        err = refusal(self, self.train, dog, rows, board_fn=empty_board)
+        self.assertEqual(err.code, "nothing_to_change")
+        self.assertEqual(user_store.get_hound(dog["id"])["spec"]["max_bets_per_day"], 3)
+
     def test_five_settled_bets_is_enough_for_an_analysis(self):
         hound = self.two_sport_dog()
         out = self.train(hound, rows_for(hound["id"], [(5, dict(result="LOSS", side="away"))]))
