@@ -1,22 +1,22 @@
 {
  "files": {
   "bouts.jsonl": {
-   "bytes": 1440782,
+   "bytes": 1441622,
    "newest": "2026-10-18T00:00Z",
-   "records": 1705,
-   "sha256": "649c6b221fe12f101dd619cbc5fb104d1f41956165cccadc0a33be9754e78c35"
+   "records": 1706,
+   "sha256": "4c6d8fd56bb59aab8db6e15e5d3b04adaae218e46c33fd4e66c332fd2490b4da"
   },
   "events.jsonl": {
-   "bytes": 80300,
+   "bytes": 80287,
    "newest": "2026-10-17T21:00Z",
    "records": 156,
-   "sha256": "5f61e1accc5cc9981cfa10b256dab58186fbca8e5919806053b54e8ba7a3ea29"
+   "sha256": "87ff223b5fd40e76f34af0a653ec865aedc986c7a6b452840f1276d59243366b"
   },
   "fight_stats.jsonl": {
    "bytes": 5650468,
    "newest": "2026-10-18T00:00Z",
    "records": 3280,
-   "sha256": "fd16a6013bb76367e73181c2cfd66f19a8645db2a4a683d20ec9c7b1d6a59615"
+   "sha256": "2aca08e14f0c0217d2ec7f4a51b3379b7195e3e14a91e60ebeb42fead67fd6e5"
   },
   "fighters.jsonl": {
    "bytes": 609912,
@@ -25,10 +25,10 @@
    "sha256": "f58cf30bd906b88b6ca06550a933f7afb9adce97fa39129720f2010f601639e1"
   },
   "odds.jsonl": {
-   "bytes": 6165225,
-   "newest": "2026-10-23T14:42:23Z",
-   "records": 4060,
-   "sha256": "8a507a78a64aa975f95197e6c09281d46a7ce35fb477671d5437bae6cd4819b0"
+   "bytes": 6166368,
+   "newest": "2026-10-24T10:24:21Z",
+   "records": 4061,
+   "sha256": "1775abe7d8b4e722e9fed7e8e02079742a6ee9cc17b6acf2da4b0e8498b8c7de"
   },
   "ufccom_profiles.jsonl": {
    "bytes": 1263862,
@@ -37,17 +37,17 @@
    "sha256": "f9d7f7ec8aa1bf8e6c6f556c4a324c4546537888cfff4654f15de97323098267"
   }
  },
- "generated_utc": "2026-10-23T14:42:32Z",
+ "generated_utc": "2026-10-24T10:24:26Z",
  "last_run": {
-  "bouts": 57,
-  "events": 5,
-  "fight_stats": 36,
+  "bouts": 79,
+  "events": 6,
+  "fight_stats": 26,
   "fighters": 0,
-  "finished_utc": "2026-10-23T14:42:32Z",
+  "finished_utc": "2026-10-24T10:24:26Z",
   "kind": "update",
-  "odds": 27,
+  "odds": 43,
   "profiles": 0,
-  "started_utc": "2026-10-23T14:41:15Z",
+  "started_utc": "2026-10-24T10:22:38Z",
   "stopped": null
  },
  "last_run_errors": 0
