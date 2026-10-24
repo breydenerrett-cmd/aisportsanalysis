@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -85,12 +87,17 @@ class TeamNamesCoverageTests(unittest.TestCase):
 
 
 class BookLabelsCoverageTests(unittest.TestCase):
-    def test_every_observed_book_key_has_a_label(self):
+    def test_every_observed_book_key_gets_a_readable_label(self):
+        # A new book key on the odds feed must not fail CI: it has no
+        # explicit entry yet, so the fallback has to name it -- non-empty
+        # and never the raw key. Explicit entries are optional polish.
         observed = _observed_book_keys()
         self.assertTrue(observed, "no `book` values found in odds_multibook.jsonl")
         for key in observed:
             with self.subTest(book=key):
-                self.assertIn(key, labels.BOOK_LABELS)
+                label = labels.book_label(key)
+                self.assertTrue(label and label.strip(), f"{key!r} has an empty label")
+                self.assertNotEqual(label, key)
 
     def test_labels_are_not_the_raw_provider_key(self):
         # A label that's just the raw key passed through would mean
@@ -129,12 +136,69 @@ class BookLabelHelperTests(unittest.TestCase):
         self.assertEqual(labels.book_label("FanDuel".lower()), "FanDuel")
         self.assertEqual(labels.book_label("BETMGM"), "BetMGM")
 
-    def test_unknown_key_passes_through_unchanged(self):
-        self.assertEqual(labels.book_label("some_new_book"), "some_new_book")
+    def test_unknown_key_is_named_from_the_key(self):
+        self.assertEqual(labels.book_label("some_new_book"), "Some New Book")
 
     def test_falsy_input_passes_through_unchanged(self):
         self.assertIsNone(labels.book_label(None))
         self.assertEqual(labels.book_label(""), "")
+
+
+class BookLabelFallbackTests(unittest.TestCase):
+    """The fallback runs for any key the table lacks. Called directly here
+    so the spelling rules are pinned even for keys that now have entries."""
+
+    def test_region_suffix_becomes_parenthesised_code(self):
+        self.assertEqual(labels.book_label_fallback("picklebet_au"), "Picklebet (AU)")
+        self.assertEqual(labels.book_label_fallback("newbook_uk"), "Newbook (UK)")
+        self.assertEqual(labels.book_label_fallback("newbook_de"), "Newbook (DE)")
+
+    def test_plain_key_is_capitalised(self):
+        self.assertEqual(labels.book_label_fallback("betright"), "Betright")
+
+    def test_multi_word_key_is_spaced(self):
+        self.assertEqual(labels.book_label_fallback("some_new_book_au"), "Some New Book (AU)")
+
+    def test_suffix_alone_is_not_a_region(self):
+        # "_au" with nothing before it is a name, not a region tag.
+        self.assertEqual(labels.book_label_fallback("_au"), "Au")
+
+    def test_mixed_case_is_normalised(self):
+        self.assertEqual(labels.book_label_fallback("PickleBet_AU"), "Picklebet (AU)")
+
+    def test_falsy_input_passes_through_unchanged(self):
+        self.assertIsNone(labels.book_label_fallback(None))
+        self.assertEqual(labels.book_label_fallback(""), "")
+
+
+HAS_NODE = shutil.which("node") is not None
+
+
+@unittest.skipUnless(HAS_NODE, "node is not installed")
+class BookLabelFallbackJsTests(unittest.TestCase):
+    """Runs web/js/labels.js under node and checks bookLabel gives the same
+    answers as the Python book_label for the same keys, table and fallback
+    both included."""
+
+    CASES = ["picklebet_au", "betright", "newbook_uk", "some_new_book_au", "_au", "PickleBet_AU", "tab"]
+
+    def test_js_fallback_matches_python_for_unknown_keys(self):
+        script = (
+            f'import {{ bookLabel }} from "{LABELS_JS.as_uri()}";'
+            f"const keys = {json.dumps(self.CASES)};"
+            "console.log(JSON.stringify(keys.map((k) => bookLabel(k))));"
+        )
+        result = subprocess.run(
+            ["node", "--input-type=module", "-e", script],
+            capture_output=True, text=True, timeout=60,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        js_labels = json.loads(result.stdout.strip().splitlines()[-1])
+        # book_label (table first, fallback second) is the twin of bookLabel.
+        py_labels = [labels.book_label(k) for k in self.CASES]
+        self.assertEqual(js_labels, py_labels)
+        self.assertEqual(js_labels[0], "Picklebet (AU)")
+        self.assertEqual(js_labels[1], "BetRight (AU)")  # explicit entry wins
 
 
 class JsPythonParityTests(unittest.TestCase):

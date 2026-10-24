@@ -855,14 +855,19 @@ def _propose_loosening(spec: Mapping, board_fn: Optional[Callable]) -> tuple:
 def _default_plan(dog, hound, bets, rows, analysis, gate, coach, board_fn) -> dict:
     """The proposal Send to training makes by itself: the coach's read and the narrowing menu as always, EXCEPT for a hound that
     is not betting (no settled bet on this version), which is offered loosening instead, never narrowing."""
-    from src.hounds.interact import coach as coach_mod
+    from src.hounds.interact import coach as coach_mod, retune
     spec = hound["spec"]
     the_coach = coach or coach_mod.Coach(rules_only=True)
     inp = _coach_input(dog, hound, bets, rows, analysis, spec)
     table = the_coach.diagnosis(inp)
     entries = menu(spec, analysis, table)
     read = the_coach.read(inp, entries, table)
-    if analysis["settled"] <= NOT_BETTING_SETTLED:
+    # The same today's-board read the owner's card shows ("On today's board: N candidates"). A spec with zero candidates today
+    # is not held back by a narrow rule the board never reached, so narrowing it would only make things worse: it gets the
+    # loosening menu instead, which offers nothing when no loosening adds a candidate. An unreadable board (None) changes nothing.
+    today = retune.whatif(spec, [], board_fn)["base"]
+    idle_today = today is not None and today["candidates"] == 0
+    if analysis["settled"] <= NOT_BETTING_SETTLED or idle_today:
         new_spec, changes, mode, note = _propose_loosening(spec, board_fn)
     else:
         new_spec, changes, mode, note = propose(spec, analysis, seed_key=f"train-v{hound['version_no']}", hound_id=dog.id,

@@ -16,11 +16,11 @@ late grade must not land on a frozen record).
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, Sequence
 
 from src.hounds import ledgers, user_engine
-from src.hounds.contract import TICKET_OPEN, ticket_status
+from src.hounds.contract import TICKET_OPEN, _slate_end, _utc, ticket_status
 from src.hounds.interact import common
 
 SETTLED_RESULTS = ("win", "loss", "push")
@@ -67,6 +67,11 @@ def forward_bets(hound_id: str, rows: Sequence) -> list:
     return [b for b in bets if b.hound_id == hound_id and b.segment == "forward"]
 
 
+def _is_ungraded(bet, now: datetime) -> bool:
+    """A forward ticket with no grade that is past the 36-hour rule (``contract.ticket_status``), not merely still open."""
+    return not bet.graded and ticket_status(bet.result, bet.start_utc, bet.date, now) != TICKET_OPEN
+
+
 def split_unsettled(bets: Sequence, now: Optional[datetime] = None) -> tuple:
     """``(open, ungraded)``: forward tickets with no grade, split by the 36-hour rule (``contract.ticket_status``)."""
     now = now or common.now_utc()
@@ -81,6 +86,16 @@ def split_unsettled(bets: Sequence, now: Optional[datetime] = None) -> tuple:
     return open_n, ungraded_n
 
 
+def _void_at(bet) -> Optional[datetime]:
+    """When the grader voids this ticket if no result arrives: its start (or slate day, as ticket_status uses) plus the
+    catalog's ``capture.void_after_hours``. None when the ticket has no readable start, so no time is ever made up."""
+    from src.sports import catalog as sports_catalog
+    start = _utc(bet.start_utc) or _slate_end(bet.date)
+    if start is None:
+        return None
+    return start + timedelta(hours=float(sports_catalog.capture_config()["void_after_hours"]))
+
+
 def require_all_settled(dog: common.Dog, bets: Sequence, now: Optional[datetime] = None) -> None:
     """Refuse while the dog has a ticket that has not settled. The message says which kind and how many."""
     open_n, ungraded_n = split_unsettled(bets, now)
@@ -88,9 +103,26 @@ def require_all_settled(dog: common.Dog, bets: Sequence, now: Optional[datetime]
         raise RiteError("open_tickets", f"{dog.name} has {open_n} open {'ticket' if open_n == 1 else 'tickets'}. "
                                         "Wait until its open tickets settle.", 409, open_tickets=open_n)
     if ungraded_n:
-        raise RiteError("open_tickets", f"{dog.name} has {ungraded_n} {'ticket' if ungraded_n == 1 else 'tickets'} "
-                                        "still waiting for a grade. Wait until its tickets settle.", 409,
+        raise RiteError("open_tickets", _ungraded_message(dog, bets, ungraded_n, now or common.now_utc()), 409,
                         open_tickets=ungraded_n)
+
+
+def _ungraded_message(dog: common.Dog, bets: Sequence, ungraded_n: int, now: datetime) -> str:
+    """Why the training or retune is refused for an ungraded ticket, and when the wait ends. The grader voids a ticket with no
+    result after the catalog's window, so the owner is told that date instead of an open-ended "wait"."""
+    noun = "ticket" if ungraded_n == 1 else "tickets"
+    head = f"{dog.name} has {ungraded_n} {noun} still waiting for a grade"
+    tickets = [b for b in bets if _is_ungraded(b, now)]
+    voids = [v for v in (_void_at(b) for b in tickets) if v is not None]
+    if not voids:
+        return f"{head}. Wait until its tickets settle."
+    last = max(voids)
+    when = f"{last:%A} {last:%H:%M} UTC"
+    if ungraded_n == 1:
+        selection = getattr(tickets[0], "selection_text", "") or ""
+        named = f" ({selection})" if selection else ""
+        return f"{head}{named}. It is void automatically after {when} if no result arrives."
+    return f"{head}. The last of them is void automatically after {when} if no result arrives."
 
 
 def settled_count(bets: Sequence) -> int:

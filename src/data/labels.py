@@ -25,9 +25,9 @@ on the Python side alone.
 
 RULES THAT COME WITH IT
 ---------------------------------------------------------------------------
-- Never invent a name or a label. An abbreviation or provider key this
-  table does not know returns UNCHANGED from the helpers below -- a
-  fabricated label is worse than an ugly raw string.
+- Never invent a club name. A club abbreviation this table does not know
+  returns UNCHANGED from team_name. A book key it does not know is named
+  from the key itself (book_label_fallback) -- a spelling, never a fact.
 - These are presentation only. They carry no odds, no verdict, no status
   -- exactly like team color, this is identity data.
 """
@@ -134,12 +134,41 @@ def team_name(abbr, form: str = "full"):
     return entry[form if form in ("city", "name") else "full"]
 
 
+# Region suffixes the odds feed appends to a book key ("picklebet_au").
+# A key ending in one of these becomes "Name (XX)" in the fallback label.
+REGION_SUFFIXES = ("au", "uk", "eu", "us", "fr", "se", "de", "nl")
+
+
+def book_label_fallback(key):
+    """A readable name built from a raw book key the table does not know,
+    so a new book on the odds feed never breaks the page or CI.
+
+    WHY A FALLBACK, AND WHY IT IS ONLY A SPELLING: the feed adds book keys
+    without warning, and a missing explicit entry used to fail the parity
+    test and block deploys. Building the label from the key ("picklebet_au"
+    -> "Picklebet (AU)", "betright" -> "Betright") is a presentation
+    derivation, the same class as the table itself; it invents no fact
+    about the book beyond what the key already says. The curated table
+    still wins whenever it has an entry (e.g. "betright" -> "BetRight (AU)").
+    Mirrored exactly by bookLabelFallback in web/js/labels.js.
+    """
+    if not key:
+        return key
+    lowered = str(key).lower()
+    base, suffix = lowered, None
+    head, sep, tail = lowered.rpartition("_")
+    if sep and head and tail in REGION_SUFFIXES:
+        base, suffix = head, tail.upper()
+    words = " ".join(w.capitalize() for w in base.split("_") if w)
+    return f"{words} ({suffix})" if suffix else words
+
+
 def book_label(key):
     """Customer-facing label for a raw sportsbook provider key (the
     `book` field the odds pipeline emits, e.g. "williamhill_us" ->
-    "Caesars"). A key this table does not know -- or a falsy input --
-    comes back UNCHANGED: never invent a book name."""
+    "Caesars"). A key the table does not know is named from the key by
+    book_label_fallback. A falsy input comes back UNCHANGED."""
     if not key:
         return key
     label = BOOK_LABELS.get(str(key).lower())
-    return key if label is None else label
+    return book_label_fallback(key) if label is None else label
