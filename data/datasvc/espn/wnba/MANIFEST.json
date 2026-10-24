@@ -2,22 +2,22 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2026.jsonl": {
-   "bytes": 7530,
-   "newest": "2026-10-24T19:23:23Z",
-   "records": 12,
-   "sha256": "37a99333f558f09b43e21bd51228874228a21aa667d946685d8f1e146a6f3589"
+   "bytes": 8830,
+   "newest": "2026-10-24T22:32:13Z",
+   "records": 14,
+   "sha256": "4b133e14fbe2454f9cb5e022507cbd64cac7fc83066976936fc64fc1a19e4eb3"
   },
   "injuries.jsonl": {
-   "bytes": 26122,
-   "newest": "2026-10-24T19:23:24Z",
-   "records": 76,
-   "sha256": "5fe1f0c23cf4642ad4d9849a08ddd99a2c45802136219a20fce117e12847e94c"
+   "bytes": 26942,
+   "newest": "2026-10-24T22:32:14Z",
+   "records": 78,
+   "sha256": "f78aa946916f648a1ba1e5fd71763ed863362ae5bdbadf8a906bbc155a405b1a"
   },
   "player_games_2026.jsonl": {
-   "bytes": 29194,
-   "newest": "2026-10-22T05:15:08Z",
-   "records": 51,
-   "sha256": "d41731bd41d4b279d305bdb52388ecc50de4129ba2aa339dfd5727b766e4f646"
+   "bytes": 42259,
+   "newest": "2026-10-24T22:32:13Z",
+   "records": 75,
+   "sha256": "6be80b7d4701f8dd347c79c535fe4a1be183e09f62aea4c1974b22ce6aded884"
   },
   "players.jsonl": {
    "bytes": 63496,
@@ -32,10 +32,10 @@
    "sha256": "27bbc2c5ac891f7b4105b9dbdf244440dd3a0e2730025513f1d5e9acd5da091f"
   },
   "team_games_2026.jsonl": {
-   "bytes": 3573,
-   "newest": "2026-10-22T05:15:08Z",
-   "records": 4,
-   "sha256": "8efd1a008166c3b5ff0cafa21677020c7b01cfec9d6f60a4f5014a95cbb0ad81"
+   "bytes": 5356,
+   "newest": "2026-10-24T22:32:13Z",
+   "records": 6,
+   "sha256": "19364c1df52b8c447ca455690b50cc600874ddc4b5359e143b4cc7d0b0ed109e"
   },
   "teams.jsonl": {
    "bytes": 4823,
@@ -44,8 +44,8 @@
    "sha256": "a9d0da1b9f10af673b6ad17ff20691ff7858a69e839624ff09be46db6f9eeeb0"
   }
  },
- "generated_utc": "2026-10-24T19:23:24Z",
+ "generated_utc": "2026-10-24T22:32:14Z",
  "league": "wnba",
- "refreshed_utc": "2026-10-24T19:23:24Z",
+ "refreshed_utc": "2026-10-24T22:32:14Z",
  "title": "WNBA"
 }
