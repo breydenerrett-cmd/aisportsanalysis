@@ -357,3 +357,4 @@
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-22T23:15:51.810619Z", "phase": "refresh"}
 {"game_id": "2026_07_NE_CHI", "observed_utc": "2026-10-22T23:45:14.675706Z", "phase": "t30m"}
 {"game_id": "2026_07_KC_SEA", "observed_utc": "2026-10-23T00:23:26.037861Z", "phase": "t72h"}
+{"game_id": "2026_07_DAL_PHI", "observed_utc": "2026-10-24T00:15:21.700798Z", "phase": "t72h"}
