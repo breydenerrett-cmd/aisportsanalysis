@@ -4874,3 +4874,4 @@
 {"call_kind": "pregame", "credits": 3, "events": 13, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-24T18:11:25.510280Z", "regions": ["us"], "rows": 324, "sport_key": "basketball_nba", "stored": 262}
 {"events": 1, "kind": "peek", "next_check_utc": "2026-10-25T00:42:33.525354Z", "observed_utc": "2026-10-24T18:42:33.525354Z", "sport_key": "basketball_ncaab"}
 {"events": 1, "kind": "peek", "next_check_utc": "2026-10-25T00:42:33.525354Z", "observed_utc": "2026-10-24T18:42:33.525354Z", "sport_key": "icehockey_sweden_hockey_league"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-25T01:23:17.429777Z", "observed_utc": "2026-10-24T19:23:17.429777Z", "sport_key": "soccer_conmebol_copa_sudamericana"}
