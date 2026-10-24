@@ -3498,3 +3498,5 @@
 {"call_kind": "pregame", "credits": 3, "events": 6, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-24T06:12:30.475661Z", "regions": ["au"], "rows": 100, "sport_key": "aussierules_aflw", "stored": 94}
 {"call_kind": "inplay", "credits": 1, "events": 64, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-24T06:12:30.475661Z", "regions": ["us"], "rows": 505, "sport_key": "americanfootball_ncaaf", "stored": 482}
 {"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-24T06:12:30.475661Z", "regions": ["us"], "rows": 25, "sport_key": "soccer_australia_aleague", "stored": 24}
+{"commence_utc": "2026-10-24T08:15:00Z", "event_id": "f312e0eeeddb0669edbcc1c1cd2b0411", "kind": "phase", "observed_utc": "2026-10-24T06:17:52.788548Z", "phase": "t2h", "rows": 18, "sport_key": "aussierules_aflw"}
+{"call_kind": "pregame", "credits": 3, "events": 6, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-24T06:17:52.788548Z", "regions": ["au"], "rows": 100, "sport_key": "aussierules_aflw", "stored": 94}
