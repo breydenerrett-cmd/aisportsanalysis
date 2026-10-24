@@ -126,7 +126,12 @@ class TrainRoute(RouteCase):
         hound = self.hound()
         write_ledger(self.ledger, rows_for(hound["id"], MIXED))
         out = self.train(hound["id"], self.owner)
-        self.assertEqual((out["new"]["version_no"], out["mode"], out["changes"][0]["id"]), (2, "analysed", "drop_sport"))
+        # The test board has no candidates today, so the proposal may only loosen (never drop_sport): a hound that found nothing
+        # today is not narrowed. See training._default_plan.
+        self.assertEqual(out["new"]["version_no"], 2)
+        self.assertEqual(out["mode"], "loosen")
+        self.assertTrue(out["changes"], out)
+        self.assertTrue(all(c["direction"] == "loosen" for c in out["changes"]), out["changes"])
         self.assertIn("starts now", out["headline"])
         self.assertIs(out["paper_only"], True)
 
