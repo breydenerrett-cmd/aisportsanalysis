@@ -7943,3 +7943,118 @@ end-to-end confirmation (above).
 - 2026-10-23T19:26Z afternoon_slate: engine slate --date 2026-10-23 exit=0
 - 2026-10-23T19:26Z afternoon_slate: card publish --date 2026-10-23 exit=0
 - 2026-10-23T19:26Z afternoon_slate: engine slip --date 2026-10-23
+- 2026-10-23T19:47Z afternoon_slate: engine slate --date 2026-10-23 exit=0
+- 2026-10-23T19:47Z afternoon_slate: card publish --date 2026-10-23 exit=0
+- 2026-10-23T19:47Z afternoon_slate: engine slip --date 2026-10-23
+- 2026-10-23T20:34Z afternoon_slate: engine slate --date 2026-10-23 exit=0
+- 2026-10-23T20:34Z afternoon_slate: card publish --date 2026-10-23 exit=0
+- 2026-10-23T20:34Z afternoon_slate: engine slip --date 2026-10-23
+- 2026-10-23T20:55Z afternoon_slate: engine slate --date 2026-10-23 exit=0
+- 2026-10-23T20:55Z afternoon_slate: card publish --date 2026-10-23 exit=0
+- 2026-10-23T20:55Z afternoon_slate: engine slip --date 2026-10-23
+- 2026-10-23T21:20Z afternoon_slate: engine slate --date 2026-10-23 exit=0
+- 2026-10-23T21:20Z afternoon_slate: card publish --date 2026-10-23 exit=0
+- 2026-10-23T21:20Z afternoon_slate: engine slip --date 2026-10-23
+- 2026-10-23T21:50Z afternoon_slate: engine slate --date 2026-10-23 exit=0
+- 2026-10-23T21:50Z afternoon_slate: card publish --date 2026-10-23 exit=0
+- 2026-10-23T21:50Z afternoon_slate: engine slip --date 2026-10-23
+- 2026-10-23T22:33Z afternoon_slate: engine slate --date 2026-10-23 exit=0
+- 2026-10-23T22:33Z afternoon_slate: card publish --date 2026-10-23 exit=0
+- 2026-10-23T22:33Z afternoon_slate: engine slip --date 2026-10-23
+- 2026-10-23T22:56Z afternoon_slate: engine slate --date 2026-10-23 exit=0
+- 2026-10-23T22:56Z afternoon_slate: card publish --date 2026-10-23 exit=0
+- 2026-10-23T22:56Z afternoon_slate: engine slip --date 2026-10-23
+- 2026-10-23T23:23Z afternoon_slate: engine slate --date 2026-10-23 exit=0
+- 2026-10-23T23:23Z afternoon_slate: card publish --date 2026-10-23 exit=0
+- 2026-10-23T23:23Z afternoon_slate: engine slip --date 2026-10-23
+- 2026-10-24T00:00Z afternoon_slate: engine slate --date 2026-10-23 exit=0
+- 2026-10-24T00:00Z afternoon_slate: card publish --date 2026-10-23 exit=0
+- 2026-10-24T00:00Z afternoon_slate: engine slip --date 2026-10-23
+- 2026-10-24T00:08Z afternoon_slate: engine slate --date 2026-10-23 exit=0
+- 2026-10-24T00:08Z afternoon_slate: card publish --date 2026-10-23 exit=0
+- 2026-10-24T00:08Z afternoon_slate: engine slip --date 2026-10-23
+- 2026-10-24T00:53Z afternoon_slate: engine slate --date 2026-10-23 exit=0
+- 2026-10-24T00:53Z afternoon_slate: card publish --date 2026-10-23 exit=0
+- 2026-10-24T00:53Z afternoon_slate: engine slip --date 2026-10-23
+- 2026-10-24T01:30Z afternoon_slate: engine slate --date 2026-10-23 exit=0
+- 2026-10-24T01:30Z afternoon_slate: card publish --date 2026-10-23 exit=0
+- 2026-10-24T01:30Z afternoon_slate: engine slip --date 2026-10-23
+- 2026-10-24T01:55Z afternoon_slate: engine slate --date 2026-10-23 exit=0
+- 2026-10-24T01:55Z afternoon_slate: card publish --date 2026-10-23 exit=0
+- 2026-10-24T01:55Z afternoon_slate: engine slip --date 2026-10-23
+- 2026-10-24T02:15Z afternoon_slate: engine slate --date 2026-10-23 exit=0
+- 2026-10-24T02:15Z afternoon_slate: card publish --date 2026-10-23 exit=0
+- 2026-10-24T02:15Z afternoon_slate: engine slip --date 2026-10-23
+- 2026-10-24T02:58Z afternoon_slate: engine slate --date 2026-10-23 exit=0
+- 2026-10-24T02:58Z afternoon_slate: card publish --date 2026-10-23 exit=0
+- 2026-10-24T02:58Z afternoon_slate: engine slip --date 2026-10-23
+- 2026-10-24T10:16Z daily_loop: ingest 2026-10-10..2026-10-24 --game-types decisive exit=0
+- 2026-10-24T10:17Z daily_loop: standings catchup end=2026-10-24
+- 2026-10-24T10:17Z daily_loop: lineups+matchup_history date=2026-10-24
+- 2026-10-24T10:17Z daily_loop: pitcher splits date=2026-10-24
+- 2026-10-24T10:17Z daily_loop: pitch arsenals season=2026
+- 2026-10-24T10:17Z daily_loop: statcast --catchup exit=0
+- 2026-10-24T10:17Z daily_loop: gamekey --date 2026-10-23 --end 2026-10-24 exit=0
+- 2026-10-24T10:17Z daily_loop: gameflow --date 2026-10-23 exit=0
+- 2026-10-24T10:22Z daily_loop: engine slate --date 2026-10-24 exit=0
+- 2026-10-24T10:22Z daily_loop: engine slip --date 2026-10-24
+- 2026-10-24T10:22Z daily_loop: engine settle --date 2026-10-23 exit=0
+- 2026-10-24T10:22Z daily_loop: engine settle --recent exit=0
+- 2026-10-24T10:22Z daily_loop: card settle --recent exit=0
+- 2026-10-24T10:22Z daily_loop: card settle --rule all --recent exit=0
+- 2026-10-24T10:22Z daily_loop: nfl card settle --recent exit=0
+- 2026-10-24T10:24Z daily_loop: ufc data update
+- 2026-10-24T10:24Z daily_loop: nfl data update
+- 2026-10-24T10:24Z daily_loop: ufc autograde + settle 2026-10-23
+- 2026-10-24T10:24Z daily_loop: mlb value shadow settle --recent exit=0 (counts only)
+- 2026-10-24T10:24Z daily_loop: tennis discover
+- 2026-10-24T10:24Z daily_loop: tennis results --date 2026-10-23
+- 2026-10-24T10:24Z daily_loop: live settle (counts only)
+- 2026-10-24T10:24Z daily_loop: card calibration frozen 2026-09-15 (docs/CARD_CALIBRATION_FREEZE_2026-09-15.md), refit skipped
+- 2026-10-24T10:24Z daily_loop: eod --date 2026-10-23 exit=0
+- 2026-10-24T10:24Z daily_loop: postmortem --date 2026-10-23 exit=0
+- 2026-10-24T10:25Z daily_loop: train exit=0
+- 2026-10-24T10:25Z daily_loop: closing-audit exit=0
+- 2026-10-24T10:25Z daily_loop: calibration_drift_audit exit=1
+- 2026-10-24T10:25Z daily_loop: test_tier_ladder exit=1
+- 2026-10-24T10:25Z daily_loop: research-readiness exit=0
+- 2026-10-24T10:26Z daily_loop: prereg-clv exit=0
+- 2026-10-24T10:26Z daily_loop: display stores refreshed (report /tmp/display_refresh_report.json)
+- 2026-10-24T13:46Z daily_loop: ingest 2026-10-10..2026-10-24 --game-types decisive exit=0
+- 2026-10-24T13:47Z daily_loop: standings catchup end=2026-10-24
+- 2026-10-24T13:47Z daily_loop: lineups+matchup_history date=2026-10-24
+- 2026-10-24T13:47Z daily_loop: pitcher splits date=2026-10-24
+- 2026-10-24T13:47Z daily_loop: pitch arsenals season=2026
+- 2026-10-24T13:47Z daily_loop: statcast --catchup exit=0
+- 2026-10-24T13:47Z daily_loop: gamekey --date 2026-10-23 --end 2026-10-24 exit=0
+- 2026-10-24T13:47Z daily_loop: gameflow --date 2026-10-23 exit=0
+- 2026-10-24T13:52Z daily_loop: engine slate --date 2026-10-24 exit=0
+- 2026-10-24T13:52Z daily_loop: engine slip --date 2026-10-24
+- 2026-10-24T13:52Z daily_loop: engine settle --date 2026-10-23 exit=0
+- 2026-10-24T13:52Z daily_loop: engine settle --recent exit=0
+- 2026-10-24T13:52Z daily_loop: card settle --recent exit=0
+- 2026-10-24T13:52Z daily_loop: card settle --rule all --recent exit=0
+- 2026-10-24T13:52Z daily_loop: nfl card settle --recent exit=0
+- 2026-10-24T13:54Z daily_loop: ufc data update
+- 2026-10-24T13:54Z daily_loop: nfl data update
+- 2026-10-24T13:54Z daily_loop: ufc autograde + settle 2026-10-23
+- 2026-10-24T13:54Z daily_loop: mlb value shadow settle --recent exit=0 (counts only)
+- 2026-10-24T13:54Z daily_loop: tennis discover
+- 2026-10-24T13:54Z daily_loop: tennis results --date 2026-10-23
+- 2026-10-24T13:54Z daily_loop: live settle (counts only)
+- 2026-10-24T13:54Z daily_loop: card calibration frozen 2026-09-15 (docs/CARD_CALIBRATION_FREEZE_2026-09-15.md), refit skipped
+- 2026-10-24T13:54Z daily_loop: eod --date 2026-10-23 exit=0
+- 2026-10-24T13:54Z daily_loop: postmortem --date 2026-10-23 exit=0
+- 2026-10-24T13:55Z daily_loop: train exit=0
+- 2026-10-24T13:55Z daily_loop: closing-audit exit=0
+- 2026-10-24T13:55Z daily_loop: calibration_drift_audit exit=1
+- 2026-10-24T13:55Z daily_loop: test_tier_ladder exit=1
+- 2026-10-24T13:55Z daily_loop: research-readiness exit=0
+- 2026-10-24T13:56Z daily_loop: prereg-clv exit=0
+- 2026-10-24T13:56Z daily_loop: display stores refreshed (report /tmp/display_refresh_report.json)
+- 2026-10-24T15:18Z afternoon_slate: engine slate --date 2026-10-24 exit=0
+- 2026-10-24T15:18Z afternoon_slate: card publish --date 2026-10-24 exit=0
+- 2026-10-24T15:18Z afternoon_slate: engine slip --date 2026-10-24
+- 2026-10-24T16:01Z afternoon_slate: engine slate --date 2026-10-24 exit=0
+- 2026-10-24T16:01Z afternoon_slate: card publish --date 2026-10-24 exit=0
+- 2026-10-24T16:01Z afternoon_slate: engine slip --date 2026-10-24

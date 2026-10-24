@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-10-22 20:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-23 20:45Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **9** |
+| Days until 2026-10-31 | **8** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-22 (1:30 pm PT run): Thursday night Patriots at Bears brief published at 20:43Z, three passes (moneyline, spread, total); attempt 2 after a checker rejection.
-- Next brief: World Series Game 1, Rays at Brewers, Fri Oct 23 5:00 pm PT.
-- Production is up; deploys through 20:13Z succeeded; newest finished CI run green.
-- Billing is live in production (founding $14.99, standard $19.99).
+- 2026-10-23 (1:30 pm PT run): World Series Game 1 brief, Rays at Brewers, published before first pitch (5:00 pm PT); every market a pass.
+- Public sample stays on the graded Thursday night Patriots at Bears brief until Game 1 is graded.
+- Production is up; billing is live (founding $14.99, standard $19.99). Site odds were 19.5 hours old at 1:40 pm PT.
+- Daily loop on the default branch is still red; tests on the working branch are green.
 - Public MLB value picks remain paused. Sends 0, replies 0, testers 0.
 

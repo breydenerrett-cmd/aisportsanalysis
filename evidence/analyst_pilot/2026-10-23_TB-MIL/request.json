@@ -1,0 +1,425 @@
+{
+  "model": "claude-sonnet-5-5",
+  "max_tokens": 16000,
+  "system": "You are a baseball betting analyst. You write the analysis of one MLB game and make a call on every market the packet prices. You are an AI model and the reader knows it. Your work is published before the game, graded afterward, and shown next to its record whatever that record turns out to be. Write like a sharp human analyst talking to a smart friend: plain words, a point of view, no hype.\n\nTHE PACKET IS YOUR ONLY SOURCE\n1. Reason only from the packet. Use no outside knowledge of any team, player, injury, weather, standing or result, even if you are sure of it. If something matters and is not in the packet, say it is missing.\n2. A claim without a packet path is forbidden. Every reason has evidence: a list of {path, value}. A path names one value in the packet and starts at the packet's own top-level key. The value is copied exactly. Examples of real paths: markets.moneyline.options[0].best.price and sections.starters.values.home_sp_era. Never start a path with data. or packet.\n3. Every number you write in prose must appear in the packet, or be a price or probability you are yourself giving in a call. Do no arithmetic of your own on packet numbers in prose (no differences, sums or ratios); quote the packet's numbers. Do not write clock times.\n3a. The one exception to doing arithmetic is a calculation you declare. A number you work out yourself (a difference, a sum, a ratio, a percent change, the days between two dates, the chance a price implies, a count or an average) may appear in a reason, a case against or the summary only if that item lists it in `derived` as {value, unit, op, inputs, note}. `op` is one of difference, sum, ratio, percent_change, days_between, implied_probability, count, mean. `inputs` are packet paths, in order: difference is the first minus the second, ratio is the first over the second, percent_change is the change from the first to the second as a percent of the first, days_between is the calendar days between two dates in UTC (later minus earlier), implied_probability takes one American price, count takes one list. `unit` is what the value is measured in (days, runs, percent, and so on) and `note` says in plain words what it is. The checker recomputes every derived value from the packet, and a wrong one strikes the call. Put the summary's in `summary_derived`. An item with no calculated number has an empty `derived`.\n4. `missing` lists what is absent, stale or thin. Weigh it. A call that rests on something listed there is a PASS.\n\nTHE CALLS\n5. Make exactly one call for every entry in `slots`, in the same order, using its slot_id and its market. `selection` must be one of that slot's selections, written exactly as listed. The first selection is the lean: the side the books favour.\n6. Verdicts. TAKE: bet the lean (the first selection) at the price you name. TAKE_OTHER_SIDE: bet the other selection, the side the books do not favour. PASS: bet nothing in this market.\n7. PASS is the default. When the evidence is thin, or the packet gives you nothing about this market beyond its own price, PASS. Say plainly when the market is probably right, and what makes you think so.\n8. Never TAKE any bet at a price of -200 or worse, in any market (-200, -250, -325 and so on). PASS it, or if the other side is the one you like, take that.\n9. price and book: the quote you would take, copied from the selection's quotes in the packet. For a PASS you may give the best quote or null.\n10. fair_estimate: your own probability that the selection wins, between 0.01 and 0.99. The books' own de-vigged number is in the packet as fair_probability, and for props the repo model's number is in context. If you depart from the books by more than a few points, the reasons must show what the packet knows that the price does not. For a PASS you may give null.\n11. pass_price: the American price at which the selection stops being worth taking, which is the break-even price of your fair_estimate. On a PASS, the price at which you would start to take it, or null if no price would do.\n12. confidence: low, medium or high. High only when several independent packet facts agree and nothing relevant is in `missing`.\n13. what_would_change_it: one sentence naming a specific new fact that would flip the call, such as a lineup change or a scratch. If it names a price, that price is your pass_price.\n13a. case_against: for a TAKE or a TAKE_OTHER_SIDE, the strongest reason from the packet that this bet loses, written as {claim, evidence} and built like a reason. It must name a specific weakness in this bet, such as a number in the packet that points the other way, not general risk: \"anything can happen in baseball\" is not a case against. Cite at least one packet path, and quote only numbers that are in the packet. Argue it as hard as you would argue the other side. For a PASS it is null.\n\nTHE WORDS\n14. Never write: lock, guaranteed, free money, sure thing, can't lose, +EV. Never claim a profit, an edge you have, or certainty. No exclamation marks.\n14a. Everything a reader sees (the summary, every reason's claim, the case against and what_would_change_it) is read by a customer who has never heard of a packet. In those fields call the data \"the data\" or \"what we have\", never \"the packet\". The checker strikes the word \"packet\" there. Likewise never write \"repo\", \"repos\", \"repository\" or \"the repo model\": the probability the packet calls repo_model_probability is LineHound's own model, so say \"LineHound's own model\" (and \"the market\" for repo_market_probability). The checker strikes those words too. Evidence paths keep their own form.\n15. Do not recommend a stake size and do not describe anything as a bet you or we placed.\n\nTHE SUMMARY\n16. `summary` is the argument in 120 to 200 words of plain prose, one or two paragraphs, no lists, no markdown. Say where you lean and why, where you pass, what the market probably has right, and which missing inputs matter. A voice like: \"Even though TB is -127, I like it: the starter has the better numbers over his last starts and the price is close to a coin flip.\" Only with facts that are actually in the packet.\n\nReply with one JSON object that matches the schema and nothing else.",
+  "output_config": {
+    "format": {
+      "type": "json_schema",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "summary",
+          "calls",
+          "summary_derived"
+        ],
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "calls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "slot_id",
+                "market",
+                "selection",
+                "verdict",
+                "price",
+                "book",
+                "fair_estimate",
+                "confidence",
+                "reasons",
+                "pass_price",
+                "what_would_change_it",
+                "case_against"
+              ],
+              "properties": {
+                "slot_id": {
+                  "type": "string"
+                },
+                "market": {
+                  "type": "string"
+                },
+                "selection": {
+                  "type": "string"
+                },
+                "verdict": {
+                  "type": "string",
+                  "enum": [
+                    "TAKE",
+                    "PASS",
+                    "TAKE_OTHER_SIDE"
+                  ]
+                },
+                "price": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "book": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "fair_estimate": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "confidence": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high"
+                  ]
+                },
+                "reasons": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "claim",
+                      "evidence",
+                      "derived"
+                    ],
+                    "properties": {
+                      "claim": {
+                        "type": "string"
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "path",
+                            "value"
+                          ],
+                          "properties": {
+                            "path": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "derived": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "value",
+                            "unit",
+                            "op",
+                            "inputs",
+                            "note"
+                          ],
+                          "properties": {
+                            "value": {
+                              "type": "number"
+                            },
+                            "unit": {
+                              "type": "string",
+                              "enum": [
+                                "books",
+                                "days",
+                                "degrees",
+                                "entries",
+                                "games",
+                                "hits",
+                                "innings",
+                                "items",
+                                "mph",
+                                "percent",
+                                "percentage points",
+                                "players",
+                                "points",
+                                "probability",
+                                "quotes",
+                                "ratio",
+                                "runs",
+                                "strikeouts",
+                                "times",
+                                "units",
+                                "wins"
+                              ]
+                            },
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "difference",
+                                "sum",
+                                "mean",
+                                "ratio",
+                                "percent_change",
+                                "days_between",
+                                "implied_probability",
+                                "count"
+                              ]
+                            },
+                            "inputs": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "note": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "pass_price": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "what_would_change_it": {
+                  "type": "string"
+                },
+                "case_against": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "claim",
+                        "evidence",
+                        "derived"
+                      ],
+                      "properties": {
+                        "claim": {
+                          "type": "string"
+                        },
+                        "evidence": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "path",
+                              "value"
+                            ],
+                            "properties": {
+                              "path": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "boolean"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "derived": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "value",
+                              "unit",
+                              "op",
+                              "inputs",
+                              "note"
+                            ],
+                            "properties": {
+                              "value": {
+                                "type": "number"
+                              },
+                              "unit": {
+                                "type": "string",
+                                "enum": [
+                                  "books",
+                                  "days",
+                                  "degrees",
+                                  "entries",
+                                  "games",
+                                  "hits",
+                                  "innings",
+                                  "items",
+                                  "mph",
+                                  "percent",
+                                  "percentage points",
+                                  "players",
+                                  "points",
+                                  "probability",
+                                  "quotes",
+                                  "ratio",
+                                  "runs",
+                                  "strikeouts",
+                                  "times",
+                                  "units",
+                                  "wins"
+                                ]
+                              },
+                              "op": {
+                                "type": "string",
+                                "enum": [
+                                  "difference",
+                                  "sum",
+                                  "mean",
+                                  "ratio",
+                                  "percent_change",
+                                  "days_between",
+                                  "implied_probability",
+                                  "count"
+                                ]
+                              },
+                              "inputs": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "note": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "summary_derived": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "value",
+                "unit",
+                "op",
+                "inputs",
+                "note"
+              ],
+              "properties": {
+                "value": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "books",
+                    "days",
+                    "degrees",
+                    "entries",
+                    "games",
+                    "hits",
+                    "innings",
+                    "items",
+                    "mph",
+                    "percent",
+                    "percentage points",
+                    "players",
+                    "points",
+                    "probability",
+                    "quotes",
+                    "ratio",
+                    "runs",
+                    "strikeouts",
+                    "times",
+                    "units",
+                    "wins"
+                  ]
+                },
+                "op": {
+                  "type": "string",
+                  "enum": [
+                    "difference",
+                    "sum",
+                    "mean",
+                    "ratio",
+                    "percent_change",
+                    "days_between",
+                    "implied_probability",
+                    "count"
+                  ]
+                },
+                "inputs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "note": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "effort": "medium"
+  },
+  "messages": [
+    {
+      "role": "user",
+      "content": "PACKET (JSON). Paths in your evidence start at its top-level keys.\n{\"built_at\":\"2026-10-23T20:41:53Z\",\"game\":{\"away\":\"TB\",\"date\":\"2026-10-23\",\"detailed_state\":\"Pre-Game\",\"first_pitch_utc\":\"2026-10-24T00:00:00Z\",\"game_id\":\"TB-MIL-2026-10-23-1\",\"game_pk\":849805,\"game_type\":\"W\",\"home\":\"MIL\",\"probables\":{\"away\":{\"name\":\"Nick Martinez\"},\"home\":{\"name\":\"Jacob Misiorowski\"}},\"state\":\"pending\",\"venue\":\"American Family Field\"},\"limits\":[\"Only the most-quoted line of each market is analyzed; alternate run lines and alternate totals are not.\",\"First-five-inning markets are not analyzed.\",\"Player props are capped per game; the contracts left out are counted in `missing`.\",\"Every quote is the newest one captured before this packet was built, with its capture time; nothing was captured after it.\"],\"markets\":{\"moneyline\":{\"as_of\":\"2026-10-23T20:00:50Z\",\"label\":\"TB at MIL moneyline\",\"lean\":\"MIL\",\"market\":\"moneyline\",\"options\":[{\"best\":{\"book\":\"lowvig\",\"price\":-180},\"books\":11,\"fair_probability\":0.6301,\"line\":null,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-190},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-180},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-205},{\"book\":\"betus\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-182},{\"book\":\"bovada\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-197},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-193},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-190},{\"book\":\"fanduel\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-190},{\"book\":\"lowvig\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-180},{\"book\":\"mybookieag\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-191},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-190}],\"selection\":\"MIL\",\"side\":\"home\"},{\"best\":{\"book\":\"betrivers\",\"price\":170},\"books\":11,\"fair_probability\":0.3699,\"line\":null,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":155},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":162},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":170},{\"book\":\"betus\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":160},{\"book\":\"bovada\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":162},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":159},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":155},{\"book\":\"fanduel\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":160},{\"book\":\"lowvig\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":162},{\"book\":\"mybookieag\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":161},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":157}],\"selection\":\"TB\",\"side\":\"away\"}],\"slot_id\":\"moneyline\"},\"prop_01\":{\"as_of\":\"2026-10-23T04:01:14Z\",\"context\":{\"expected_pa\":2.9,\"player\":\"Richie Palacios\",\"repo_market_probability\":0.7399,\"repo_model_probability\":0.7015,\"repo_model_side\":\"under\",\"season_games\":30,\"stat\":\"batter_runs_scored\"},\"label\":\"Richie Palacios runs scored\",\"lean\":\"Under 0.5\",\"market\":\"prop\",\"options\":[{\"best\":{\"book\":\"betmgm\",\"price\":-350},\"books\":2,\"fair_probability\":0.7399,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-350},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-399}],\"selection\":\"Under 0.5\",\"side\":\"under\"},{\"best\":{\"book\":\"draftkings\",\"price\":272},\"books\":2,\"fair_probability\":0.2601,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":250},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":272}],\"selection\":\"Over 0.5\",\"side\":\"over\"}],\"slot_id\":\"prop_01\"},\"prop_02\":{\"as_of\":\"2026-10-23T04:01:14Z\",\"context\":{\"batting_slot\":8,\"expected_pa\":3.623,\"player\":\"Sal Frelick\",\"repo_market_probability\":0.6905,\"repo_model_probability\":0.701,\"repo_model_side\":\"under\",\"season_games\":23,\"stat\":\"batter_runs_scored\"},\"label\":\"Sal Frelick runs scored\",\"lean\":\"Under 0.5\",\"market\":\"prop\",\"options\":[{\"best\":{\"book\":\"betmgm\",\"price\":-275},\"books\":2,\"fair_probability\":0.6905,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-275},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-291}],\"selection\":\"Under 0.5\",\"side\":\"under\"},{\"best\":{\"book\":\"draftkings\",\"price\":204},\"books\":2,\"fair_probability\":0.3095,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":200},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":204}],\"selection\":\"Over 0.5\",\"side\":\"over\"}],\"slot_id\":\"prop_02\"},\"prop_03\":{\"as_of\":\"2026-10-23T04:01:14Z\",\"context\":{\"batting_slot\":5,\"expected_pa\":4.105,\"player\":\"Liam Hicks\",\"repo_market_probability\":0.7111,\"repo_model_probability\":0.6851,\"repo_model_side\":\"under\",\"season_games\":30,\"stat\":\"batter_runs_scored\"},\"label\":\"Liam Hicks runs scored\",\"lean\":\"Under 0.5\",\"market\":\"prop\",\"options\":[{\"best\":{\"book\":\"betmgm\",\"price\":-300},\"books\":2,\"fair_probability\":0.7111,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-300},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-343}],\"selection\":\"Under 0.5\",\"side\":\"under\"},{\"best\":{\"book\":\"draftkings\",\"price\":237},\"books\":2,\"fair_probability\":0.2889,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":210},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":237}],\"selection\":\"Over 0.5\",\"side\":\"over\"}],\"slot_id\":\"prop_03\"},\"prop_04\":{\"as_of\":\"2026-10-23T04:01:14Z\",\"context\":{\"batting_slot\":3,\"expected_pa\":4.326,\"player\":\"Chandler Simpson\",\"repo_market_probability\":0.6361,\"repo_model_probability\":0.6809,\"repo_model_side\":\"over\",\"season_games\":32,\"season_rate\":0.6875,\"stat\":\"batter_total_bases\"},\"label\":\"Chandler Simpson total bases\",\"lean\":\"Over 0.5\",\"market\":\"prop\",\"options\":[{\"best\":{\"book\":\"betmgm\",\"price\":-210},\"books\":2,\"fair_probability\":0.6361,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-210},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-213}],\"selection\":\"Over 0.5\",\"side\":\"over\"},{\"best\":{\"book\":\"betonlineag\",\"price\":160},\"books\":2,\"fair_probability\":0.3639,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":155},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":160}],\"selection\":\"Under 0.5\",\"side\":\"under\"}],\"slot_id\":\"prop_04\"},\"prop_05\":{\"as_of\":\"2026-10-23T04:01:14Z\",\"context\":{\"batting_slot\":1,\"expected_pa\":4.467,\"player\":\"Jackson Chourio\",\"repo_market_probability\":0.6774,\"repo_model_probability\":0.6649,\"repo_model_side\":\"over\",\"season_games\":34,\"season_rate\":0.7059,\"stat\":\"batter_hits\"},\"label\":\"Jackson Chourio hits\",\"lean\":\"Over 0.5\",\"market\":\"prop\",\"options\":[{\"best\":{\"book\":\"draftkings\",\"price\":-248},\"books\":4,\"fair_probability\":0.6774,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-275},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-263},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-265},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-248}],\"selection\":\"Over 0.5\",\"side\":\"over\"},{\"best\":{\"book\":\"betmgm\",\"price\":195},\"books\":3,\"fair_probability\":0.3226,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":195},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":193},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":183}],\"selection\":\"Under 0.5\",\"side\":\"under\"}],\"slot_id\":\"prop_05\"},\"prop_06\":{\"as_of\":\"2026-10-23T04:01:14Z\",\"context\":{\"batting_slot\":7,\"expected_pa\":3.753,\"player\":\"Cooper Pratt\",\"repo_market_probability\":0.6848,\"repo_model_probability\":0.6642,\"repo_model_side\":\"under\",\"season_games\":30,\"stat\":\"batter_runs_scored\"},\"label\":\"Cooper Pratt runs scored\",\"lean\":\"Under 0.5\",\"market\":\"prop\",\"options\":[{\"best\":{\"book\":\"draftkings\",\"price\":-274},\"books\":2,\"fair_probability\":0.6848,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-275},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-274}],\"selection\":\"Under 0.5\",\"side\":\"under\"},{\"best\":{\"book\":\"betmgm\",\"price\":200},\"books\":2,\"fair_probability\":0.3152,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":200},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":193}],\"selection\":\"Over 0.5\",\"side\":\"over\"}],\"slot_id\":\"prop_06\"},\"prop_07\":{\"as_of\":\"2026-10-23T04:01:14Z\",\"context\":{\"batting_slot\":2,\"expected_pa\":4.444,\"player\":\"Jonathan Aranda\",\"repo_market_probability\":0.5606,\"repo_model_probability\":0.6594,\"repo_model_side\":\"over\",\"season_games\":32,\"season_rate\":0.6562,\"stat\":\"batter_total_bases\"},\"label\":\"Jonathan Aranda total bases\",\"lean\":\"Over 0.5\",\"market\":\"prop\",\"options\":[{\"best\":{\"book\":\"williamhill_us\",\"price\":-148},\"books\":3,\"fair_probability\":0.5606,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-150},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-152},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-148}],\"selection\":\"Over 0.5\",\"side\":\"over\"},{\"best\":{\"book\":\"betonlineag\",\"price\":117},\"books\":3,\"fair_probability\":0.4394,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":110},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":117},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":111}],\"selection\":\"Under 0.5\",\"side\":\"under\"}],\"slot_id\":\"prop_07\"},\"prop_08\":{\"as_of\":\"2026-10-23T04:01:14Z\",\"context\":{\"batting_slot\":9,\"expected_pa\":3.461,\"player\":\"Taylor Walls\",\"repo_market_probability\":0.7534,\"repo_model_probability\":0.6589,\"repo_model_side\":\"under\",\"season_games\":22,\"stat\":\"batter_runs_scored\"},\"label\":\"Taylor Walls runs scored\",\"lean\":\"Under 0.5\",\"market\":\"prop\",\"options\":[{\"best\":{\"book\":\"betmgm\",\"price\":-400},\"books\":2,\"fair_probability\":0.7534,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-400},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-421}],\"selection\":\"Under 0.5\",\"side\":\"under\"},{\"best\":{\"book\":\"draftkings\",\"price\":285},\"books\":2,\"fair_probability\":0.2466,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":275},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":285}],\"selection\":\"Over 0.5\",\"side\":\"over\"}],\"slot_id\":\"prop_08\"},\"prop_09\":{\"as_of\":\"2026-10-23T04:01:14Z\",\"context\":{\"batting_slot\":4,\"expected_pa\":4.234,\"player\":\"Junior Caminero\",\"repo_market_probability\":0.5889,\"repo_model_probability\":0.6548,\"repo_model_side\":\"over\",\"season_games\":36,\"season_rate\":0.7222,\"stat\":\"batter_total_bases\"},\"label\":\"Junior Caminero total bases\",\"lean\":\"Over 0.5\",\"market\":\"prop\",\"options\":[{\"best\":{\"book\":\"betmgm\",\"price\":-165},\"books\":3,\"fair_probability\":0.5889,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-165},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-167},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-180}],\"selection\":\"Over 0.5\",\"side\":\"over\"},{\"best\":{\"book\":\"williamhill_us\",\"price\":130},\"books\":3,\"fair_probability\":0.4111,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":125},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":127},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":130}],\"selection\":\"Under 0.5\",\"side\":\"under\"}],\"slot_id\":\"prop_09\"},\"prop_10\":{\"as_of\":\"2026-10-23T04:01:14Z\",\"context\":{\"batting_slot\":3,\"expected_pa\":4.326,\"player\":\"Chandler Simpson\",\"repo_market_probability\":0.6376,\"repo_model_probability\":0.6474,\"repo_model_side\":\"over\",\"season_games\":32,\"season_rate\":0.6875,\"stat\":\"batter_hits\"},\"label\":\"Chandler Simpson hits\",\"lean\":\"Over 0.5\",\"market\":\"prop\",\"options\":[{\"best\":{\"book\":\"betonlineag\",\"price\":-204},\"books\":4,\"fair_probability\":0.6376,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-210},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-204},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-225},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-223}],\"selection\":\"Over 0.5\",\"side\":\"over\"},{\"best\":{\"book\":\"draftkings\",\"price\":166},\"books\":3,\"fair_probability\":0.3624,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":155},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":156},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":166}],\"selection\":\"Under 0.5\",\"side\":\"under\"}],\"slot_id\":\"prop_10\"},\"prop_11\":{\"as_of\":\"2026-10-23T04:01:14Z\",\"context\":{\"batting_slot\":7,\"expected_pa\":3.753,\"player\":\"Cooper Pratt\",\"repo_market_probability\":0.5599,\"repo_model_probability\":0.6415,\"repo_model_side\":\"over\",\"season_games\":30,\"season_rate\":0.7,\"stat\":\"batter_total_bases\"},\"label\":\"Cooper Pratt total bases\",\"lean\":\"Over 0.5\",\"market\":\"prop\",\"options\":[{\"best\":{\"book\":\"williamhill_us\",\"price\":-145},\"books\":3,\"fair_probability\":0.5599,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-155},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-147},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-145}],\"selection\":\"Over 0.5\",\"side\":\"over\"},{\"best\":{\"book\":\"betmgm\",\"price\":115},\"books\":3,\"fair_probability\":0.4401,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":115},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":114},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":109}],\"selection\":\"Under 0.5\",\"side\":\"under\"}],\"slot_id\":\"prop_11\"},\"prop_12\":{\"as_of\":\"2026-10-23T04:01:14Z\",\"context\":{\"batting_slot\":4,\"expected_pa\":4.234,\"player\":\"William Contreras\",\"repo_market_probability\":0.6413,\"repo_model_probability\":0.6382,\"repo_model_side\":\"over\",\"season_games\":29,\"season_rate\":0.8276,\"stat\":\"batter_hits\"},\"label\":\"William Contreras hits\",\"lean\":\"Over 0.5\",\"market\":\"prop\",\"options\":[{\"best\":{\"book\":\"draftkings\",\"price\":-195},\"books\":4,\"fair_probability\":0.6413,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-235},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-222},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-235},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-195}],\"selection\":\"Over 0.5\",\"side\":\"over\"},{\"best\":{\"book\":\"betmgm\",\"price\":175},\"books\":3,\"fair_probability\":0.3587,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":175},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":166},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":145}],\"selection\":\"Under 0.5\",\"side\":\"under\"}],\"slot_id\":\"prop_12\"},\"prop_13\":{\"as_of\":\"2026-10-23T04:01:14Z\",\"context\":{\"batting_slot\":5,\"expected_pa\":4.105,\"player\":\"Liam Hicks\",\"repo_market_probability\":0.5411,\"repo_model_probability\":0.6376,\"repo_model_side\":\"over\",\"season_games\":30,\"season_rate\":0.5,\"stat\":\"batter_total_bases\"},\"label\":\"Liam Hicks total bases\",\"lean\":\"Over 0.5\",\"market\":\"prop\",\"options\":[{\"best\":{\"book\":\"betonlineag\",\"price\":-135},\"books\":3,\"fair_probability\":0.5411,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-140},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-135},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-136}],\"selection\":\"Over 0.5\",\"side\":\"over\"},{\"best\":{\"book\":\"betonlineag\",\"price\":105},\"books\":3,\"fair_probability\":0.4589,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":105},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":105},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":102}],\"selection\":\"Under 0.5\",\"side\":\"under\"}],\"slot_id\":\"prop_13\"},\"prop_14\":{\"as_of\":\"2026-10-23T04:01:14Z\",\"context\":{\"batting_slot\":9,\"expected_pa\":3.461,\"player\":\"David Hamilton\",\"repo_market_probability\":0.7024,\"repo_model_probability\":0.637,\"repo_model_side\":\"under\",\"season_games\":23,\"stat\":\"batter_runs_scored\"},\"label\":\"David Hamilton runs scored\",\"lean\":\"Under 0.5\",\"market\":\"prop\",\"options\":[{\"best\":{\"book\":\"betmgm\",\"price\":-275},\"books\":2,\"fair_probability\":0.7024,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-275},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-333}],\"selection\":\"Under 0.5\",\"side\":\"under\"},{\"best\":{\"book\":\"draftkings\",\"price\":230},\"books\":2,\"fair_probability\":0.2976,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":200},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":230}],\"selection\":\"Over 0.5\",\"side\":\"over\"}],\"slot_id\":\"prop_14\"},\"prop_15\":{\"as_of\":\"2026-10-23T04:01:14Z\",\"context\":{\"batting_slot\":3,\"expected_pa\":4.326,\"player\":\"Christian Yelich\",\"repo_market_probability\":0.5848,\"repo_model_probability\":0.6369,\"repo_model_side\":\"over\",\"season_games\":30,\"season_rate\":0.6333,\"stat\":\"batter_total_bases\"},\"label\":\"Christian Yelich total bases\",\"lean\":\"Over 0.5\",\"market\":\"prop\",\"options\":[{\"best\":{\"book\":\"williamhill_us\",\"price\":-162},\"books\":3,\"fair_probability\":0.5848,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-175},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-164},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-162}],\"selection\":\"Over 0.5\",\"side\":\"over\"},{\"best\":{\"book\":\"betmgm\",\"price\":130},\"books\":3,\"fair_probability\":0.4152,\"line\":0.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":130},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":125},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":121}],\"selection\":\"Under 0.5\",\"side\":\"under\"}],\"slot_id\":\"prop_15\"},\"prop_16\":{\"as_of\":\"2026-10-23T04:01:14Z\",\"context\":{\"batting_slot\":3,\"expected_pa\":4.326,\"player\":\"Chandler Simpson\",\"repo_market_probability\":0.6649,\"repo_model_probability\":0.6326,\"repo_model_side\":\"under\",\"season_games\":32,\"season_rate\":0.3438,\"stat\":\"batter_total_bases\"},\"label\":\"Chandler Simpson total bases\",\"lean\":\"Under 1.5\",\"market\":\"prop\",\"options\":[{\"best\":{\"book\":\"draftkings\",\"price\":-219},\"books\":3,\"fair_probability\":0.6649,\"line\":1.5,\"quotes\":[{\"book\":\"bovada\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-280},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-219},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":-240}],\"selection\":\"Under 1.5\",\"side\":\"under\"},{\"best\":{\"book\":\"bovada\",\"price\":205},\"books\":3,\"fair_probability\":0.3351,\"line\":1.5,\"quotes\":[{\"book\":\"bovada\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":205},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":163},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T04:01:14Z\",\"price\":174}],\"selection\":\"Over 1.5\",\"side\":\"over\"}],\"slot_id\":\"prop_16\"},\"run_line\":{\"as_of\":\"2026-10-23T20:00:50Z\",\"label\":\"TB at MIL run line\",\"lean\":\"TB +1.5\",\"market\":\"run_line\",\"options\":[{\"best\":{\"book\":\"betrivers\",\"price\":-141},\"books\":11,\"fair_probability\":0.5698,\"line\":1.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-150},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-144},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-141},{\"book\":\"betus\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-150},{\"book\":\"bovada\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-145},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-149},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-150},{\"book\":\"fanduel\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-144},{\"book\":\"lowvig\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-142},{\"book\":\"mybookieag\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-144},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-145}],\"selection\":\"TB +1.5\",\"side\":\"away\"},{\"best\":{\"book\":\"betus\",\"price\":130},\"books\":11,\"fair_probability\":0.4302,\"line\":-1.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":125},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":124},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":115},{\"book\":\"betus\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":130},{\"book\":\"bovada\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":125},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":123},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":125},{\"book\":\"fanduel\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":120},{\"book\":\"lowvig\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":126},{\"book\":\"mybookieag\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":122},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":122}],\"selection\":\"MIL -1.5\",\"side\":\"home\"}],\"slot_id\":\"run_line\"},\"total\":{\"as_of\":\"2026-10-23T20:00:50Z\",\"label\":\"TB at MIL game total runs\",\"lean\":\"Over 6.5\",\"market\":\"total\",\"options\":[{\"best\":{\"book\":\"betrivers\",\"price\":-106},\"books\":11,\"fair_probability\":0.5075,\"line\":6.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-115},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-115},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-106},{\"book\":\"betus\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-115},{\"book\":\"bovada\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-120},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-115},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-115},{\"book\":\"fanduel\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-110},{\"book\":\"lowvig\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-113},{\"book\":\"mybookieag\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-115},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-107}],\"selection\":\"Over 6.5\",\"side\":\"over\"},{\"best\":{\"book\":\"bovada\",\"price\":100},\"books\":11,\"fair_probability\":0.4925,\"line\":6.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-105},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-105},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-115},{\"book\":\"betus\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-105},{\"book\":\"bovada\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":100},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-105},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-105},{\"book\":\"fanduel\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-110},{\"book\":\"lowvig\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-102},{\"book\":\"mybookieag\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-106},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-23T20:00:50Z\",\"price\":-112}],\"selection\":\"Under 6.5\",\"side\":\"under\"}],\"slot_id\":\"total\"}},\"missing\":[{\"item\":\"bullpen.home\",\"kind\":\"absent\",\"reason\":\"no reliever appearances recorded for the home club in the window\"},{\"item\":\"news\",\"kind\":\"absent\",\"reason\":\"no injured-list moves, call-ups or trades for either club in the last 10 days\"},{\"item\":\"prop_prices\",\"kind\":\"stale\",\"reason\":\"the newest player-prop quote is 1000 minutes old\"},{\"item\":\"props\",\"kind\":\"thin\",\"reason\":\"142 player props were priced and 16 analyzed: 29 player props had fewer than 2 books quoting them and 97 were left out by the limit of 16 props per game\"},{\"item\":\"standings\",\"kind\":\"absent\",\"reason\":\"no standings snapshot stored for 2026-10-23\"},{\"item\":\"starters\",\"kind\":\"stale\",\"reason\":\"starters stats run only through 2026-10-19, 4 days before the game\"},{\"item\":\"team_totals\",\"kind\":\"absent\",\"reason\":\"no team-total prices were captured for this game\"},{\"item\":\"teams\",\"kind\":\"stale\",\"reason\":\"teams stats run only through 2026-10-19, 4 days before the game\"}],\"packet_version\":\"analyst_packet_v1\",\"sections\":{\"arsenals\":{\"as_of\":\"2026-10-23T20:42:14Z\",\"as_of_basis\":\"when the game payload was built\",\"values\":{\"away\":[{\"est_woba\":0.336,\"hard_hit_pct\":37.5,\"k_pct\":17.3,\"pa\":243.0,\"pitch\":\"Sinker\",\"pitcher\":\"Martinez, Nick\",\"usage_pct\":31.7,\"whiff_pct\":9.3,\"woba\":0.315},{\"est_woba\":0.241,\"hard_hit_pct\":23.2,\"k_pct\":20.3,\"pa\":187.0,\"pitch\":\"Changeup\",\"pitcher\":\"Martinez, Nick\",\"usage_pct\":25.8,\"whiff_pct\":30.7,\"woba\":0.231},{\"est_woba\":0.314,\"hard_hit_pct\":30.3,\"k_pct\":7.1,\"pa\":170.0,\"pitch\":\"Cutter\",\"pitcher\":\"Martinez, Nick\",\"usage_pct\":22.0,\"whiff_pct\":13.0,\"woba\":0.283},{\"est_woba\":0.307,\"hard_hit_pct\":43.3,\"k_pct\":18.7,\"pa\":91.0,\"pitch\":\"4-Seam Fastball\",\"pitcher\":\"Martinez, Nick\",\"usage_pct\":12.6,\"whiff_pct\":16.6,\"woba\":0.344}],\"home\":[{\"est_woba\":0.23,\"hard_hit_pct\":39.4,\"k_pct\":43.6,\"pa\":381.0,\"pitch\":\"4-Seam Fastball\",\"pitcher\":\"Misiorowski, Jacob\",\"usage_pct\":63.4,\"whiff_pct\":40.2,\"woba\":0.243},{\"est_woba\":0.26,\"hard_hit_pct\":31.4,\"k_pct\":17.2,\"pa\":93.0,\"pitch\":\"Cutter\",\"pitcher\":\"Misiorowski, Jacob\",\"usage_pct\":14.0,\"whiff_pct\":20.9,\"woba\":0.214},{\"est_woba\":0.237,\"hard_hit_pct\":28.6,\"k_pct\":26.4,\"pa\":91.0,\"pitch\":\"Slider\",\"pitcher\":\"Misiorowski, Jacob\",\"usage_pct\":10.8,\"whiff_pct\":35.3,\"woba\":0.251},{\"est_woba\":0.166,\"hard_hit_pct\":19.0,\"k_pct\":46.7,\"pa\":92.0,\"pitch\":\"Curveball\",\"pitcher\":\"Misiorowski, Jacob\",\"usage_pct\":10.7,\"whiff_pct\":43.9,\"woba\":0.141}]}},\"bullpen\":{\"as_of\":\"2026-10-23\",\"as_of_basis\":\"newest stamp inside the section\",\"values\":{\"MIL\":{\"as_of\":\"2026-10-23\",\"reliever_count\":0,\"relievers\":[],\"team\":\"MIL\",\"total_innings\":0,\"window_days\":7},\"TB\":{\"as_of\":\"2026-10-23\",\"reliever_count\":6,\"relievers\":[{\"appearances\":[{\"date\":\"2026-10-19\",\"days_ago\":4,\"innings\":1.0,\"pitches\":9},{\"date\":\"2026-10-18\",\"days_ago\":5,\"innings\":1.0,\"pitches\":14},{\"date\":\"2026-10-17\",\"days_ago\":6,\"innings\":1.0,\"pitches\":12}],\"availability\":\"available\",\"availability_reason\":\"last pitched 4 days ago\",\"innings\":3.0,\"name\":\"Bryan Baker\",\"pitches\":35,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-10-19\",\"days_ago\":4,\"innings\":1.667,\"pitches\":17},{\"date\":\"2026-10-18\",\"days_ago\":5,\"innings\":0.667,\"pitches\":10},{\"date\":\"2026-10-17\",\"days_ago\":6,\"innings\":0.333,\"pitches\":4}],\"availability\":\"available\",\"availability_reason\":\"last pitched 4 days ago\",\"innings\":2.67,\"name\":\"Cam Booser\",\"pitches\":31,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-10-19\",\"days_ago\":4,\"innings\":0.0,\"pitches\":12},{\"date\":\"2026-10-17\",\"days_ago\":6,\"innings\":1.0,\"pitches\":29}],\"availability\":\"available\",\"availability_reason\":\"last pitched 4 days ago\",\"innings\":1.0,\"name\":\"Ian Seymour\",\"pitches\":41,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-10-19\",\"days_ago\":4,\"innings\":0.333,\"pitches\":3},{\"date\":\"2026-10-17\",\"days_ago\":6,\"innings\":0.667,\"pitches\":16}],\"availability\":\"available\",\"availability_reason\":\"last pitched 4 days ago\",\"innings\":1.0,\"name\":\"Kevin Kelly\",\"pitches\":19,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-10-19\",\"days_ago\":4,\"innings\":0.667,\"pitches\":11},{\"date\":\"2026-10-18\",\"days_ago\":5,\"innings\":0.333,\"pitches\":5}],\"availability\":\"available\",\"availability_reason\":\"last pitched 4 days ago\",\"innings\":1.0,\"name\":\"Tyler Wells\",\"pitches\":16,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-10-17\",\"days_ago\":6,\"innings\":0.667,\"pitches\":9}],\"availability\":\"available\",\"availability_reason\":\"last pitched 6 days ago\",\"innings\":0.67,\"name\":\"Freddy Peralta\",\"pitches\":9,\"pitches_known\":true}],\"team\":\"TB\",\"total_innings\":9.34,\"window_days\":7}}},\"lineups\":{\"as_of\":\"2026-10-23T20:42:14Z\",\"as_of_basis\":\"when the game payload was built\",\"values\":{\"away\":{\"batters\":[{\"name\":\"Yandy D\\u00edaz\",\"order\":1,\"position\":\"DH\"},{\"name\":\"Jonathan Aranda\",\"order\":2,\"position\":\"1B\"},{\"name\":\"Chandler Simpson\",\"order\":3,\"position\":\"LF\"},{\"name\":\"Junior Caminero\",\"order\":4,\"position\":\"3B\"},{\"name\":\"Liam Hicks\",\"order\":5,\"position\":\"C\"},{\"name\":\"Jonny DeLuca\",\"order\":6,\"position\":\"CF\"},{\"name\":\"Victor Mesa Jr.\",\"order\":7,\"position\":\"RF\"},{\"name\":\"Ben Williamson\",\"order\":8,\"position\":\"2B\"},{\"name\":\"Taylor Walls\",\"order\":9,\"position\":\"SS\"}],\"faces_starter_throwing\":\"R\",\"handedness\":{\"L\":4,\"R\":4,\"S\":1,\"known\":9,\"unknown\":0},\"platoon_advantage\":{\"advantaged\":5,\"counts\":{\"L\":4,\"R\":4,\"S\":1,\"known\":9,\"unknown\":0},\"known\":9,\"reason\":null,\"share\":0.556}},\"home\":{\"batters\":[{\"name\":\"Jackson Chourio\",\"order\":1,\"position\":\"LF\"},{\"name\":\"Jake Bauers\",\"order\":2,\"position\":\"1B\"},{\"name\":\"Christian Yelich\",\"order\":3,\"position\":\"DH\"},{\"name\":\"William Contreras\",\"order\":4,\"position\":\"C\"},{\"name\":\"Brice Turang\",\"order\":5,\"position\":\"2B\"},{\"name\":\"Garrett Mitchell\",\"order\":6,\"position\":\"CF\"},{\"name\":\"Cooper Pratt\",\"order\":7,\"position\":\"SS\"},{\"name\":\"Sal Frelick\",\"order\":8,\"position\":\"RF\"},{\"name\":\"David Hamilton\",\"order\":9,\"position\":\"3B\"}],\"faces_starter_throwing\":\"R\",\"handedness\":{\"L\":6,\"R\":3,\"S\":0,\"known\":9,\"unknown\":0},\"platoon_advantage\":{\"advantaged\":6,\"counts\":{\"L\":6,\"R\":3,\"S\":0,\"known\":9,\"unknown\":0},\"known\":9,\"reason\":null,\"share\":0.667}}}},\"matchup_depth\":{\"as_of\":\"2026-10-23T20:42:14Z\",\"as_of_basis\":\"when the game payload was built\",\"values\":{\"away\":{\"concentration\":{\"absent\":[],\"bottom\":{\"pa\":1004,\"woba\":0.2823},\"gap\":0.0787,\"sentences\":[\"Lineup slots 1-4 have run 0.361 wOBA across all pitchers before the cutoff (1669 PA).\",\"Lineup slots 5-9 have run 0.282 wOBA across all pitchers before the cutoff (1004 PA).\",\"Top-minus-bottom concentration: +0.079 wOBA (1669 PA vs 1004 PA).\"],\"top\":{\"pa\":1669,\"woba\":0.361},\"warnings\":[]},\"handedness\":{\"absent\":[\"starter platoon split: only 0 batters faced left-handed and 0 right-handed before the cutoff; a platoon split needs 60 each side\"],\"lineup\":{\"advantaged\":5,\"known\":9,\"share\":0.556},\"lineup_counts\":{\"L\":4,\"R\":4,\"S\":1,\"known\":9,\"unknown\":0},\"sentences\":[\"The posted lineup bats 4L / 4R / 1S (9 of 9 bat sides known).\",\"5 of the 9 hitters with a known bat side hold the platoon advantage against this right-handed starter (55.6%).\"],\"starter\":null,\"warnings\":[\"Small sample: only 0 batters faced left-handed and 0 right-handed before the cutoff; a platoon split needs 60 each side.\"]},\"opposing_starter_id\":\"694819\",\"opposing_starter_throws\":\"R\",\"pitch_mix\":{\"absent\":[\"the starter has fewer than 50 pitches recorded before the cutoff, so his primary pitch is unknown\"],\"batters\":[],\"lineup_vs_primary\":null,\"primary\":null,\"sentences\":[],\"warnings\":[\"Small sample: fewer than 50 recorded pitches from this starter before the cutoff -- no pitch-mix read is possible.\"]},\"starter_stuff\":{\"absent\":[\"starter fastball velocity: only 0 measured fastballs across the pitcher's last 0 appearances before the cutoff; the velocity read needs 100\",\"starter ground-ball share: only 0 batted balls before the cutoff; the ground-ball share needs 50\"],\"groundball\":null,\"sentences\":[],\"velocity\":null,\"warnings\":[\"Small sample: only 0 measured fastballs across the pitcher's last 0 appearances before the cutoff; the velocity read needs 100.\",\"Small sample: only 0 batted balls before the cutoff; the ground-ball share needs 50.\"]},\"team\":\"TB\"},\"cutoff\":\"2026-10-23\",\"floors\":{\"groundball_batted_balls\":50,\"half_pa\":60,\"lineup_vs_pitch_pa\":60,\"pitch_mix_pitches\":50,\"platoon_bf_per_side\":60,\"velocity_fastballs\":100},\"home\":{\"concentration\":{\"absent\":[],\"bottom\":{\"pa\":2446,\"woba\":0.3058},\"gap\":0.049,\"sentences\":[\"Lineup slots 1-4 have run 0.355 wOBA across all pitchers before the cutoff (3395 PA).\",\"Lineup slots 5-9 have run 0.306 wOBA across all pitchers before the cutoff (2446 PA).\",\"Top-minus-bottom concentration: +0.049 wOBA (3395 PA vs 2446 PA).\"],\"top\":{\"pa\":3395,\"woba\":0.3548},\"warnings\":[]},\"handedness\":{\"absent\":[],\"lineup\":{\"advantaged\":6,\"known\":9,\"share\":0.667},\"lineup_counts\":{\"L\":6,\"R\":3,\"S\":0,\"known\":9,\"unknown\":0},\"sentences\":[\"The posted lineup bats 6L / 3R / 0S (9 of 9 bat sides known).\",\"6 of the 9 hitters with a known bat side hold the platoon advantage against this right-handed starter (66.7%).\",\"That starter has allowed 0.314 wOBA to left-handed hitters (454 batters faced) and 0.280 to right-handed (566 faced) before the cutoff -- a gap of +0.034.\"],\"starter\":{\"gap\":0.034,\"vs_left_faced\":454,\"vs_left_woba\":0.3144,\"vs_right_faced\":566,\"vs_right_woba\":0.2804,\"weaker_against\":\"L\"},\"warnings\":[]},\"opposing_starter_id\":\"607259\",\"opposing_starter_throws\":\"R\",\"pitch_mix\":{\"absent\":[],\"batters\":[{\"name\":\"Jackson Chourio\",\"order\":1,\"pa\":50,\"woba\":0.392},{\"name\":\"Jake Bauers\",\"order\":2,\"pa\":77,\"woba\":0.2331},{\"name\":\"Christian Yelich\",\"order\":3,\"pa\":108,\"woba\":0.3306},{\"name\":\"William Contreras\",\"order\":4,\"pa\":136,\"woba\":0.329},{\"name\":\"Brice Turang\",\"order\":5,\"pa\":130,\"woba\":0.2327},{\"name\":\"Garrett Mitchell\",\"order\":6,\"pa\":37,\"woba\":0.2757},{\"name\":\"Sal Frelick\",\"order\":8,\"pa\":85,\"woba\":0.2341},{\"name\":\"David Hamilton\",\"order\":9,\"pa\":40,\"woba\":0.21}],\"lineup_vs_primary\":{\"batters_measured\":8,\"pa\":663,\"woba\":0.2817},\"primary\":{\"pitch_type\":\"CH\",\"pitches\":964,\"total_pitches\":3876,\"usage_pct\":24.9},\"sentences\":[\"The opposing starter's most-used pitch before the cutoff is the CH at 24.9% usage (964 of 3876 pitches).\",\"This lineup has run 0.282 wOBA against that pitch type across 663 PA (8 of 9 posted hitters have a measured line).\"],\"warnings\":[]},\"starter_stuff\":{\"absent\":[],\"groundball\":{\"batted_balls\":741,\"share\":0.4453},\"sentences\":[\"The opposing starter's fastball has averaged 92.1 mph over his last 5 measured appearances before the cutoff (195 fastballs), against a league average of 93.9 mph at the same cutoff -- a gap of -1.8 mph.\",\"Ground balls make up 44.5% of the batted balls against that starter before the cutoff (741 batted balls).\"],\"velocity\":{\"avg\":92.13,\"fastballs\":195,\"games\":5,\"gap\":-1.81,\"league_avg\":93.94},\"warnings\":[]},\"team\":\"MIL\"},\"nature\":\"Observations of play recorded before the cutoff, from pitch-level rows that already existed. Nothing in this section is a prediction.\",\"stuff_note\":\"Starter stuff: a fastball below the league average at the same cutoff marks lost velocity before the season line reflects it, and a high ground-ball share takes balls out of the air. V5 tested both features against the market and found nothing (docs/RESEARCH_V5_STUFF.md), so these are observations, not an edge.\"}},\"matchup_history\":{\"as_of\":\"2026-10-23T20:42:14Z\",\"as_of_basis\":\"when the game payload was built\",\"values\":{\"away\":null,\"home\":{\"aggregate_avg\":0.255,\"batters\":[{\"at_bats\":12,\"avg\":0.167,\"hits\":2,\"home_runs\":0,\"name\":\"Jackson Chourio\",\"ops\":0.417,\"order\":1,\"strikeouts\":2,\"walks\":0},{\"at_bats\":5,\"avg\":0.2,\"hits\":1,\"home_runs\":0,\"name\":\"Jake Bauers\",\"ops\":0.4,\"order\":2,\"strikeouts\":1,\"walks\":0},{\"at_bats\":19,\"avg\":0.263,\"hits\":5,\"home_runs\":1,\"name\":\"Christian Yelich\",\"ops\":0.774,\"order\":3,\"strikeouts\":5,\"walks\":1},{\"at_bats\":18,\"avg\":0.278,\"hits\":5,\"home_runs\":2,\"name\":\"William Contreras\",\"ops\":0.945,\"order\":4,\"strikeouts\":2,\"walks\":0},{\"at_bats\":16,\"avg\":0.25,\"hits\":4,\"home_runs\":1,\"name\":\"Brice Turang\",\"ops\":0.857,\"order\":5,\"strikeouts\":4,\"walks\":1},{\"at_bats\":12,\"avg\":0.333,\"hits\":4,\"home_runs\":0,\"name\":\"Garrett Mitchell\",\"ops\":0.833,\"order\":6,\"strikeouts\":4,\"walks\":0},{\"at_bats\":0,\"avg\":null,\"hits\":0,\"home_runs\":0,\"name\":\"Cooper Pratt\",\"ops\":null,\"order\":7,\"strikeouts\":0,\"walks\":0},{\"at_bats\":13,\"avg\":0.308,\"hits\":4,\"home_runs\":0,\"name\":\"Sal Frelick\",\"ops\":0.693,\"order\":8,\"strikeouts\":0,\"walks\":0},{\"at_bats\":3,\"avg\":0.0,\"hits\":0,\"home_runs\":0,\"name\":\"David Hamilton\",\"ops\":0.0,\"order\":9,\"strikeouts\":0,\"walks\":0}],\"reason\":null,\"total_at_bats\":98,\"total_hits\":25,\"total_home_runs\":4,\"total_strikeouts\":18,\"usable\":true}}},\"park\":{\"as_of\":\"2026-10-23T20:42:14Z\",\"as_of_basis\":\"when the game payload was built\",\"values\":{\"altitude_m\":193,\"name\":\"American Family Field\",\"roof\":\"retractable\",\"team\":\"MIL\"}},\"splits\":{\"as_of\":\"2026-10-23T10:24:45.207742+00:00\",\"as_of_basis\":\"newest stamp inside the section\",\"values\":{\"away\":{\"platoon\":{\"gap\":-0.046,\"reason\":null,\"usable\":true,\"vs_left_faced\":419,\"vs_left_ops\":0.659,\"vs_right_faced\":303,\"vs_right_ops\":0.705,\"weaker_against\":\"R\"},\"record\":{\"as_of\":\"2026-10-23T10:24:45.053322+00:00\",\"season\":\"2026\",\"splits\":{\"Away_Games\":{\"avg\":0.232,\"batters_faced\":372,\"home_runs\":8,\"innings\":\"94.2\",\"ops\":0.618,\"strikeouts\":55,\"walks\":13},\"Home_Games\":{\"avg\":0.267,\"batters_faced\":350,\"home_runs\":14,\"innings\":\"85.1\",\"ops\":0.742,\"strikeouts\":54,\"walks\":13},\"vs_Left\":{\"avg\":0.236,\"batters_faced\":419,\"home_runs\":13,\"innings\":\"105.0\",\"ops\":0.659,\"strikeouts\":66,\"walks\":17},\"vs_Right\":{\"avg\":0.267,\"batters_faced\":303,\"home_runs\":9,\"innings\":\"73.2\",\"ops\":0.705,\"strikeouts\":43,\"walks\":9}}}},\"home\":{\"platoon\":{\"gap\":-0.204,\"reason\":null,\"usable\":true,\"vs_left_faced\":366,\"vs_left_ops\":0.378,\"vs_right_faced\":299,\"vs_right_ops\":0.582,\"weaker_against\":\"R\"},\"record\":{\"as_of\":\"2026-10-23T10:24:45.207742+00:00\",\"season\":\"2026\",\"splits\":{\"Away_Games\":{\"avg\":0.157,\"batters_faced\":308,\"home_runs\":4,\"innings\":\"79.2\",\"ops\":0.466,\"strikeouts\":107,\"walks\":23},\"Home_Games\":{\"avg\":0.158,\"batters_faced\":357,\"home_runs\":10,\"innings\":\"95.0\",\"ops\":0.474,\"strikeouts\":145,\"walks\":21},\"vs_Left\":{\"avg\":0.114,\"batters_faced\":366,\"home_runs\":6,\"innings\":\"99.0\",\"ops\":0.378,\"strikeouts\":163,\"walks\":24},\"vs_Right\":{\"avg\":0.209,\"batters_faced\":299,\"home_runs\":8,\"innings\":\"75.2\",\"ops\":0.582,\"strikeouts\":89,\"walks\":20}}}}}},\"starters\":{\"as_of\":\"2026-10-19\",\"as_of_basis\":\"stats through this date\",\"values\":{\"away_sp_appearances\":31,\"away_sp_bb9\":1.3,\"away_sp_days_rest\":14,\"away_sp_era\":3.1,\"away_sp_fip\":4.1223,\"away_sp_hr9\":1.1,\"away_sp_innings\":180.0,\"away_sp_ip_per_start\":5.806,\"away_sp_k9\":5.45,\"away_sp_k_bb_pct\":0.115,\"away_sp_known\":true,\"away_sp_recent_era\":5.2683,\"away_sp_recent_ip_per_start\":4.556,\"away_sp_recent_starts\":3,\"away_sp_starts\":31,\"away_sp_thin\":false,\"away_sp_whip\":1.0944,\"both_sp_known\":true,\"diff_sp_era\":-1.2966,\"diff_sp_fip\":-1.8989,\"diff_sp_ip_per_start\":0.016,\"diff_sp_k9\":7.5347,\"diff_sp_k_bb_pct\":0.1978,\"diff_sp_whip\":-0.2929,\"either_sp_thin\":false,\"home_sp_appearances\":30,\"home_sp_bb9\":2.2672,\"home_sp_days_rest\":14,\"home_sp_era\":1.8034,\"home_sp_fip\":2.2234,\"home_sp_hr9\":0.7214,\"home_sp_innings\":174.67,\"home_sp_ip_per_start\":5.822,\"home_sp_k9\":12.9847,\"home_sp_k_bb_pct\":0.3128,\"home_sp_known\":true,\"home_sp_recent_era\":0.0,\"home_sp_recent_ip_per_start\":4.444,\"home_sp_recent_starts\":3,\"home_sp_starts\":30,\"home_sp_thin\":false,\"home_sp_whip\":0.8015}},\"teams\":{\"as_of\":\"2026-10-19\",\"as_of_basis\":\"stats through this date\",\"values\":{\"away_away_win_pct\":0.5301,\"away_games_played\":169,\"away_home_win_pct\":0.686,\"away_last10_games\":10,\"away_last10_run_diff_pg\":0.8,\"away_last10_runs_scored_pg\":3.8,\"away_last10_wins\":7,\"away_last5_games\":5,\"away_last5_run_diff_pg\":2.2,\"away_last5_runs_scored_pg\":4.4,\"away_last5_wins\":4,\"away_losses\":66,\"away_rest_days\":4,\"away_run_diff_pg\":0.515,\"away_runs_allowed_pg\":3.964,\"away_runs_scored_pg\":4.479,\"away_sample_is_thin\":false,\"away_streak\":3,\"away_win_pct\":0.6095,\"away_wins\":103,\"diff_run_diff_pg\":0.82,\"diff_runs_allowed_pg\":-0.21,\"diff_runs_scored_pg\":0.611,\"diff_win_pct\":0.0312,\"either_sample_thin\":false,\"home_away_win_pct\":0.6,\"home_games_played\":167,\"home_home_win_pct\":0.6829,\"home_last10_games\":10,\"home_last10_run_diff_pg\":1.6,\"home_last10_runs_scored_pg\":4.3,\"home_last10_wins\":9,\"home_last5_games\":5,\"home_last5_run_diff_pg\":2.4,\"home_last5_runs_scored_pg\":4.8,\"home_last5_wins\":5,\"home_losses\":60,\"home_rest_days\":8,\"home_run_diff_pg\":1.335,\"home_runs_allowed_pg\":3.754,\"home_runs_scored_pg\":5.09,\"home_sample_is_thin\":false,\"home_streak\":5,\"home_win_pct\":0.6407,\"home_wins\":107}},\"travel\":{\"as_of\":\"2026-10-23T20:42:14Z\",\"as_of_basis\":\"when the game payload was built\",\"values\":{\"MIL\":{\"days_since_last_game\":8,\"dense_stretch\":false,\"eastward\":true,\"games_last_7\":1,\"last_venue\":\"LAD\",\"long_trip\":true,\"miles\":1737.1,\"reason\":null,\"team\":\"MIL\",\"zones\":2.0},\"TB\":{\"days_since_last_game\":4,\"dense_stretch\":false,\"eastward\":false,\"games_last_7\":4,\"last_venue\":\"TB\",\"long_trip\":false,\"miles\":1095.4,\"reason\":null,\"team\":\"TB\",\"zones\":0.4}}},\"weather\":{\"as_of\":\"2026-10-24T00:00\",\"as_of_basis\":\"forecast for the hour shown\",\"values\":{\"hours_from_first_pitch\":0.0,\"humidity_pct\":86,\"observed_utc\":\"2026-10-24T00:00\",\"precip_probability_pct\":0,\"pressure_hpa\":1001.9,\"temp_f\":54.8,\"wind_from_deg\":130,\"wind_mph\":4.3}}},\"slots\":[{\"label\":\"TB at MIL moneyline\",\"market\":\"moneyline\",\"selections\":[\"MIL\",\"TB\"],\"slot_id\":\"moneyline\"},{\"label\":\"TB at MIL run line\",\"market\":\"run_line\",\"selections\":[\"TB +1.5\",\"MIL -1.5\"],\"slot_id\":\"run_line\"},{\"label\":\"TB at MIL game total runs\",\"market\":\"total\",\"selections\":[\"Over 6.5\",\"Under 6.5\"],\"slot_id\":\"total\"},{\"label\":\"Richie Palacios runs scored\",\"market\":\"prop\",\"selections\":[\"Under 0.5\",\"Over 0.5\"],\"slot_id\":\"prop_01\"},{\"label\":\"Sal Frelick runs scored\",\"market\":\"prop\",\"selections\":[\"Under 0.5\",\"Over 0.5\"],\"slot_id\":\"prop_02\"},{\"label\":\"Liam Hicks runs scored\",\"market\":\"prop\",\"selections\":[\"Under 0.5\",\"Over 0.5\"],\"slot_id\":\"prop_03\"},{\"label\":\"Chandler Simpson total bases\",\"market\":\"prop\",\"selections\":[\"Over 0.5\",\"Under 0.5\"],\"slot_id\":\"prop_04\"},{\"label\":\"Jackson Chourio hits\",\"market\":\"prop\",\"selections\":[\"Over 0.5\",\"Under 0.5\"],\"slot_id\":\"prop_05\"},{\"label\":\"Cooper Pratt runs scored\",\"market\":\"prop\",\"selections\":[\"Under 0.5\",\"Over 0.5\"],\"slot_id\":\"prop_06\"},{\"label\":\"Jonathan Aranda total bases\",\"market\":\"prop\",\"selections\":[\"Over 0.5\",\"Under 0.5\"],\"slot_id\":\"prop_07\"},{\"label\":\"Taylor Walls runs scored\",\"market\":\"prop\",\"selections\":[\"Under 0.5\",\"Over 0.5\"],\"slot_id\":\"prop_08\"},{\"label\":\"Junior Caminero total bases\",\"market\":\"prop\",\"selections\":[\"Over 0.5\",\"Under 0.5\"],\"slot_id\":\"prop_09\"},{\"label\":\"Chandler Simpson hits\",\"market\":\"prop\",\"selections\":[\"Over 0.5\",\"Under 0.5\"],\"slot_id\":\"prop_10\"},{\"label\":\"Cooper Pratt total bases\",\"market\":\"prop\",\"selections\":[\"Over 0.5\",\"Under 0.5\"],\"slot_id\":\"prop_11\"},{\"label\":\"William Contreras hits\",\"market\":\"prop\",\"selections\":[\"Over 0.5\",\"Under 0.5\"],\"slot_id\":\"prop_12\"},{\"label\":\"Liam Hicks total bases\",\"market\":\"prop\",\"selections\":[\"Over 0.5\",\"Under 0.5\"],\"slot_id\":\"prop_13\"},{\"label\":\"David Hamilton runs scored\",\"market\":\"prop\",\"selections\":[\"Under 0.5\",\"Over 0.5\"],\"slot_id\":\"prop_14\"},{\"label\":\"Christian Yelich total bases\",\"market\":\"prop\",\"selections\":[\"Over 0.5\",\"Under 0.5\"],\"slot_id\":\"prop_15\"},{\"label\":\"Chandler Simpson total bases\",\"market\":\"prop\",\"selections\":[\"Under 1.5\",\"Over 1.5\"],\"slot_id\":\"prop_16\"}]}\n\nMake one call for each of these slot ids, in this order: moneyline, run_line, total, prop_01, prop_02, prop_03, prop_04, prop_05, prop_06, prop_07, prop_08, prop_09, prop_10, prop_11, prop_12, prop_13, prop_14, prop_15, prop_16."
+    }
+  ]
+}

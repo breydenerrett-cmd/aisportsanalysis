@@ -62623,3 +62623,12 @@
 {"date": "2026-10-20", "empty": true}
 {"date": "2026-10-21", "empty": true}
 {"date": "2026-10-22", "empty": true}
+{"batters_faced": 19, "date": "2026-10-23", "earned_runs": 2, "game_pk": 849805, "hits": 5, "innings": 5.0, "name": "Nick Martinez", "person_id": 607259, "pitches": 73, "started": true, "strikeouts": 5, "team": "TB", "walks": 0}
+{"batters_faced": 8, "date": "2026-10-23", "earned_runs": 1, "game_pk": 849805, "hits": 0, "innings": 1.667, "name": "Steven Matz", "person_id": 571927, "pitches": 31, "started": false, "strikeouts": 0, "team": "TB", "walks": 3}
+{"batters_faced": 4, "date": "2026-10-23", "earned_runs": 0, "game_pk": 849805, "hits": 3, "innings": 0.333, "name": "Kevin Kelly", "person_id": 687330, "pitches": 12, "started": false, "strikeouts": 0, "team": "TB", "walks": 0}
+{"batters_faced": 3, "date": "2026-10-23", "earned_runs": 0, "game_pk": 849805, "hits": 0, "innings": 0.667, "name": "Garrett Cleavinger", "person_id": 664076, "pitches": 10, "started": false, "strikeouts": 0, "team": "TB", "walks": 1}
+{"batters_faced": 1, "date": "2026-10-23", "earned_runs": 0, "game_pk": 849805, "hits": 0, "innings": 0.333, "name": "Cole Sulser", "person_id": 642121, "pitches": 4, "started": false, "strikeouts": 0, "team": "TB", "walks": 0}
+{"batters_faced": 18, "date": "2026-10-23", "earned_runs": 1, "game_pk": 849805, "hits": 4, "innings": 5.0, "name": "Jacob Misiorowski", "person_id": 694819, "pitches": 78, "started": true, "strikeouts": 3, "team": "MIL", "walks": 1}
+{"batters_faced": 4, "date": "2026-10-23", "earned_runs": 0, "game_pk": 849805, "hits": 1, "innings": 1.333, "name": "Abner Uribe", "person_id": 682842, "pitches": 15, "started": false, "strikeouts": 2, "team": "MIL", "walks": 0}
+{"batters_faced": 5, "date": "2026-10-23", "earned_runs": 0, "game_pk": 849805, "hits": 0, "innings": 1.667, "name": "Aaron Ashby", "person_id": 676879, "pitches": 20, "started": false, "strikeouts": 3, "team": "MIL", "walks": 0}
+{"batters_faced": 6, "date": "2026-10-23", "earned_runs": 1, "game_pk": 849805, "hits": 2, "innings": 1.0, "name": "Trevor Megill", "person_id": 656730, "pitches": 20, "started": false, "strikeouts": 1, "team": "MIL", "walks": 1}
