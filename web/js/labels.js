@@ -29,9 +29,9 @@
  *
  * RULES THAT COME WITH IT
  * -------------------------------------------------------------------
- * - Never invent a name or a label. An abbreviation or provider key
- *   this table does not know returns UNCHANGED from the helpers below
- *   -- a fabricated label is worse than an ugly raw string.
+ * - Never invent a club name. A club abbreviation this table does not
+ *   know comes back UNCHANGED. A book key it does not know is named from
+ *   the key itself (bookLabelFallback) -- a spelling, never a fact.
  * - These are presentation only. They carry no odds, no verdict, no
  *   status -- exactly like team color, this is identity data.
  */
@@ -173,14 +173,43 @@ export function teamName(abbr, form = "full") {
   return entry.full;
 }
 
+// Mirrors REGION_SUFFIXES in src/data/labels.py (the parity test does not
+// compare these, so keep the two lists identical by hand).
+const REGION_SUFFIXES = ["au", "uk", "eu", "us", "fr", "se", "de", "nl"];
+
+/**
+ * A readable name built from a raw book key the table does not know, so a
+ * new book on the odds feed never breaks the page or CI. Mirror of
+ * book_label_fallback in src/data/labels.py: "picklebet_au" ->
+ * "Picklebet (AU)", "betright" -> "Betright". It is a spelling of the key,
+ * not a fact about the book.
+ */
+export function bookLabelFallback(key) {
+  if (!key) return key;
+  const lowered = String(key).toLowerCase();
+  let base = lowered;
+  let suffix = null;
+  const idx = lowered.lastIndexOf("_");
+  if (idx > 0 && REGION_SUFFIXES.includes(lowered.slice(idx + 1))) {
+    base = lowered.slice(0, idx);
+    suffix = lowered.slice(idx + 1).toUpperCase();
+  }
+  const words = base
+    .split("_")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+  return suffix ? `${words} (${suffix})` : words;
+}
+
 /**
  * Customer-facing label for a raw sportsbook provider key (the `book`
  * field the odds pipeline emits, e.g. "williamhill_us" -> "Caesars"). A
- * key this table does not know -- or a falsy input -- comes back
- * UNCHANGED: never invent a book name.
+ * key the table does not know is named from the key by bookLabelFallback.
+ * A falsy input comes back UNCHANGED.
  */
 export function bookLabel(key) {
   if (!key) return key;
   const label = BOOK_LABELS[String(key).toLowerCase()];
-  return label === undefined ? key : label;
+  return label === undefined ? bookLabelFallback(key) : label;
 }
