@@ -3435,3 +3435,5 @@
 {"commence_utc": "2026-10-24T11:00:00Z", "event_id": "3233b7448b8320329a3b66fa412f55dc", "kind": "phase", "observed_utc": "2026-10-24T05:10:23.638491Z", "phase": "t6h", "rows": 14, "sport_key": "soccer_sweden_superettan"}
 {"commence_utc": "2026-10-24T11:00:00Z", "event_id": "c3d62b14f6c1c572a60f9c5cdc2515c7", "kind": "phase", "observed_utc": "2026-10-24T05:10:23.638491Z", "phase": "t6h", "rows": 12, "sport_key": "soccer_sweden_superettan"}
 {"call_kind": "pregame", "credits": 2, "events": 7, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-24T05:10:23.638491Z", "regions": ["us"], "rows": 94, "sport_key": "soccer_sweden_superettan", "stored": 68}
+{"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-24T05:21:54.769422Z", "regions": ["us"], "rows": 23, "sport_key": "soccer_korea_kleague1", "stored": 23}
+{"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-24T05:21:54.769422Z", "regions": ["us"], "rows": 28, "sport_key": "soccer_australia_aleague", "stored": 27}
