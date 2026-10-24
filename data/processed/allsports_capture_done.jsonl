@@ -4889,3 +4889,7 @@
 {"events": 15, "kind": "peek", "next_check_utc": "2026-10-25T04:44:34.221334Z", "observed_utc": "2026-10-24T22:44:34.221334Z", "sport_key": "soccer_england_league2"}
 {"events": 9, "kind": "peek", "next_check_utc": "2026-10-25T04:44:34.221334Z", "observed_utc": "2026-10-24T22:44:34.221334Z", "sport_key": "soccer_uefa_champs_league_women"}
 {"events": 2, "kind": "peek", "next_check_utc": "2026-10-25T05:15:26.821928Z", "observed_utc": "2026-10-24T23:15:26.821928Z", "sport_key": "cricket_international_t20"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-25T05:37:23.810355Z", "observed_utc": "2026-10-24T23:37:23.810355Z", "sport_key": "icehockey_liiga"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-25T05:37:23.810355Z", "observed_utc": "2026-10-24T23:37:23.810355Z", "sport_key": "soccer_england_efl_cup"}
+{"events": 16, "kind": "peek", "next_check_utc": "2026-10-25T05:37:23.810355Z", "observed_utc": "2026-10-24T23:37:23.810355Z", "sport_key": "soccer_germany_dfb_pokal"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-25T05:37:23.810355Z", "observed_utc": "2026-10-24T23:37:23.810355Z", "sport_key": "soccer_uefa_nations_league"}
