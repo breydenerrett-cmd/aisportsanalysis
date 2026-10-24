@@ -47,6 +47,10 @@ LEAGUES: Dict[str, League] = {l.code: l for l in (
     League("ligue1", "soccer/fra.1", "Ligue 1", "soccer", players=False, injuries=False),
     League("mls", "soccer/usa.1", "MLS", "soccer", players=False, injuries=False),
     League("ucl", "soccer/uefa.champions", "UEFA Champions League", "soccer", players=False, injuries=False),
+    # Added 2026-10-24 for the live grading loop (src/hounds/live_scores.py): European cup ties on open tickets. NOT in
+    # DEFAULT_REFRESH, so the scheduled data refresh does not fetch them; only the grading loop asks for them.
+    League("uel", "soccer/uefa.europa", "UEFA Europa League", "soccer", players=False, injuries=False),
+    League("uecl", "soccer/uefa.europa.conf", "UEFA Conference League", "soccer", players=False, injuries=False),
 )}
 
 # The leagues the scheduled refresh keeps current (cheap: a handful of requests each per pass).

@@ -439,9 +439,12 @@ class StatusAndOverdue(LiveCase):
         self.run_pass(late, feed)
         self.assertEqual(lv.overdue_tickets(late, paths=self.paths, conn=self.conn), [])
 
-    def test_a_game_the_feed_cannot_read_is_not_counted_so_the_alert_cannot_cry_wolf(self):
+    def test_a_game_the_feed_cannot_read_is_counted_and_overdue_so_it_is_never_invisible(self):
+        # Changed 2026-10-24: an unreadable sport used to be left out, which hid it. It is now an overdue ticket, and
+        # tests/test_live_settle_grade_all.py pins the status count and the watchdog alert.
         self.write(user_bet(1, event="evt-cricket", sport="CRICKET", league="cricket_ipl", away="A", home="B"))
-        self.assertEqual(lv.overdue_tickets(utc("2026-10-22T09:00:00Z"), paths=self.paths, conn=self.conn), [])
+        over = lv.overdue_tickets(utc("2026-10-22T09:00:00Z"), paths=self.paths, conn=self.conn)
+        self.assertEqual([(o["sport"], o["tickets"]) for o in over], [("CRICKET", 1)])
 
 
 class Packaging(unittest.TestCase):

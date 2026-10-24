@@ -869,10 +869,13 @@ class Watchdog:
         more = f" and {len(overdue) - 4} more" if len(overdue) > 4 else ""
         what = (f"{tickets} ticket{'s' if tickets != 1 else ''} on {len(overdue)} game{'s' if len(overdue) != 1 else ''} "
                 f"{'are' if tickets != 1 else 'is'} still open more than {GRADING_OVERDUE_HOURS:g} hours after the scheduled "
-                f"start: {games}{more}. The live settlement loop should have graded them within minutes of the final. "
+                f"start: {games}{more}. The live settlement loop should have graded the ones it can read within minutes of "
+                "the final; the rest (no free feed for the sport) grade from the odds vendor's scores. "
                 "Records and bankrolls are out of date until they grade")
-        fix = ("open GET /hounds/live/status and the app log (search 'live settle'); the usual causes are the score feed "
-               "not listing the game under the names the ticket carries, the feed down, or LIVE_SETTLE=off. Ask Claude to look")
+        fix = ("open GET /hounds/live/status (its 'unsupported' count is open tickets with no free feed) and the app log "
+               "(search 'live settle'); the usual causes are the score feed not listing the game under the names the ticket "
+               "carries, the feed down, LIVE_SETTLE=off, or a sport with no free feed (EuroLeague, cricket, other hockey), "
+               "which grades only from the odds vendor's slower scores. Ask Claude to look")
         detail = {"games": len(overdue), "tickets": tickets, "oldest": oldest["key"],
                   "oldest_hours": oldest["hours_overdue"]}
         return Outcome("grading", ALERT, f"{tickets} ticket{'s' if tickets != 1 else ''} open past {GRADING_OVERDUE_HOURS:g} h",

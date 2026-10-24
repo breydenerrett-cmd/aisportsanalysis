@@ -1,0 +1,37 @@
+{
+  "leagues": [{"name": "UEFA Europa League", "slug": "uefa.europa"}],
+  "events": [
+    {
+      "id": "700101",
+      "date": "2026-10-22T19:00Z",
+      "season": {"year": 2026, "type": 2, "slug": "league-phase"},
+      "competitions": [{
+        "date": "2026-10-22T19:00Z",
+        "status": {"displayClock": "90'", "period": 2,
+                   "type": {"name": "STATUS_FULL_TIME", "state": "post", "completed": true, "shortDetail": "FT"}},
+        "competitors": [
+          {"homeAway": "home", "score": "1", "winner": false,
+           "team": {"id": "1001", "abbreviation": "CLU", "displayName": "Club Brugge KV"}},
+          {"homeAway": "away", "score": "1", "winner": false,
+           "team": {"id": "1002", "abbreviation": "AZA", "displayName": "AZ Alkmaar"}}
+        ]
+      }]
+    },
+    {
+      "id": "700102",
+      "date": "2026-10-22T19:00Z",
+      "season": {"year": 2026, "type": 2, "slug": "league-phase"},
+      "competitions": [{
+        "date": "2026-10-22T19:00Z",
+        "status": {"displayClock": "90'", "period": 2,
+                   "type": {"name": "STATUS_FULL_TIME", "state": "post", "completed": true, "shortDetail": "FT"}},
+        "competitors": [
+          {"homeAway": "home", "score": "3", "winner": true,
+           "team": {"id": "2001", "abbreviation": "RMC", "displayName": "Real Madrid Castilla"}},
+          {"homeAway": "away", "score": "0", "winner": false,
+           "team": {"id": "2002", "abbreviation": "GET", "displayName": "Getafe"}}
+        ]
+      }]
+    }
+  ]
+}
