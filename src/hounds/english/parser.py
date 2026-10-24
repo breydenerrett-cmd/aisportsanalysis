@@ -61,7 +61,7 @@ a an the and or but also plus then so only just any all every each of to at for 
 is are was were be been being has have had having it its it's they they're theyre their them theirs we i my
 me you your he he's his him she her when whenever if while where which that this those these there than
 bet bets betting back backing take takes taking play plays playing pick picks make games game team teams
-side sides club clubs dog dogs please want like would should will can get gets going lets let's let do does
+side sides club clubs dog dogs please want like would should will can get gets going lets let's let do does find finds seek seeking you're youre
 always never ever really very some more most up out off over under about around when's whats what's
 day days night both either one i'd ill i'll go goes pitcher pitchers batter batters hitter hitters player players
 use uses using statistics statistic stats data matched matching based consider considering factor factors
@@ -281,6 +281,19 @@ _STYLE_SPORT_WORDS = (
 )
 
 
+# The sport words a plain rule reads (longest or most specific first). A word the menu has no prop markets for
+# still names its sport; build_rule says so rather than switching to MLB.
+_SPORT_WORDS = (
+    (r"\b(?:mlb|baseball)\b", "MLB"), (r"\b(?:nfl|football)\b", "NFL"), (r"\b(?:nba|basketball)\b", "NBA"),
+    (r"\b(?:nhl|hockey|puck)\b", "NHL"), (r"\bsoccer\b", "SOCCER"), (r"\btennis\b", "TENNIS"), (r"\b(?:mma|ufc)\b", "MMA"),
+)
+
+
+# How a refusal names a sport in the words a person uses ("player props for hockey", not "for NHL").
+_SPORT_NOUNS = {"NHL": "hockey", "NBA": "basketball", "NFL": "football", "MLB": "baseball", "SOCCER": "soccer",
+                "TENNIS": "tennis", "MMA": "MMA"}
+
+
 def read_style_sports(rd: Reader, box: list) -> None:
     for words, code in _STYLE_SPORT_WORDS:
         def hit(m, code=code):
@@ -318,6 +331,22 @@ def read_globals(rd: Reader, box: list) -> None:
             rd.no(m.group(0), "a stake is 0.5 to 3 paper units in half-unit steps")
 
     rd.take(box, r"\b(?:stake|risk|bet|wager|size|for)?\s*(?P<n>\d+(?:\.\d+)?)\s*(?:u|units?)\b", stake)
+
+    # "aggressive on unit sizing" / "bigger stakes" asks for the top of the stake menu, never past it. "aggressive on
+    # how many bets" / "many bets" asks for the top of the bets-a-day menu. Neither is a number the owner typed, so
+    # both say what they set; the spec default stays for anything the words do not name.
+    def aggressive_stake(m):
+        g["stake_units"] = max(R.STAKE_CHOICES)
+        rd.ok(m.group(0), f"stake {max(R.STAKE_CHOICES):g} paper units a bet (the top of the stake menu)")
+    rd.take(box, r"\baggressive(?:ly)?\s+(?:on|with|about|in)\s+(?:the\s+)?(?:unit|stake|bet)\s+sizing\b"
+                 r"|\baggressive(?:ly)?\s+(?:on|with|about|in)\s+(?:the\s+)?(?:units?|stakes?|sizing)\b"
+                 r"|\bbigger\s+(?:stakes?|units?)\b", aggressive_stake)
+
+    def many_bets(m):
+        g["max_bets_per_day"] = user_spec.MAX_BETS_RANGE[1]
+        rd.ok(m.group(0), f"at most {user_spec.MAX_BETS_RANGE[1]} bets a day (the top of the bets menu)")
+    rd.take(box, r"\baggressive(?:ly)?\s+(?:on|with|about|in)\s+(?:how\s+many|the\s+number\s+of)\s+(?:bets?|picks?|plays?)\b"
+                 r"|\b(?:how\s+many|many)\s+(?:bets?|picks?|plays?)\b", many_bets)
 
     def lock(m):
         n = int(m.group("n"))
@@ -382,8 +411,21 @@ def read_segment(rd: Reader, seg: Seg) -> None:
     take(r"\b(?:fad(?:e|es|ing)|bet(?:ting)? against(?! the spread)|back(?:ing)? against(?! the spread)|go(?:ing)? against(?! the spread))\b", fade)
 
     # --- sports -------------------------------------------------------------------------------------
-    take(r"\b(?:mlb|baseball)\b", lambda m: (seg.sports.append("MLB"), ok(m.group(0), "MLB")) and None)
-    take(r"\b(?:nfl|football)\b", lambda m: (seg.sports.append("NFL"), ok(m.group(0), "NFL")) and None)
+    # Each sport word names the rule's sport. "player props" is read for the sports named (see build_rule), so a
+    # hockey sentence can never fall back to MLB props.
+    def sport_word(code: str):
+        def h(m):
+            if code not in seg.sports:
+                seg.sports.append(code)
+            ok(m.group(0), user_spec.SPORT_LABELS.get(code, code))
+        return h
+    for rx, code in _SPORT_WORDS:
+        take(rx, sport_word(code))
+    # "find" / "seek out" / "look for" say the owner wants bets found; they carry no condition of their own.
+    take(r"\b(?:find|seek\s+out|look\s+for)\b", lambda m: None)
+    # "undervalued prices" needs a fair-price model the condition menu does not have, so it is refused in words.
+    take(r"\b(?:under|over)?valued\s+(?:prices?|lines?|odds)\b|\b(?:under|over)valued\b|\bgood\s+value\b|\bvalue\s+(?:bets?|plays?|picks?|prices?|spots?)\b",
+         lambda m: rd.no(m.group(0), "a value or fair-price test is not on the condition menu yet, so a hound cannot check it"))
 
     # --- spread size ("spreads under 7") ---------------------------------------------------------------
     def spread_size(m):
@@ -1052,7 +1094,17 @@ def build_rule(rd: Reader, seg: Seg) -> Optional[dict]:
     _leftovers(rd, seg)
 
     markets = list(seg.markets)
-    # player props
+    # player props. The menu's prop markets are MLB batter and pitcher stats only (user_rules.PROP_MARKETS). A prop
+    # request for any other named sport is left out and said to be not available yet; it is never switched to MLB.
+    # A generic "props" with no sport named still means MLB, as it always has.
+    if (seg.prop_generic or any(R.market_kind(m) == "prop" for m in markets)) and [s for s in seg.sports if s != "MLB"]:
+        other = [s for s in seg.sports if s != "MLB"]
+        noun = " and ".join(_SPORT_NOUNS.get(s, s) for s in other)
+        # the prop words were already read as understood; they are reported once, as the refusal below
+        rd.understood[:] = [u for u in rd.understood if u["meaning"] != "player props"]
+        rd.no(f"player props for {noun}", "not available yet; the menu has player props for MLB only")
+        markets = [m for m in markets if R.market_kind(m) != "prop"]
+        seg.prop_generic = False
     prop_markets = [m for m in markets if R.market_kind(m) == "prop"]
     if seg.prop_generic and not prop_markets:
         prop_markets = list(R.PROP_MARKETS)
