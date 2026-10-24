@@ -4882,3 +4882,5 @@
 {"events": 2, "kind": "peek", "next_check_utc": "2026-10-25T03:41:29.034138Z", "observed_utc": "2026-10-24T21:41:29.034138Z", "sport_key": "cricket_test_match"}
 {"events": 1, "kind": "peek", "next_check_utc": "2026-10-25T03:41:29.034138Z", "observed_utc": "2026-10-24T21:41:29.034138Z", "sport_key": "soccer_conmebol_copa_libertadores"}
 {"events": 5, "kind": "peek", "next_check_utc": "2026-10-25T03:41:29.034138Z", "observed_utc": "2026-10-24T21:41:29.034138Z", "sport_key": "soccer_league_of_ireland"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-10-25T04:10:52.071734Z", "observed_utc": "2026-10-24T22:10:52.071734Z", "sport_key": "soccer_efl_champ"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-25T04:10:52.071734Z", "observed_utc": "2026-10-24T22:10:52.071734Z", "sport_key": "soccer_uefa_champs_league"}
