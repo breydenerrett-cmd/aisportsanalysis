@@ -2,16 +2,16 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2026.jsonl": {
-   "bytes": 6269,
-   "newest": "2026-10-24T00:59:17Z",
-   "records": 10,
-   "sha256": "1f2e4e25b8478464dd318ee8d492dfb3cc0aee211fb66694f4f4512ccd413616"
+   "bytes": 6922,
+   "newest": "2026-10-24T10:06:37Z",
+   "records": 11,
+   "sha256": "c5499a55d3fd76870a9753deba2a69e2f352eb9880cb83af9fc116d22b61fec8"
   },
   "injuries.jsonl": {
-   "bytes": 24998,
-   "newest": "2026-10-24T07:04:45Z",
-   "records": 72,
-   "sha256": "549fcb86b5355eb7996374e96caf4026a143a048cfc12333f333be49d4b97ce8"
+   "bytes": 25279,
+   "newest": "2026-10-24T10:06:39Z",
+   "records": 73,
+   "sha256": "ddf11825a92bc6a93ad449db6239cc32eb0670b586d6ffa3203df66487f5fbcc"
   },
   "player_games_2026.jsonl": {
    "bytes": 29194,
@@ -44,8 +44,8 @@
    "sha256": "a9d0da1b9f10af673b6ad17ff20691ff7858a69e839624ff09be46db6f9eeeb0"
   }
  },
- "generated_utc": "2026-10-24T07:04:46Z",
+ "generated_utc": "2026-10-24T10:06:39Z",
  "league": "wnba",
- "refreshed_utc": "2026-10-24T07:04:46Z",
+ "refreshed_utc": "2026-10-24T10:06:39Z",
  "title": "WNBA"
 }
