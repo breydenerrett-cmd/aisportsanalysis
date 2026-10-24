@@ -7578,3 +7578,6 @@
 {"game_date": "2026-10-25", "observed_utc": "2026-10-24T19:50:05.151961+00:00", "poll": true}
 {"game_date": "2026-10-24", "observed_utc": "2026-10-24T19:58:43.020509+00:00", "poll": true}
 {"game_date": "2026-10-25", "observed_utc": "2026-10-24T19:58:43.096649+00:00", "poll": true}
+{"game_date": "2026-10-24", "observed_utc": "2026-10-24T20:19:51.293339+00:00", "poll": true}
+{"commence_time": "2026-10-25T00:00:00Z", "crew": [{"id": 427554, "name": "Jim Wolf", "officialType": "Home Plate"}, {"id": 428442, "name": "James Hoye", "officialType": "First Base"}, {"id": 483569, "name": "Vic Carapazza", "officialType": "Second Base"}, {"id": 483564, "name": "Dan Bellino", "officialType": "Third Base"}, {"id": 503586, "name": "Tripp Gibson", "officialType": "Left Field"}, {"id": 573597, "name": "Gabe Morales", "officialType": "Right Field"}], "game_date": "2026-10-24", "game_pk": 849802, "game_state": "Pre-Game", "home_plate_umpire": "Jim Wolf", "observed_utc": "2026-10-24T20:19:51.293339+00:00", "prev_poll_utc": "2026-10-24T19:58:43.020509+00:00", "revealed": true}
+{"game_date": "2026-10-25", "observed_utc": "2026-10-24T20:19:51.342867+00:00", "poll": true}
