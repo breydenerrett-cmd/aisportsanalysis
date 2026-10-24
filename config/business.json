@@ -131,9 +131,9 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-10-23 (1:30 pm PT run): World Series Game 1 brief, Rays at Brewers, published before first pitch (5:00 pm PT); every market a pass.",
-    "Public sample stays on the graded Thursday night Patriots at Bears brief until Game 1 is graded.",
-    "Production is up; billing is live (founding $14.99, standard $19.99). Site odds were 19.5 hours old at 1:40 pm PT.",
+    "2026-10-24 (8:30 am PT run): World Series Game 1 brief (Rays at Brewers, 2-3 final) is graded; the public sample now shows it.",
+    "Game 2 brief runs on the 1:30 pm PT pass (first pitch 5:00 pm PT).",
+    "Production is up, restarted by a deploy at 8:12 am PT; site odds 0.5 hours old.",
     "Daily loop on the default branch is still red; tests on the working branch are green.",
     "Public MLB value picks remain paused. Sends 0, replies 0, testers 0."
   ],

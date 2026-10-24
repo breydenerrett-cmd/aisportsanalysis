@@ -923,12 +923,20 @@ def game_states(keys: Sequence[str], *, now: Optional[datetime] = None, conn: Op
 
 
 def status(*, now: Optional[datetime] = None, conn: Optional[sqlite3.Connection] = None,
-           env: Optional[Mapping] = None) -> dict:
-    """The small public status: is the loop on, when it last ran, when a ticket last graded, and how many games are
-    waiting on a final (the "Grading" indicator)."""
+           env: Optional[Mapping] = None, paths: Optional[Mapping] = None) -> dict:
+    """The small public status: is the loop on, when it last ran, when a ticket last graded, how many games are
+    waiting on a final (the "Grading" indicator), and ``unsupported``: open tickets whose sport or league the loop has
+    no free feed for (tennis and MMA have their own readers and count as supported). Those tickets are on the
+    old path, which is slow; the count is shown rather than hidden so a stall is visible. None when the ledgers
+    cannot be read, never a guess."""
     moment = now or ls.utcnow()
     out = {"enabled": enabled(env), "last_pass_utc": None, "last_graded_utc": None, "awaiting_final": 0,
-           "final_ungraded": 0}
+           "final_ungraded": 0, "unsupported": None}
+    try:
+        out["unsupported"] = sum(g.tickets for g in open_games(moment, paths if paths is not None else ledger_paths())
+                                 if not g.supported())
+    except Exception:  # noqa: BLE001 -- an unreadable ledger is unknown, not zero
+        out["unsupported"] = None
     own = conn is None
     try:
         conn = conn or connect()
@@ -952,11 +960,13 @@ def status(*, now: Optional[datetime] = None, conn: Optional[sqlite3.Connection]
 
 def overdue_tickets(now: Optional[datetime] = None, *, paths: Optional[Mapping] = None,
                     conn: Optional[sqlite3.Connection] = None, hours: float = OVERDUE_HOURS) -> list:
-    """Open tickets on the volume ledgers whose game's scheduled start was more than ``hours`` ago, for the watchdog.
+    """Open member tickets whose game's scheduled start was more than ``hours`` ago, for the watchdog.
 
-    Only tickets this loop is responsible for count: a supported family, not a game the feed says is postponed or
-    cancelled (those wait for a makeup by rule), not a game still genuinely in play. Anything else would make a
-    rare-by-design alert fire every night."""
+    Counted whether or not the loop has a free feed for the sport: a family it cannot read (EuroLeague, cricket, other
+    hockey, European soccer off the mapped leagues) is still an open ticket on a game that has long ended, and the watchdog
+    must say so. Left out: a game the feed says is postponed or cancelled (those wait for a makeup by rule), a game still
+    genuinely in play on a feed that can see it, and house-pack tickets (graded by the capture slot). Tennis and MMA are
+    counted with their own extra grace hours, as before."""
     moment = now or ls.utcnow()
     own = conn is None
     try:
@@ -967,7 +977,7 @@ def overdue_tickets(now: Optional[datetime] = None, *, paths: Optional[Mapping] 
         out = []
         for g in open_games(moment, paths if paths is not None else ledger_paths()):
             grace = hours + (FREE_OVERDUE_EXTRA_HOURS if g.free_family() else 0.0)
-            if g.start is None or not g.supported() or not g.settles_here() or moment - g.start <= timedelta(hours=grace):
+            if g.start is None or not g.settles_here() or moment - g.start <= timedelta(hours=grace):
                 continue
             row = _row(conn, g.key)
             state = row["state"] if row is not None else ls.UPCOMING

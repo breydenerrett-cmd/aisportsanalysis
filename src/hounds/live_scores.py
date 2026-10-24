@@ -25,7 +25,9 @@ A wrong score would append a wrong grade to an append-only ledger, so every doub
   * a score counts only from a FINAL status with both numbers present. Soccer counts only regulation time
     (``STATUS_FULL_TIME``): the books grade a match result at 90 minutes, and ESPN's extra-time and penalty finals
     would grade a cup tie on a different basis;
-  * an unmapped family (cricket, rugby, AFL) or league is unsupported and stays on the old path.
+  * an unmapped family (cricket, rugby, AFL, other hockey, EuroLeague) or league is unsupported and stays on the old path.
+    Such tickets are counted (``unsupported`` on /hounds/live/status) and the watchdog alerts on them when they are 4 hours
+    overdue, so they are never invisible.
 
 ONE REQUEST PER LEAGUE-DAY, NEVER A STORE. A scoreboard is one small request for a league on a day; only the wanted
 games are read out of it and only those are kept. MLB is asked one game at a time by ``gamePk``
@@ -64,6 +66,7 @@ ESPN_LEAGUE_BY_KEY = {
     "soccer_epl": "epl", "soccer_spain_la_liga": "laliga", "soccer_germany_bundesliga": "bundesliga",
     "soccer_italy_serie_a": "seriea", "soccer_france_ligue_one": "ligue1", "soccer_usa_mls": "mls",
     "soccer_uefa_champs_league": "ucl",
+    "soccer_uefa_europa_league": "uel", "soccer_uefa_europa_conference_league": "uecl",
 }
 #: The NFL is not in the data service's registry (its own store is nflverse); ESPN's path is the same shape.
 NFL_PATH = "football/nfl"
@@ -77,6 +80,7 @@ SOCCER_FULL_TIME = "STATUS_FULL_TIME"
 
 _FINAL_STATUS = re.compile(r"^STATUS_FINAL")
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")
+_JK = re.compile(r"\bj\.\s?k\.")
 _TEAM_ALIASES = (("los angeles ", "la "), ("saint ", "st "), (" and ", " "))
 
 
@@ -138,6 +142,7 @@ def scoreboard_url(league_code: str, day: date) -> str:
 def norm_team(name: Optional[str]) -> str:
     text = unicodedata.normalize("NFKD", str(name or ""))
     text = "".join(ch for ch in text if not unicodedata.combining(ch)).lower().replace("&", " and ")
+    text = _JK.sub("jk", text)                    # "J.K." is one club suffix, not two initials
     text = _NON_ALNUM.sub(" ", text).strip()
     text = f" {text} "
     for old, new in _TEAM_ALIASES:
@@ -145,22 +150,20 @@ def norm_team(name: Optional[str]) -> str:
     return " ".join(text.split())
 
 
-_CLUB_SUFFIXES = frozenset({"fc", "cf", "afc", "sc", "ac"})
+_CLUB_SUFFIXES = frozenset({"fc", "cf", "afc", "sc", "ac", "jk"})
 
 
 def teams_match(a: Optional[str], b: Optional[str]) -> bool:
-    """Two team names are the same club: equal after folding ("Los Angeles Clippers" / "LA Clippers"), ignoring a club
-    suffix ("Arsenal" / "Arsenal FC"), or one is the other plus extra words when the shorter keeps two or more words
-    ("Brighton Hove Albion" / "Brighton and Hove Albion FC"). A shared nickname alone ("Kings", "Panthers") is NOT
-    enough: several leagues share them, so the answer is no."""
+    """Two team names are the same club: equal after folding ("Los Angeles Clippers" / "LA Clippers", "Brighton and Hove
+    Albion" / "Brighton & Hove Albion") and after dropping a club suffix ("Arsenal" / "Arsenal FC", "Tammeka" / "Tammeka
+    J.K.", "Paris Saint-Germain" / "Paris Saint Germain SC"). Nothing looser.
+
+    WHY NO "one name contains the other" RULE (2026-10-24). A subset test put "Real Madrid" on the scoreboard line of
+    "Real Madrid Castilla" (the reserve side): a ticket on the first team would have been graded from the reserves' score.
+    A shared nickname alone ("Kings", "Panthers") is not enough either, and is not a match by any rule here."""
     x = [t for t in norm_team(a).split() if t not in _CLUB_SUFFIXES]
     y = [t for t in norm_team(b).split() if t not in _CLUB_SUFFIXES]
-    if not x or not y:
-        return False
-    if x == y:
-        return True
-    small, big = (set(x), set(y)) if len(x) <= len(y) else (set(y), set(x))
-    return len(small) >= 2 and small <= big
+    return bool(x) and bool(y) and x == y
 
 
 # ---------------------------------------------------------------------------
