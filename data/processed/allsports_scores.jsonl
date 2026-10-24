@@ -1897,3 +1897,5 @@
 {"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-10-24T04:30:06.785448+00:00", "sport_key": "cricket_international_t20"}
 {"credits": 2, "days_from": 3, "events": 9, "kind": "poll", "observed_utc": "2026-10-24T04:30:06.785448+00:00", "sport_key": "soccer_belgium_first_div"}
 {"credits": 2, "days_from": 3, "events": 17, "kind": "poll", "observed_utc": "2026-10-24T04:30:06.785448+00:00", "sport_key": "soccer_uefa_europa_conference_league"}
+{"away_score": 0.0, "away_team": "Macarthur FC", "commence_time": "2026-10-24T04:00:00Z", "completed": false, "event_id": "2e129a494260b770d4934b3f08ffc71a", "home_score": 1.0, "home_team": "Newcastle Jets FC", "kind": "score", "last_update": "2026-10-24T05:10:27Z", "observed_utc": "2026-10-24T05:10:28.134423+00:00", "outcome": "home", "scores": [{"name": "Newcastle Jets FC", "score": "1"}, {"name": "Macarthur FC", "score": "0"}], "sport_key": "soccer_australia_aleague"}
+{"credits": 2, "days_from": 3, "events": 12, "kind": "poll", "observed_utc": "2026-10-24T05:10:28.134423+00:00", "sport_key": "soccer_australia_aleague"}
