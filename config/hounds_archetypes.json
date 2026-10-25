@@ -3189,5 +3189,183 @@
    "TENNIS",
    "MMA"
   ]
- }
+ },
+ "expert_presets": [
+  {
+   "id": "hockey_pro",
+   "name": "Hockey Pro",
+   "icon": "wave",
+   "pitch": "NHL only. Plus-money underdogs and totals the market has been moving toward, at four or more books. Four bets a day, two units.",
+   "sports": [
+    "NHL"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Hockey Pro underdog moneyline",
+      "sports": [
+       "NHL"
+      ],
+      "markets": [
+       "moneyline"
+      ],
+      "side": "either",
+      "price_min": 110,
+      "price_max": 220,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 4,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "underdog"
+        },
+        {
+         "id": "steam",
+         "direction": "toward"
+        }
+       ]
+      }
+     },
+     {
+      "label": "Hockey Pro total",
+      "sports": [
+       "NHL"
+      ],
+      "markets": [
+       "total"
+      ],
+      "side": "either",
+      "price_min": -150,
+      "price_max": 150,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 4,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "steam",
+         "direction": "toward"
+        }
+       ]
+      }
+     }
+    ],
+    "max_bets_per_day": 4,
+    "stake_units": 2.0,
+    "rank_by": "biggest_steam"
+   }
+  },
+  {
+   "id": "basketball_pro",
+   "name": "Basketball Pro",
+   "icon": "flame",
+   "pitch": "NBA only. Plus-money underdogs at four or more books, backed when the market moves their way. Three bets a day, 1.5 units.",
+   "sports": [
+    "NBA"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Basketball Pro underdog moneyline",
+      "sports": [
+       "NBA"
+      ],
+      "markets": [
+       "moneyline"
+      ],
+      "side": "either",
+      "price_min": 120,
+      "price_max": 250,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 4,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "underdog"
+        },
+        {
+         "id": "steam",
+         "direction": "toward"
+        }
+       ]
+      }
+     }
+    ],
+    "max_bets_per_day": 3,
+    "stake_units": 1.5,
+    "rank_by": "biggest_steam"
+   }
+  },
+  {
+   "id": "football_pro",
+   "name": "Football Pro",
+   "icon": "trophy",
+   "pitch": "NFL only. Spreads and totals near even money, at four or more books, backed when the market moves toward them. Three bets a day, one unit.",
+   "sports": [
+    "NFL"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Football Pro spread",
+      "sports": [
+       "NFL"
+      ],
+      "markets": [
+       "spread"
+      ],
+      "side": "either",
+      "price_min": -130,
+      "price_max": 120,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 4,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "steam",
+         "direction": "toward"
+        }
+       ]
+      }
+     },
+     {
+      "label": "Football Pro total",
+      "sports": [
+       "NFL"
+      ],
+      "markets": [
+       "total"
+      ],
+      "side": "either",
+      "price_min": -130,
+      "price_max": 120,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 4,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "steam",
+         "direction": "toward"
+        }
+       ]
+      }
+     }
+    ],
+    "max_bets_per_day": 3,
+    "stake_units": 1.0,
+    "rank_by": "biggest_steam"
+   }
+  }
+ ]
 }

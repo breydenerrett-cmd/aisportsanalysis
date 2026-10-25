@@ -188,6 +188,40 @@ def validate_library(lib: Optional[Mapping] = None) -> list:
                 problems.append(f"{aid}: a rule covers sports outside works_in")
         if set(frag.get("rank_by") and [frag["rank_by"]] or []) - set(R.RANK_RULES):
             problems.append(f"{aid}: unknown rank_by")
+    # Expert presets: whole validated specs for the people who already know the market (Hockey Pro and friends). Same gate as the
+    # archetypes, plus two presets-only rules: the copy never says "dog" (the product says hound), and a preset names its sports.
+    preset_ids: set = set()
+    for pr in lib.get("expert_presets") or []:
+        pid = pr.get("id", "?")
+        if pid in preset_ids:
+            problems.append(f"preset {pid}: duplicate id")
+        preset_ids.add(pid)
+        check_copy(f"preset {pid}.name", pr.get("name"), user_spec.NAME_MAX + 6)
+        check_copy(f"preset {pid}.pitch", pr.get("pitch"), 200)
+        for field in ("name", "pitch"):
+            if isinstance(pr.get(field), str) and re.search(r"dogs?", pr[field], re.I):
+                problems.append(f"preset {pid}.{field}: says dog, the product says hound")
+        if pr.get("icon") not in ICON_KEYS:
+            problems.append(f"preset {pid}: unknown icon {pr.get('icon')!r}")
+        frag = pr.get("fragment")
+        if not isinstance(frag, Mapping) or not frag.get("rules"):
+            problems.append(f"preset {pid}: needs a fragment with rules")
+            continue
+        try:
+            spec = validate_fragment(frag)
+        except user_spec.SpecError as exc:
+            problems.append(f"preset {pid}: the builder refuses it ({exc})")
+            continue
+        named = set(pr.get("sports") or [])
+        if not named or not named <= set(user_spec.SPORTS):
+            problems.append(f"preset {pid}: sports must name menu sports")
+        for rule in spec["rules"]:
+            if rule["price_min"] < 0 and rule["price_min"] <= user_spec.MAX_FAVOURITE_PRICE:
+                problems.append(f"preset {pid}: price reaches {user_spec.MAX_FAVOURITE_PRICE}")
+            if not set(rule["sports"]) <= named:
+                problems.append(f"preset {pid}: a rule covers sports the preset does not name")
+    if len(preset_ids) < 3:
+        problems.append(f"expert presets: {len(preset_ids)} found, expected at least 3 (hockey, basketball, football)")
     for table in ("personalities", "markets", "price_comforts", "quirks", "timings"):
         ids = [row.get("id") for row in lib.get(table) or []]
         if not ids or len(set(ids)) != len(ids):
@@ -368,6 +402,19 @@ def _plain(row: Mapping, *drop: str) -> dict:
     return {k: copy.deepcopy(v) for k, v in row.items() if k not in drop}
 
 
+def expert_presets(lib: Optional[Mapping] = None) -> list:
+    """GET /hounds/quiz/library: each expert preset as a pre-filled draft (its rules and its caps, the same shape the English
+    reader returns) plus the English the renderer makes of it. The page applies one of these to the builder; nothing is saved."""
+    lib = lib if lib is not None else load()
+    out = []
+    for pr in lib.get("expert_presets") or []:
+        english = english_for(pr["fragment"])
+        out.append({"id": pr["id"], "name": pr["name"], "pitch": pr["pitch"], "icon": pr["icon"],
+                    "sports": list(pr["sports"]), "draft": copy.deepcopy(pr["fragment"]), "english": english["text"],
+                    "sentences": english["sentences"]})
+    return out
+
+
 def public_library(lib: Optional[Mapping] = None) -> dict:
     """GET /hounds/quiz/library: every answer table, the archetypes with their generated English, and the limits."""
     lib = lib if lib is not None else load()
@@ -381,6 +428,7 @@ def public_library(lib: Optional[Mapping] = None) -> dict:
         "sports_any": any_sport_choice(lib),
         "sports_default": list(user_spec.LEGACY_SPORTS),
         "archetypes": archetypes(lib),
+        "expert_presets": expert_presets(lib),
         "personalities": [_plain(p, "recipes") for p in lib["personalities"]],
         "markets": [_plain(m, "markets") | {"markets": list(m["markets"])} for m in lib["markets"]],
         "price_comforts": [_plain(c) for c in lib["price_comforts"]],

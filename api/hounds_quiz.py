@@ -6,6 +6,8 @@
     POST /hounds/quiz/moves     {answers, page?} -> the four move cards on that page for the sports and answers so far
                                 (name, one short line, sport badge, the full rule behind it); page + 1 is "Show me 4 others"
     POST /hounds/quiz/pick      {answers} -> the one move "Pick for me" takes
+    POST /hounds/quiz/describe  {text} -> the "Describe it first" door: a draft from one sentence, what cannot be checked yet, and
+                                the follow-up questions the draft leaves open (src/hounds/quiz/describe.py)
 
 Both are public reads of a config file and pure functions: nothing is saved, no bet is placed, no hound is created. The spec
 that comes back has already been through the real validator (`user_spec.validate_spec`); the page still sends it through
@@ -28,6 +30,7 @@ from src.appstate import ratelimit
 from src.hounds import user_spec, user_store
 from src.hounds.english import parser as english_parser
 from src.hounds.quiz import compose as quiz_compose
+from src.hounds.quiz import describe as quiz_describe
 from src.hounds.quiz import library as quiz_library
 from src.hounds.quiz import moves as quiz_moves
 
@@ -42,11 +45,18 @@ _compose_limiter = ratelimit.FixedWindowLimiter(limit=45, window_s=60.0)
 _rl_compose = ratelimit.limiter_dependency(_compose_limiter)
 _moves_limiter = ratelimit.FixedWindowLimiter(limit=60, window_s=60.0)
 _rl_moves = ratelimit.limiter_dependency(_moves_limiter)
+# Describing is the English reader plus a few rules: cheap, but it is an open door like compose, so it gets the same budget.
+_describe_limiter = ratelimit.FixedWindowLimiter(limit=45, window_s=60.0)
+_rl_describe = ratelimit.limiter_dependency(_describe_limiter)
 
 
 class MovesRequest(BaseModel):
     answers: Dict[str, Any] = {}
     page: int = 0
+
+
+class DescribeRequest(BaseModel):
+    text: str
 
 
 class ComposeRequest(BaseModel):
@@ -87,6 +97,23 @@ def quiz_compose_answers(body: ComposeRequest, response: Response, _rl: None = D
     except user_spec.SpecError as exc:
         raise HTTPException(status_code=422, detail={"error": "spec_invalid", "message": "the quiz could not compose a "
                                                      "valid hound from that", "fields": exc.errors})
+    out.update(PAPER)
+    return out
+
+
+@router.post("/hounds/quiz/describe")
+def quiz_describe_words(body: DescribeRequest, response: Response, _rl: None = Depends(_rl_describe)) -> dict:
+    response.headers["Cache-Control"] = "no-store"
+    text = (body.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=422, detail={"error": "text_required", "message": "Type a strategy first."})
+    if len(text) > english_parser.MAX_TEXT:
+        raise HTTPException(status_code=422, detail={"error": "text_too_long", "max": english_parser.MAX_TEXT})
+    try:
+        levels = quiz_library.load().get("risk_levels") or []
+    except (OSError, ValueError, KeyError) as exc:
+        raise HTTPException(status_code=503, detail={"error": "library_unavailable", "message": type(exc).__name__})
+    out = quiz_describe.read(text, levels)
     out.update(PAPER)
     return out
 

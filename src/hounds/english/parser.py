@@ -275,7 +275,7 @@ def read_style(rd: Reader, box: list) -> None:
 _STYLE_SPORT_WORDS = (
     (r"college football|ncaa football|ncaaf", "NCAAF"), (r"college basketball|ncaa basketball|ncaab|march madness", "NCAAB"),
     (r"aussie rules|afl", "AFL"), (r"premier league|epl|soccer", "SOCCER"), (r"wnba", "WNBA"), (r"nba", "NBA"),
-    (r"nhl", "NHL"), (r"mlb", "MLB"), (r"nfl", "NFL"), (r"tennis", "TENNIS"), (r"cricket", "CRICKET"),
+    (r"hockey|nhl", "NHL"), (r"basketball|nba", "NBA"), (r"mlb", "MLB"), (r"nfl", "NFL"), (r"tennis", "TENNIS"), (r"cricket", "CRICKET"),
     (r"mma|ufc", "MMA"), (r"rugby", "RUGBY"), (r"cfl|ufl", "GRIDIRON"),
     (r"any sports?|every sports?|all sports|all the sports|any and all sports", user_spec.ANY),
 )
@@ -289,6 +289,24 @@ def read_style_sports(rd: Reader, box: list) -> None:
             label = "every sport on the menu" if code == user_spec.ANY else user_spec.SPORT_LABELS.get(code, code)
             rd.ok(m.group(0), label)
         rd.take(box, r"\b(?:" + words + r")\b", hit)
+
+
+def named_sports(text: Any) -> list:
+    """The dog-menu sports the words name, in the order they appear, each once (ANY excluded). It only LOOKS: nothing is consumed.
+
+    The ordinary rule reader knows MLB and NFL, so a hockey sentence used to come back as "covers MLB and NFL". The
+    describe-first quiz asks "which sports?" only when this list is empty, so the sport words must be read on every
+    sentence, not only the Gematria one. "hockey" and "basketball" are the everyday names for NHL and NBA."""
+    if not isinstance(text, str) or not text.strip():
+        return []
+    norm = normalise(text)
+    found: list = []
+    for words, code in _STYLE_SPORT_WORDS:
+        if code == user_spec.ANY:
+            continue
+        for m in re.finditer(r"\b(?:" + words + r")\b", norm):
+            found.append((m.start(), code))
+    return list(dict.fromkeys(code for _, code in sorted(found)))
 
 
 def read_globals(rd: Reader, box: list) -> None:
