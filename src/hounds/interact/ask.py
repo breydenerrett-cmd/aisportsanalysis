@@ -315,11 +315,76 @@ def _no_tickets(ctx: AskContext, what: str) -> str:
     return f"I have not recorded a ticket yet, so there is nothing to say about {what}."
 
 
+# The canine word never appears in the copy a visitor reads (owner, 2026-10-25). A hound's own name is its own; a tagline
+# that uses the word is the builder's text, so it is left out of the intro rather than rewritten.
+_CANINE = re.compile(r"(?<![-_A-Za-z])[Dd]ogs?(?![-_A-Za-z])")
+_MARKET_WORDS = {"moneyline": "moneylines", "spread": "spreads", "total": "game totals"}
+INTRO_LIMIT = 3          # the identity answer is two or three short lines, never a wall
+
+
+def _spec_bets(spec: Optional[dict]) -> Optional[str]:
+    """What the hound bets, in plain English, read off its spec: sports (through the sport label map), markets and the
+    price band. None when the spec names no sport (a house dog or a draft with no rule to read)."""
+    if not spec:
+        return None
+    rules = spec.get("rules") if isinstance(spec.get("rules"), list) else []
+    if rules:                                    # a v2 spec keeps its sports and prices on each rule
+        sports = list(spec.get("sports") or [])
+        markets = [m for r in rules for m in (r.get("markets") or [])]
+        los = [r.get("price_min") for r in rules if isinstance(r.get("price_min"), (int, float))]
+        his = [r.get("price_max") for r in rules if isinstance(r.get("price_max"), (int, float))]
+    else:
+        sports = list(spec.get("sports") or [])
+        markets = list(spec.get("markets") or [])
+        los = [spec.get("price_min")] if isinstance(spec.get("price_min"), (int, float)) else []
+        his = [spec.get("price_max")] if isinstance(spec.get("price_max"), (int, float)) else []
+    if not sports:
+        return None
+    from src.hounds import user_spec
+    phrase = user_spec.sports_phrase(sports)
+    who = "any sport" if phrase == "Any sport" else phrase
+    seen = []
+    for m in markets:
+        word = _MARKET_WORDS.get(m)
+        if word and word not in seen:
+            seen.append(word)
+    market_text = ", ".join(seen[:-1]) + " and " + seen[-1] if len(seen) > 1 else (seen[0] if seen else "bets")
+    text = f"I bet on {who}: {market_text}"
+    if los and his:
+        text += f", at average prices from {_price(min(los))} to {_price(max(his))}"
+    return f"{text} (never {user_spec.MAX_FAVOURITE_PRICE} or worse)."
+
+
+def _record_line(ctx: AskContext) -> Optional[str]:
+    s = ctx.summary
+    if s is None:
+        return "My numbers are still loading."
+    rec = s.get("record") or {}
+    n = rec.get("bets") or 0
+    if n <= 0:
+        return "No graded bets yet."
+    w, l, p = rec.get("wins") or 0, rec.get("losses") or 0, rec.get("pushes") or 0
+    wl = f"{w}-{l}" + (f"-{p}" if p else "")
+    avg = rec.get("units_average_price")
+    units = avg if isinstance(avg, (int, float)) else rec.get("units_recorded_price")
+    return f"So far: {wl} over {n} graded {'bet' if n == 1 else 'bets'}, {_units(units)}."
+
+
 def _intro(ctx: AskContext) -> dict:
-    """ONE line: the name and the hound's own catchphrase. The full rules live on the Rules tab, never in the chat
-    (owner, 2026-10-22: the bio wall at the top of Ask was the first thing a visitor read)."""
+    """Two or three short lines in the hound's voice: its name and personality line, what it bets (from its spec, through
+    the sport label map), and its record so far. No vote row rides on this answer (the page skips it for intent "hello")."""
     tag = " ".join(str(ctx.catchphrase or "").split())
-    return {"lines": [f"{ctx.name} · {tag}" if tag else str(ctx.name)]}
+    if tag and _CANINE.search(tag):
+        tag = ""
+    head = f"{ctx.name} · {tag}" if tag else str(ctx.name)
+    lines = [head]
+    bets = _spec_bets(ctx.spec) if ctx.kind == "user" else None
+    if bets is None and ctx.trigger:
+        bets = f"I bet when {ctx.trigger}."
+    if bets:
+        lines.append(bets)
+    lines.append(_record_line(ctx))
+    return {"lines": [x for x in lines if x][:INTRO_LIMIT]}
 
 
 def _record(ctx: AskContext) -> dict:

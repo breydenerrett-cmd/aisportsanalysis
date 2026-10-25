@@ -137,7 +137,8 @@ export function mountAsk(box, { id, name, compact = false, gematria = false }) {
           try { window.location.href = href; } catch (err) { /* a fake window */ }
         } })));
       }
-      msg.appendChild(voteRow({ id, kind: "answer", targetId: out.intent || "fallback", label: "this answer" }));
+      // an introduction is not a call the hound made, so it has no Good call / Bad call row (intent "hello")
+      if (out.intent !== "hello") msg.appendChild(voteRow({ id, kind: "answer", targetId: out.intent || "fallback", label: "this answer" }));
       thread.appendChild(msg);
       thread.scrollTop = msg.offsetTop ? Math.max(0, msg.offsetTop - 8) : thread.scrollHeight;     // the top of the new answer
       paint(out.followups);

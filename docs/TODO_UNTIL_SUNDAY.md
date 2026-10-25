@@ -28,6 +28,12 @@ Owner directive (2026-10-22): usage is the top priority, so no building until th
 6. **Warm the "right now" cache at startup.** The first NFL call after a deploy takes about 15s.
 7. **Live page redesign** (low priority, in docs/BACKLOG.md).
 
+7b. **The Apprentice Hound** (owner, 2026-10-24, for Jacob): a hound with no rules that learns only from its owner's real bets.
+   - The owner logs a bet (game, side, market, the price they actually got, stake). The hound grades it and stores it as an append-only "lesson".
+   - Lessons can't be edited or deleted, not even by the owner. The hound can be retired, but its lessons stay.
+   - The hound learns the owner's patterns: sports, price range, fav/dog, home/away, timing, and which of those win. It then proposes its own picks in the owner's style, as normal graded paper tickets, kept separate from the owner's logged bets.
+   - Reuses: manual.record (input), the grading loop, diagnosis.py (patterns), and Retune/Apply/Veto (when it changes its own rule).
+   - It's the Learner Hound (item 8) seeded by one human, so build them together. Estimate $10–15 on Sonnet.
 8. **The Learner Hound** (owner idea, 2026-10-23): a hound with no starting rules. It bets widely, then learns which patterns win and adapts, with AI and owner input on top. It becomes the brand mascot and an option in the quiz. Plan:
    - **Phase 1, explore:** paper-bet many small bets a day (cap 50–100) across markets, logging 20–30 features per bet: sport, price band, fav/dog, home/away, line move, books, rest, time.
    - **Phase 2, learn weekly:** fit a simple model (logistic regression or a small tree) on its own settled bets. Each new version is trained only on data before a cutoff, then tested forward on the next week before it may change how it bets. This is the guard against fitting to luck.

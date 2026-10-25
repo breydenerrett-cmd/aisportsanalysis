@@ -44,9 +44,28 @@ MAX_CONDITIONS = 16            # per rule, counting leaves in every nested group
 MAX_LIST = 5                   # teams or players named in one condition
 
 GAME_MARKETS = ("moneyline", "spread", "total")
-PROP_MARKETS = ("batter_hits", "batter_total_bases", "batter_home_runs", "batter_rbis",
-                "batter_runs_scored", "batter_hits_runs_rbis", "pitcher_strikeouts")
+# Player props are sport-scoped. The MARKET KEY is the captured store's own name (the MLB prop store, and the
+# all-sports prop store `allsports_props.jsonl`, whose market keys are the Odds API's). Two keys are shared
+# between NBA and NHL (`player_points`, `player_assists`): the rule's sports decide which league's prop it is,
+# and `prop_sports` says which. NHL goals (Over/Under) and goalie saves are NOT in the captured store under the
+# names the owner first asked for: the store carries `player_total_saves` (the saves line) and no Over/Under goals
+# market (`player_goal_scorer_anytime` is Yes/No only), so neither is offered until a capture names it.
+PROP_SPORT_MARKETS = {
+    "MLB": ("batter_hits", "batter_total_bases", "batter_home_runs", "batter_rbis",
+            "batter_runs_scored", "batter_hits_runs_rbis", "pitcher_strikeouts"),
+    "NBA": ("player_points", "player_rebounds", "player_assists", "player_threes",
+            "player_points_rebounds_assists"),
+    "NHL": ("player_points", "player_assists", "player_shots_on_goal", "player_total_saves"),
+}
+ALLSPORTS_PROP_MARKETS = tuple(dict.fromkeys(PROP_SPORT_MARKETS["NBA"] + PROP_SPORT_MARKETS["NHL"]))
+PROP_MARKETS = tuple(dict.fromkeys(PROP_SPORT_MARKETS["MLB"] + ALLSPORTS_PROP_MARKETS))
 ALL_MARKETS = GAME_MARKETS + PROP_MARKETS
+
+
+def prop_sports(market: str) -> tuple:
+    """The sports whose captured store carries this prop market (empty for a game market)."""
+    return tuple(sport for sport, markets in PROP_SPORT_MARKETS.items() if market in markets)
+
 
 MARKET_LABELS = {
     "moneyline": "Moneyline", "spread": "Spread / run line", "total": "Game total",
@@ -54,6 +73,9 @@ MARKET_LABELS = {
     "batter_home_runs": "Batter home runs", "batter_rbis": "Batter RBIs",
     "batter_runs_scored": "Batter runs scored", "batter_hits_runs_rbis": "Batter hits + runs + RBIs",
     "pitcher_strikeouts": "Pitcher strikeouts",
+    "player_points": "Player points", "player_rebounds": "Player rebounds", "player_assists": "Player assists",
+    "player_threes": "Player threes made", "player_points_rebounds_assists": "Player points + rebounds + assists",
+    "player_shots_on_goal": "Player shots on goal", "player_total_saves": "Goalie saves",
 }
 # What each prop market counts, and where the box score keeps it. The settlement and the player
 # conditions read the same table, so "total bases" cannot mean one thing to the grader and another
@@ -68,7 +90,14 @@ PROP_STATS = {
     "pitcher_strikeouts": ("pitcher", "k", "strikeouts"),
 }
 # Short names used in sentences: "over 1.5 total bases".
-PROP_NOUN = {m: v[2] for m, v in PROP_STATS.items()}
+# NBA and NHL props are graded from the ESPN box score (src/pipeline/allsports_props_grade.py), not from PROP_STATS:
+# the MLB table names MLB box-score keys. The nouns are shared here so a sentence reads the same for every sport.
+ALLSPORTS_PROP_NOUN = {
+    "player_points": "points", "player_rebounds": "rebounds", "player_assists": "assists",
+    "player_threes": "threes", "player_points_rebounds_assists": "points + rebounds + assists",
+    "player_shots_on_goal": "shots on goal", "player_total_saves": "saves",
+}
+PROP_NOUN = {**{m: v[2] for m, v in PROP_STATS.items()}, **ALLSPORTS_PROP_NOUN}
 
 SIDES = ("either", "home", "away", "over", "under")
 SIDE_LABELS = {"either": "Either side (the conditions decide)", "home": "The home side",

@@ -288,6 +288,14 @@ def _start_cache_warmup() -> None:
     warmup.start_background_warmup()
 
 
+# The "right now" caches (src/hounds/interact/right_now.py): the first right-now call after a deploy paid a cold
+# board and house-store load. One daemon thread, started and returned at once; it swallows its own errors.
+@app.on_event("startup")
+def _start_right_now_warmup() -> None:
+    from src.hounds.interact import right_now
+    right_now.start_background_warmup()
+
+
 # -- background data refresh -------------------------------------------------
 #
 # The pages read results / pitcher / bullpen / standings files in the image at

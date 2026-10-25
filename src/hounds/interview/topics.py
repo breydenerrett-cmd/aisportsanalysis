@@ -79,7 +79,7 @@ def _market_options() -> List[dict]:
     out = []
     for m in R.ALL_MARKETS:
         label = R.MARKET_LABELS[m]
-        out.append({"value": m, "label": label + (" (MLB)" if R.market_kind(m) == "prop" else "")})
+        out.append({"value": m, "label": label + (f" ({' / '.join(R.prop_sports(m))})" if R.market_kind(m) == "prop" else "")})
     out += [{"value": f"x:{mid}", "label": label, "unsupported": True} for mid, label, _ in UNSUPPORTED_MARKETS]
     return out
 

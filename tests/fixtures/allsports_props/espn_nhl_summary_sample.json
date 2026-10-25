@@ -1,0 +1,556 @@
+{
+"boxscore": {
+"players": [
+{
+"displayOrder": 1,
+"statistics": [
+{
+"athletes": [
+{
+"athlete": {
+"active": true,
+"displayName": "Josh Anderson",
+"id": "3069687",
+"jersey": "17",
+"lastName": "Anderson",
+"position": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/3?lang=en&region=us",
+"abbreviation": "RW",
+"displayName": "Right Wing",
+"id": "3",
+"leaf": true,
+"name": "Right Wing",
+"parent": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+}
+},
+"scratched": false,
+"shortName": "J. Anderson"
+},
+"stats": [
+"0",
+"1",
+"0"
+]
+},
+{
+"athlete": {
+"active": false,
+"displayName": "Sammy Blais",
+"id": "3149697",
+"jersey": "27",
+"lastName": "Blais",
+"position": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/2?lang=en&region=us",
+"abbreviation": "LW",
+"displayName": "Left Wing",
+"id": "2",
+"leaf": true,
+"name": "Left Wing",
+"parent": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+}
+},
+"scratched": false,
+"shortName": "S. Blais"
+},
+"stats": [
+"1",
+"4",
+"1"
+]
+},
+{
+"athlete": {
+"active": true,
+"displayName": "Zack Bolduc",
+"id": "4874734",
+"jersey": "76",
+"lastName": "Bolduc",
+"position": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/3?lang=en&region=us",
+"abbreviation": "RW",
+"displayName": "Right Wing",
+"id": "3",
+"leaf": true,
+"name": "Right Wing",
+"parent": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+}
+},
+"scratched": false,
+"shortName": "Z. Bolduc"
+},
+"stats": [
+"0",
+"5",
+"0"
+]
+}
+],
+"descriptions": [
+"Total shots blocked.",
+"Total hits.",
+"Total takeaways."
+],
+"keys": [
+"blockedShots",
+"hits",
+"takeaways"
+],
+"labels": [
+"BS",
+"HT",
+"TK"
+],
+"name": "forwards"
+},
+{
+"athletes": [
+{
+"athlete": {
+"active": true,
+"displayName": "Alexandre Carrier",
+"id": "3942064",
+"jersey": "45",
+"lastName": "Carrier",
+"position": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+"abbreviation": "D",
+"displayName": "Defense",
+"id": "4",
+"leaf": true,
+"name": "Defense",
+"parent": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+}
+},
+"scratched": false,
+"shortName": "A. Carrier"
+},
+"stats": [
+"4",
+"0",
+"0"
+]
+},
+{
+"athlete": {
+"active": true,
+"displayName": "Noah Dobson",
+"id": "4352732",
+"jersey": "53",
+"lastName": "Dobson",
+"position": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+"abbreviation": "D",
+"displayName": "Defense",
+"id": "4",
+"leaf": true,
+"name": "Defense",
+"parent": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+}
+},
+"scratched": false,
+"shortName": "N. Dobson"
+},
+"stats": [
+"4",
+"0",
+"0"
+]
+},
+{
+"athlete": {
+"active": true,
+"displayName": "Kaiden Guhle",
+"id": "4697399",
+"jersey": "21",
+"lastName": "Guhle",
+"position": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+"abbreviation": "D",
+"displayName": "Defense",
+"id": "4",
+"leaf": true,
+"name": "Defense",
+"parent": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+}
+},
+"scratched": false,
+"shortName": "K. Guhle"
+},
+"stats": [
+"1",
+"1",
+"1"
+]
+}
+],
+"descriptions": [
+"Total shots blocked.",
+"Total hits.",
+"Total takeaways."
+],
+"keys": [
+"blockedShots",
+"hits",
+"takeaways"
+],
+"labels": [
+"BS",
+"HT",
+"TK"
+],
+"name": "defenses"
+},
+{
+"athletes": [],
+"descriptions": [
+"Total shots blocked.",
+"Total hits.",
+"Total takeaways."
+],
+"keys": [
+"blockedShots",
+"hits",
+"takeaways"
+],
+"labels": [
+"BS",
+"HT",
+"TK"
+],
+"name": "skaters"
+}
+],
+"team": {
+"abbreviation": "MTL",
+"alternateColor": "013a81",
+"color": "c41230",
+"displayName": "Montreal Canadiens",
+"id": "10",
+"location": "Montreal",
+"logo": "https://a.espncdn.com/i/teamlogos/nhl/500/mtl.png",
+"name": "Canadiens",
+"shortDisplayName": "Canadiens",
+"slug": "montreal-canadiens"
+}
+},
+{
+"displayOrder": 2,
+"statistics": [
+{
+"athletes": [
+{
+"athlete": {
+"active": true,
+"displayName": "Zach Benson",
+"id": "5149186",
+"jersey": "6",
+"lastName": "Benson",
+"position": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/2?lang=en&region=us",
+"abbreviation": "LW",
+"displayName": "Left Wing",
+"id": "2",
+"leaf": true,
+"name": "Left Wing",
+"parent": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+}
+},
+"scratched": false,
+"shortName": "Z. Benson"
+},
+"stats": [
+"0",
+"1",
+"1"
+]
+},
+{
+"athlete": {
+"active": true,
+"displayName": "Josh Doan",
+"id": "4874870",
+"jersey": "91",
+"lastName": "Doan",
+"position": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/3?lang=en&region=us",
+"abbreviation": "RW",
+"displayName": "Right Wing",
+"id": "3",
+"leaf": true,
+"name": "Right Wing",
+"parent": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+}
+},
+"scratched": false,
+"shortName": "J. Doan"
+},
+"stats": [
+"0",
+"1",
+"1"
+]
+},
+{
+"athlete": {
+"active": true,
+"displayName": "Jordan Greenway",
+"id": "3900260",
+"jersey": "12",
+"lastName": "Greenway",
+"position": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/2?lang=en&region=us",
+"abbreviation": "LW",
+"displayName": "Left Wing",
+"id": "2",
+"leaf": true,
+"name": "Left Wing",
+"parent": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+}
+},
+"scratched": false,
+"shortName": "J. Greenway"
+},
+"stats": [
+"1",
+"3",
+"0"
+]
+}
+],
+"descriptions": [
+"Total shots blocked.",
+"Total hits.",
+"Total takeaways."
+],
+"keys": [
+"blockedShots",
+"hits",
+"takeaways"
+],
+"labels": [
+"BS",
+"HT",
+"TK"
+],
+"name": "forwards"
+},
+{
+"athletes": [
+{
+"athlete": {
+"active": false,
+"displayName": "Jacob Bryson",
+"id": "4197014",
+"jersey": "78",
+"lastName": "Bryson",
+"position": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+"abbreviation": "D",
+"displayName": "Defense",
+"id": "4",
+"leaf": true,
+"name": "Defense",
+"parent": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+}
+},
+"scratched": false,
+"shortName": "J. Bryson"
+},
+"stats": [
+"0",
+"0",
+"0"
+]
+},
+{
+"athlete": {
+"active": true,
+"displayName": "Bowen Byram",
+"id": "4565225",
+"jersey": "4",
+"lastName": "Byram",
+"position": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+"abbreviation": "D",
+"displayName": "Defense",
+"id": "4",
+"leaf": true,
+"name": "Defense",
+"parent": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+}
+},
+"scratched": false,
+"shortName": "B. Byram"
+},
+"stats": [
+"0",
+"0",
+"0"
+]
+},
+{
+"athlete": {
+"active": true,
+"displayName": "Rasmus Dahlin",
+"id": "4294163",
+"jersey": "26",
+"lastName": "Dahlin",
+"position": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+"abbreviation": "D",
+"displayName": "Defense",
+"id": "4",
+"leaf": true,
+"name": "Defense",
+"parent": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+}
+},
+"scratched": false,
+"shortName": "R. Dahlin"
+},
+"stats": [
+"2",
+"0",
+"0"
+]
+}
+],
+"descriptions": [
+"Total shots blocked.",
+"Total hits.",
+"Total takeaways."
+],
+"keys": [
+"blockedShots",
+"hits",
+"takeaways"
+],
+"labels": [
+"BS",
+"HT",
+"TK"
+],
+"name": "defenses"
+},
+{
+"athletes": [],
+"descriptions": [
+"Total shots blocked.",
+"Total hits.",
+"Total takeaways."
+],
+"keys": [
+"blockedShots",
+"hits",
+"takeaways"
+],
+"labels": [
+"BS",
+"HT",
+"TK"
+],
+"name": "skaters"
+}
+],
+"team": {
+"abbreviation": "BUF",
+"alternateColor": "fdb71a",
+"color": "00468b",
+"displayName": "Buffalo Sabres",
+"id": "2",
+"location": "Buffalo",
+"logo": "https://a.espncdn.com/i/teamlogos/nhl/500/buf.png",
+"name": "Sabres",
+"shortDisplayName": "Sabres",
+"slug": "buffalo-sabres"
+}
+}
+],
+"teams": [
+{
+"displayOrder": 1,
+"homeAway": "away",
+"statistics": [
+{
+"abbreviation": "BS",
+"displayValue": "18",
+"label": "Blocked Shots",
+"name": "blockedShots"
+},
+{
+"abbreviation": "HT",
+"displayValue": "26",
+"label": "Hits",
+"name": "hits"
+},
+{
+"abbreviation": "TK",
+"displayValue": "4",
+"label": "Takeaways",
+"name": "takeaways"
+}
+],
+"team": {
+"abbreviation": "MTL",
+"alternateColor": "013a81",
+"color": "c41230",
+"displayName": "Montreal Canadiens",
+"id": "10",
+"location": "Montreal",
+"logo": "https://a.espncdn.com/i/teamlogos/nhl/500/mtl.png",
+"name": "Canadiens",
+"shortDisplayName": "Canadiens",
+"slug": "montreal-canadiens"
+}
+},
+{
+"displayOrder": 2,
+"homeAway": "home",
+"statistics": [
+{
+"abbreviation": "BS",
+"displayValue": "6",
+"label": "Blocked Shots",
+"name": "blockedShots"
+},
+{
+"abbreviation": "HT",
+"displayValue": "21",
+"label": "Hits",
+"name": "hits"
+},
+{
+"abbreviation": "TK",
+"displayValue": "6",
+"label": "Takeaways",
+"name": "takeaways"
+}
+],
+"team": {
+"abbreviation": "BUF",
+"alternateColor": "fdb71a",
+"color": "00468b",
+"displayName": "Buffalo Sabres",
+"id": "2",
+"location": "Buffalo",
+"logo": "https://a.espncdn.com/i/teamlogos/nhl/500/buf.png",
+"name": "Sabres",
+"shortDisplayName": "Sabres",
+"slug": "buffalo-sabres"
+}
+}
+]
+}
+}

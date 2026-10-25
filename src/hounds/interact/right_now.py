@@ -308,3 +308,70 @@ def build(dog: common.Dog, viewer_id: Optional[int] = None, *, now: Optional[dat
     spec = dog.spec if dog.kind == common.KIND_USER else None
     return view_from_payload(payload, dog_id=dog.id, dog_name=dog.name, kind=dog.kind, spec=spec, persona=_persona(dog),
                              held=held, now=now)
+
+
+# ---------------------------------------------------------------------------
+# startup warm-up (owner, 2026-10-25): the first "right now" call after a deploy paid ~15s on a cold NFL cache
+# ---------------------------------------------------------------------------
+#
+# A right-now call is fire.fire(dog): the house pack reads the windowed pack stores (fire.default_stores) and a builder
+# hound reads the board for its own sport set (fire.cached_games, keyed by the sorted sports). Both are process-local
+# caches, so a cold process pays the full load inside the first visitor's request. This warms those same functions for
+# today's boards, once, on a daemon thread started from the startup hook in api/app.py. It never blocks startup, every
+# step is wrapped, and it reads only the running builder hounds (user_store.list_running) and the windowed stores: no
+# whole-ledger read. NOTE: fire.cached_games remembers a board for 60 seconds, so this warms the process's first
+# request, not a visitor an hour later; a periodic repeat would be a separate decision.
+
+def warm_today(now: Optional[datetime] = None, *, hounds: Optional[list] = None, stores_fn=None, games_fn=None) -> dict:
+    """Pre-build the caches a right-now call reads, for today. Each step is isolated: a failure is counted and logged
+    in the returned report, never raised. ``hounds``, ``stores_fn`` and ``games_fn`` are injected by tests."""
+    import logging
+    log = logging.getLogger(__name__)
+    now = now or common.now_utc()
+    report = {"stores": False, "sport_sets": 0, "errors": 0}
+    stores_fn = stores_fn or fire.default_stores
+    games_fn = games_fn or fire.cached_games
+    try:
+        stores_fn(now)
+        report["stores"] = True
+    except Exception as exc:  # noqa: BLE001 -- a warm-up never takes the process down
+        report["errors"] += 1
+        log.warning("right-now warm-up: house stores failed: %r", exc)
+    if hounds is None:
+        try:
+            from src.hounds import user_store
+            hounds = user_store.list_running()
+        except Exception as exc:  # noqa: BLE001
+            report["errors"] += 1
+            log.warning("right-now warm-up: could not list running hounds: %r", exc)
+            hounds = []
+    done = set()
+    for row in hounds or []:
+        try:
+            spec = (row or {}).get("spec")
+            sports = tuple(sorted(spec.get("sports") or [])) if isinstance(spec, Mapping) else ()
+            if not sports or sports in done:
+                continue
+            done.add(sports)
+            games_fn(list(sports), now)
+            report["sport_sets"] += 1
+        except Exception as exc:  # noqa: BLE001
+            report["errors"] += 1
+            log.warning("right-now warm-up: board for %s failed: %r", row.get("id") if isinstance(row, Mapping) else row, exc)
+    return report
+
+
+def start_background_warmup(**kw):
+    """Start ``warm_today`` on a daemon thread and return the thread at once. The thread body is wrapped again, so even
+    an error outside warm_today's own steps cannot escape into the server."""
+    import threading
+
+    def run() -> None:
+        try:
+            warm_today(**kw)
+        except Exception:  # noqa: BLE001 -- last line of defence: a warm-up is never a crash
+            pass
+
+    thread = threading.Thread(target=run, name="right-now-warmup", daemon=True)
+    thread.start()
+    return thread

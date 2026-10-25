@@ -452,7 +452,10 @@ function ruleCard(rule, index, onChange) {
   const markets = h("div", { class: "bd-marketgroups", "data-hook": "rule-markets" });
   const groupsDef = [["ml_spread", "Game bets"], ["total", "Game totals"], ["prop", "Player props"]];
   for (const [gk, title] of groupsDef) {
-    const ms = menu.markets.filter((m) => m.kind === gk);
+    // a prop chip shows only for the sport(s) the rule names: NBA and NHL props appear when that sport is chosen
+    const ruleSports = rule.sports || [];
+    const ms = menu.markets.filter((m) => m.kind === gk
+      && (gk !== "prop" || !ruleSports.length || ruleSports.some((sp) => covers(m.sports, sp))));
     const box = h("div", { class: "bd-chips", role: "group", "aria-label": title });
     for (const m of ms) {
       const on = rule.markets.includes(m.value);

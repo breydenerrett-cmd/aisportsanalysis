@@ -147,7 +147,9 @@ class TheMenuDrivesThePage(unittest.TestCase):
         # the page always puts "Any sport" first, wherever the menu lists it
         anys = [s["label"] for s in MENU["sports"] if s["value"] == "ANY"]
         self.assertEqual(f["sports"], anys + [s["label"] for s in MENU["sports"] if s["value"] != "ANY"])
-        self.assertEqual(f["markets"], [m["label"] for m in MENU["markets"]])
+        # a blank rule is MLB (the menu's first concrete sport), so only the props MLB prices show beside the game bets:
+        # an NBA or NHL prop chip appears when that sport is chosen (hounds-build.js, the market group's filter)
+        self.assertEqual(f["markets"], [m["label"] for m in MENU["markets"] if m["kind"] != "prop" or "MLB" in m["sports"]])
         self.assertEqual(f["sides"], [s["label"] for s in MENU["sides"] if s["value"] in MENU["side_by_kind"]["ml_spread"]])
         self.assertEqual(f["lock"], [f"{v} minutes" for v in MENU["lock_minutes"]["choices"]])
         # 2026-10-21: the picker names the dollars at the viewer's unit size ("2u · $20" for the runner's $10 viewer)
