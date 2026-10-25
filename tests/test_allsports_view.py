@@ -10,6 +10,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+
+from src.hounds import user_rules as R
 from datetime import timedelta
 from pathlib import Path
 from unittest import mock
@@ -328,7 +330,12 @@ class TheUiContract(unittest.TestCase):
         dog_sports = list(user_spec.SPORTS)
         for market in menu["markets"]:
             self.assertIn("sports", market, market["value"])
-            self.assertEqual(market["sports"], ["MLB"] if market["kind"] == "prop" else dog_sports, market["value"])
+            if market["kind"] == "prop":
+                # a prop market names the sports that price it (NBA/NHL props added 2026-10-25, user_rules.PROP_SPORT_MARKETS)
+                want = sorted(s for s, ms in R.PROP_SPORT_MARKETS.items() if market["value"] in ms)
+                self.assertEqual(sorted(market["sports"]), want, market["value"])
+            else:
+                self.assertEqual(market["sports"], dog_sports, market["value"])
         for market in user_spec.menu()["markets"]:
             self.assertEqual(market["sports"], dog_sports)
         conditions = {c["id"]: c for c in menu["conditions"]}
