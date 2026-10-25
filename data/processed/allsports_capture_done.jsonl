@@ -5394,3 +5394,10 @@
 {"commence_utc": "2026-10-25T16:30:00Z", "event_id": "1b5fac1f4112d8fc65467176c5d5d0cd", "kind": "phase", "observed_utc": "2026-10-25T10:30:46.039585Z", "phase": "t6h", "rows": 15, "sport_key": "soccer_poland_ekstraklasa"}
 {"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T10:30:46.039585Z", "regions": ["us"], "rows": 68, "sport_key": "soccer_poland_ekstraklasa", "stored": 45}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T10:30:46.039585Z", "regions": ["us"], "rows": 4, "sport_key": "tennis_wta_ningbo_open", "stored": 4}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-10-25T16:46:54.622996Z", "observed_utc": "2026-10-25T10:46:54.622996Z", "sport_key": "americanfootball_cfl"}
+{"events": 17, "kind": "peek", "next_check_utc": "2026-10-25T16:46:54.622996Z", "observed_utc": "2026-10-25T10:46:54.622996Z", "sport_key": "soccer_england_league1"}
+{"commence_utc": "2026-10-25T11:15:00Z", "event_id": "f168373343a58c07d02f40538d04b404", "kind": "phase", "observed_utc": "2026-10-25T10:46:54.622996Z", "phase": "t30m", "rows": 15, "sport_key": "soccer_netherlands_eredivisie"}
+{"call_kind": "pregame", "credits": 2, "events": 14, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T10:46:54.622996Z", "regions": ["us"], "rows": 122, "sport_key": "soccer_netherlands_eredivisie", "stored": 75}
+{"commence_utc": "2026-10-25T11:15:00Z", "event_id": "081acf0f093e5c83d3b272bf80e8cd4f", "kind": "phase", "observed_utc": "2026-10-25T10:46:54.622996Z", "phase": "t30m", "rows": 15, "sport_key": "soccer_poland_ekstraklasa"}
+{"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T10:46:54.622996Z", "regions": ["us"], "rows": 68, "sport_key": "soccer_poland_ekstraklasa", "stored": 45}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T10:46:54.622996Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 1}
