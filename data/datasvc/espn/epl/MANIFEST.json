@@ -2,16 +2,16 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2026.jsonl": {
-   "bytes": 75870,
-   "newest": "2026-10-25T14:30:57Z",
-   "records": 128,
-   "sha256": "30b664e5214839ce46703bced11e4ba6265c86300b2b0d383b63cddbd1d5dbb6"
+   "bytes": 78845,
+   "newest": "2026-10-25T17:43:55Z",
+   "records": 133,
+   "sha256": "b0eb83750f846716ab67155267beba55f9e07e99bb14b516865b2f7f42c48205"
   },
   "player_games_2026.jsonl": {
-   "bytes": 1718196,
-   "newest": "2026-10-24T19:51:15Z",
-   "records": 3000,
-   "sha256": "7730f388d8c24e62adaa8ff30137d151c6159ccc21e33827b3a05bcf506ae451"
+   "bytes": 1809845,
+   "newest": "2026-10-25T17:44:01Z",
+   "records": 3160,
+   "sha256": "118849c5fe722b5a1a1afc21868392331df628f77074bb375de013395c1922cd"
   },
   "players.jsonl": {
    "bytes": 149141,
@@ -20,16 +20,16 @@
    "sha256": "f6f1c2b14aa4ba8f5235f083df1622886de0e276231d5c6b1efe374668d77c08"
   },
   "standings_2026.jsonl": {
-   "bytes": 22315,
-   "newest": "2026-10-24T19:51:15Z",
-   "records": 52,
-   "sha256": "805d26f234691b3dbe4597ea6b2be3eb3cda870c13e5fe9465cbe09320e60ecb"
+   "bytes": 28721,
+   "newest": "2026-10-25T17:44:02Z",
+   "records": 67,
+   "sha256": "6e9dc282e89e09ab862fa096dc06297282d0c53891999a97c1a80645743916a3"
   },
   "team_games_2026.jsonl": {
-   "bytes": 127640,
-   "newest": "2026-10-24T19:51:15Z",
-   "records": 150,
-   "sha256": "903b459d0f3daff726b5f5b570aead076f44a7946cc5f11871daae8c1636d98f"
+   "bytes": 134455,
+   "newest": "2026-10-25T17:44:01Z",
+   "records": 158,
+   "sha256": "1765e288d4d9780cb22ec1526d1e48d61d92b477142d8c3b63c8d2a428c3e0a7"
   },
   "teams.jsonl": {
    "bytes": 6696,
@@ -38,8 +38,8 @@
    "sha256": "cc46598dff00ae0994ba8bde70bfd6e932944ba49ca475fa7cfdb8b3498e83f4"
   }
  },
- "generated_utc": "2026-10-25T14:31:01Z",
+ "generated_utc": "2026-10-25T17:44:02Z",
  "league": "epl",
- "refreshed_utc": "2026-10-25T14:31:01Z",
+ "refreshed_utc": "2026-10-25T17:44:02Z",
  "title": "English Premier League"
 }
