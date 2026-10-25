@@ -6094,3 +6094,7 @@
 {"call_kind": "pregame", "credits": 2, "events": 23, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T20:16:54.114865Z", "regions": ["us"], "rows": 194, "sport_key": "soccer_argentina_primera_division", "stored": 72}
 {"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T20:16:54.114865Z", "regions": ["us"], "rows": 40, "sport_key": "soccer_belgium_first_div", "stored": 0}
 {"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T20:16:54.114865Z", "regions": ["us"], "rows": 32, "sport_key": "soccer_norway_eliteserien", "stored": 0}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-25T23:10:00Z", "observed_utc": "2026-10-25T20:33:29.186769Z", "sport_key": "basketball_wnba"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-26T02:33:29.186769Z", "observed_utc": "2026-10-25T20:33:29.186769Z", "sport_key": "soccer_belgium_first_div"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-26T02:33:29.186769Z", "observed_utc": "2026-10-25T20:33:29.186769Z", "sport_key": "soccer_norway_eliteserien"}
+{"call_kind": "inplay", "credits": 1, "events": 19, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T20:33:29.186769Z", "regions": ["us"], "rows": 75, "sport_key": "soccer_netherlands_eredivisie", "stored": 5}
