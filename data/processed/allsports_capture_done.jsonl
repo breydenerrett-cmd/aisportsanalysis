@@ -5250,3 +5250,6 @@
 {"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T07:05:46.822193Z", "regions": ["us"], "rows": 77, "sport_key": "soccer_turkey_super_league", "stored": 65}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T07:05:46.822193Z", "regions": ["au"], "rows": 5, "sport_key": "aussierules_aflw", "stored": 4}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T07:05:46.822193Z", "regions": ["us"], "rows": 0, "sport_key": "basketball_nbl", "stored": 0}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-25T13:19:57.421152Z", "observed_utc": "2026-10-25T07:19:57.421152Z", "sport_key": "basketball_ncaab"}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-10-25T13:19:57.421152Z", "observed_utc": "2026-10-25T07:19:57.421152Z", "sport_key": "icehockey_sweden_hockey_league"}
+{"call_kind": "inplay", "credits": 1, "events": 13, "events_live": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T07:19:57.421152Z", "regions": ["us"], "rows": 54, "sport_key": "soccer_japan_j_league", "stored": 20}
