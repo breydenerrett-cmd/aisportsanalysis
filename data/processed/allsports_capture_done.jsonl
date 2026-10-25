@@ -5337,3 +5337,12 @@
 {"commence_utc": "2026-10-25T15:30:00Z", "event_id": "3cd10979dc2ce2d75eb529b6ff1dfbc3", "kind": "phase", "observed_utc": "2026-10-25T09:30:06.826940Z", "phase": "t6h", "rows": 15, "sport_key": "soccer_switzerland_superleague"}
 {"call_kind": "pregame", "credits": 2, "events": 5, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T09:30:06.826940Z", "regions": ["us"], "rows": 52, "sport_key": "soccer_switzerland_superleague", "stored": 45}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T09:30:06.826940Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 1}
+{"events": 14, "kind": "peek", "next_check_utc": "2026-10-25T15:54:59.085435Z", "observed_utc": "2026-10-25T09:54:59.085435Z", "sport_key": "basketball_euroleague"}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-10-25T15:54:59.085435Z", "observed_utc": "2026-10-25T09:54:59.085435Z", "sport_key": "cricket_test_match"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-25T15:54:59.085435Z", "observed_utc": "2026-10-25T09:54:59.085435Z", "sport_key": "soccer_conmebol_copa_libertadores"}
+{"events": 5, "kind": "peek", "next_check_utc": "2026-10-25T15:54:59.085435Z", "observed_utc": "2026-10-25T09:54:59.085435Z", "sport_key": "soccer_league_of_ireland"}
+{"commence_utc": "2026-10-25T15:45:00Z", "event_id": "6a5709e9c094b7f5d089026af10fb820", "kind": "phase", "observed_utc": "2026-10-25T09:54:59.085435Z", "phase": "t6h", "rows": 15, "sport_key": "soccer_netherlands_eredivisie"}
+{"call_kind": "pregame", "credits": 2, "events": 14, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T09:54:59.085435Z", "regions": ["us"], "rows": 122, "sport_key": "soccer_netherlands_eredivisie", "stored": 75}
+{"commence_utc": "2026-10-25T19:05:00Z", "event_id": "1ab8100e319f199bc9f8b5809fd64960", "kind": "phase", "observed_utc": "2026-10-25T09:54:59.085435Z", "phase": "t24h", "rows": 3, "sport_key": "icehockey_ahl"}
+{"call_kind": "pregame", "credits": 3, "events": 2, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-25T09:54:59.085435Z", "regions": ["us"], "rows": 6, "sport_key": "icehockey_ahl", "stored": 6}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T09:54:59.085435Z", "regions": ["us"], "rows": 5, "sport_key": "tennis_wta_ningbo_open", "stored": 5}
