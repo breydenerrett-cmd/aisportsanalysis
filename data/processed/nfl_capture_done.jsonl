@@ -402,3 +402,10 @@
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-25T15:32:50.459134Z", "phase": "refresh"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-25T15:58:51.293506Z", "phase": "refresh"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-25T16:25:01.636863Z", "phase": "refresh"}
+{"game_id": "2026_07_SF_ATL", "observed_utc": "2026-10-25T16:38:06.875943Z", "phase": "t30m"}
+{"game_id": "2026_07_CIN_BAL", "observed_utc": "2026-10-25T16:38:06.875943Z", "phase": "t30m"}
+{"game_id": "2026_07_TB_CAR", "observed_utc": "2026-10-25T16:38:06.875943Z", "phase": "t30m"}
+{"game_id": "2026_07_NYG_HOU", "observed_utc": "2026-10-25T16:38:06.875943Z", "phase": "t30m"}
+{"game_id": "2026_07_IND_MIN", "observed_utc": "2026-10-25T16:38:06.875943Z", "phase": "t30m"}
+{"game_id": "2026_07_MIA_NYJ", "observed_utc": "2026-10-25T16:38:06.875943Z", "phase": "t30m"}
+{"game_id": "2026_07_CLE_TEN", "observed_utc": "2026-10-25T16:38:06.875943Z", "phase": "t30m"}
