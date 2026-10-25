@@ -103,7 +103,11 @@ class ForwardLedgerTests(unittest.TestCase):
         self.assertGreaterEqual(len(self.picks), 6)
         ids = [r["pick_id"] for r in self.picks]
         self.assertEqual(len(ids), len(set(ids)))
-        for r in self.picks:
+        late = [r for r in self.picks if r["status"].startswith("post-result capture")]
+        for r in late:                                                           # logged after the final: labelled, never a forward pick
+            self.assertIn("AFTER", r["source"], r["pick_id"])
+            self.assertTrue(r["result"] and r["final_score"], r["pick_id"])
+        for r in (x for x in self.picks if x not in late):
             self.assertLess(r["captured_utc"], r["event_start_utc"], r["pick_id"])
             self.assertTrue(r["status"].startswith("forward, pre-game"), r["pick_id"])
             self.assertTrue(r["source"], r["pick_id"])

@@ -118,7 +118,8 @@ Rules for the file: a pick row is never edited after its game. When a game is fi
 `pick_id`, with `final_score`, `result` of WIN / LOSS / VOID / NO_BET, `graded_utc` and `result_source`). A hound PASS is graded NO_BET: it is not
 a win. Both sides are graded into the same file, so the comparison is his record on his selections against the hound's record on its own,
 over the same games. `tests/test_gematria_replay.py` holds the shape. Three games is an anecdote; the file is the start of a record, and
-no claim is made from it. `forward_claims.csv` re-checks the ciphers the three posts state: all 11 arithmetic claims recompute (an "RR" is
+no claim is made from it. Picks the owner captured only after the games were final (2026-10-22, F004 to F006) are kept with the status
+"post-result capture (not a clean forward pick)" and their result inline; they are not part of the forward record. `forward_claims.csv` re-checks the ciphers the three posts state: all 11 arithmetic claims recompute (an "RR" is
 read as Reverse Full Reduction, the only reverse reduction the engine has; that reading is an interpretation and is flagged on each row), and
 the record/streak claims are UNVERIFIED_HISTORY because the NBA store holds this season only.
 
