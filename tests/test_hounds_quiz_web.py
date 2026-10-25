@@ -51,6 +51,7 @@ NEXT = click(hook("quiz-next"), "next")
 SKIP = click(hook("quiz-skip"), "skip")
 BACK = click(hook("quiz-back"), "back")
 START = click(hook("quiz-start"), "start")
+TAKE = click(hook("quiz-take"), "take", wait=120)   # the entry screen: "Take the quiz" (owner ruling 2026-10-25: two doors)
 
 
 def composed(answers, **kw):
@@ -87,6 +88,12 @@ def base_routes(answers=None, **over):
 
 
 def quiz(routes=None, **kw):
+    # A new visit opens the two-door entry (TAKE is "Take the quiz"). Any action list that starts on the quiz itself goes through
+    # the entry first, unless it already does, so every flow below still starts on step one with its answers empty.
+    actions = kw.get("actions")
+    saved = DRAFT_KEY in (kw.get("stored") or {})
+    if actions and not saved and actions[0].get("sel") not in (hook("quiz-take"), hook("quiz-describe")):
+        kw["actions"] = [TAKE] + list(actions)
     return run_page("quiz", routes=routes or base_routes(), **kw)
 
 
@@ -95,7 +102,7 @@ def posts_to(out, suffix):
 
 
 QUICK_ANSWERS = derive(["MLB"], "chalk_eater")
-QUICK = [click(card("sports", "MLB")), NEXT, click(card("personality", "chalk_eater")), NEXT, NEXT, NEXT]      # risk keeps its default
+QUICK = [TAKE, click(card("sports", "MLB")), NEXT, click(card("personality", "chalk_eater")), NEXT, NEXT, NEXT]      # risk keeps its default
 
 
 def skip_all():
@@ -105,6 +112,7 @@ def skip_all():
 
 COMBO_ANSWERS = derive(["MLB"], "chalk_eater", "bold", look={"coat": "golden", "accessory": "cap"})
 COMBO_ACTIONS = [
+    TAKE,
     click(card("sports", "MLB")), NEXT,
     click(card("personality", "chalk_eater")), NEXT,
     click(card("risk", "bold")), NEXT,
@@ -175,15 +183,23 @@ class StaticFacts(unittest.TestCase):
 class TheFourSteps(unittest.TestCase):
     """Owner ruling 2026-10-21: four steps, one primary action each, a real "Step n of 4" indicator, no intro, no Skip."""
 
-    def test_the_quiz_opens_straight_on_step_one_with_no_intro_and_no_skip(self):
-        out = quiz(queries=[q("q", hook("quiz-question")), q("step", hook("quiz-step")), q("intro", hook("quiz-intro"), "count"),
-                            q("skip", hook("quiz-skip"), "count"), q("back_hidden", hook("quiz-back"), "hidden"),
-                            q("next", hook("quiz-next")), q("next_disabled", hook("quiz-next"), "disabled"),
-                            q("builder", hook("quiz-skip-builder"), "attr", attr="href"), q("restart_hidden", hook("quiz-restart"), "hidden"),
-                            q("shell_hidden", hook("quiz-shell"), "hidden")])
+    def test_a_new_visit_opens_the_two_door_entry_then_take_the_quiz_starts_step_one(self):
+        out = quiz(queries=[q("entry_hidden", hook("quiz-entry"), "hidden"), q("shell_hidden", hook("quiz-shell"), "hidden"),
+                            q("take", hook("quiz-take")), q("describe", hook("quiz-describe"))])
+        f = out["final"]
+        self.assertEqual((f["entry_hidden"], f["shell_hidden"]), (False, True))
+        self.assertTrue(f["take"].startswith("Take the quiz") and f["describe"].startswith("Describe it first"), f)
+        out = quiz(actions=[TAKE], queries=[q("q", hook("quiz-question")), q("step", hook("quiz-step")),
+                                            q("intro", hook("quiz-intro"), "count"), q("skip", hook("quiz-skip"), "count"),
+                                            q("back_hidden", hook("quiz-back"), "hidden"), q("next", hook("quiz-next")),
+                                            q("next_disabled", hook("quiz-next"), "disabled"),
+                                            q("builder", hook("quiz-skip-builder"), "attr", attr="href"),
+                                            q("restart_hidden", hook("quiz-restart"), "hidden"),
+                                            q("shell_hidden", hook("quiz-shell"), "hidden"),
+                                            q("entry_hidden", hook("quiz-entry"), "hidden")])
         f = out["final"]
         self.assertEqual((f["q"], f["step"]), ("Which sports should it bet?", "Step 1 of 4"))
-        self.assertEqual((f["intro"], f["skip"], f["back_hidden"], f["shell_hidden"]), (0, 0, True, False))
+        self.assertEqual((f["intro"], f["skip"], f["back_hidden"], f["shell_hidden"], f["entry_hidden"]), (0, 0, True, False, True))
         self.assertEqual((f["next"], f["next_disabled"], f["builder"], f["restart_hidden"]), ("Next", True, "build-a-hound.html", True))
         self.assertEqual([g for g in out["gets"] if "quiz" in g], ["/hounds/quiz/library"])
 
@@ -199,7 +215,7 @@ class TheFourSteps(unittest.TestCase):
                    q("label", hook("quiz-step")), q("valuenow", hook("quiz-progress"), "attr", attr="aria-valuenow"),
                    q("valuemax", hook("quiz-progress"), "attr", attr="aria-valuemax"), q("cards", "[data-hook='quiz-card']", "count"),
                    q("next", hook("quiz-next")), q("coats", "[data-hook='quiz-coat']", "count"), q("back_hidden", hook("quiz-back"), "hidden")]
-        out = quiz(actions=[dict(click(card("sports", "MLB")), label="s1", capture=capture), dict(NEXT, label="s2", capture=capture),
+        out = quiz(actions=[TAKE, dict(click(card("sports", "MLB")), label="s1", capture=capture), dict(NEXT, label="s2", capture=capture),
                             dict(click(card("personality", "chalk_eater")), label="p", capture=capture), dict(NEXT, label="s3", capture=capture),
                             dict(NEXT, label="s4", capture=capture)])
         c = out["captures"]
@@ -228,11 +244,11 @@ class TheFourSteps(unittest.TestCase):
         self.assertEqual(c["pick"], {"pressed": "true", "d": False})
         self.assertEqual((c["n"]["d"], c["style"]["d"], c["unstyle"]["d"]), (True, False, True))
         self.assertEqual(c["back"]["step"], "sports")
-        back_to_sports = quiz(actions=[click(card("sports", "MLB")), NEXT, BACK], queries=[q("pressed", card("sports", "MLB"), "attr", attr="aria-pressed")])
+        back_to_sports = quiz(actions=[TAKE, click(card("sports", "MLB")), NEXT, BACK], queries=[q("pressed", card("sports", "MLB"), "attr", attr="aria-pressed")])
         self.assertEqual(back_to_sports["final"]["pressed"], "true")
 
     def test_the_personality_cards_draw_a_dog_each_and_gematria_and_mystic_are_there(self):
-        out = quiz(actions=[click(card("sports", "MLB")), NEXT], queries=[
+        out = quiz(actions=[TAKE, click(card("sports", "MLB")), NEXT], queries=[
             q("dogs", "[data-hook='quiz-card'][data-group='personality'] svg.dk-badge", "attrs", attr="data-breed"),
             q("ids", "[data-hook='quiz-card'][data-group='personality']", "attrs", attr="data-id"),
             q("pages", "[data-hook='quiz-card'][data-group='personality']", "attrs", attr="data-page"),
@@ -246,13 +262,13 @@ class TheFourSteps(unittest.TestCase):
         self.assertLessEqual(max(f["pages"].count(str(n)) for n in range(5)), 4)             # four to a page
 
     def test_show_me_others_turns_the_personality_page(self):
-        out = quiz(actions=[click(card("sports", "MLB")), NEXT, dict(click(hook("quiz-personality-more"), "more"), capture=[
+        out = quiz(actions=[TAKE, click(card("sports", "MLB")), NEXT, dict(click(hook("quiz-personality-more"), "more"), capture=[
             q("page", hook("quiz-personality-grid"), "attr", attr="data-page"), q("count", hook("quiz-personality-count"))])])
         self.assertEqual(out["captures"]["more"], {"page": "1", "count": "Page 2 of 2."})
 
     def test_the_risk_step_is_one_three_way_choice_that_starts_in_the_middle(self):
         pressed = lambda r: q(r, card("risk", r), "attr", attr="aria-pressed")          # noqa: E731
-        out = quiz(actions=[click(card("sports", "MLB")), NEXT, click(card("personality", "stats_nerd")), NEXT,
+        out = quiz(actions=[TAKE, click(card("sports", "MLB")), NEXT, click(card("personality", "stats_nerd")), NEXT,
                             dict(click(card("risk", "bold"), "bold"), capture=[pressed("steady"), pressed("balanced"), pressed("bold")])],
                    queries=[q("levels", "[data-hook='quiz-card'][data-group='risk'] .qz-pin__title", "texts"), q("segs", "[data-hook='quiz-seg']", "count"),
                             q("cap", "[data-hook='quiz-risk'] .qz-fine", "texts")])
@@ -260,7 +276,7 @@ class TheFourSteps(unittest.TestCase):
         self.assertEqual(out["final"]["segs"], 0)                                          # no number pickers: one choice maps to all three
         self.assertEqual(out["captures"]["bold"], {"steady": "false", "balanced": "false", "bold": "true"})
         self.assertTrue(any("-200 or worse" in t for t in out["final"]["cap"]))
-        default = quiz(actions=[click(card("sports", "MLB")), NEXT, click(card("personality", "stats_nerd")), NEXT],
+        default = quiz(actions=[TAKE, click(card("sports", "MLB")), NEXT, click(card("personality", "stats_nerd")), NEXT],
                        queries=[pressed("balanced")])
         self.assertEqual(default["final"]["balanced"], "true")
 
@@ -268,7 +284,7 @@ class TheFourSteps(unittest.TestCase):
         for risk in ("steady", "balanced", "bold"):
             with self.subTest(risk=risk):
                 out = quiz(routes=base_routes(derive(["NBA"], "stats_nerd", risk)),
-                           actions=[click(card("sports", "NBA")), NEXT, click(card("personality", "stats_nerd")), NEXT, click(card("risk", risk)), NEXT, NEXT])
+                           actions=[TAKE, click(card("sports", "NBA")), NEXT, click(card("personality", "stats_nerd")), NEXT, click(card("risk", risk)), NEXT, NEXT])
                 body = posts_to(out, "/hounds/quiz/compose")[0]["body"]
                 self.assertEqual(body, {"answers": derive(["NBA"], "stats_nerd", risk)})
                 level = next(r for r in LIB["risk_levels"] if r["id"] == risk)
@@ -308,7 +324,7 @@ class TheFourSteps(unittest.TestCase):
         for p in LIB["personalities"]:
             for risk in ("steady", "bold"):
                 with self.subTest(personality=p["id"], risk=risk):
-                    out = quiz(actions=[click(card("sports", "MLB")), NEXT, click(card("personality", p["id"])), NEXT, click(card("risk", risk)), NEXT, NEXT])
+                    out = quiz(actions=[TAKE, click(card("sports", "MLB")), NEXT, click(card("personality", p["id"])), NEXT, click(card("risk", risk)), NEXT, NEXT])
                     answers = posts_to(out, "/hounds/quiz/compose")[0]["body"]["answers"]
                     self.assertEqual(answers, derive(["MLB"], p["id"], risk))
                     res = C.compose(answers)
@@ -325,13 +341,13 @@ class TheFourSteps(unittest.TestCase):
                 self.assertEqual([w["code"] for w in res["warnings"] if w["level"] == "heads_up"], [])
 
     def test_the_four_answers_are_saved_and_start_over_clears_them(self):
-        out = quiz(actions=[click(card("sports", "NFL")), click(card("sports", "MLB")), NEXT, click(card("personality", "mystic")), NEXT, click(card("risk", "steady"))],
+        out = quiz(actions=[TAKE, click(card("sports", "NFL")), click(card("sports", "MLB")), NEXT, click(card("personality", "mystic")), NEXT, click(card("risk", "steady"))],
                    queries=[q("restart_hidden", hook("quiz-restart"), "hidden")])
         saved = json.loads(out["storedAfter"][DRAFT_KEY])
         self.assertEqual((saved["answers"]["sports"], saved["answers"]["personality"], saved["answers"]["risk"], saved["step"]),
                          (["NFL", "MLB"], "mystic", "steady", 2))
         self.assertFalse(out["final"]["restart_hidden"])
-        cleared = quiz(actions=[click(card("sports", "NFL")), click(hook("quiz-restart"), "restart")],
+        cleared = quiz(actions=[TAKE, click(card("sports", "NFL")), click(hook("quiz-restart"), "restart")],
                        queries=[q("pressed", card("sports", "NFL"), "attr", attr="aria-pressed"), q("step", hook("quiz-step"))])
         self.assertEqual((cleared["final"]["pressed"], cleared["final"]["step"]), ("false", "Step 1 of 4"))
         self.assertNotIn(DRAFT_KEY, cleared["storedAfter"])
@@ -348,7 +364,7 @@ class TheFourSteps(unittest.TestCase):
     # ---- the sports step (a chip grid with an All sports chip) -------------------------------------------------------------
 
     def test_the_sport_step_is_a_chip_grid_with_every_sport_most_popular_first_and_an_all_sports_chip(self):
-        out = quiz(queries=[
+        out = quiz(actions=[TAKE], queries=[
             q("chips", "[data-hook='quiz-sports-grid'] [data-hook='quiz-card']", "texts"),
             q("more", hook("quiz-sports-more")), q("more_open", hook("quiz-sports-more"), "attr", attr="aria-expanded"),
             q("extra_hidden", hook("quiz-sports-extra"), "hidden"), q("extra", "[data-hook='quiz-sports-extra'] [data-hook='quiz-card']", "texts"),
@@ -362,7 +378,7 @@ class TheFourSteps(unittest.TestCase):
         self.assertEqual(f["all"], len(LIB["sports"]) + 1)
 
     def test_more_opens_the_rest_and_a_pick_in_it_keeps_it_open(self):
-        out = quiz(actions=[click(hook("quiz-sports-more"), "open", capture=[q("hidden", hook("quiz-sports-extra"), "hidden"), q("label", hook("quiz-sports-more")),
+        out = quiz(actions=[TAKE, click(hook("quiz-sports-more"), "open", capture=[q("hidden", hook("quiz-sports-extra"), "hidden"), q("label", hook("quiz-sports-more")),
                                                                           q("expanded", hook("quiz-sports-more"), "attr", attr="aria-expanded")]),
                             click(card("sports", "WNBA"), "wnba", capture=[q("on", card("sports", "WNBA"), "attr", attr="aria-pressed")]),
                             click(hook("quiz-sports-more"), "close", capture=[q("hidden", hook("quiz-sports-extra"), "hidden")])])
@@ -374,7 +390,7 @@ class TheFourSteps(unittest.TestCase):
     def test_sports_take_many_and_all_sports_is_a_different_answer_from_a_list(self):
         pressed = lambda ident: q(ident, card("sports", ident), "attr", attr="aria-pressed")           # noqa: E731
         caps = [pressed("NBA"), pressed("NHL"), pressed("ANY")]
-        out = quiz(actions=[click(card("sports", "NBA")), click(card("sports", "NHL"), "two", capture=caps),
+        out = quiz(actions=[TAKE, click(card("sports", "NBA")), click(card("sports", "NHL"), "two", capture=caps),
                             click(card("sports", "ANY"), "any", capture=caps),
                             click(card("sports", "NBA"), "list_again", capture=caps),
                             click(card("sports", "ANY"), "any2"), click(card("sports", "ANY"), "off", capture=caps)])
@@ -389,7 +405,7 @@ class TheFourSteps(unittest.TestCase):
         out = quiz(routes=base_routes(derive(["TENNIS", "NCAAF"], "chalk_eater")), actions=pick)
         self.assertEqual(posts_to(out, "/hounds/quiz/compose")[0]["body"], {"answers": derive(["TENNIS", "NCAAF"], "chalk_eater")})
         anything = quiz(routes=base_routes(derive([user_spec.ANY], "chalk_eater")),
-                        actions=[click(card("sports", "ANY")), NEXT, click(card("personality", "chalk_eater")), NEXT, NEXT, NEXT])
+                        actions=[TAKE, click(card("sports", "ANY")), NEXT, click(card("personality", "chalk_eater")), NEXT, NEXT, NEXT])
         self.assertEqual(posts_to(anything, "/hounds/quiz/compose")[0]["body"]["answers"]["sports"], ["ANY"])
 
 

@@ -315,3 +315,10 @@
 .qz-dog--big .dk-badge, .qz-dog--hero .dk-badge { max-width: 100%; height: auto; }
 .qz-pin__check { display: none; }
 .qz-pin[aria-pressed="true"] .qz-pin__check { display: grid; }
+
+/* The two-door entry (quiz.html): "Take the quiz" and "Describe it first". Plain buttons that take the page's own text colour. */
+.qz-entry__door { display: block; width: 100%; margin: 0 0 .75rem; padding: 1rem 1.1rem; text-align: left; color: inherit;
+  background: transparent; border: 1px solid currentColor; border-radius: 12px; cursor: pointer; }
+.qz-entry__door:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.qz-entry__title { display: block; font-weight: 700; font-size: 1.1rem; }
+.qz-entry__pitch { display: block; margin-top: .25rem; opacity: .8; font-size: .92rem; }
