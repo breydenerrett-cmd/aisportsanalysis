@@ -5466,3 +5466,13 @@
 {"call_kind": "pregame", "credits": 2, "events": 15, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T11:38:53.906680Z", "regions": ["us"], "rows": 155, "sport_key": "soccer_spain_la_liga", "stored": 75}
 {"commence_utc": "2026-10-25T17:30:00Z", "event_id": "0911f42b66dd1f6544db407bccaeed07", "kind": "phase", "observed_utc": "2026-10-25T11:38:53.906680Z", "phase": "t6h", "rows": 11, "sport_key": "soccer_spain_segunda_division"}
 {"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T11:38:53.906680Z", "regions": ["us"], "rows": 64, "sport_key": "soccer_spain_segunda_division", "stored": 53}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-25T17:50:21.457922Z", "observed_utc": "2026-10-25T11:50:21.457922Z", "sport_key": "icehockey_liiga"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-25T17:50:21.457922Z", "observed_utc": "2026-10-25T11:50:21.457922Z", "sport_key": "soccer_england_efl_cup"}
+{"events": 16, "kind": "peek", "next_check_utc": "2026-10-25T17:50:21.457922Z", "observed_utc": "2026-10-25T11:50:21.457922Z", "sport_key": "soccer_germany_dfb_pokal"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-25T17:50:21.457922Z", "observed_utc": "2026-10-25T11:50:21.457922Z", "sport_key": "soccer_uefa_nations_league"}
+{"commence_utc": "2026-10-25T13:45:00Z", "event_id": "d9313796a9a62b27ced7530e0788f6dc", "kind": "phase", "observed_utc": "2026-10-25T11:50:21.457922Z", "phase": "t2h", "rows": 15, "sport_key": "soccer_poland_ekstraklasa"}
+{"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T11:50:21.457922Z", "regions": ["us"], "rows": 62, "sport_key": "soccer_poland_ekstraklasa", "stored": 37}
+{"commence_utc": "2026-10-25T17:45:00Z", "event_id": "66cc5175d5607361771b4cdbdd763bea", "kind": "phase", "observed_utc": "2026-10-25T11:50:21.457922Z", "phase": "t6h", "rows": 13, "sport_key": "soccer_argentina_primera_division"}
+{"call_kind": "pregame", "credits": 2, "events": 24, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T11:50:21.457922Z", "regions": ["us"], "rows": 203, "sport_key": "soccer_argentina_primera_division", "stored": 78}
+{"call_kind": "inplay", "credits": 1, "events": 15, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T11:50:21.457922Z", "regions": ["us"], "rows": 131, "sport_key": "soccer_italy_serie_a", "stored": 46}
+{"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T11:50:21.457922Z", "regions": ["us"], "rows": 9, "sport_key": "soccer_russia_premier_league", "stored": 6}
