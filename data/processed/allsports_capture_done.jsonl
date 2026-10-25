@@ -5212,3 +5212,5 @@
 {"events": 31, "kind": "peek", "next_check_utc": "2026-10-25T12:13:55.245233Z", "observed_utc": "2026-10-25T06:13:55.245233Z", "sport_key": "americanfootball_ncaaf"}
 {"events": 6, "kind": "peek", "next_check_utc": "2026-10-25T12:13:55.245233Z", "observed_utc": "2026-10-25T06:13:55.245233Z", "sport_key": "soccer_australia_aleague"}
 {"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T06:13:55.245233Z", "regions": ["us"], "rows": 44, "sport_key": "soccer_japan_j_league", "stored": 35}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T06:26:44.765834Z", "regions": ["au"], "rows": 5, "sport_key": "aussierules_aflw", "stored": 4}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T06:26:44.765834Z", "regions": ["us"], "rows": 0, "sport_key": "basketball_nbl", "stored": 0}
