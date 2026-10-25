@@ -63,7 +63,7 @@ class ThePanelsOnThePage(unittest.TestCase):
         return run_page("landing_board", routes=self.routes() if routes is None else routes, **kw)
 
     def test_the_board_lists_five_models_with_record_bankroll_return_and_bets(self):
-        out = self.page(queries=[
+        out = self.page(now="2026-10-25T04:00:00Z", queries=[  # inside the 6 h fresh window of the fixture's as_of
             q("ids", "[data-hook='lb-board'] .lbrow", "attrs", attr="data-hound"), q("ranks", ".lbrank", "texts"),
             q("bank", "[data-hook='lb-bankroll']", "texts"), q("ret", "[data-hook='lb-return']", "texts"),
             q("bets", "[data-hook='lb-bets']", "texts"), q("rec", "[data-hook='lb-record']", "texts"),
