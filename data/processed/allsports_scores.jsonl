@@ -2942,3 +2942,15 @@
 {"away_score": null, "away_team": "Gamba Osaka", "commence_time": "2026-11-01T07:00:00Z", "completed": false, "event_id": "79aa428a07ac9855ab1aae2b7395b6eb", "home_score": null, "home_team": "FC Machida Zelvia", "kind": "score", "last_update": null, "observed_utc": "2026-10-25T08:11:33.091211+00:00", "outcome": null, "scores": null, "sport_key": "soccer_japan_j_league"}
 {"credits": 2, "days_from": 3, "events": 20, "kind": "poll", "observed_utc": "2026-10-25T08:11:33.091211+00:00", "sport_key": "soccer_japan_j_league"}
 {"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-10-25T08:11:33.091211+00:00", "sport_key": "baseball_kbo"}
+{"away_score": null, "away_team": "Chicago Wolves", "commence_time": "2026-10-25T18:00:00Z", "completed": false, "event_id": "437e0d7069d92faf6555f6e48ff57cac", "home_score": null, "home_team": "Milwaukee Admirals", "kind": "score", "last_update": null, "observed_utc": "2026-10-25T08:36:54.087078+00:00", "outcome": null, "scores": null, "sport_key": "icehockey_ahl"}
+{"away_score": null, "away_team": "Belleville Senators", "commence_time": "2026-10-25T19:05:00Z", "completed": false, "event_id": "1ab8100e319f199bc9f8b5809fd64960", "home_score": null, "home_team": "Lehigh Valley Phantoms", "kind": "score", "last_update": null, "observed_utc": "2026-10-25T08:36:54.087078+00:00", "outcome": null, "scores": null, "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-25T08:36:54.087078+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-10-25T08:36:54.087078+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-10-25T08:36:54.087078+00:00", "sport_key": "aussierules_aflw"}
+{"away_score": null, "away_team": "Arthur Biyarslanov", "commence_time": "2026-10-31T22:00:00Z", "completed": false, "event_id": "8a85ecc4cb23a9b6639bd944c33d7346", "home_score": null, "home_team": "Lindolfo Delgado", "kind": "score", "last_update": null, "observed_utc": "2026-10-25T08:36:54.087078+00:00", "outcome": null, "scores": null, "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 36, "kind": "poll", "observed_utc": "2026-10-25T08:36:54.087078+00:00", "sport_key": "boxing_boxing"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-10-25T08:36:54.087078+00:00", "sport_key": "icehockey_mestis"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-25T08:36:54.087078+00:00", "sport_key": "cricket_odi"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-10-25T08:36:54.087078+00:00", "sport_key": "baseball_npb"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-25T08:36:54.087078+00:00", "sport_key": "cricket_international_t20"}
+{"credits": 2, "days_from": 3, "events": 13, "kind": "poll", "observed_utc": "2026-10-25T08:36:54.087078+00:00", "sport_key": "soccer_belgium_first_div"}
