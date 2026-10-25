@@ -128,10 +128,11 @@ export const MOOD_LINES = {
     grinder: "On the clock, waiting for a fit.", generic: "Sniffing around the board.",
   },
   fresh: {
-    underdog: "New here. Hungry for an upset.", chalk: "New here. Keeping it tidy.", chaos: "New here. Zero plan.",
-    nerd: "New here. Collecting data.", steam: "New here. Learning the market.", mystic: "New here. The signs will show.",
-    gematria: "New here. Learning the letters.", degen: "New here. Let's go.", grinder: "New here. Putting in the hours.",
-    generic: "New here. Waiting for a first game.",
+    underdog: "Hungry for an upset. Waiting for its first game.", chalk: "Keeping it tidy. Waiting for its first game.",
+    chaos: "Zero plan. Waiting for its first game.", nerd: "Collecting data. Waiting for its first game.",
+    steam: "Learning the market. Waiting for its first game.", mystic: "The signs will show. Waiting for its first game.",
+    gematria: "Learning the letters. Waiting for its first game.", degen: "Let's go. Waiting for its first game.",
+    grinder: "Putting in the hours. Waiting for its first game.", generic: "Waiting for its first game.",
   },
   gone: {
     underdog: "Off the clock. The record stays.", chalk: "Off the clock. The record stays.", chaos: "Off the clock. The record stays.",

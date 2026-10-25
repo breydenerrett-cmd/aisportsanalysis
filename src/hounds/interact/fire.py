@@ -22,9 +22,10 @@ Paper only. No pick here is advice.
 
 from __future__ import annotations
 
+import re
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
 from src.core import odds as odds_math
@@ -32,6 +33,7 @@ from src.hounds import one_side, user_engine, user_spec
 from src.hounds.interact import common
 
 MAX_MISSES = 6
+MAX_NEAR = 6                       # closest-candidate rows a payload carries (the right-now view shows up to three)
 HORIZON_HOURS = {"MLB": 36, "NFL": 24 * 5}
 STORES_TTL_S = 300.0
 STARTED_KEEP = timedelta(hours=12)       # how long after first pitch a started game is still NAMED
@@ -125,6 +127,44 @@ def clock_et(moment: datetime) -> str:
     local = moment.astimezone(_eastern())
     hour = local.hour % 12 or 12
     return f"{hour}:{local.minute:02d} {'am' if local.hour < 12 else 'pm'} ET"
+
+
+# ---------------------------------------------------------------------------
+# times in the viewer's zone: the server writes a TOKEN, the browser writes the clock (owner, 2026-10-25)
+# ---------------------------------------------------------------------------
+# A user-facing time is sent as a token such as [[t:<UTC ISO>]] (kinds: t = "Today 12:45 PM PT", d = "Oct 25 at 12:45 PM PT",
+# w = "Thu 12:45 PM PT", c = "12:45 PM PT"). web/js/local-time.js turns each token into the VIEWER's zone and day words.
+# ``resolve_plain`` writes the same times in Eastern for a plain-text consumer (the ``answer`` string, tests, a bot).
+TIME_TOKEN = re.compile(r"\[\[(t|d|w|c):([^\]\s]+)\]\]")
+_MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+
+def stamp(kind: str, moment: Optional[datetime]) -> str:
+    """A token for ``moment`` (UTC ISO inside), or '' when there is no moment."""
+    if moment is None:
+        return ""
+    return "[[" + kind + ":" + common.iso(moment) + "]]"
+
+
+def resolve_plain(text: str, now: datetime) -> str:
+    """The same sentence with every time token written in Eastern time, for a consumer that cannot format in the browser."""
+    def one(match):
+        kind, raw = match.group(1), match.group(2)
+        try:
+            moment = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        except ValueError:
+            return ""
+        if moment.tzinfo is None:
+            moment = moment.replace(tzinfo=timezone.utc)
+        if kind == "c":
+            return clock_et(moment)
+        if kind == "t":
+            return day_label(day_of(moment), now) + " " + clock_et(moment)
+        if kind == "d":
+            local = moment.astimezone(_eastern())
+            return _MONTHS[local.month - 1] + " " + str(local.day) + " at " + clock_et(moment)
+        return WEEKDAYS[moment.astimezone(_eastern()).weekday()][:3] + " " + clock_et(moment)
+    return TIME_TOKEN.sub(one, str(text or ""))
 
 
 def day_label(date: str, now: datetime) -> str:
@@ -294,7 +334,7 @@ def next_game_line(now: datetime, upcoming: list) -> Optional[str]:
     local = start.astimezone(_eastern())
     hour = local.hour % 12 or 12
     clock = f"{hour}:{local.minute:02d} {'AM' if local.hour < 12 else 'PM'}"
-    return f"Next game: {WEEKDAYS[local.weekday()][:3]} {clock} \u2014 {game.replace(' @ ', ' at ')}"
+    return "Next game: " + stamp('w', start) + " " + "\u2014 " + game.replace(' @ ', ' at ')
 
 
 def _heavy():
@@ -527,6 +567,7 @@ def fire_user(dog: common.Dog, *, now: Optional[datetime] = None, games: Optiona
         games = cached_games(spec["sports"], now, rows_for)
     recorded, per_date = _recorded_index(hound["id"], ledger)
     picks, misses, tickets = [], [], []
+    near: list = []                                  # the closest games that did not fully fit (see user_engine.closeness)
     miss_counts: dict = {}
     looked = 0
     newest = None
@@ -565,6 +606,9 @@ def fire_user(dog: common.Dog, *, now: Optional[datetime] = None, games: Optiona
             if cand is None:
                 miss_counts[code] = miss_counts.get(code, 0) + 1
                 misses.append(_miss(game, market, code, _explain(spec, game, market, observed, code)))
+                near_one = user_engine.closeness(spec, game, market, observed, game.commence)
+                if near_one is not None:
+                    near.append(_near_row(hound, game, market, near_one, now, lock_utc))
                 continue
             age = _minutes(now - observed)
             cand = dict(cand, board_age_minutes=float(age))
@@ -608,8 +652,35 @@ def fire_user(dog: common.Dog, *, now: Optional[datetime] = None, games: Optiona
     misses.sort(key=lambda m: (MISS_TIER.get(m["code"], 9), m["gap"] if m["gap"] is not None else 1e9,
                                m["start_utc"], m["event_id"]))
     elsewhere = other_sports_live(other_live, spec["sports"], now, started, upcoming, bool(picks))
+    # one closest candidate per game, and never a game that already has a pick (its side is the pick's, one side per game)
+    have = {p["event_id"] for p in picks}
+    near = sorted([n for n in near if n["event_id"] not in have], key=lambda n: (-n["score"], n["start_utc"], n["event_id"]))
+    seen_near: set = set()
+    closest = []
+    for n in near:
+        if n["event_id"] in seen_near:
+            continue
+        seen_near.add(n["event_id"])
+        closest.append(n)
     return _payload(dog, now, picks, misses, tickets, miss_counts, looked, newest, notes, started, upcoming,
-                    elsewhere)
+                    elsewhere, closest=closest[:MAX_NEAR])
+
+
+def _near_row(hound: dict, game, market: str, near_one: dict, now: datetime, lock_utc: datetime) -> dict:
+    """A closest-candidate row in the shape a pick has (so the card and Ask read one thing), plus its failing conditions."""
+    return {
+        "event_id": game.event_id, "game": _game_text(game), "sport": game.sport, "market": market,
+        "market_label": market_label(market, game.sport), "side": near_one["side"], "selection": near_one["selection"],
+        "line": near_one["line"], "price_average": near_one["price"], "price_best": near_one["best_price"],
+        "best_book": near_one["best_book"], "n_books": near_one["n_books"],
+        "start_utc": user_engine._iso(game.commence), "lock_utc": user_engine._iso(lock_utc),
+        "minutes_to_start": _minutes(game.commence - now), "before_lock": now < lock_utc,
+        "board_age_minutes": near_one["board_age_minutes"],
+        "stale": near_one["board_age_minutes"] > user_engine.MAX_BOARD_AGE_MINUTES,
+        "day": day_of(game.commence), "day_label": day_label(day_of(game.commence), now),
+        "over_daily_limit": False, "reason": "", "score": near_one["score"], "of": near_one["of"],
+        "misses": list(near_one["misses"]),
+    }
 
 
 def _miss(game, market: str, code: str, info: dict) -> dict:
@@ -622,7 +693,7 @@ def _miss(game, market: str, code: str, info: dict) -> dict:
 
 def _payload(dog: common.Dog, now: datetime, picks: list, misses: list, tickets: list, miss_counts: dict,
              looked: int, newest, notes: list, started: Optional[list] = None,
-             upcoming: Optional[list] = None, other_live: Optional[dict] = None) -> dict:
+             upcoming: Optional[list] = None, other_live: Optional[dict] = None, closest: Optional[list] = None) -> dict:
     nothing = not picks
     slate = slate_view(now, started or [], upcoming or [], other_live)
     # The two lines the page reads on an empty result (2026-10-19 contract): the next game in the dog's sports
@@ -643,7 +714,8 @@ def _payload(dog: common.Dog, now: datetime, picks: list, misses: list, tickets:
         "dog_id": dog.id, "dog_name": dog.name, "kind": dog.kind, "mode": "preview",
         "as_of": common.iso(now), "newest_board_utc": common.iso(newest) if newest else None,
         "games_considered": looked, "picks": picks, "recorded": tickets,
-        "closest_misses": misses[:MAX_MISSES], "miss_counts": miss_counts, "nothing_qualifies": nothing,
+        "closest_misses": misses[:MAX_MISSES], "closest_candidates": list(closest or []), "miss_counts": miss_counts,
+        "nothing_qualifies": nothing,
         "games": _by_game(picks, tickets, misses),
         "next_game": next_game_text, "live_elsewhere": elsewhere_text,
         "headline": headline, "notes": notes, "preview_note": PREVIEW_NOTE, "slate": slate,

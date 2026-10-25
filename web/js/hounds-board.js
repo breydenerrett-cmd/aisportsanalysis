@@ -410,9 +410,17 @@ export function sportsOf(hound) {
   return Array.isArray(hound && hound.sports) ? hound.sports.map((x) => String(x).toLowerCase()) : [];
 }
 
+/** Plain words for the market keys a hound can carry (owner, 2026-10-25: the hero showed "batter_hits, batter_total_bases"). */
+export const MARKET_WORDS = {
+  batter_hits: "hits", batter_total_bases: "total bases", batter_home_runs: "home runs", batter_rbis: "RBIs",
+  batter_runs_scored: "runs", batter_hits_runs_rbis: "hits + runs + RBIs", pitcher_strikeouts: "strikeouts",
+  batter_strikeouts: "batter strikeouts", batter_walks: "walks", player_points: "points", player_rebounds: "rebounds",
+  player_assists: "assists", player_threes: "threes",
+};
+
 export function marketsText(hound) {
   const m = Array.isArray(hound && hound.markets) ? hound.markets : [];
-  return m.map((x) => ({ h2h: "moneyline", totals: "totals", spreads: "spread", props: "props" }[x] || String(x))).join(", ");
+  return m.map((x) => MARKET_WORDS[x] || ({ h2h: "moneyline", totals: "totals", spreads: "spread", props: "props" }[x] || String(x))).join(", ");
 }
 
 export function typeText(hound) {

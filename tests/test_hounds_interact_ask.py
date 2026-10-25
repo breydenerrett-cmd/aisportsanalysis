@@ -115,6 +115,10 @@ PHRASINGS = [
     ("What are your rules?", "rules"),
     ("how do you pick games", "rules"),
     ("explain your strategy", "rules"),
+    ("If you had to take a bet no matter what, what would it be?", "picks_now"),
+    ("pick one for me, I have to bet something", "picks_now"),
+    ("Show me the research and results", "research"),
+    ("what did you check today and what was the evidence", "research"),
     ("How do I make you better?", "improve"),
     ("can I train you", "improve"),
     ("how do I improve you", "improve"),
@@ -234,7 +238,7 @@ class TheAnswers(unittest.TestCase):
         self.assertIn("+131", out["lines"][0])
         card = out["cards"][0]
         self.assertEqual((card["selection"], card["price_text"], card["game"]), ("Cleveland Guardians to win", "+131", "Tampa Bay Rays @ Cleveland Guardians"))
-        self.assertEqual(card["when"], "Today 7:10 pm ET")
+        self.assertTrue(card["when"].startswith("[[t:"))          # a time token: the browser writes the viewer's zone
         self.assertEqual(card["stake"], "$10")                            # the reference account's unit, when the asker sent no sizing
         # the rule text is NEVER inline: not in a line, not on the card; it sits behind "How I checked it"
         self.assertNotIn("Rule 2", out["answer"])

@@ -241,6 +241,33 @@ def fresh_picks(picks: list, held: list, now: datetime, *, in_play_on: bool = Fa
     return out[:MAX_CANDIDATES]
 
 
+CLOSEST_SHOWN = 3
+
+
+def closest_view(payload: Mapping, held: Optional[list], now: datetime, *, in_play_on: bool = False) -> list:
+    """The closest games that did NOT fully fit, best first: the most conditions passed, then the earliest start.
+
+    Uses the same ``fresh_picks`` guards as a full pick (not started, never -200 or worse, not already held, one per game),
+    so a closest candidate is never something a full pick would have refused. Each row says what it misses in plain words."""
+    rows = fresh_picks(payload.get("closest_candidates") or [], held or [], now, in_play_on=in_play_on)
+    rows = sorted(rows, key=lambda p: -int(p.get("score") or 0))[:CLOSEST_SHOWN]
+    out = []
+    for pick in rows:
+        out.append({
+            "event_id": pick.get("event_id"), "market": pick.get("market"), "market_label": pick.get("market_label"),
+            "game": pick.get("game"), "sport": pick.get("sport"), "side": pick.get("side"),
+            "selection": pick.get("selection"), "line": pick.get("line"), "price_average": pick.get("price_average"),
+            "price_best": pick.get("price_best"), "best_book": pick.get("best_book"), "n_books": pick.get("n_books"),
+            "start_utc": pick.get("start_utc"), "minutes_to_start": pick.get("minutes_to_start"),
+            "day_label": pick.get("day_label"), "stale": bool(pick.get("stale")),
+            "board_age_minutes": pick.get("board_age_minutes"), "score": pick.get("score"), "of": pick.get("of"),
+            "misses": list(pick.get("misses") or []), "in_play": False, "over_daily_limit": False,
+            "manual": {"can_record": bool((pick.get("manual") or {}).get("can_record")),
+                       "blocked": (pick.get("manual") or {}).get("blocked")},
+        })
+    return out
+
+
 def view_from_payload(payload: Mapping, *, dog_id: str, dog_name: str, kind: str, spec: Optional[Mapping],
                       persona: Optional[Mapping], held: Optional[list], now: datetime) -> dict:
     """The answer for one hound from a Fire-now payload. Pure: no disk, no clock but ``now``."""
@@ -277,6 +304,8 @@ def view_from_payload(payload: Mapping, *, dog_id: str, dog_name: str, kind: str
         "fit_definition": ("How strongly the game fits this hound's own rule, by its place among the games that fit tonight, "
                            f"ranked by {RANK_WORDS[rank_by]}. It is not a chance of winning."),
         "candidates": candidates, "nothing": not candidates, "games_considered": payload.get("games_considered", 0),
+        "closest": [] if candidates else closest_view(payload, held, now, in_play_on=in_play_on),
+        "stake_units": stake,
         "bets_in_play": in_play_on, "viewer_is_owner": bool(payload.get("viewer_is_owner")),
         "manual_remaining_today": payload.get("manual_remaining_today"),
         "next_look": None if candidates else _next_look(payload, spec, now),

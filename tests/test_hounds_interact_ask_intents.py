@@ -18,6 +18,8 @@ OWNER_QUESTION = "What bets would yopu have taken today pre market"
 
 # (question, intent). 'fallback' means nothing should win.
 PHRASINGS = [
+    ("Show me the research and results", "research"),
+    ("If you had to take a bet no matter what, what would it be?", "picks_now"),
     # picks_earlier_today: hindsight about today's boards at each game's decision time
     (OWNER_QUESTION, "picks_earlier_today"),
     ("what bets would you have taken today pre market", "picks_earlier_today"),

@@ -33,7 +33,7 @@ from src.hounds import stats
 from src.hounds.interact import ask_intents, ask_voice, fire, retune
 
 INTENTS = ("hello", "record", "today", "why_bet", "best_worst", "picks_now", "picks_earlier_today",
-           "backtest_window", "why_not", "rules", "improve", "explain_market", "fans", "coach", "help", "retune")
+           "backtest_window", "why_not", "rules", "improve", "explain_market", "fans", "coach", "help", "retune", "research")
 FALLBACK = "fallback"
 ANSWER_KINDS = INTENTS + (FALLBACK,)
 
@@ -136,12 +136,9 @@ def _units(u) -> str:
 
 
 def _when(stamp) -> str:
-    text = str(stamp or "")
-    m = re.match(r"(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})", text)
-    if not m:
-        return text[:10]
-    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    return f"{months[int(m.group(2)) - 1]} {int(m.group(3))} at {m.group(4)}:{m.group(5)} UTC"
+    """'Oct 25 at 12:25 PM PT' in the viewer's zone: a time token the browser formats (web/js/local-time.js)."""
+    moment = _parse(stamp)
+    return fire.stamp("d", moment) if moment is not None else str(stamp or "")[:10]
 
 
 def _day(stamp) -> str:
@@ -511,16 +508,15 @@ def _now(ctx: AskContext) -> datetime:
 
 
 def _et_when(ctx: AskContext, stamp) -> str:
-    """'Today 8:10 pm ET', 'Thursday 8:15 pm ET': the viewer's day words, Eastern clock, zone named."""
+    """'Today 12:45 PM PT', 'Thu 8:15 PM ET': a time token. The browser writes the viewer's day words and clock (owner, 2026-10-25);
+    a plain-text reader gets the Eastern form from ``fire.resolve_plain`` (see ``answer``)."""
     moment = _parse(stamp)
-    if moment is None:
-        return ""
-    return f"{fire.day_label(fire.day_of(moment), _now(ctx))} {fire.clock_et(moment)}"
+    return fire.stamp("t", moment) if moment is not None else ""
 
 
 def _clock(ctx: AskContext, stamp) -> str:
     moment = _parse(stamp)
-    return fire.clock_et(moment) if moment is not None else ""
+    return fire.stamp("c", moment) if moment is not None else ""
 
 
 def _stake_text(ctx: AskContext, units) -> str:
@@ -668,13 +664,21 @@ def _picks_now(ctx: AskContext, payload: Optional[dict]) -> dict:
     candidates = view["candidates"]
     if candidates:
         top = candidates[0]
-        card = _card(ctx, dict(top, stake_units=top.get("stake_units"), reason=""))   # the rule text is in "How I checked it"
+        card = _pick_card(ctx, view, top)
         lines = [ask_voice.pick_line(voice, str(top.get("selection") or ""), _price(top.get("price_average")),
                                      seed=f"{ctx.dog_id}|{top.get('event_id')}|{top.get('market')}")]
         if len(candidates) > 1:
             more = len(candidates) - 1
             lines.append(f"{more} more {'fits' if more == 1 else 'fit'} tonight. Open What I'd play right now on my page to flip through.")
         out = {"lines": lines, "cards": [card], "cards_at": len(lines), "fire": True, "fine": PAPER_FINE}
+    elif view.get("closest"):
+        # owner, 2026-10-25: "what would you bet no matter what" must get a pick. The closest game is a suggestion, never placed.
+        top = view["closest"][0]
+        card = dict(_pick_card(ctx, view, top), closest=True)
+        misses = "; ".join(top.get("misses") or []) or "one of my conditions"
+        lines = [f"Nothing fully fits my rule. Closest: {top.get('selection')} {_price(top.get('price_average'))} "
+                 f"\u2014 it misses: {misses}."]
+        out = {"lines": lines, "cards": [card], "cards_at": 1, "fire": True, "fine": PAPER_FINE}
     else:
         nxt = view.get("next_look") or {}
         when = _et_when(ctx, nxt.get("start_utc")) if nxt.get("start_utc") else ""
@@ -687,6 +691,45 @@ def _picks_now(ctx: AskContext, payload: Optional[dict]) -> dict:
 
 
 PAPER_FINE = "Paper pick, not advice. 21+."
+
+
+def _pick_card(ctx: AskContext, view: dict, pick: dict) -> dict:
+    """A pick as an answer card. The owner sees "Add as a manual pick" on it when the rules allow (the same flag the page's card reads)."""
+    card = _card(ctx, dict(pick, stake_units=view.get("stake_units"), reason=""))   # the rule text is in "How I checked it"
+    manual = pick.get("manual") or {}
+    if view.get("viewer_is_owner") and manual.get("can_record"):
+        card["manual"] = {"event_id": pick.get("event_id"), "market": pick.get("market"), "player": pick.get("player")}
+    elif view.get("viewer_is_owner") and manual.get("blocked"):
+        card["manual_blocked"] = str(manual.get("blocked"))
+    return card
+
+
+def _research(ctx: AskContext) -> dict:
+    """"Show me the research": what the rule checked TODAY (counts, why games were out, the closest ones, the rule in one line)."""
+    if ctx.fire_fn is None:
+        return {"lines": [NOT_FIRABLE + " Ask me about my record instead."]}
+    payload = _get_fire(ctx)
+    stop = _unavailable(payload, "I cannot read the boards just now. Try me again in a minute.")
+    if stop is not None:
+        return stop
+    view = _right_now_view(ctx, payload)
+    checked = payload.get("games_considered") or 0
+    fitted = len(payload.get("picks") or [])
+    lines = [f"Today I checked {checked} {'game' if checked == 1 else 'games'} and {fitted} passed my rule."]
+    reasons = [f"{n} {fire.MISS_TITLE.get(code, code).lower()}"
+               for code, n in sorted((payload.get("miss_counts") or {}).items(), key=lambda kv: -kv[1]) if n]
+    if reasons:
+        lines.append("Out: " + ", ".join(reasons) + ".")
+    for c in (view.get("closest") or [])[:3]:
+        lines.append(f"Closest: {c.get('selection')} {_price(c.get('price_average'))}. It misses: "
+                     f"{'; '.join(c.get('misses') or []) or 'nothing I can name'}.")
+    if not view.get("closest") and not fitted:
+        lines.append("No game has a price I can show as close.")
+    rule = plain_rule(ctx.rule_english or ctx.rule_text)
+    if rule:
+        lines.append(f"My rule: {rule}")
+    lines.append(PAPER_TAIL)
+    return {"lines": lines}
 
 
 MAX_TICKETS = 3
@@ -1167,6 +1210,8 @@ def _answer_body(intent: str, q: str, ctx: AskContext, scored: dict) -> dict:
         return _retune(ctx, q)
     if intent == "explain_market":
         return _explain_market(ctx, q)
+    if intent == "research":
+        return _research(ctx)
     if intent == "fans":
         return _fans(ctx)
     if intent == "coach":
@@ -1190,7 +1235,9 @@ def answer(question: str, ctx: AskContext) -> dict:
         intent = FALLBACK
     lines = body["lines"]
     followups = [s for s in suggestions(ctx) if norm(s) != norm(q)][:4]
-    return {"intent": intent, "question": q, "answer": " ".join(lines), "lines": lines,
+    now = _now(ctx)
+    plain = [fire.resolve_plain(x, now) for x in lines]        # the plain-text reader gets Eastern times; the page gets tokens
+    return {"intent": intent, "question": q, "answer": " ".join(plain), "lines": lines,
             "ui_lines": body.get("ui_lines") or lines, "cards": body.get("cards", []), "cards_at": body.get("cards_at"),
             "hindsight": bool(body.get("hindsight")), "busy": body.get("busy"),
             "details": body.get("details"), "fine": body.get("fine"), "retune": body.get("retune"),

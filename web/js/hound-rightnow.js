@@ -22,6 +22,7 @@ import { h, clearNode, fmtPrice, isNum, createPoller } from "./hounds-core.js";
 import { post, errorText } from "./dog-common.js";
 import { stakeWords } from "./unitsize.js";
 import { pickLine, nothingLine, voiceOf } from "./hound-lines.js";
+import { localizeTimes } from "./local-time.js";
 
 export const NOW_POLL_MS = 90000;
 export const CAP = -200;
@@ -115,7 +116,14 @@ export function renderNow(body, ctx) {
     if (next && isNum(next.locks_in_minutes)) {
       body.appendChild(h("p", { class: "hn-fine", "data-hook": "now-next", text: next.locks_in_minutes <= 0 ? "I'm already looking at it." : `I'll start looking at it in ${spanWords(next.locks_in_minutes)}.` }));
     } else if (data && data.next_game) {
-      body.appendChild(h("p", { class: "hn-fine", "data-hook": "now-next", text: String(data.next_game) }));
+      body.appendChild(h("p", { class: "hn-fine", "data-hook": "now-next", text: localizeTimes(String(data.next_game)) }));
+    }
+    // owner, 2026-10-25: nothing fully fits, so the card names the closest game as a suggestion (Ask says the same thing)
+    const closest = data && Array.isArray(data.closest) ? data.closest[0] : null;
+    if (closest) {
+      const misses = (closest.misses || []).join("; ") || "one of my conditions";
+      body.appendChild(h("p", { class: "hn-fine", "data-hook": "now-closest",
+        text: `Nothing fully fits my rule. Closest: ${closest.selection} ${fmtPrice(closest.price_average)} \u2014 it misses: ${misses}.` }));
     }
     body.appendChild(h("p", { class: "hn-paper", "data-hook": "now-paper", text: PAPER_LINE }));
     return null;
