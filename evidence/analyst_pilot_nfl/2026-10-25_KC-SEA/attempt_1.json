@@ -1,0 +1,136 @@
+{
+  "summary": "Kansas City comes in 5-0 with a points margin of 11.4 per game over five games, while Seattle sits at 4.3333 per game over six, and Kansas City has the better yards per play, 6.699 to 5.2586. Seattle's defence is stingier on yards allowed per play, 3.9556 to 4.8113, so this is not one-sided. The market has Seattle as a small home favourite at -3, a key number, and the gap Seattle is laying has grown from 2.5 when first captured to 3 now. I lean Kansas City: the points at KC +3 and the moneyline at +135 both look a little generous given the form, though five games is a thin sample, Kansas City travels 1508.8 miles, and Rashee Rice is listed out. Seattle is projected to start Sam Darnold, a change from last game's starter Drew Lock, who is listed questionable, which adds uncertainty either way. I pass on the total at 42.5, down from 44.5 when first captured. Nothing in the scoring or yardage numbers shows why that price is wrong, and we cannot see weather for an outdoor game.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "KC",
+      "verdict": "TAKE_OTHER_SIDE",
+      "price": 135,
+      "book": "betmgm",
+      "fair_estimate": 0.47,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Kansas City has been the stronger team on results this season, with a larger points margin per game than Seattle, so the books' 42 percent for the underdog looks a little low.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 11.4},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 4.3333},
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.4215}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Kansas City also leads on net yards per play this season, which backs the scoreboard results.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.yards_per_play.value", "value": 6.699},
+            {"path": "sections.home.values.form.season_to_date.yards_per_play.value", "value": 5.2586}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Seattle's projected quarterback is a change from last game, with Drew Lock listed questionable, which makes the home side harder to read.",
+          "evidence": [
+            {"path": "sections.home.values.qb.listed_for_this_game.changed_since_last_game", "value": true},
+            {"path": "sections.home.values.qb.listed_for_this_game.name", "value": "Sam Darnold"},
+            {"path": "sections.home.values.injuries.skill_players_listed[0].report_status", "value": "questionable"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 113,
+      "what_would_change_it": "Patrick Mahomes being ruled out, or the price falling to +113 or shorter, would take away the reason to back Kansas City.",
+      "case_against": {
+        "claim": "Kansas City travels a long way west across two time zones to play at a venue where Seattle has ten days of rest, and Rashee Rice is listed out, so the home side has real situational pull behind the favourite price.",
+        "evidence": [
+          {"path": "sections.away.values.travel.miles_from_home_base", "value": 1508.8},
+          {"path": "sections.away.values.travel.time_zones_crossed", "value": -2},
+          {"path": "sections.home.values.rest.days_since_last_game", "value": 10},
+          {"path": "sections.away.values.injuries.skill_players_listed[1].report_status", "value": "out"}
+        ],
+        "derived": []
+      }
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "KC +3",
+      "verdict": "TAKE",
+      "price": -108,
+      "book": "lowvig",
+      "fair_estimate": 0.55,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The number is wrong by a small amount in Kansas City's favour: a 5-0 team with a bigger points margin per game than Seattle is getting a field goal, and the books' own split is near even.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 11.4},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 4.3333},
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5154}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Three is a key number, so Kansas City getting exactly 3 is worth more than a neighbouring number would be, since a field goal margin returns the stake.",
+          "evidence": [
+            {"path": "sections.reference.values.key_numbers", "value": "3,6,7,10,14"},
+            {"path": "markets.spread.options[0].line", "value": 3.0}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Kansas City allows fewer points per game over its five games than Seattle has over its six, which helps a team getting points keep the margin small.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 16.6},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 20.3333}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -122,
+      "what_would_change_it": "Kansas City losing Patrick Mahomes before kickoff, or the number moving off 3 to something worse than KC +3 at -122, would flip this call.",
+      "case_against": {
+        "claim": "The number has already moved toward Seattle since it was first captured, and Seattle's defence allows fewer yards per play than Kansas City's, so the market may be reacting to something that backs the home side.",
+        "evidence": [
+          {"path": "markets.spread.context.away_number_first_captured", "value": 2.5},
+          {"path": "sections.home.values.form.season_to_date.yards_per_play_allowed.value", "value": 3.9556},
+          {"path": "sections.away.values.form.season_to_date.yards_per_play_allowed.value", "value": 4.8113}
+        ],
+        "derived": []
+      }
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 42.5",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books split this almost exactly in half, and Kansas City's scoring and Seattle's defensive yardage pull in different directions, so the data does not show that the price is off.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5008},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 28},
+            {"path": "sections.home.values.form.season_to_date.yards_per_play_allowed.value", "value": 3.9556}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Seattle's quarterback is projected to change and Drew Lock is listed questionable, which could move a total, and weather for this outdoor game is missing from what we have.",
+          "evidence": [
+            {"path": "sections.home.values.qb.listed_for_this_game.changed_since_last_game", "value": true},
+            {"path": "missing[1].item", "value": "weather"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 110,
+      "what_would_change_it": "Confirmed weather for Lumen Field, or a quarterback ruling for Seattle, would give a reason to move off this pass.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

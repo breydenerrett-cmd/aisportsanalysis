@@ -430,6 +430,14 @@ class BannedWords(unittest.TestCase):
         self.assertEqual(C.banned_words("A clockwork bullpen."), [])
         self.assertEqual(C.banned_words("Bet Check says so"), ["Bet Check"])
 
+    def test_a_name_the_packet_vouches_for_is_not_a_banned_word(self):
+        # 2026-10-25: Seattle's Drew Lock was on the injury report and "lock" struck every answer.
+        known = C.KnownNames.build({"injuries": [{"player": "Lock, Drew"}]}, clubs=False)
+        self.assertEqual(C.banned_words("Seattle may start Drew Lock.", known=known), [])
+        self.assertEqual(C.banned_words("Drew Lock is a lock.", known=known), ["lock"])
+        self.assertEqual(C.banned_words("Seattle may start Drew Lock."), ["lock"])
+        self.assertEqual(C.banned_words("Seattle may start Bob Lock.", known=known), ["lock"])
+
     def test_a_banned_word_in_the_summary_withholds_it(self):
         v = verify(F.build(), lambda o: o.update(summary=o["summary"] + " This one is a lock."))
         self.assertEqual(v.summary_status, "withheld")

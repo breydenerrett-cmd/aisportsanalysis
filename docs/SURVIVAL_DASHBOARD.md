@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-25 18:10Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-25 20:47Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-25 (11:00 am PT run): NFL briefs published for Broncos at Cardinals, Packers at Lions and Rams at Raiders.
+- 2026-10-25 (1:30 pm PT run): NFL brief published for Chiefs at Seahawks (5:20 pm PT); four briefs today in all.
+- The checker struck the word 'lock' inside Seattle quarterback Drew Lock's name; fixed so names from the data are not scanned, first freeze kept on record.
 - No MLB game today; World Series Game 3 (Brewers at Rays) is Monday 5:00 pm PT.
-- The Saturday 1:30 pm PT run did not happen, so Game 2 had no brief.
-- Working-branch tests went red Saturday on one research-file test; fixed in this run. Site odds were 23 hours old because production only refreshes on green tests.
+- Working-branch tests red on two quiz browser tests after the new quiz entry; another session's fix is in CI.
 - Public MLB value picks remain paused. Sends 0, replies 0, testers 0.
 

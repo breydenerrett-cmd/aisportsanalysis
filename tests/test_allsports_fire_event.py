@@ -195,8 +195,10 @@ class TheEmptyResultLines(Base):
         other = lambda own, at: {"games": 14, "families": [], "text": "Live now in other sports: 14 games (tennis, cricket)."}  # noqa: E731
         out = self.fire_empty(other)
         self.assertEqual(out["picks"], [])
-        # the time is a token the page formats in the viewer's own zone (2026-10-25): [[w:<ISO UTC>]]
-        self.assertEqual(out["next_game"], "Next game: [[w:2026-10-20T23:10:00Z]] — New York Knicks at Boston Celtics")
+        # the time is a viewer-zone token; resolved plainly it reads in Eastern time
+        self.assertIn("[[w:", out["next_game"])
+        self.assertEqual(fire.resolve_plain(out["next_game"], self.TUESDAY),
+                         "Next game: Tue 7:10 pm ET — New York Knicks at Boston Celtics")
         self.assertEqual(out["live_elsewhere"], "Live now in other sports: 14 games (tennis, cricket)")
 
     def test_a_pick_means_neither_line(self):
@@ -217,7 +219,7 @@ class TheEmptyResultLines(Base):
     def test_the_lines_are_given_even_when_the_dog_has_a_game_later_today(self):
         # a game tonight that the dog's band rejects: nothing qualifies, but there IS a next game
         out = self.fire_empty(lambda own, at: {"games": 2, "families": [], "text": "Live now in other sports: 2 games (nba)."})
-        self.assertTrue(out["next_game"].startswith("Next game: [[w:2026-10-20T"))
+        self.assertTrue(fire.resolve_plain(out["next_game"], self.TUESDAY).startswith("Next game: Tue "))
         self.assertEqual(out["live_elsewhere"], "Live now in other sports: 2 games (nba)")
 
     def test_an_english_dog_gets_the_same_two_lines(self):
@@ -228,9 +230,11 @@ class TheEmptyResultLines(Base):
         self.assertIsNone(out["next_game"])
         self.assertEqual(out["live_elsewhere"], "Live now in other sports: 3 games (soccer)")
 
-    def test_the_next_game_line_carries_a_local_time_token(self):
+    def test_the_next_game_line_formats_in_eastern_time(self):
         upcoming = [("B @ A", utc("2026-10-22T21:15:00Z"), None), ("D @ C", utc("2026-10-23T00:15:00Z"), None)]
-        self.assertEqual(fire.next_game_line(self.TUESDAY, upcoming), "Next game: [[w:2026-10-22T21:15:00Z]] — B at A")
+        line = fire.next_game_line(self.TUESDAY, upcoming)
+        self.assertEqual(line, "Next game: [[w:2026-10-22T21:15:00Z]] — B at A")
+        self.assertEqual(fire.resolve_plain(line, self.TUESDAY), "Next game: Thu 5:15 pm ET — B at A")
         self.assertIsNone(fire.next_game_line(self.TUESDAY, []))
         self.assertIsNone(fire.next_game_line(utc("2026-10-25T00:00:00Z"), upcoming))
 

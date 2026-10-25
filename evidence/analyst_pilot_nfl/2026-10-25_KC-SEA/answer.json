@@ -1,0 +1,126 @@
+{
+  "summary": "Kansas City arrives 5-0 with a margin of 11.4 points per game, while Seattle is 3-3 at 4.3333 over 6 games, so on form the visitors look sound. The market already knows that. Seattle is a modest home favourite at -146 on the moneyline, and the spread sits at KC +3, a key number, after first being captured at KC +2.5. Seattle's listed quarterback changed since its last game to Sam Darnold, and that is a projection, not a confirmed starter. We also cannot see the weather for an outdoor game, and Kansas City's form rests on only 5 games. I pass on the moneyline: KC at +135 pays more than the books' fair probability of 0.4215 asks, but nothing we hold shows the price is wrong. I pass on the spread for the same reason, since a half point either side of 3 is not something the data can settle. I pass on the total of 42.5, which was 44.5 when first captured; the two sides are priced almost evenly and the scoring and yardage figures for each team pull in different directions.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "SEA",
+      "verdict": "PASS",
+      "price": -146,
+      "book": "fanduel",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books' own number for Seattle is a little under 58 percent, a moderate favourite, and nothing in what we have gives a reason to move off it.",
+          "evidence": [
+            { "path": "markets.moneyline.options[0].fair_probability", "value": 0.5785 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Kansas City has the better results so far, a margin of 11.4 points per game over 5 games against Seattle's 4.3333 over 6, which is why the underdog price is tempting. Five games is a small sample, though.",
+          "evidence": [
+            { "path": "sections.away.values.form.season_to_date.margin_per_game", "value": 11.4 },
+            { "path": "sections.home.values.form.season_to_date.margin_per_game", "value": 4.3333 },
+            { "path": "sections.away.values.form.season_to_date.games", "value": 5 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Seattle's listed quarterback changed since its last game, and it is only a projection. That is a reason for care on either side, so I stay out.",
+          "evidence": [
+            { "path": "sections.home.values.qb.listed_for_this_game.changed_since_last_game", "value": true },
+            { "path": "sections.home.values.qb.listed_for_this_game.projected", "value": true }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed quarterback for Seattle that differs from the projected one, or a Kansas City price that moves well above the +135 now on offer, would make me look again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "KC +3",
+      "verdict": "PASS",
+      "price": -108,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books price the two sides of this number almost evenly, which is how a spread is built, and a bet needs a reason the number is wrong in points. We do not have one.",
+          "evidence": [
+            { "path": "markets.spread.options[0].fair_probability", "value": 0.5154 },
+            { "path": "markets.spread.options[1].fair_probability", "value": 0.4846 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number is on 3, one of the scoring key numbers, and it has moved from KC +2.5 at first capture to KC +3 now, so Kansas City is getting a little more room than before. That fits the form gap but also means the move is already in the price.",
+          "evidence": [
+            { "path": "sections.reference.values.key_numbers[0]", "value": 3 },
+            { "path": "markets.spread.context.away_number_first_captured", "value": 2.5 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both teams' form figures come from small windows, 5 games for Kansas City and 6 for Seattle, and the weather is missing for an outdoor game, so the evidence is thin.",
+          "evidence": [
+            { "path": "sections.home.values.form.season_to_date.games", "value": 6 },
+            { "path": "sections.schedule.values.venue.roof", "value": "outdoors" }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed Seattle quarterback change, or the number moving off 3, would make me revisit the side.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 42.5",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books split this almost exactly in half, and the total has come down from 44.5 at first capture to 42.5, so the lower number is already in the price.",
+          "evidence": [
+            { "path": "markets.total.options[0].fair_probability", "value": 0.5008 },
+            { "path": "markets.total.context.number_first_captured", "value": 44.5 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The scoring figures point both ways. Kansas City scores 28 points per game this season and allows 16.6, while Seattle scores 24.6667 and allows 20.3333, and Seattle allows only 3.9556 yards per play.",
+          "evidence": [
+            { "path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 28 },
+            { "path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 16.6 },
+            { "path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 24.6667 },
+            { "path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 20.3333 },
+            { "path": "sections.home.values.form.season_to_date.yards_per_play_allowed.value", "value": 3.9556 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "A quarterback change for Seattle and a missing weather read for an outdoor game are both things that could move a total, so care is the right default.",
+          "evidence": [
+            { "path": "sections.home.values.qb.listed_for_this_game.name", "value": "Sam Darnold" },
+            { "path": "sections.schedule.values.venue.roof", "value": "outdoors" }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed quarterback for Seattle or a weather read showing conditions that suppress or help scoring would change the view.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
