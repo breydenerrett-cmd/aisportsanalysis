@@ -5172,3 +5172,10 @@
 {"commence_utc": "2026-10-25T07:00:00Z", "event_id": "6877d7a799170623675d730a7548a2e5", "kind": "phase", "observed_utc": "2026-10-25T05:08:41.906143Z", "phase": "t2h", "rows": 13, "sport_key": "soccer_japan_j_league"}
 {"call_kind": "pregame", "credits": 2, "events": 6, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T05:08:41.906143Z", "regions": ["us"], "rows": 70, "sport_key": "soccer_japan_j_league", "stored": 63}
 {"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T05:08:41.906143Z", "regions": ["us"], "rows": 44, "sport_key": "soccer_mexico_ligamx", "stored": 35}
+{"events": 0, "kind": "peek", "next_check_utc": "2026-10-25T11:15:30.178387Z", "observed_utc": "2026-10-25T05:15:30.178387Z", "sport_key": "baseball_kbo"}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-10-25T11:15:30.178387Z", "observed_utc": "2026-10-25T05:15:30.178387Z", "sport_key": "cricket_international_t20"}
+{"commence_utc": "2026-10-25T11:15:00Z", "event_id": "f168373343a58c07d02f40538d04b404", "kind": "phase", "observed_utc": "2026-10-25T05:15:30.178387Z", "phase": "t6h", "rows": 15, "sport_key": "soccer_netherlands_eredivisie"}
+{"call_kind": "pregame", "credits": 2, "events": 14, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T05:15:30.178387Z", "regions": ["us"], "rows": 122, "sport_key": "soccer_netherlands_eredivisie", "stored": 75}
+{"commence_utc": "2026-10-25T11:15:00Z", "event_id": "081acf0f093e5c83d3b272bf80e8cd4f", "kind": "phase", "observed_utc": "2026-10-25T05:15:30.178387Z", "phase": "t6h", "rows": 15, "sport_key": "soccer_poland_ekstraklasa"}
+{"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T05:15:30.178387Z", "regions": ["us"], "rows": 66, "sport_key": "soccer_poland_ekstraklasa", "stored": 45}
+{"call_kind": "inplay", "credits": 1, "events": 31, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T05:15:30.178387Z", "regions": ["us"], "rows": 88, "sport_key": "americanfootball_ncaaf", "stored": 14}
