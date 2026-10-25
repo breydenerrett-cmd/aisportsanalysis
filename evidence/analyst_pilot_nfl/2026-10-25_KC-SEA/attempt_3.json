@@ -1,0 +1,30 @@
+{
+"summary":"The market looks roughly right here, and what we have gives reasons for care rather than a clear edge. Seattle is the home favourite on the moneyline with a de-vigged win probability of 0.5785, yet Kansas City has the stronger recent form: five wins from five games and a margin per game of 11.4, against 4.6 for Seattle over its last five. That gap is real but rests on five games, and Seattle's listed quarterback has changed from the last game, with Drew Lock listed as questionable, so I pass on the moneyline. The spread sits on 3, one of the scoring key numbers, after first being captured with Kansas City getting 2.5. The fair probability on Kansas City at that number is 0.5154, almost a coin flip, so I pass on that too. The total of 42.5 has come down from 44.5 and the price is nearly even on both sides. Weather is missing for an outdoor game, so I pass there as well.",
+"summary_derived":[],
+"calls":[
+{"slot_id":"moneyline","market":"moneyline","selection":"SEA","verdict":"PASS","price":-146,"book":"fanduel","fair_estimate":null,"confidence":"low","pass_price":null,
+"reasons":[
+{"claim":"The books make Seattle the favourite with a de-vigged win probability of 0.5785, and nothing in what we have clearly shows that number is wrong.","evidence":[{"path":"markets.moneyline.options[0].fair_probability","value":0.5785}],"derived":[]},
+{"claim":"Kansas City has the better recent margin per game over its last five, but both windows are small, so it is not enough to fight the price.","evidence":[{"path":"sections.away.values.form.last_5.margin_per_game","value":11.4},{"path":"sections.home.values.form.last_5.margin_per_game","value":4.6},{"path":"sections.away.values.form.last_5.games","value":5}],"derived":[]},
+{"claim":"Seattle's projected quarterback is different from the one who played last game, and the quarterback who played last game is listed as questionable, which is a reason for care.","evidence":[{"path":"sections.home.values.qb.listed_for_this_game.changed_since_last_game","value":true},{"path":"sections.home.values.qb.listed_for_this_game.name","value":"Sam Darnold"},{"path":"sections.home.values.injuries.skill_players_listed[0].report_status","value":"questionable"}],"derived":[]}
+],
+"what_would_change_it":"Seattle's quarterback being confirmed out or Kansas City's price drifting well above the current best quote would make me revisit.",
+"case_against":null},
+{"slot_id":"spread","market":"spread","selection":"KC +3","verdict":"PASS","price":-108,"book":"lowvig","fair_estimate":null,"confidence":"low","pass_price":null,
+"reasons":[
+{"claim":"At this number the two sides are close to a coin flip, with Kansas City at 0.5154, so a bet needs a reason the number is wrong in points and we do not have one.","evidence":[{"path":"markets.spread.options[0].fair_probability","value":0.5154},{"path":"markets.spread.options[1].fair_probability","value":0.4846}],"derived":[]},
+{"claim":"The number sits on 3, one of the scoring key numbers, and it has moved from Kansas City getting 2.5 when first captured to 3 now, toward Seattle being the bigger favourite.","evidence":[{"path":"sections.reference.values.key_numbers[0]","value":3},{"path":"markets.spread.context.away_number_first_captured","value":2.5},{"path":"markets.spread.options[0].line","value":3.0}],"derived":[]},
+{"claim":"Kansas City's season margin per game is larger than Seattle's, but it rests on five games against six and the Seattle quarterback situation is unsettled, so the form gap does not clearly show the price is off.","evidence":[{"path":"sections.away.values.form.season_to_date.margin_per_game","value":11.4},{"path":"sections.home.values.form.season_to_date.margin_per_game","value":4.3333}],"derived":[]}
+],
+"what_would_change_it":"A confirmed Seattle quarterback change or the number moving off 3 would make me look again.",
+"case_against":null},
+{"slot_id":"total","market":"total","selection":"Under 42.5","verdict":"PASS","price":-107,"book":"lowvig","fair_estimate":null,"confidence":"low","pass_price":null,
+"reasons":[
+{"claim":"The price is almost exactly even on both sides, so the market sees no lean either way.","evidence":[{"path":"markets.total.options[0].fair_probability","value":0.5008},{"path":"markets.total.options[1].fair_probability","value":0.4992}],"derived":[]},
+{"claim":"The total has come down from 44.5 when first captured to 42.5, and Seattle's defence has allowed few yards per play, but Kansas City scores 28 points per game, so the form points both ways.","evidence":[{"path":"markets.total.context.number_first_captured","value":44.5},{"path":"sections.home.values.form.season_to_date.yards_per_play_allowed.value","value":3.9556},{"path":"sections.away.values.form.season_to_date.points_for_per_game","value":28}],"derived":[]},
+{"claim":"We cannot see weather for an outdoor game, and a quarterback change could move the total.","evidence":[{"path":"sections.schedule.values.venue.roof","value":"outdoors"},{"path":"sections.home.values.qb.listed_for_this_game.changed_since_last_game","value":true}],"derived":[]}
+],
+"what_would_change_it":"A weather forecast showing hard wind or the total moving off 42.5 would change my view.",
+"case_against":null}
+]
+}
