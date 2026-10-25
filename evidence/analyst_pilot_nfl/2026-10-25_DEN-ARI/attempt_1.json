@@ -1,0 +1,128 @@
+{
+  "summary": "Denver is the better side on the numbers we have, but the market already knows it. The best Denver moneyline is -220, which is past the -200 limit, so I pass on it, and Arizona at +195 would need a better chance than the 0.3331 the books give it, which I cannot argue from what we have. Arizona allows 29.6667 points per game this season and 6.0086 net yards per play, and Denver has the better recent margin, yet Denver itself scores only 19 points per game. The spread of DEN -4.5 is split almost exactly even by the books at 0.5005, and 4.5 sits just off the key numbers 3 and 6, so I pass; I see no reason in points that the number is wrong. The total of 43.5 sets a leaky Arizona defense against a Denver offense at 4.3983 net yards per play, and both quarterbacks are only projected starters. Arizona lists Carson Beck as questionable at quarterback, though Jacoby Brissett is the listed starter. Weather and roof are missing, so I cannot judge conditions for what may be an outdoor game, and I pass on all three markets.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "DEN",
+      "verdict": "PASS",
+      "price": -220,
+      "book": "mybookieag",
+      "fair_estimate": 0.65,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Denver is the favourite, but the best price on it is -220, which is past the -200 limit, so it cannot be a bet. The books' own fair chance for Denver is 0.6669.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].best.price", "value": -220},
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.6669}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Arizona has been poor this season, with a margin of -8.6667 per game, so the market is probably right that Denver is the likelier winner. Arizona's price of +195 has a fair chance of 0.3331 behind it, and nothing in what we have clearly shows that is too low.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": -8.6667},
+            {"path": "markets.moneyline.options[1].best.price", "value": 195},
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.3331}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Denver's own scoring is thin at 19 points per game and 4.3983 net yards per play, and both quarterbacks are only projected, so the case for a bigger Denver price is not solid.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 19},
+            {"path": "sections.away.values.form.season_to_date.yards_per_play.value", "value": 4.3983},
+            {"path": "sections.home.values.qb.listed_for_this_game.projected", "value": true}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -186,
+      "what_would_change_it": "Denver's moneyline falling to -186 or better, or Arizona's quarterback being ruled out on the injury report, would change this.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "DEN -4.5",
+      "verdict": "PASS",
+      "price": -104,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books split this number almost exactly even, with a fair chance of 0.5005 on Denver at -4.5, so the price says it is a coin flip and we have no clear reason in points that it is wrong.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5005},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4995}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number has barely moved from where it was first captured, which was -4.5, so the market has held its view for ten days.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": -4.5},
+            {"path": "markets.spread.options[0].line", "value": -4.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Arizona allows 29.6667 points per game, which points toward Denver, but Denver scores only 19 per game and Arizona's last-five margin of -12.8 shows a team that may already be priced as weak. Two projected quarterbacks and no weather leave the number unchallenged.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 29.6667},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 19},
+            {"path": "sections.home.values.form.last_5.margin_per_game", "value": -12.8}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Arizona's quarterback being ruled out on the injury report, or the number moving off -4.5 toward a key number such as 3 or 6, would make me look again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 43.5",
+      "verdict": "PASS",
+      "price": -108,
+      "book": "betmgm",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books price the total as an even split, with a fair chance of 0.5002 on the Under at 43.5, and the number is down from 45.5 when first captured, so the market has already moved toward the low scoring both offenses suggest.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5002},
+            {"path": "markets.total.context.number_first_captured", "value": 45.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The scoring pulls in two directions. Denver scores 19 points per game and allows 20.8333, which points Under, while Arizona allows 29.6667 and 6.0086 net yards per play, which points Over. The price already holds both.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 19},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 20.8333},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 29.6667},
+            {"path": "sections.home.values.form.season_to_date.yards_per_play_allowed.value", "value": 6.0086}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Weather and roof are not in what we have, and Arizona lists its quarterback Carson Beck as questionable, so a quarterback change could move the total. That is a reason for care.",
+          "evidence": [
+            {"path": "missing[2].item", "value": "weather"},
+            {"path": "sections.home.values.injuries.skill_players_listed[0].report_status", "value": "questionable"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A weather forecast showing heavy wind or a quarterback change for Arizona would move the total enough to revisit it.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

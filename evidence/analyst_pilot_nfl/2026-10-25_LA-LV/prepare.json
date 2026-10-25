@@ -1,0 +1,23 @@
+{
+  "sport": "nfl",
+  "game_id": "2026_07_LA_LV",
+  "date": "2026-10-25",
+  "away": "LA",
+  "home": "LV",
+  "kickoff_utc": "2026-10-25T20:25:00Z",
+  "built_at": "2026-10-25T18:08:49Z",
+  "packet_hash": "4f247eefe99703ef85e960ddbcd082ff2475da0219a65943ff4b0ca97bf4f277",
+  "prompt_version": "analyst_prompt_nfl_v1",
+  "prompt_hash": "8b80fc0cc2622da7497bed03b851d3934b8d687a6ca9c5a17d3eeb2d1c56ea7b",
+  "token_estimate": 9474,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "spread",
+    "total"
+  ],
+  "missing_items": 1,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "nfl_store+odds_multibook"
+}

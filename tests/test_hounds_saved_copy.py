@@ -344,7 +344,7 @@ class ThePageSaysWhenItShowsASavedCopy(unittest.TestCase):
                    dict(name="asof", sel="[data-hook='data-as-of']", mode="text"),
                    dict(name="rows", sel="[data-hook='hounds-list'] .hd-tr", mode="count"),
                    dict(name="warming", sel="[data-kind='warming']", mode="count")]
-        out = run_page("hounds", routes=r, switchAfter=fresh, captureInitial=queries,
+        out = run_page("hounds", routes=r, switchAfter=fresh, captureInitial=queries, now="2026-10-25T04:00:00Z",
                        actions=[dict(do="fire_timers", wait=120)], queries=queries)
         first = out["captures"]["initial"]
         self.assertEqual(first["note"], 1)                        # a quiet amber "Updating" note while it is a saved copy

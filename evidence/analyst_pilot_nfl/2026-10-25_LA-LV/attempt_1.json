@@ -1,0 +1,104 @@
+{
+  "summary": "The Rams look like the better team on the numbers we have. Over the season they allow fewer net yards per play than the Raiders, and Las Vegas has lost three straight while giving up 36 points a game across its last three. The books see the same thing, which is why the Rams are priced as clear favorites on the moneyline at -172. I pass on all three markets because the price already holds that gap. The spread has shortened from 6.5 to 3 since it was first captured, and 3 is a key number, so laying it needs a reason the number is wrong in points, and I do not have one. The total sits at 48.5, unchanged since first capture. The two offenses score at a similar rate in recent form while the Raiders defense is leaking, and that cuts both ways, so I see no reason to disagree with an even price. What is missing matters: Puka Nacua is listed questionable, and both quarterbacks are projections, not confirmed starters. Three-game windows are also noisy this early.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "LA",
+      "verdict": "PASS",
+      "price": -172,
+      "book": "fanduel",
+      "fair_estimate": 0.62,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The Rams have been the stronger defense per play this season, which supports them as favorites, but the books already price that in.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.yards_per_play_allowed.value", "value": 4.8462},
+            {"path": "sections.home.values.form.season_to_date.yards_per_play_allowed.value", "value": 5.9946},
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.6133}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The Rams are only 2-4 on the season and Puka Nacua is listed questionable, so there is not enough to say the market underrates them.",
+          "evidence": [
+            {"path": "sections.away.values.record.season.wins", "value": 2},
+            {"path": "sections.away.values.record.season.losses", "value": 4},
+            {"path": "sections.away.values.injuries.skill_players_listed[0].report_status", "value": "questionable"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -163,
+      "what_would_change_it": "A price on the Rams of -163 or shorter, or Nacua ruled out, would change how I see this market.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "LA -3",
+      "verdict": "PASS",
+      "price": -115,
+      "book": "lowvig",
+      "fair_estimate": 0.52,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The number has moved from 6.5 to 3 since first captured, so the market has already adjusted toward the Raiders, and 3 is a key number where a field goal decides the result.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": -6.5},
+            {"path": "markets.spread.options[0].line", "value": -3.0},
+            {"path": "sections.reference.values.key_numbers", "value": "3,6,7,10,14"}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The books' own number for the Rams at this line is close to a coin flip, and the form data does not show a reason it is wrong in points.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5206},
+            {"path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": 0.5}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -108,
+      "what_would_change_it": "A Rams price of -108 or better at this number, or the line moving off 3, would make me look again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 48.5",
+      "verdict": "PASS",
+      "price": -106,
+      "book": "williamhill_us",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The number has not moved since first captured and the books split it evenly, so the market looks about right.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 48.5},
+            {"path": "markets.total.options[0].line", "value": 48.5},
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The Raiders have been allowing a lot of points lately, which points toward the Over, but the Rams allow fewer yards per play, and the quarterbacks are only projected, so the picture is mixed.",
+          "evidence": [
+            {"path": "sections.home.values.form.last_3.points_against_per_game", "value": 36},
+            {"path": "sections.away.values.form.season_to_date.yards_per_play_allowed.value", "value": 4.8462},
+            {"path": "sections.home.values.qb.listed_for_this_game.projected", "value": true}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A price on the Over at +100 or better, or a quarterback change on either side, would change this call.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

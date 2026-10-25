@@ -1,0 +1,154 @@
+{
+  "summary": "I pass on the moneyline and the spread and lean Under on the total. Detroit is a home side coming off a bye, and the books make them clear favourites, with a de-vigged win chance of 0.6368 that fits a line of 3.5 points. Green Bay's last three games look strong, but three games is thin, and Detroit's own scoring and allowing both run high. Nothing in what we have shows the side prices are wrong, so I think the market is probably right on both. The spread has sat at 3.5 since it was first captured, half a point past the field goal key number of 3. On the total, the line has moved up from 53.0 to 55.5. Adding the two teams' season points scored gives a figure below that number, and adding the two points allowed does too. Against that, Detroit plays in a dome and scored 34 per game over its last three. No depth chart or snap data is in what we have, and Green Bay lists 12 players on its injury report with one out, without telling us how much they matter.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "DET",
+      "verdict": "PASS",
+      "price": -186,
+      "book": "betrivers",
+      "fair_estimate": 0.63,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books' own de-vigged number already makes Detroit the clear favourite, and nothing else we have gives a reason to disagree with it.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.6368},
+            {"path": "markets.moneyline.options[0].best.price", "value": -186}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Detroit is at home off a bye, with Green Bay on a normal week of rest and a short trip, which supports the favourite but is what the price already holds.",
+          "evidence": [
+            {"path": "sections.home.values.rest.coming_off_bye", "value": true},
+            {"path": "sections.away.values.travel.miles_from_home_base", "value": 292.6}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Green Bay's last three games are strong on points allowed, but three games is a thin window and its season margin is small.",
+          "evidence": [
+            {"path": "sections.away.values.form.last_3.points_against_per_game", "value": 11.3333},
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 0.3333}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -170,
+      "what_would_change_it": "A quarterback change on either side, or Detroit's price falling to -170 or shorter, would make the home side worth taking.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "DET -3.5",
+      "verdict": "PASS",
+      "price": -108,
+      "book": "betrivers",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides are priced as a near coin flip, and the number has not moved from where it was first captured, so the market has had time to settle.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5051},
+            {"path": "markets.spread.context.away_number_first_captured", "value": 3.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number sits half a point past the field goal, so a three-point Detroit win would land Green Bay on the right side; that is a reason to be careful about laying it, not a reason to take Green Bay.",
+          "evidence": [
+            {"path": "sections.reference.values.scoring.field_goal", "value": 3},
+            {"path": "markets.spread.options[1].line", "value": 3.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The form figures point both ways: Detroit has the stronger season scoring, Green Bay the stronger recent defence, and the windows are small.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 3.2},
+            {"path": "sections.away.values.form.last_3.margin_per_game", "value": 12.3333}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A quarterback change or a key player ruled out would move the call, as would Detroit -3.5 being offered at +100 or better.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 55.5",
+      "verdict": "TAKE",
+      "price": -110,
+      "book": "mybookieag",
+      "fair_estimate": 0.54,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two teams' season points scored per game add up to a figure below 55.5.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 32.8},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 21.1667},
+            {"path": "markets.total.options[0].line", "value": 55.5}
+          ],
+          "derived": [
+            {
+              "value": 53.9667,
+              "unit": "points",
+              "op": "sum",
+              "inputs": [
+                "sections.home.values.form.season_to_date.points_for_per_game",
+                "sections.away.values.form.season_to_date.points_for_per_game"
+              ],
+              "note": "Detroit and Green Bay season points scored per game added together"
+            }
+          ]
+        },
+        {
+          "claim": "The two teams' season points allowed per game also add up to a figure below 55.5, so neither side of the ball points to a total this high.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 29.6},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 20.8333}
+          ],
+          "derived": [
+            {
+              "value": 50.4333,
+              "unit": "points",
+              "op": "sum",
+              "inputs": [
+                "sections.home.values.form.season_to_date.points_against_per_game",
+                "sections.away.values.form.season_to_date.points_against_per_game"
+              ],
+              "note": "Detroit and Green Bay season points allowed per game added together"
+            }
+          ]
+        },
+        {
+          "claim": "The total has moved up from where it was first captured, and Green Bay's recent defence and yards per play allowed do not look like a team that gives up a shootout.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 53.0},
+            {"path": "sections.away.values.form.last_3.yards_per_play_allowed.value", "value": 4.1407}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -117,
+      "what_would_change_it": "A quarterback change or a key offensive player ruled out would move this, and the Under stops being worth taking at a price worse than -117.",
+      "case_against": {
+        "claim": "Detroit plays indoors and has scored heavily lately, and its defence has given up a lot of points, so a high-scoring game is very possible; the books' fair split is also almost exactly even.",
+        "evidence": [
+          {"path": "sections.home.values.form.last_3.points_for_per_game", "value": 34},
+          {"path": "sections.home.values.form.last_3.points_against_per_game", "value": 25.6667},
+          {"path": "sections.schedule.values.venue.roof", "value": "dome"}
+        ],
+        "derived": []
+      }
+    }
+  ],
+  "summary_derived": []
+}

@@ -499,7 +499,8 @@ class TheDataFreshnessLine(unittest.TestCase):
         self.assertTrue(out["intervals"], "a saved copy re-asks on the server's cadence")
 
     def test_fresh_data_shows_no_note(self):
-        out = run_page("hounds", routes=routes(), queries=[q("note", "[data-hook='updating-note']", "count")])
+        out = run_page("hounds", routes=routes(), now="2026-10-25T04:00:00Z",          # inside the 6 h fresh window of the fixture's as_of
+                       queries=[q("note", "[data-hook='updating-note']", "count")])
         self.assertEqual(out["final"]["note"], 0)
 
 
