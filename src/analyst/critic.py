@@ -252,9 +252,19 @@ def unsupported_numbers(text: str, pool: NumberPool) -> list:
     return [lit for lit in numbers_in_prose(text) if not pool.has(lit)]
 
 
-def banned_words(text: str, *, internal: bool = False) -> list:
+def banned_words(text: str, *, internal: bool = False,
+                 known: Optional["KnownNames"] = None) -> list:
     """The banned words in `text`. `internal` also rejects our own vocabulary (`INTERNAL_WORDS`),
-    which only prose a reader sees is held to, and only for MLB."""
+    which only prose a reader sees is held to, and only for MLB.
+
+    `known`: a name the packet vouches for is not prose and is blanked out first. Seattle's
+    quarterback Drew Lock was on the 2026-10-25 injury report, and "lock" struck every answer
+    that named him (six of six), the same way a pitcher named Edge would trip "edge"."""
+    if known is not None and text:
+        for run in name_runs(text):
+            if known.has(run):
+                pattern = r"\b" + r"\W+".join(re.escape(w) for w in run.split()) + r"\b"
+                text = re.sub(pattern, " ", text, flags=re.I)
     found = []
     for pattern, label in _BANNED + (INTERNAL_WORDS if internal else ()):
         if re.search(pattern, text or "", re.I):
@@ -763,7 +773,7 @@ def _check_reason(packet: Mapping, where: str, reason: Any, pool: NumberPool,
         used.extend(_used(verified, claim))
     for lit in unsupported_numbers(claim, pool):
         problems.append(f"{where} quotes {lit}, which is not a number in the packet")
-    for word in banned_words(claim, internal=used is not None):
+    for word in banned_words(claim, internal=used is not None, known=known):
         problems.append(f"{where} uses the banned word {word!r}")
     for run in unsupported_names(claim, known):
         problems.append(f"{where} names {run!r}, which is not a name in the packet")
@@ -856,7 +866,7 @@ def check_call(packet: Mapping, call: Mapping, pool: NumberPool,
         text = call.get(text_key) or ""
         for lit in unsupported_numbers(text, pool):
             p.append(f"{text_key} quotes {lit}, which is not a number in the packet")
-        for word in banned_words(text, internal=mlb):
+        for word in banned_words(text, internal=mlb, known=known):
             p.append(f"{text_key} uses the banned word {word!r}")
         for run in unsupported_names(text, known):
             p.append(f"{text_key} names {run!r}, which is not a name in the packet")
@@ -1032,7 +1042,7 @@ def verify(packet: Mapping, output: Mapping, *,
             s_derived = _used(s_verified, summary)
         for lit in unsupported_numbers(summary, pool):
             s_problems.append(f"the summary quotes {lit}, which is not a number in the packet")
-        for word in banned_words(summary, internal=is_mlb_packet(packet)):
+        for word in banned_words(summary, internal=is_mlb_packet(packet), known=known):
             s_problems.append(f"the summary uses the banned word {word!r}")
         for run in unsupported_names(summary, known):
             s_problems.append(f"the summary names {run!r}, which is not a name in the packet")
