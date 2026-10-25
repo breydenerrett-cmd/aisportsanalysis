@@ -2,16 +2,16 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2027.jsonl": {
-   "bytes": 279610,
-   "newest": "2026-10-25T17:43:25Z",
-   "records": 464,
-   "sha256": "98f01d5208d3e08b9f79e632470d20dcae615a4394911de2ee5cbbaeeb2d6eb8"
+   "bytes": 283949,
+   "newest": "2026-10-25T20:58:28Z",
+   "records": 471,
+   "sha256": "71a7116f75be916650fa6a723b6d2b6ce7946f95c63d684d536717ca520d0450"
   },
   "injuries.jsonl": {
-   "bytes": 200840,
-   "newest": "2026-10-25T17:43:33Z",
-   "records": 505,
-   "sha256": "fd5482b4197bce208398c61d959bdcc7289eb849ea292d15a30d9bbb1b003b39"
+   "bytes": 204244,
+   "newest": "2026-10-25T20:58:34Z",
+   "records": 514,
+   "sha256": "18ee0773ec8c43939a4d853fe4dece7b9f2700daf9d534316861b8f77168bdfc"
   },
   "player_games_2027.jsonl": {
    "bytes": 1951152,
@@ -44,8 +44,8 @@
    "sha256": "210055491d204c7264f1b4fe5f75f1c2a00cb1652af9064317e2e8c4aed0a016"
   }
  },
- "generated_utc": "2026-10-25T17:43:33Z",
+ "generated_utc": "2026-10-25T20:58:34Z",
  "league": "nba",
- "refreshed_utc": "2026-10-25T17:43:33Z",
+ "refreshed_utc": "2026-10-25T20:58:34Z",
  "title": "NBA"
 }
