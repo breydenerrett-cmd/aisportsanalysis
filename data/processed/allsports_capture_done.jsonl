@@ -5707,3 +5707,6 @@
 {"call_kind": "inplay", "credits": 1, "events": 15, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T14:30:27.357993Z", "regions": ["us"], "rows": 94, "sport_key": "soccer_spain_la_liga", "stored": 41}
 {"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T14:30:27.357993Z", "regions": ["us"], "rows": 42, "sport_key": "soccer_spain_segunda_division", "stored": 32}
 {"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T14:30:27.357993Z", "regions": ["us"], "rows": 48, "sport_key": "soccer_turkey_super_league", "stored": 36}
+{"events": 15, "kind": "peek", "next_check_utc": "2026-10-25T20:41:07.280129Z", "observed_utc": "2026-10-25T14:41:07.280129Z", "sport_key": "soccer_brazil_campeonato"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-25T20:41:07.280129Z", "observed_utc": "2026-10-25T14:41:07.280129Z", "sport_key": "soccer_germany_bundesliga2"}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-10-25T20:41:07.280129Z", "observed_utc": "2026-10-25T14:41:07.280129Z", "sport_key": "soccer_saudi_arabia_pro_league"}
