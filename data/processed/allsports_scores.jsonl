@@ -2964,3 +2964,4 @@
 {"credits": 2, "days_from": 3, "events": 20, "kind": "poll", "observed_utc": "2026-10-25T10:20:58.142096+00:00", "sport_key": "soccer_japan_j_league"}
 {"away_score": null, "away_team": "Kia Tigers", "commence_time": "2026-10-26T09:30:00Z", "completed": false, "event_id": "decf9db43a47206e2a444e58864abac7", "home_score": null, "home_team": "Samsung Lions", "kind": "score", "last_update": null, "observed_utc": "2026-10-25T10:20:58.142096+00:00", "outcome": null, "scores": null, "sport_key": "baseball_kbo"}
 {"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-10-25T10:20:58.142096+00:00", "sport_key": "baseball_kbo"}
+{"errors": [], "events": 1, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 1, "observed_utc": "2026-10-25T10:30:51.916927Z", "source": "espn_tennis", "unmatched": 0, "unmatched_ids": [], "void": 0, "written": 0}
