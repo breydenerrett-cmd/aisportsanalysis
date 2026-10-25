@@ -885,7 +885,11 @@ class TwoAppliesAtOnceMakeOneVersion(Case):
             t.join(30)
         made = [r for r in results if isinstance(r, dict)]
         refused = [r for r in results if isinstance(r, rites.RiteError)]
-        self.assertEqual((len(made), [r.code for r in refused]), (1, ["proposal_stale"]), results)
+        # The loser is refused either as out of date or, when the winner's training is already counted, as too soon
+        # (seen on CI 3.11, 2026-10-25); both are correct. The invariant is one version and one event.
+        self.assertEqual(len(made), 1, results)
+        self.assertEqual(len(refused), 1, results)
+        self.assertIn(refused[0].code, ("proposal_stale", "training_too_soon"), results)
         self.assertEqual(len(user_store.lineage(hound["id"])), 2)
         self.assertEqual(len(user_store.list_events(root_id=hound["root_id"])), 1, "one training event, not two")
 
