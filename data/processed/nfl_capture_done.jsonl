@@ -390,3 +390,5 @@
 {"game_id": "2026_07_PIT_NO", "observed_utc": "2026-10-25T13:09:01.858264Z", "phase": "t30m"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-25T13:35:49.325715Z", "phase": "refresh"}
 {"game_id": "2026_07_DEN_ARI", "observed_utc": "2026-10-25T14:23:46.989042Z", "phase": "t6h"}
+{"game_id": "2026_07_GB_DET", "observed_utc": "2026-10-25T14:30:25.004565Z", "phase": "t6h"}
+{"game_id": "2026_07_LA_LV", "observed_utc": "2026-10-25T14:30:25.004565Z", "phase": "t6h"}
