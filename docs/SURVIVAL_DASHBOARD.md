@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-10-24 15:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-25 18:10Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **7** |
+| Days until 2026-10-31 | **6** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-24 (8:30 am PT run): World Series Game 1 brief (Rays at Brewers, 2-3 final) is graded; the public sample now shows it.
-- Game 2 brief runs on the 1:30 pm PT pass (first pitch 5:00 pm PT).
-- Production is up, restarted by a deploy at 8:12 am PT; site odds 0.5 hours old.
-- Daily loop on the default branch is still red; tests on the working branch are green.
+- 2026-10-25 (11:00 am PT run): NFL briefs published for Broncos at Cardinals, Packers at Lions and Rams at Raiders.
+- No MLB game today; World Series Game 3 (Brewers at Rays) is Monday 5:00 pm PT.
+- The Saturday 1:30 pm PT run did not happen, so Game 2 had no brief.
+- Working-branch tests went red Saturday on one research-file test; fixed in this run. Site odds were 23 hours old because production only refreshes on green tests.
 - Public MLB value picks remain paused. Sends 0, replies 0, testers 0.
 
