@@ -424,3 +424,5 @@
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-25T20:33:26.581959Z", "phase": "refresh"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-25T21:11:01.295477Z", "phase": "refresh"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-25T21:37:08.094908Z", "phase": "refresh"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-10-25T22:03:56.829491Z", "phase": "refresh"}
+{"game_id": "2026_07_KC_SEA", "observed_utc": "2026-10-25T22:31:28.620994Z", "phase": "t2h"}
