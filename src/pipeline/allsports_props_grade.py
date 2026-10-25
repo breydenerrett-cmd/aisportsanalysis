@@ -307,7 +307,9 @@ def grade_prop(row: dict, box) -> dict:
 # key, so the bet's own teams and start time find the ESPN game: the same two team names on the same ET slate day,
 # kicking off within MATCH_WINDOW_HOURS of the bet's commence time. A pair of names that matches more than one game
 # is AMBIGUOUS and stays pending: a prop is never graded on a guessed game. Team names are compared accent-blind and
-# case-blind (`names.normalise`), which is how the Odds API and ESPN spell "Los Angeles Lakers" and "LA Clippers".
+# case-blind with the scoreboard's own club folding (`live_scores.teams_match`): the Odds API spells the Clippers
+# "Los Angeles Clippers" and ESPN "LA Clippers", which plain `names.normalise` keeps apart (every Clippers prop
+# stayed pending forever).
 
 ESPN_LEAGUE = {"NBA": "nba", "NHL": "nhl"}      # the prop sports the all-sports prop store carries, and their league codes
 MATCH_WINDOW_HOURS = 8.0                        # generous for a start-time drift; the names do the real matching
@@ -339,8 +341,9 @@ def find_espn_game(bet: dict, client, cache: Optional[dict] = None) -> tuple:
     code = ESPN_LEAGUE.get(str(bet.get("sport") or "").upper())
     if code is None:
         return None, f"no ESPN league for sport {bet.get('sport')!r}"
-    home, away = names.normalise(bet.get("home_team")), names.normalise(bet.get("away_team"))
-    if not home or not away:
+    from src.hounds.live_scores import teams_match
+    home, away = bet.get("home_team"), bet.get("away_team")
+    if not names.normalise(home) or not names.normalise(away):
         return None, "the bet does not name both teams"
     start = _parse_time(bet.get("commence_time") or bet.get("start_utc"))
     if start is None or not bet.get("slate_date"):
@@ -354,7 +357,7 @@ def find_espn_game(bet: dict, client, cache: Optional[dict] = None) -> tuple:
         if not isinstance(answer, dict) or not answer.get("available"):
             continue
         for game in answer.get("data") or []:
-            if names.normalise(game.get("home_name")) != home or names.normalise(game.get("away_name")) != away:
+            if not teams_match(game.get("home_name"), home) or not teams_match(game.get("away_name"), away):
                 continue
             kickoff = _parse_time(game.get("date_utc"))
             if kickoff is None or abs((kickoff - start).total_seconds()) > MATCH_WINDOW_HOURS * 3600:

@@ -186,9 +186,24 @@ class GradingAndSettlement(unittest.TestCase):
                          ("4000001", None))
 
     def test_accents_and_case_do_not_stop_a_team_match(self):
-        league = FakeLeague([schedule_row(home="Memphis Grizzlies", away="Orlando Magic")])
-        bet = nba_bet("player_points", "Jaren Jackson Jr.", 28.5, home="MEMPHIS GRIZZLIES", away="Orlando Magic")
+        league = FakeLeague([schedule_row(home="Memphis Grizzlíes", away="Orlando Magic")])
+        # home_team / away_team are the bet's keys (`home=` / `away=` set unread keys, so this test once passed vacuously)
+        bet = nba_bet("player_points", "Jaren Jackson Jr.", 28.5, home_team="MEMPHIS GRIZZLIES", away_team="Orlando Magic")
         self.assertEqual(grade.find_espn_game(bet, FakeClient(league))[0], "4000001")
+
+    def test_the_odds_api_and_espn_spellings_of_the_clippers_match(self):
+        # The Odds API: "Los Angeles Clippers"; ESPN: "LA Clippers". Before 2026-10-25 the pair never matched, so
+        # every Clippers prop stayed pending forever (seen on the captured 2026-10-23 Lakers-Clippers game).
+        league = FakeLeague([schedule_row(home="Los Angeles Lakers", away="LA Clippers")])
+        bet = nba_bet("player_points", "Jaren Jackson Jr.", 28.5, home_team="Los Angeles Lakers",
+                      away_team="Los Angeles Clippers")
+        self.assertEqual(grade.find_espn_game(bet, FakeClient(league))[0], "4000001")
+
+    def test_a_different_club_with_a_shared_city_does_not_match(self):
+        league = FakeLeague([schedule_row(home="Los Angeles Lakers", away="LA Clippers")])
+        bet = nba_bet("player_points", "Jaren Jackson Jr.", 28.5, home_team="Los Angeles Lakers",
+                      away_team="Los Angeles Kings")
+        self.assertIsNone(grade.find_espn_game(bet, FakeClient(league))[0])
 
     def test_two_games_that_fit_are_ambiguous_and_not_graded(self):
         league = FakeLeague([schedule_row("4000001"), schedule_row("4000002")])
