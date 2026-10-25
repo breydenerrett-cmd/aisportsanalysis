@@ -409,3 +409,4 @@
 {"game_id": "2026_07_IND_MIN", "observed_utc": "2026-10-25T16:38:06.875943Z", "phase": "t30m"}
 {"game_id": "2026_07_MIA_NYJ", "observed_utc": "2026-10-25T16:38:06.875943Z", "phase": "t30m"}
 {"game_id": "2026_07_CLE_TEN", "observed_utc": "2026-10-25T16:38:06.875943Z", "phase": "t30m"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-10-25T17:04:08.048829Z", "phase": "refresh"}
