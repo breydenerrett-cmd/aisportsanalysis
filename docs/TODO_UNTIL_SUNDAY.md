@@ -28,6 +28,29 @@ Owner directive (2026-10-22): usage is the top priority, so no building until th
 6. **Warm the "right now" cache at startup.** The first NFL call after a deploy takes about 15s.
 7. **Live page redesign** (low priority, in docs/BACKLOG.md).
 
+## Owner-approved order (2026-10-25 evening)
+1. Confirm the deploy (CI plus the live site).
+2. The describe-it-first quiz. Merged in ship, pushing next.
+3. **Apprentice Hound + DraftKings screenshot import.** The import must:
+   - extract the selections, market, odds, stake, time, book, bet ID, outcome and payout
+   - dedupe by bet ID
+   - keep pending, live, settled, void and cash-out as separate states
+   - never count a single winning leg as a winning parlay
+   - ask the user to confirm anything ambiguous
+   - track profit, ROI and CLV
+   - group correlated exposure (same game or player)
+   - keep the original screenshot plus the extracted evidence, append-only
+   Direct sportsbook access is not required.
+4. **Jarvis pre-game briefing.** Per briefing:
+   - 3–5 ranked singles and at most two 2-leg parlays (ML, spreads, totals, props)
+   - real odds plus the maximum acceptable price
+   - news, lineups, weather and matchups
+   - model probability vs break-even, EV and confidence, marked EXPERIMENTAL where the market isn't calibrated
+   - the reasons for each pick, how it could lose, what to avoid, and edges that disappeared when lines moved
+   It must be built on LINEHOUND data only, with no hallucinated research.
+5. Validate both against real records and forward predictions.
+The reference workflow is the Dobbins + Bucky trail: research → hypothesis → compare lines → drop the weak leg → place → track legs → settle → record. Pregame knowledge stays frozen, so postgame data never contaminates it.
+
 7b. **The Apprentice Hound** (owner, 2026-10-24, for Jacob): a hound with no rules that learns only from its owner's real bets.
    - The owner logs a bet (game, side, market, the price they actually got, stake). The hound grades it and stores it as an append-only "lesson".
    - Lessons can't be edited or deleted, not even by the owner. The hound can be retired, but its lessons stay.
