@@ -31,6 +31,7 @@ THE RULES (each one is a test)
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from typing import Callable, Dict, List, Optional
 
 from src.datasvc import names
@@ -298,6 +299,90 @@ def grade_prop(row: dict, box) -> dict:
     won = over if side == "over" else not over
     return _result(WIN if won else LOSS, row, f"{actual:g} against {line:g}", actual=actual, line=line,
                    player=player, note=note)
+
+
+# -- the game behind a bet ---------------------------------------------------------------------------------------------
+#
+# A bet names its game by the Odds API's event id, and the data service names it by ESPN's game id. The two share no
+# key, so the bet's own teams and start time find the ESPN game: the same two team names on the same ET slate day,
+# kicking off within MATCH_WINDOW_HOURS of the bet's commence time. A pair of names that matches more than one game
+# is AMBIGUOUS and stays pending: a prop is never graded on a guessed game. Team names are compared accent-blind and
+# case-blind (`names.normalise`), which is how the Odds API and ESPN spell "Los Angeles Lakers" and "LA Clippers".
+
+ESPN_LEAGUE = {"NBA": "nba", "NHL": "nhl"}      # the prop sports the all-sports prop store carries, and their league codes
+MATCH_WINDOW_HOURS = 8.0                        # generous for a start-time drift; the names do the real matching
+_SLATE_NEIGHBOURS = (-1, 0, 1)                  # ESPN's scoreboard day and the ET slate day can differ by one
+
+
+def _parse_time(value) -> Optional[datetime]:
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        moment = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
+
+
+def _days_around(slate_date: str) -> List[str]:
+    day = datetime.strptime(slate_date, "%Y-%m-%d").date()
+    return [(day + timedelta(days=n)).isoformat() for n in _SLATE_NEIGHBOURS]
+
+
+def find_espn_game(bet: dict, client, cache: Optional[dict] = None) -> tuple:
+    """(ESPN game id | None, reason | None) for a bet's game. `client` is a data-service DataClient (or a stand-in
+    with the same `league(code).schedule(date=...)` read). `cache` (one settle pass) holds each day's schedule so a
+    card of props reads each day once."""
+    cache = {} if cache is None else cache
+    code = ESPN_LEAGUE.get(str(bet.get("sport") or "").upper())
+    if code is None:
+        return None, f"no ESPN league for sport {bet.get('sport')!r}"
+    home, away = names.normalise(bet.get("home_team")), names.normalise(bet.get("away_team"))
+    if not home or not away:
+        return None, "the bet does not name both teams"
+    start = _parse_time(bet.get("commence_time") or bet.get("start_utc"))
+    if start is None or not bet.get("slate_date"):
+        return None, "the bet has no start time to place it on the schedule"
+    found: dict = {}
+    for day in _days_around(str(bet["slate_date"])):
+        key = ("schedule", code, day)
+        if key not in cache:
+            cache[key] = client.league(code).schedule(date=day)
+        answer = cache[key]
+        if not isinstance(answer, dict) or not answer.get("available"):
+            continue
+        for game in answer.get("data") or []:
+            if names.normalise(game.get("home_name")) != home or names.normalise(game.get("away_name")) != away:
+                continue
+            kickoff = _parse_time(game.get("date_utc"))
+            if kickoff is None or abs((kickoff - start).total_seconds()) > MATCH_WINDOW_HOURS * 3600:
+                continue
+            found[str(game["game_id"])] = game
+    if not found:
+        return None, "no ESPN game for these teams on this date"
+    if len(found) > 1:
+        return None, "ambiguous: more than one ESPN game matches these teams and start time"
+    return next(iter(found)), None
+
+
+def settle_prop(bet: dict, client, cache: Optional[dict] = None) -> dict:
+    """Grade one NBA or NHL prop bet from its ESPN box score. `cache` (a dict the caller keeps for one settle pass)
+    holds each game's box so a card of props reads each game once. Anything not answerable yet is UNRESOLVED
+    (pending), never a guess; a box that says the player did not play is VOID, as in grade_prop."""
+    cache = {} if cache is None else cache
+    code = ESPN_LEAGUE.get(str(bet.get("sport") or "").upper())
+    game_id, why = find_espn_game(bet, client, cache)
+    if game_id is None:
+        return _result(UNRESOLVED, bet, why)
+    key = (code, game_id)
+    if key not in cache:
+        answer = client.league(code).game(game_id)
+        cache[key] = answer if isinstance(answer, dict) and answer.get("available") else None
+    if cache[key] is None:
+        return _result(UNRESOLVED, bet, "no box score in the data service yet")
+    return grade_prop(bet, cache[key])
 
 
 def grade_rows(rows, boxes: Callable[[dict], object]) -> List[dict]:

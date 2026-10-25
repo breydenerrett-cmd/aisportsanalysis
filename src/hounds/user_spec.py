@@ -710,9 +710,17 @@ def _validate_rule(raw: Any, index: int, errors: dict) -> Optional[dict]:
             errors[f"{prefix}markets"] = ("a rule is about game bets (moneyline, spread), game totals, or "
                                           "player props; put each in its own rule")
             markets = None
-        elif "prop" in kinds and sports and sports != ["MLB"]:
-            errors[f"{prefix}sports"] = "player props are MLB only: there are no prop prices on file for any other sport"
-            sports = None
+        elif "prop" in kinds and sports:
+            # A prop is priced in its own sport's captured store, so every sport the rule names must carry every
+            # prop the rule names: batter_hits is an MLB prop (an NHL rule with it is refused), player_points is
+            # NBA and NHL. A sport with no props on file (NFL, soccer) is refused the same way.
+            wrong = [f"{R.MARKET_LABELS[m]} works for {' / '.join(R.prop_sports(m)) or 'no sport'} only"
+                     for m in markets if R.market_kind(m) == "prop"
+                     for sp in sports if sp not in R.prop_sports(m)]
+            if wrong:
+                errors[f"{prefix}sports"] = ("a player prop is only priced for its own sport: " + "; ".join(sorted(set(wrong)))
+                                             + f" (you named {' / '.join(sports)})")
+                sports = None
 
     side = raw.get("side", "either")
     if side not in R.SIDES:
@@ -875,7 +883,7 @@ def builder_menu() -> dict:
         "rule_label": {"max": RULE_LABEL_MAX},
         "sports": sports_menu(),
         "markets": [{"value": m, "label": R.MARKET_LABELS[m], "kind": R.market_kind(m), "has_line": m != "moneyline",
-                     "sports": ["MLB"] if R.market_kind(m) == "prop" else list(SPORTS)} for m in R.ALL_MARKETS],
+                     "sports": list(R.prop_sports(m)) if R.market_kind(m) == "prop" else list(SPORTS)} for m in R.ALL_MARKETS],
         "sides": [{"value": s, "label": R.SIDE_LABELS[s]} for s in R.SIDES],
         "side_by_kind": {"ml_spread": list(R.sides_for(["ml_spread"])), "total": list(R.sides_for(["total"])),
                          "prop": list(R.sides_for(["prop"]))},

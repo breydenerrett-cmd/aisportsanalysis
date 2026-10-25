@@ -269,6 +269,30 @@ def read_style(rd: Reader, box: list) -> None:
         read_style_sports(rd, box)
 
 
+def _generic_prop_markets(named_sports: list) -> list:
+    """Every prop market a bare "props" means: the ones every named prop sport carries (MLB when none is named,
+    as the menu had only MLB props before NBA and NHL). A shared key (points, assists) survives two named sports."""
+    sets = [set(R.PROP_SPORT_MARKETS[s]) for s in (named_sports or ["MLB"])]
+    return [m for m in R.PROP_MARKETS if all(m in st for st in sets)]
+
+
+def _prop_rule_sports(markets: list, named_sports: list, rd: "Reader") -> list:
+    """The sports a prop rule covers: the sports that carry every named market, narrowed to the sports the words named.
+    A market both NBA and NHL carry (points) with no sport said covers both, and the reading says so."""
+    carry = [s for s in R.PROP_SPORT_MARKETS if all(m in R.PROP_SPORT_MARKETS[s] for m in markets)]
+    chosen = [s for s in carry if s in named_sports] if named_sports else carry
+    if not chosen:
+        rd.no(", ".join(R.MARKET_LABELS[m] for m in markets),
+              "no sport you named prices every one of these props; say which sport the props are")
+        return carry or ["MLB"]
+    left_out = [s for s in named_sports if s not in chosen]
+    if left_out:
+        rd.no(" and ".join(left_out), "that sport does not price these props, so the rule covers " + " and ".join(chosen))
+    if not named_sports and len(chosen) > 1:
+        rd.assumed.append(" and ".join(chosen) + " both price this prop; the rule covers each of them")
+    return chosen
+
+
 # The ordinary rule reader knows MLB and NFL only; the Gematria style runs on every dog-menu sport, so when the style is asked
 # for the sport words are read here, from the dog menu's own names. Longer names first, each consumed so the rule reader does
 # not report it as an unknown word.
@@ -384,6 +408,9 @@ def read_segment(rd: Reader, seg: Seg) -> None:
     # --- sports -------------------------------------------------------------------------------------
     take(r"\b(?:mlb|baseball)\b", lambda m: (seg.sports.append("MLB"), ok(m.group(0), "MLB")) and None)
     take(r"\b(?:nfl|football)\b", lambda m: (seg.sports.append("NFL"), ok(m.group(0), "NFL")) and None)
+    # NBA and NHL: game bets and their player props (the prop stores carry both; see user_rules.PROP_SPORT_MARKETS)
+    take(r"\b(?:nba|basketball)\b", lambda m: (seg.sports.append("NBA"), ok(m.group(0), "NBA")) and None)
+    take(r"\b(?:nhl|hockey)\b", lambda m: (seg.sports.append("NHL"), ok(m.group(0), "NHL")) and None)
 
     # --- spread size ("spreads under 7") ---------------------------------------------------------------
     def spread_size(m):
@@ -667,6 +694,36 @@ def read_segment(rd: Reader, seg: Seg) -> None:
     take(r"\bplus[- ]money\b", plus_money)
 
     # --- stats (prop markets) --------------------------------------------------------------------------------------------------------------------------
+    # NBA and NHL stats name the market only; the sport is settled by the rule's sports (`_prop_rule_sports`). "points"
+    # and "assists" alone are not taken here: they read as game totals and spreads too often to claim without a sport.
+    def pmarket(name, label):
+        def h(m):
+            if name not in seg.markets:
+                seg.markets.append(name)
+            seg.stat_for_player = True
+            ok(m.group(0), label)
+        return h
+    take(r"\bpoints?,?\s+rebounds?,?\s+(?:and\s+)?assists?\b|\bpra\b|\bpts\s*\+\s*rebs?\s*\+\s*asts?\b",
+         pmarket("player_points_rebounds_assists", "player points + rebounds + assists"))
+    take(r"\b(?:3|three)[\s-]?(?:pointers?|pt|s)\b|\bthrees\b", pmarket("player_threes", "player threes made"))
+    take(r"\bplayer\s+points\b", pmarket("player_points", "player points"))
+    take(r"\bplayer\s+assists\b", pmarket("player_assists", "player assists"))
+
+    def named_pmarket(name, label):
+        # a bare "points" or "assists" is a player stat only once an NBA or NHL word has named the sport; without one it
+        # is left for the game-total reader ("total points" is never a player stat)
+        inner = pmarket(name, label)
+        def h(m):
+            if not any(s in seg.sports for s in ("NBA", "NHL")):
+                return False
+            return inner(m)
+        return h
+    take(r"(?<!total )\bpoints?\b|\bpts\b", named_pmarket("player_points", "player points"))
+    take(r"\bassists?\b", named_pmarket("player_assists", "player assists"))
+    take(r"\brebounds?\b", pmarket("player_rebounds", "player rebounds"))
+    take(r"\bshots\s+on\s+goal\b|\bsog\b", pmarket("player_shots_on_goal", "player shots on goal"))
+    take(r"\b(?:goalie\s+)?saves\b", pmarket("player_total_saves", "goalie saves"))
+
     def market(name, label):
         def h(m):
             if name not in seg.markets:
@@ -1054,9 +1111,14 @@ def build_rule(rd: Reader, seg: Seg) -> Optional[dict]:
     markets = list(seg.markets)
     # player props
     prop_markets = [m for m in markets if R.market_kind(m) == "prop"]
+    named_prop_sports = [s for s in dict.fromkeys(seg.sports) if s in R.PROP_SPORT_MARKETS]
     if seg.prop_generic and not prop_markets:
-        prop_markets = list(R.PROP_MARKETS)
-        rd.assumed.append("'props' with no stat named is read as every prop market; narrow it to the stats you want")
+        prop_markets = _generic_prop_markets(named_prop_sports)
+        if prop_markets:
+            rd.assumed.append("'props' with no stat named is read as every prop market for "
+                              + " and ".join(named_prop_sports or ["MLB"]) + "; narrow it to the stats you want")
+        else:
+            rd.no("props", "no prop market is priced for every sport you named")
     if prop_markets:
         markets = prop_markets
     if seg.players and not prop_markets and not seg.stat_for_player:
@@ -1080,7 +1142,7 @@ def build_rule(rd: Reader, seg: Seg) -> Optional[dict]:
 
     sports = list(dict.fromkeys(seg.sports))
     if kind == "prop":
-        sports = ["MLB"]
+        sports = _prop_rule_sports(markets, named_prop_sports, rd)
     if not sports:
         both_ok = all(set(R.BY_ID[c["id"]].sports) >= {"MLB", "NFL"} for _t, c in seg.conds if c["id"] in R.BY_ID)
         sports = ["MLB", "NFL"] if both_ok and not seg.teams else (_team_sports(seg) or ["MLB"])
