@@ -5149,3 +5149,4 @@
 {"call_kind": "pregame", "credits": 3, "events": 2, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-25T04:16:17.934736Z", "regions": ["us"], "rows": 3, "sport_key": "basketball_nbl", "stored": 3}
 {"call_kind": "inplay", "credits": 1, "events": 13, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T04:16:17.934736Z", "regions": ["us"], "rows": 93, "sport_key": "basketball_nba", "stored": 79}
 {"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T04:16:17.934736Z", "regions": ["us"], "rows": 10, "sport_key": "soccer_australia_aleague", "stored": 4}
+{"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T04:29:40.778293Z", "regions": ["us"], "rows": 44, "sport_key": "soccer_mexico_ligamx", "stored": 35}
