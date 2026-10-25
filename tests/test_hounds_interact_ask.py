@@ -357,7 +357,8 @@ class TheAnswers(unittest.TestCase):
 
     def test_the_intro_names_the_dog_and_its_rule(self):
         out = self.say("who are you")
-        self.assertEqual(out["lines"], ["Dog Days \u00b7 Fetch the plus money."])      # one line; the rules live on the Rules tab
+        self.assertEqual(out["lines"][0], "Dog Days · Fetch the plus money.")   # name and personality line first
+        self.assertLessEqual(len(out["lines"]), 3)                                       # two or three short lines
         self.assertNotIn("What I do", out["answer"])
         self.assertNotIn("I back the underdog", out["answer"])
         self.assertNotIn("MLB", out["answer"])
@@ -404,7 +405,9 @@ class TheVoice(unittest.TestCase):
                       rule_english="", rule_text="Moneyline. Bet the favourite between -199 and -101.",
                       trigger="a favourite is priced between -101 and -199", spec=None)
         hello = ask.answer("who are you", ctx)["answer"]
-        self.assertEqual(hello, "Chalk Chihuahua \u00b7 Short legs, short prices.")
+        self.assertEqual(hello.split(" · ")[0], "Chalk Chihuahua")
+        self.assertIn("Short legs, short prices.", hello)
+        self.assertIn("I bet when a favourite is priced between -101 and -199.", hello)
         why = ask.answer("why did you bet Boston", ctx)["answer"]
         self.assertIn("I bet when a favourite is priced between -101 and -199.", why)
 
