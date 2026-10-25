@@ -140,7 +140,7 @@ def decorate_fire(dog: common.Dog, out: dict, viewer_id: Optional[int], *, now: 
     if dog.kind == common.KIND_USER:
         remaining = manual.remaining_today(dog.id, now)
         already = {t["bet_id"] for t in manual.tickets(dog.id, now=now)}
-    for pick in out["picks"]:
+    for pick in list(out["picks"]) + list(out.get("closest_candidates") or []):
         pick.pop("row", None)
         blocked = None
         if not owner:

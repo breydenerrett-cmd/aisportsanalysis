@@ -123,7 +123,7 @@ class RightNow(Tmp):
         self.assertNotIn("Rule: the underdog", a)              # the rule text is behind "How I checked it", never inline
         card = out["cards"][0]
         self.assertEqual((card["selection"], card["price"], card["game"], card["when"], card["state"]),
-                         ("Boston Red Sox to win", 120, f"{AWAY} @ {HOME}", "Today 7:10 pm ET", "ahead"))
+                         ("Boston Red Sox to win", 120, f"{AWAY} @ {HOME}", "[[t:2026-10-20T23:10:00Z]]", "ahead"))
         self.assertEqual(card["reason"], "")
         self.assertTrue(any("Rule: the underdog" in line for line in out["details"]["lines"]))
         self.assertIn("21+", out["fine"])
@@ -152,13 +152,15 @@ class RightNow(Tmp):
         out = self.say("what would you bet tonight", dog, NOW_BEFORE_LOCK, standard_rows())
         a = out["answer"]
         self.assertEqual(len(out["lines"]), 1)
-        self.assertIn(f"Next game I'll check: {AWAY} @ {HOME}, Today 7:10 pm ET", a)     # names the next game, not a started one
-        self.assertNotIn("Closest", a)                         # the near misses sit behind "How I checked it"
+        # owner, 2026-10-25: nothing fully fits, so the closest game is named as a suggestion with what it misses
+        self.assertIn("Nothing fully fits my rule. Closest: Boston Red Sox to win +120", a)
+        self.assertIn("it misses: the price +120 is outside my band of +200 to +250.", a)
         why = " ".join(out["details"]["lines"])
         self.assertIn(f"Closest: {AWAY} @ {HOME} (Moneyline)", why)
         self.assertIn("shorter than my band of +200 to +250", why)
         self.assertNotIn("your band", why)
-        self.assertEqual(out["cards"], [])
+        self.assertEqual(len(out["cards"]), 1)
+        self.assertTrue(out["cards"][0]["closest"])               # a suggestion card, never a placed pick
         self.assertIn("I looked at 1 game.", why)
 
     def test_a_version_2_dog_that_passes_names_the_failed_condition(self):
@@ -175,7 +177,10 @@ class RightNow(Tmp):
         out = self.say("what would you bet", dog, "2026-10-21T00:40:00Z", rows)
         self.assertNotIn(f"{AWAY} @ {HOME}", out["answer"])        # a game that has started is never filler
         self.assertNotIn("already started", out["answer"])
-        self.assertIn("Thursday 8:15 pm ET", " ".join([out["answer"], out["cards"][0]["when"]]))
+        self.assertEqual(out["cards"][0]["when"], "[[t:2026-10-23T00:15:00Z]]")
+        from datetime import datetime as _dt
+        plain = fire.resolve_plain(out["cards"][0]["when"], _dt.fromisoformat("2026-10-21T00:40:00+00:00"))
+        self.assertEqual(plain, "Thursday 8:15 pm ET")               # the plain-text reader gets the Eastern form
         self.assertEqual(out["cards"][0]["day"], "Thursday")
 
     def test_no_games_today_is_said_before_the_next_slate(self):

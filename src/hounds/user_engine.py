@@ -618,6 +618,62 @@ def evaluate(spec: Mapping, game: GameBoards, market: str, lock_utc: datetime,
     }, "ok"
 
 
+NEAR_CONDITIONS = ("enough books", "a side to back", "a price under the -200 cap", "a price inside the band")
+
+
+def closeness(spec: Mapping, game: GameBoards, market: str, lock_utc: datetime, commence: datetime) -> Optional[dict]:
+    """A game the rule did NOT fully fit, scored by how many of its conditions pass, or None when there is no price to show.
+
+    WHY. A hound that has nothing that fully fits still owes the owner its closest game ("if you had to take a bet").
+    The engine stops at its first failing check, so this re-reads the same board and counts every condition: enough
+    books, a side, the -200 cap and the price band. A game with no board, a stale board, no side, or -200 or worse has no
+    honest price to show, so it returns None. The cap is never bent: -200 or worse is never a closest pick.
+    ``score`` is the passing count out of ``of``; ``misses`` says the failing ones in plain words."""
+    found = game.board_at(market, lock_utc)
+    if found is None:
+        return None
+    observed, board = found
+    age = (lock_utc - observed).total_seconds() / 60.0
+    if age > game.board_max_age():
+        return None
+    open_board = None
+    if spec["side_rule"].startswith("market_moved"):
+        first = game.first_board(market, observed)
+        open_board = first[1] if first else None
+    side = side_for_rule(spec["side_rule"], market, board, open_board)
+    if side is None:
+        return None
+    book_prices = board["sides"][side]
+    avg = average_price([p for _, p in book_prices])
+    if user_spec.beyond_cap(avg):
+        return None
+    best, best_book = best_price(book_prices)
+    books_ok = board["n_books"] >= spec["min_books"]
+    band_ok = user_spec.in_band(avg, spec["price_min"], spec["price_max"])
+    misses = []
+    if not books_ok:
+        misses.append(f"only {board['n_books']} {'book is' if board['n_books'] == 1 else 'books are'} quoting it, "
+                      f"and the rule needs {spec['min_books']}")
+    if not band_ok:
+        misses.append(f"the price {_fmt_price(avg)} is outside my band of "
+                      f"{_fmt_price(spec['price_min'])} to {_fmt_price(spec['price_max'])}")
+    line = None
+    selection_line = None
+    if market == "spread":
+        line = board["line"] if side == "home" else -board["line"]
+        selection_line = board["line"]
+    elif market == "total":
+        line = board["line"]
+        selection_line = board["line"]
+    return {
+        "side": side, "line": line, "price": avg, "best_price": best, "best_book": best_book,
+        "n_books": board["n_books"], "board_observed_utc": _iso(observed), "as_of_utc": _iso(lock_utc),
+        "board_age_minutes": round(age, 1),
+        "selection": _selection_text(game, market, side, selection_line),
+        "score": 3 + int(books_ok) + int(band_ok), "of": 5, "misses": misses,
+    }
+
+
 def read_ledger(path: Optional[str] = None) -> list:
     return HashChainLedger(ledger_path(path)).read()
 

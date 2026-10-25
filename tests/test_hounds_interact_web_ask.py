@@ -94,7 +94,9 @@ class AskDrawsPickCards(unittest.TestCase):
         self.assertIn("+131", c["price"])
         self.assertEqual(c["stake"], "Stake $10")                       # the viewer's sizing (the runner pins the reference account)
         self.assertIn("Tampa Bay Rays @ Cleveland Guardians", c["game"])
-        self.assertIn("7:10 pm ET", c["game"])
+        # owner, 2026-10-25: the page writes the VIEWER's clock (the machine's zone here), never the server's "ET" text
+        self.assertRegex(c["game"], r"\d{1,2}:10 [AP]M [A-Z]{2}")
+        self.assertNotIn("ET", c["game"])
         # the rule text is behind ONE collapsed "How I checked it", never inline
         self.assertEqual(c["folds"], 1)
         self.assertEqual(c["foldTitle"], "How I checked it")

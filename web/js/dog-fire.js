@@ -27,6 +27,7 @@ import { h, clearNode, fmtPrice, isNum } from "./hounds-core.js";
 import { post, errorText, errorCode, whenText, spanText, statusLine, celebrate, PAPER_NOTE } from "./dog-common.js";
 import { dogBadge, DEFAULT_LOOK } from "./dog-avatar.js";
 import { stakeWords } from "./unitsize.js";
+import { localizeTimes } from "./local-time.js";
 import { runGematriaStream, gematriaAnalysis, analysisLog, reducedMotion } from "./dog-gematria-stream.js";
 
 const SLOW = 90000;
@@ -123,13 +124,13 @@ function localClock(stamp) {
  *  Thursday."), and it is only worth a line when it carries something the counts block does not: the day it is waiting for. */
 function slateLine(slate) {
   if (!slate || !slate.line) return "";
-  return String(slate.line);
+  return localizeTimes(slate.line);
 }
 
 /** A sentence out of a field the server may send as a string or as {line}. */
 function sentenceOf(v) {
-  if (typeof v === "string") return v.trim();
-  return v && typeof v.line === "string" ? v.line.trim() : "";
+  if (typeof v === "string") return localizeTimes(v).trim();
+  return v && typeof v.line === "string" ? localizeTimes(v.line).trim() : "";
 }
 
 /** "7:10 PM EDT" in the visitor's own clock, else the server's Eastern one. */

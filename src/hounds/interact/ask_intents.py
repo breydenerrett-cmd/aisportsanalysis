@@ -30,7 +30,7 @@ from typing import Dict, Iterable, Optional
 
 # Highest first: when two intents score the same, the earlier one here wins.
 PRIORITY = ("picks_earlier_today", "backtest_window", "picks_now", "why_not", "why_bet", "best_worst",
-            "today", "explain_market", "record", "rules", "improve", "fans", "coach", "help", "hello")
+            "today", "explain_market", "research", "record", "rules", "improve", "fans", "coach", "help", "hello")
 MIN_SCORE = 3.0
 
 # ---------------------------------------------------------------------------
@@ -271,6 +271,10 @@ def scores(question: str, protect: Iterable[str] = (), *, team_named: bool = Fal
         or has(r"\bwhy no\b|\bwhy not\b")
     did = has(r"\b(?:did you|have you|had you|do you have|you have|you placed|you made|you took|you take)\b")
 
+    # "if you had to take a bet no matter what": a forced pick from the boards as they stand (normalized, "if you had" is "wouldhave")
+    if has(r"\b(?:had to|wouldhave to|no matter what|no matter|force|forced|pick one|must bet|have to bet|have to pick)\b")             and (betv or you or has(r"\bwouldhave\b")) and not did and not why:
+        _add(s, "picks_now", 6.0)
+
     # --- picks_earlier_today: hindsight about TODAY's boards at each game's decision time -----------------------
     if has(r"\bpremarket\b"):
         _add(s, "picks_earlier_today", 4.0)
@@ -364,6 +368,10 @@ def scores(question: str, protect: Iterable[str] = (), *, team_named: bool = Fal
     if has(r"\bwhat (?:bet|pick|ticket|play)\b.{0,20}\b(?:do you have|you got|are open|are pending)\b"):
         _add(s, "today", 2.0)
 
+    # --- research: what the dog checked today (counts, closest games, its rule), not its record
+    if has(r"\bresearch\b|\bevidence\b|\bshow (?:me )?(?:the )?(?:work|checks?|numbers|data|reasoning|math)\b|\bwhat (?:did|do) you (?:check|look at|scan|look for)\b|\bhow did you (?:check|decide|pick)\b"):
+        _add(s, "research", 6.0)
+
     # --- record ---------------------------------------------------------------------------------------------------
     if has(r"\bhow (?:are|is) you (?:do|go|look|run|perform|hold)\w*\b|\bhow is it going\b|\bhow you do\w*\b|\bhow you been\b|\bhow have you been\b|\bhow did you do\b|\bhow you do\b"):
         _add(s, "record", 4.0)
@@ -432,6 +440,9 @@ def scores(question: str, protect: Iterable[str] = (), *, team_named: bool = Fal
     # "how did you do this week" is the record, not a replay
     if has(r"\bhow (?:did|are|is|have) you\b") and not hindsight:
         s["backtest_window"] = max(0.0, s["backtest_window"] - 3.0)
+    # research asked for: "results" in the same breath is the research's own word, not the record
+    if s["research"] >= MIN_SCORE:
+        s["record"] = max(0.0, s["record"] - 4.0)
     # a definitional question is not a record question, and vice versa
     if s["explain_market"] >= MIN_SCORE:
         s["record"] = max(0.0, s["record"] - 4.0)
