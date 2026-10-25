@@ -5710,3 +5710,8 @@
 {"events": 15, "kind": "peek", "next_check_utc": "2026-10-25T20:41:07.280129Z", "observed_utc": "2026-10-25T14:41:07.280129Z", "sport_key": "soccer_brazil_campeonato"}
 {"events": 9, "kind": "peek", "next_check_utc": "2026-10-25T20:41:07.280129Z", "observed_utc": "2026-10-25T14:41:07.280129Z", "sport_key": "soccer_germany_bundesliga2"}
 {"events": 7, "kind": "peek", "next_check_utc": "2026-10-25T20:41:07.280129Z", "observed_utc": "2026-10-25T14:41:07.280129Z", "sport_key": "soccer_saudi_arabia_pro_league"}
+{"commence_utc": "2026-10-25T15:15:00Z", "event_id": "2013e3955186ebe5258e85eb741a7553", "kind": "phase", "observed_utc": "2026-10-25T14:50:48.495746Z", "phase": "t30m", "rows": 15, "sport_key": "soccer_spain_la_liga"}
+{"call_kind": "pregame", "credits": 2, "events": 15, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T14:50:48.495746Z", "regions": ["us"], "rows": 142, "sport_key": "soccer_spain_la_liga", "stored": 62}
+{"commence_utc": "2026-10-25T15:15:00Z", "event_id": "db2ea589f6cf6dd11d7c9a5c56ef544a", "kind": "phase", "observed_utc": "2026-10-25T14:50:48.495746Z", "phase": "t30m", "rows": 11, "sport_key": "soccer_spain_segunda_division"}
+{"commence_utc": "2026-10-25T15:15:00Z", "event_id": "cc338030ec8bd12ae96cb998ace47cd4", "kind": "phase", "observed_utc": "2026-10-25T14:50:48.495746Z", "phase": "t30m", "rows": 11, "sport_key": "soccer_spain_segunda_division"}
+{"call_kind": "pregame", "credits": 2, "events": 10, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T14:50:48.495746Z", "regions": ["us"], "rows": 62, "sport_key": "soccer_spain_segunda_division", "stored": 49}
