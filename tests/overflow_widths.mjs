@@ -35,7 +35,8 @@ const MEASURE = `(()=>{ const iw = window.innerWidth, sw = document.documentElem
 // the four steps and the reveal, driven the way a person drives them
 const STEPS = `(async()=>{ const w = (ms) => new Promise((r) => setTimeout(r, ms)); const out = []; const q = (h) => document.querySelector("[data-hook='" + h + "']");
   const m = () => ${MEASURE};
-  await w(900); out.push(Object.assign({ step: "sports" }, m()));
+  await w(900); if (q("quiz-take") && !q("quiz-entry").hidden) { q("quiz-take").click(); await w(900); }   // the two-door entry (2026-10-25)
+  out.push(Object.assign({ step: "sports" }, m()));
   document.querySelector("[data-hook='quiz-card'][data-group='sports'][data-id='MLB']").click(); await w(200); q("quiz-next").click(); await w(900);
   out.push(Object.assign({ step: "personality" }, m()));
   document.querySelector("[data-hook='quiz-card'][data-group='personality'][data-id='gematria']").click(); await w(200); q("quiz-next").click(); await w(900);

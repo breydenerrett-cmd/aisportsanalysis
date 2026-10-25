@@ -32,6 +32,7 @@ const out = await ev(`(async () => { try {
   const w = (ms) => new Promise((r) => setTimeout(r, ms));
   const q = (h) => document.querySelector("[data-hook='" + h + "']");
   // OWNER RULING 2026-10-21 (four-step quiz): no intro and no Skip. Pick a sport, Next, and the style step is open.
+  if (q("quiz-take") && !q("quiz-entry").hidden) { q("quiz-take").click(); await w(900); }   // the two-door entry (2026-10-25)
   document.querySelector("[data-hook='quiz-card'][data-group='sports'][data-id='MLB']").click(); await w(300); q("quiz-next").click(); await w(1500);
   q("quiz-personality-more").click(); await w(900);
   document.querySelector("[data-hook='quiz-card'][data-group='personality'][data-id='gematria']").click(); await w(900);
