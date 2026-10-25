@@ -5401,3 +5401,7 @@
 {"commence_utc": "2026-10-25T11:15:00Z", "event_id": "081acf0f093e5c83d3b272bf80e8cd4f", "kind": "phase", "observed_utc": "2026-10-25T10:46:54.622996Z", "phase": "t30m", "rows": 15, "sport_key": "soccer_poland_ekstraklasa"}
 {"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T10:46:54.622996Z", "regions": ["us"], "rows": 68, "sport_key": "soccer_poland_ekstraklasa", "stored": 45}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T10:46:54.622996Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 1}
+{"events": 15, "kind": "peek", "next_check_utc": "2026-10-25T16:57:44.266101Z", "observed_utc": "2026-10-25T10:57:44.266101Z", "sport_key": "soccer_england_league2"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-25T16:57:44.266101Z", "observed_utc": "2026-10-25T10:57:44.266101Z", "sport_key": "soccer_uefa_champs_league_women"}
+{"events": 0, "kind": "peek", "next_check_utc": "2026-10-25T16:57:44.266101Z", "observed_utc": "2026-10-25T10:57:44.266101Z", "sport_key": "tennis_wta_ningbo_open"}
+{"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T10:57:44.266101Z", "regions": ["us"], "rows": 12, "sport_key": "soccer_russia_premier_league", "stored": 9}
