@@ -1,0 +1,425 @@
+{
+  "model": "claude-sonnet-5-5",
+  "max_tokens": 16000,
+  "system": "You are a football betting analyst. You write the analysis of one NFL game and make a call on every market the packet prices. You are an AI model and the reader knows it. Your work is published before the game, graded afterward, and shown next to its record whatever that record turns out to be. Write like a sharp human analyst talking to a smart friend: plain words, a point of view, no hype.\n\nTHE PACKET IS YOUR ONLY SOURCE\n1. Reason only from the packet. Use no outside knowledge of any team, player, coach, injury, weather, standing or result, even if you are sure of it. If something matters and is not in the packet, say it is missing.\n2. A claim without a packet path is forbidden. Every reason has evidence: a list of {path, value}. A path names one value in the packet and starts at the packet's own top-level key. The value is copied exactly. Examples of real paths: markets.spread.options[0].best.price and sections.home.values.form.last_3.points_for_per_game. Never start a path with data. or packet.\n3. Every number you write in prose must appear in the packet, or be a price or probability you are yourself giving in a call. Do no arithmetic of your own on packet numbers in prose (no differences, sums or ratios); quote the packet's numbers, including the differences it already holds in sections.matchup. Do not write clock times.\n3a. The one exception to doing arithmetic is a calculation you declare. A number you work out yourself (a difference, a sum, a ratio, a percent change, the days between two dates, the chance a price implies, a count or an average) may appear in a reason, a case against or the summary only if that item lists it in `derived` as {value, unit, op, inputs, note}. `op` is one of difference, sum, ratio, percent_change, days_between, implied_probability, count, mean. `inputs` are packet paths, in order: difference is the first minus the second, ratio is the first over the second, percent_change is the change from the first to the second as a percent of the first, days_between is the calendar days between two dates in UTC (later minus earlier), implied_probability takes one American price, count takes one list. `unit` is what the value is measured in (days, points, percent, and so on) and `note` says in plain words what it is. The checker recomputes every derived value from the packet, and a wrong one strikes the call. Put the summary's in `summary_derived`. An item with no calculated number has an empty `derived`.\n4. `missing` lists what is absent, stale or thin. Weigh it. A call that rests on something listed there is a PASS.\n\nTHE CALLS\n5. Make exactly one call for every entry in `slots`, in the same order, using its slot_id and its market. `selection` must be one of that slot's selections, written exactly as listed. The first selection is the lean: the side the books favour.\n6. Verdicts. TAKE: bet the lean (the first selection) at the price you name. TAKE_OTHER_SIDE: bet the other selection, the side the books do not favour. PASS: bet nothing in this market.\n7. PASS is the default. When the evidence is thin, or the packet gives you nothing about this market beyond its own price, PASS. Say plainly when the market is probably right, and what makes you think so.\n8. Never TAKE any bet at a price of -200 or worse, in any market (-200, -250, -325 and so on). PASS it, or if the other side is the one you like, take that.\n9. price and book: the quote you would take, copied from the selection's quotes in the packet. For a PASS you may give the best quote or null.\n10. fair_estimate: your own probability that the selection wins, between 0.01 and 0.99. The books' own de-vigged number is in the packet as fair_probability. If you depart from the books by more than a few points, the reasons must show what the packet knows that the price does not. For a PASS you may give null.\n11. pass_price: the American price at which the selection stops being worth taking, which is the break-even price of your fair_estimate. On a PASS, the price at which you would start to take it, or null if no price would do.\n12. confidence: low, medium or high. High only when several independent packet facts agree and nothing relevant is in `missing`.\n13. what_would_change_it: one sentence naming a specific new fact that would flip the call, such as a quarterback change, a player ruled out on the injury report, or the number moving off a key number. If it names a price, that price is your pass_price.\n13a. case_against: for a TAKE or a TAKE_OTHER_SIDE, the strongest reason from the packet that this bet loses, written as {claim, evidence} and built like a reason. It must name a specific weakness in this bet, such as a number in the packet that points the other way, not general risk: \"anything can happen on Sunday\" is not a case against. Cite at least one packet path, and quote only numbers that are in the packet. Argue it as hard as you would argue the other side. For a PASS it is null.\n\nTHE FOOTBALL\nF1. The spread. Its two selections are the two sides of one number, each written with its own signed number as the packet lists it (a selection like \"KC -3.5\" lays 3.5 points and \"LAC +3.5\" gets 3.5). A spread call names the side and the number, and the number is the one the packet quotes. Never write a spread number the packet does not quote for that team; when you mean something else with a sign (a turnover margin, a point difference), write it as a plain number with its name, such as \"a turnover margin of -1.5\", never a team followed by a signed number. The lean of a spread is the side with the higher margin-free probability at that number, which is close to a coin flip by design: a TAKE needs a reason the number is wrong, in points, not a reason the team is good. `markets.spread.context` says where the number was first captured; if the number has moved, say which way.\nF2. The total. A total call names the number (Over 41.5, Under 41.5). Set both teams' points scored and allowed per game, yards per play, and turnover margin against the number, and say whether the price already holds them. A total that a quarterback change or an injury report could move is a reason for care.\nF3. Key numbers. Margins and totals land on 3, 7 and a few others far more often than on their neighbours because of how the game is scored. You may discuss a spread or total sitting on, or half a point off, one of those numbers, using only `sections.reference.values` for the scoring facts. Never state how often a margin occurs, any historical rate, or any percentage the packet does not hold. Never invent a key number: use the ones the packet lists.\nF4. The moneyline. A moneyline is a view on who wins, priced; a heavy favourite is never a TAKE at -200 or worse (rule 8), and the underdog is the other side. Say what the price needs for the underdog to be worth taking, using the packet's own fair_probability and the declared implied probability if you need one.\nF5. Quarterbacks and injuries. The quarterback a team lists for the game is the schedule's projection (`projected`, with the time it was listed); a changed quarterback from the last game, or a quarterback with few prior starts, is a reason for care. The injury report is the weekly report as stored: counts by position and named skill players with their designations. A player listed as out matters more than one listed as questionable, and a long list is not the same as a long list of starters: the packet does not measure a player's importance, so do not claim it. Never claim an injury, a scratch or a snap count that is not in the packet.\nF6. Rest, travel and venue. Use days of rest, a short week, a bye, miles, time zones crossed, the team's own clock at kickoff, a neutral site and the roof exactly as the packet gives them. A neutral-site game has a nominal home team. Weather is not in the packet unless it says so: when `missing` lists weather as absent for an outdoor game, say you cannot see it, and do not guess at wind or cold.\nF7. Samples. A season is seventeen games and this is early in it: a window of three games is noise, and every form figure states how many games it rests on (`games`). Where a team has few games, where `thin_sample` is true or `missing` says a window is thin, prefer PASS, say it is thin, and lean on what is solid. Head to head covers only the meetings since the data store begins.\nF8. Keep the calls consistent with each other and with the summary. A side you expect to win comfortably is not also a spread you pass for being too close, and a total you take Under is not argued with a pace that favours Over.\n\nTHE WORDS\n14. Never write: lock, guaranteed, free money, sure thing, can't lose, +EV. Never claim a profit, an edge you have, or certainty. No exclamation marks.\n14a. Everything a reader sees (the summary, every reason's claim, the case against and what_would_change_it) is read by a customer who has never heard of a packet. In those fields call the data \"the data\" or \"what we have\", never \"the packet\". The checker strikes the word \"packet\" there. Likewise never write \"repo\", \"repos\", \"repository\" or \"the repo model\". The checker strikes those words too. Evidence paths keep their own form.\n15. Do not recommend a stake size and do not describe anything as a bet you or we placed.\n\nTHE SUMMARY\n16. `summary` is the argument in 120 to 200 words of plain prose, one or two paragraphs, no lists, no markdown. Say where you lean and why, where you pass, what the market probably has right, and which missing inputs matter. A voice like: \"The home side is the better team on the numbers, but the spread already asks for a touchdown and the injury list on the other side is long without telling us who is out, so I pass on the number and look at the total.\" Only with facts that are actually in the packet.\n\nReply with one JSON object that matches the schema and nothing else.",
+  "output_config": {
+    "format": {
+      "type": "json_schema",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "summary",
+          "calls",
+          "summary_derived"
+        ],
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "calls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "slot_id",
+                "market",
+                "selection",
+                "verdict",
+                "price",
+                "book",
+                "fair_estimate",
+                "confidence",
+                "reasons",
+                "pass_price",
+                "what_would_change_it",
+                "case_against"
+              ],
+              "properties": {
+                "slot_id": {
+                  "type": "string"
+                },
+                "market": {
+                  "type": "string"
+                },
+                "selection": {
+                  "type": "string"
+                },
+                "verdict": {
+                  "type": "string",
+                  "enum": [
+                    "TAKE",
+                    "PASS",
+                    "TAKE_OTHER_SIDE"
+                  ]
+                },
+                "price": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "book": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "fair_estimate": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "confidence": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high"
+                  ]
+                },
+                "reasons": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "claim",
+                      "evidence",
+                      "derived"
+                    ],
+                    "properties": {
+                      "claim": {
+                        "type": "string"
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "path",
+                            "value"
+                          ],
+                          "properties": {
+                            "path": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "derived": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "value",
+                            "unit",
+                            "op",
+                            "inputs",
+                            "note"
+                          ],
+                          "properties": {
+                            "value": {
+                              "type": "number"
+                            },
+                            "unit": {
+                              "type": "string",
+                              "enum": [
+                                "books",
+                                "days",
+                                "degrees",
+                                "entries",
+                                "games",
+                                "hits",
+                                "innings",
+                                "items",
+                                "mph",
+                                "percent",
+                                "percentage points",
+                                "players",
+                                "points",
+                                "probability",
+                                "quotes",
+                                "ratio",
+                                "runs",
+                                "strikeouts",
+                                "times",
+                                "units",
+                                "wins"
+                              ]
+                            },
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "difference",
+                                "sum",
+                                "mean",
+                                "ratio",
+                                "percent_change",
+                                "days_between",
+                                "implied_probability",
+                                "count"
+                              ]
+                            },
+                            "inputs": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "note": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "pass_price": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "what_would_change_it": {
+                  "type": "string"
+                },
+                "case_against": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "claim",
+                        "evidence",
+                        "derived"
+                      ],
+                      "properties": {
+                        "claim": {
+                          "type": "string"
+                        },
+                        "evidence": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "path",
+                              "value"
+                            ],
+                            "properties": {
+                              "path": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "boolean"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "derived": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "value",
+                              "unit",
+                              "op",
+                              "inputs",
+                              "note"
+                            ],
+                            "properties": {
+                              "value": {
+                                "type": "number"
+                              },
+                              "unit": {
+                                "type": "string",
+                                "enum": [
+                                  "books",
+                                  "days",
+                                  "degrees",
+                                  "entries",
+                                  "games",
+                                  "hits",
+                                  "innings",
+                                  "items",
+                                  "mph",
+                                  "percent",
+                                  "percentage points",
+                                  "players",
+                                  "points",
+                                  "probability",
+                                  "quotes",
+                                  "ratio",
+                                  "runs",
+                                  "strikeouts",
+                                  "times",
+                                  "units",
+                                  "wins"
+                                ]
+                              },
+                              "op": {
+                                "type": "string",
+                                "enum": [
+                                  "difference",
+                                  "sum",
+                                  "mean",
+                                  "ratio",
+                                  "percent_change",
+                                  "days_between",
+                                  "implied_probability",
+                                  "count"
+                                ]
+                              },
+                              "inputs": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "note": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "summary_derived": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "value",
+                "unit",
+                "op",
+                "inputs",
+                "note"
+              ],
+              "properties": {
+                "value": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "books",
+                    "days",
+                    "degrees",
+                    "entries",
+                    "games",
+                    "hits",
+                    "innings",
+                    "items",
+                    "mph",
+                    "percent",
+                    "percentage points",
+                    "players",
+                    "points",
+                    "probability",
+                    "quotes",
+                    "ratio",
+                    "runs",
+                    "strikeouts",
+                    "times",
+                    "units",
+                    "wins"
+                  ]
+                },
+                "op": {
+                  "type": "string",
+                  "enum": [
+                    "difference",
+                    "sum",
+                    "mean",
+                    "ratio",
+                    "percent_change",
+                    "days_between",
+                    "implied_probability",
+                    "count"
+                  ]
+                },
+                "inputs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "note": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "effort": "medium"
+  },
+  "messages": [
+    {
+      "role": "user",
+      "content": "PACKET (JSON). Paths in your evidence start at its top-level keys.\n{\"built_at\":\"2026-10-25T18:08:48Z\",\"figure_units\":{\"days_since_last_game\":\"days\",\"listed\":\"players on the report\",\"margin_per_game\":\"points margin per game\",\"miles_from_home_base\":\"miles\",\"out\":\"players out\",\"points_against_per_game\":\"points allowed per game\",\"points_for_per_game\":\"points per game\",\"time_zones_crossed\":\"hours\",\"turnover_margin\":\"takeaways - giveaways per game\",\"yards_per_play\":\"net yards per play\",\"yards_per_play_allowed\":\"net yards per play allowed\"},\"game\":{\"away\":\"GB\",\"away_name\":\"Green Bay Packers\",\"date\":\"2026-10-25\",\"game_id\":\"2026_07_GB_DET\",\"game_type\":\"REG\",\"home\":\"DET\",\"home_name\":\"Detroit Lions\",\"kickoff_utc\":\"2026-10-25T20:25:00Z\",\"neutral_site\":false,\"season\":2026,\"stadium\":\"Ford Field\",\"state\":\"pending\",\"week\":7},\"how_to_read\":[\"In sections.matchup.values.differentials a difference is home minus away, so a positive one means the home team has the larger number. head_to_head is written from the home team's side.\",\"A form window says how many games it rests on (games). last_3 and last_5 are the team's most recent finished games; season_to_date is this season only. yards_per_play is net yards per play and turnover_margin is takeaways minus giveaways per game; each states the games it rests on.\",\"A spread selection carries its own signed number: \\\"KC -3.5\\\" lays 3.5 points and \\\"LAC +3.5\\\" gets 3.5. The two selections of the spread are the two sides of one number. fair_probability is the market's probability with the bookmaker's margin divided out, averaged over the books that quoted both sides.\",\"first_captured fields give where the market stood the first time it was captured, which is not necessarily the opening line.\",\"A qb listed_for_this_game with projected true is the schedule's projection at listed_as_of_utc, not a confirmed starter. The injury report is the weekly team report as stored.\",\"figure_units says what each form figure measures. sections.reference.values holds scoring facts, not statistics.\"],\"limits\":[\"Only the moneyline, the point spread and the game total are analyzed, each at its most-quoted number. Alternate numbers, team totals, half and quarter markets and player props are not.\",\"Every quote is the newest one captured before this packet was built, with its capture time, from the books named; nothing was captured after the packet was built or after the start.\",\"Form, rest, travel and head to head cover only the games in the data store (it begins with the 2021 season). A window holds fewer games than it names early in a season, and each figure states how many it rests on.\",\"Weather forecasts, depth charts, snap counts, play-by-play detail, officials, coaching and scheme changes and news after the weekly injury report are not in the data.\",\"The starting quarterback is the one the schedule lists, a projection until the game is played. The injury report is the weekly team report; a player's importance is not measured.\",\"A neutral-site game has a nominal home team; its differentials still read home minus away.\"],\"markets\":{\"moneyline\":{\"as_of\":\"2026-10-25T17:56:55Z\",\"label\":\"GB at DET moneyline\",\"lean\":\"DET\",\"market\":\"moneyline\",\"options\":[{\"best\":{\"book\":\"betrivers\",\"price\":-186},\"books\":11,\"fair_probability\":0.6368,\"line\":null,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-190},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-202},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-186},{\"book\":\"betus\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-195},{\"book\":\"bovada\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-200},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-192},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-200},{\"book\":\"fanduel\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-198},{\"book\":\"lowvig\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-202},{\"book\":\"mybookieag\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-194},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-197}],\"selection\":\"DET\",\"side\":\"home\"},{\"best\":{\"book\":\"lowvig\",\"price\":175},\"books\":11,\"fair_probability\":0.3632,\"line\":null,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":160},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":175},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":150},{\"book\":\"betus\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":167},{\"book\":\"bovada\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":170},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":160},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":165},{\"book\":\"fanduel\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":166},{\"book\":\"lowvig\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":175},{\"book\":\"mybookieag\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":163},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":163}],\"selection\":\"GB\",\"side\":\"away\"}],\"slot_id\":\"moneyline\"},\"spread\":{\"as_of\":\"2026-10-25T17:56:55Z\",\"context\":{\"away_number_first_captured\":3.5,\"books_at_first_capture\":8,\"books_on_other_numbers\":2,\"books_on_this_number\":9,\"first_captured_utc\":\"2026-10-15T00:25:27Z\"},\"label\":\"GB at DET point spread\",\"lean\":\"DET -3.5\",\"market\":\"spread\",\"options\":[{\"best\":{\"book\":\"betrivers\",\"price\":-108},\"books\":9,\"fair_probability\":0.5051,\"line\":-3.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-112},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-115},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-108},{\"book\":\"betus\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-115},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-115},{\"book\":\"fanduel\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-112},{\"book\":\"lowvig\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-109}],\"selection\":\"DET -3.5\",\"side\":\"home\"},{\"best\":{\"book\":\"lowvig\",\"price\":100},\"books\":9,\"fair_probability\":0.4949,\"line\":3.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-108},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-105},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-113},{\"book\":\"betus\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-105},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-105},{\"book\":\"fanduel\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-108},{\"book\":\"lowvig\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":100},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110}],\"selection\":\"GB +3.5\",\"side\":\"away\"}],\"slot_id\":\"spread\"},\"total\":{\"as_of\":\"2026-10-25T17:56:55Z\",\"context\":{\"books_at_first_capture\":6,\"books_on_other_numbers\":3,\"books_on_this_number\":8,\"first_captured_utc\":\"2026-10-15T00:25:27Z\",\"number_first_captured\":53.0},\"label\":\"GB at DET game total points\",\"lean\":\"Under 55.5\",\"market\":\"total\",\"options\":[{\"best\":{\"book\":\"mybookieag\",\"price\":-110},\"books\":8,\"fair_probability\":0.5014,\"line\":55.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110},{\"book\":\"betus\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110},{\"book\":\"bovada\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110},{\"book\":\"fanduel\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110},{\"book\":\"mybookieag\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-114}],\"selection\":\"Under 55.5\",\"side\":\"under\"},{\"best\":{\"book\":\"williamhill_us\",\"price\":-106},\"books\":8,\"fair_probability\":0.4986,\"line\":55.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-108},{\"book\":\"betus\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110},{\"book\":\"bovada\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110},{\"book\":\"fanduel\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110},{\"book\":\"mybookieag\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-110},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-25T17:56:55Z\",\"price\":-106}],\"selection\":\"Over 55.5\",\"side\":\"over\"}],\"slot_id\":\"total\"}},\"missing\":[{\"item\":\"props\",\"kind\":\"absent\",\"reason\":\"no NFL player-prop prices are captured, so no prop is analyzed\"}],\"packet_version\":\"analyst_nfl_packet_v1\",\"sections\":{\"away\":{\"as_of\":\"2026-10-25T18:08:48Z\",\"as_of_basis\":\"games the data store holds as finished before this packet was built\",\"values\":{\"form\":{\"last_3\":{\"games\":3,\"losses\":0,\"margin_per_game\":12.3333,\"points_against\":34,\"points_against_per_game\":11.3333,\"points_for\":71,\"points_for_per_game\":23.6667,\"ties\":0,\"turnover_margin\":{\"games\":3,\"total\":6,\"value\":2},\"wins\":3,\"yards_per_play\":{\"games\":3,\"value\":5.5924},\"yards_per_play_allowed\":{\"games\":3,\"value\":4.1407}},\"last_5\":{\"games\":5,\"losses\":1,\"margin_per_game\":3.8,\"points_against\":86,\"points_against_per_game\":17.2,\"points_for\":105,\"points_for_per_game\":21,\"ties\":0,\"turnover_margin\":{\"games\":5,\"total\":5,\"value\":1},\"wins\":4,\"yards_per_play\":{\"games\":5,\"value\":5.2391},\"yards_per_play_allowed\":{\"games\":5,\"value\":4.7685}},\"season_to_date\":{\"games\":6,\"losses\":2,\"margin_per_game\":0.3333,\"points_against\":125,\"points_against_per_game\":20.8333,\"points_for\":127,\"points_for_per_game\":21.1667,\"ties\":0,\"turnover_margin\":{\"games\":6,\"total\":4,\"value\":0.6667},\"wins\":4,\"yards_per_play\":{\"games\":6,\"value\":5.4258},\"yards_per_play_allowed\":{\"games\":6,\"value\":4.6382}}},\"injuries\":{\"assumption\":\"a row without date_modified is the week's final report, taken as published 24 hours before kickoff\",\"by_position_group\":{\"DB\":{\"dnp\":0,\"doubtful\":0,\"limited\":2,\"listed\":2,\"out\":0,\"questionable\":1},\"DL\":{\"dnp\":0,\"doubtful\":0,\"limited\":2,\"listed\":2,\"out\":0,\"questionable\":1},\"LB\":{\"dnp\":1,\"doubtful\":0,\"limited\":1,\"listed\":2,\"out\":1,\"questionable\":0},\"OL\":{\"dnp\":0,\"doubtful\":0,\"limited\":1,\"listed\":1,\"out\":0,\"questionable\":1},\"QB\":{\"dnp\":0,\"doubtful\":0,\"limited\":1,\"listed\":1,\"out\":0,\"questionable\":0},\"WR\":{\"dnp\":0,\"doubtful\":0,\"limited\":4,\"listed\":4,\"out\":0,\"questionable\":1}},\"newest_report_utc\":null,\"players_listed\":12,\"report_week\":7,\"skill_players_listed\":[{\"injury\":\"Back\",\"name\":\"Jordan Love\",\"position\":\"QB\",\"practice_status\":\"limited\",\"report_status\":null},{\"injury\":\"Back\",\"name\":\"Bo Melton\",\"position\":\"WR\",\"practice_status\":\"limited\",\"report_status\":\"questionable\"}],\"totals\":{\"dnp\":1,\"doubtful\":0,\"limited\":11,\"listed\":12,\"out\":1,\"questionable\":4}},\"last_three\":[{\"kickoff_utc\":\"2026-10-19T00:20:00Z\",\"margin\":10,\"opponent\":\"DAL\",\"points_against\":13,\"points_for\":23,\"result\":\"W\",\"site\":\"home\",\"week\":6},{\"kickoff_utc\":\"2026-10-11T17:00:00Z\",\"margin\":24,\"opponent\":\"CHI\",\"points_against\":7,\"points_for\":31,\"result\":\"W\",\"site\":\"home\",\"week\":5},{\"kickoff_utc\":\"2026-10-04T17:00:00Z\",\"margin\":3,\"opponent\":\"TB\",\"points_against\":14,\"points_for\":17,\"result\":\"W\",\"site\":\"away\",\"week\":4}],\"name\":\"Green Bay Packers\",\"qb\":{\"last_game_starter\":\"Jordan Love\",\"listed_for_this_game\":{\"changed_since_last_game\":false,\"listed_as_of_utc\":\"2026-10-25T18:08:31Z\",\"name\":\"Jordan Love\",\"prior_starts_in_store\":58,\"prior_starts_with_team\":58,\"projected\":true}},\"record\":{\"season\":{\"games\":6,\"losses\":2,\"ties\":0,\"wins\":4}},\"rest\":{\"coming_off_bye\":false,\"days_since_last_game\":7,\"season_opener\":false,\"short_week\":false,\"week_gap\":1},\"side\":\"away\",\"streak\":{\"length\":3,\"type\":\"W\"},\"team\":\"GB\",\"travel\":{\"direction\":\"east\",\"kickoff_home_base_clock\":\"15:25\",\"miles_from_home_base\":292.6,\"time_zones_crossed\":1}}},\"home\":{\"as_of\":\"2026-10-25T18:08:48Z\",\"as_of_basis\":\"games the data store holds as finished before this packet was built\",\"values\":{\"form\":{\"last_3\":{\"games\":3,\"losses\":1,\"margin_per_game\":8.3333,\"points_against\":77,\"points_against_per_game\":25.6667,\"points_for\":102,\"points_for_per_game\":34,\"ties\":0,\"turnover_margin\":{\"games\":3,\"total\":2,\"value\":0.6667},\"wins\":2,\"yards_per_play\":{\"games\":3,\"value\":6.3198},\"yards_per_play_allowed\":{\"games\":3,\"value\":5.4265}},\"last_5\":{\"games\":5,\"losses\":2,\"margin_per_game\":3.2,\"points_against\":148,\"points_against_per_game\":29.6,\"points_for\":164,\"points_for_per_game\":32.8,\"ties\":0,\"turnover_margin\":{\"games\":5,\"total\":4,\"value\":0.8},\"wins\":3,\"yards_per_play\":{\"games\":5,\"value\":5.9307},\"yards_per_play_allowed\":{\"games\":5,\"value\":5.6323}},\"season_to_date\":{\"games\":5,\"losses\":2,\"margin_per_game\":3.2,\"points_against\":148,\"points_against_per_game\":29.6,\"points_for\":164,\"points_for_per_game\":32.8,\"ties\":0,\"turnover_margin\":{\"games\":5,\"total\":4,\"value\":0.8},\"wins\":3,\"yards_per_play\":{\"games\":5,\"value\":5.9307},\"yards_per_play_allowed\":{\"games\":5,\"value\":5.6323}}},\"injuries\":{\"assumption\":\"a row without date_modified is the week's final report, taken as published 24 hours before kickoff\",\"by_position_group\":{\"DB\":{\"dnp\":0,\"doubtful\":0,\"limited\":1,\"listed\":2,\"out\":0,\"questionable\":1},\"OL\":{\"dnp\":0,\"doubtful\":0,\"limited\":0,\"listed\":1,\"out\":0,\"questionable\":1}},\"newest_report_utc\":null,\"players_listed\":3,\"report_week\":7,\"skill_players_listed\":[],\"totals\":{\"dnp\":0,\"doubtful\":0,\"limited\":1,\"listed\":3,\"out\":0,\"questionable\":2}},\"last_three\":[{\"kickoff_utc\":\"2026-10-11T20:25:00Z\",\"margin\":24,\"opponent\":\"ARI\",\"points_against\":21,\"points_for\":45,\"result\":\"W\",\"site\":\"away\",\"week\":5},{\"kickoff_utc\":\"2026-10-05T00:20:00Z\",\"margin\":-6,\"opponent\":\"CAR\",\"points_against\":32,\"points_for\":26,\"result\":\"L\",\"site\":\"away\",\"week\":4},{\"kickoff_utc\":\"2026-09-27T17:00:00Z\",\"margin\":7,\"opponent\":\"NYJ\",\"points_against\":24,\"points_for\":31,\"result\":\"W\",\"site\":\"home\",\"week\":3}],\"name\":\"Detroit Lions\",\"qb\":{\"last_game_starter\":\"Jared Goff\",\"listed_for_this_game\":{\"changed_since_last_game\":false,\"listed_as_of_utc\":\"2026-10-25T18:08:31Z\",\"name\":\"Jared Goff\",\"prior_starts_in_store\":91,\"prior_starts_with_team\":91,\"projected\":true}},\"record\":{\"season\":{\"games\":5,\"losses\":2,\"ties\":0,\"wins\":3}},\"rest\":{\"coming_off_bye\":true,\"days_since_last_game\":14,\"season_opener\":false,\"short_week\":false,\"week_gap\":2},\"side\":\"home\",\"streak\":{\"length\":1,\"type\":\"W\"},\"team\":\"DET\",\"travel\":{\"direction\":\"none\",\"kickoff_home_base_clock\":\"16:25\",\"miles_from_home_base\":0.0,\"time_zones_crossed\":0}}},\"matchup\":{\"as_of\":\"2026-10-25T18:08:48Z\",\"as_of_basis\":\"the same finished games, both teams compared (home minus away)\",\"values\":{\"differentials\":{\"form_last_3_margin_per_game\":{\"away\":12.3333,\"diff\":-4.0,\"home\":8.3333,\"thin_sample\":false},\"form_last_3_points_against_per_game\":{\"away\":11.3333,\"diff\":14.3334,\"home\":25.6667,\"thin_sample\":false},\"form_last_3_points_for_per_game\":{\"away\":23.6667,\"diff\":10.3333,\"home\":34,\"thin_sample\":false},\"form_last_3_turnover_margin\":{\"away\":2,\"diff\":-1.3333,\"home\":0.6667,\"thin_sample\":false},\"form_last_3_yards_per_play\":{\"away\":5.5924,\"diff\":0.7274,\"home\":6.3198,\"thin_sample\":false},\"form_last_3_yards_per_play_allowed\":{\"away\":4.1407,\"diff\":1.2858,\"home\":5.4265,\"thin_sample\":false},\"form_last_5_margin_per_game\":{\"away\":3.8,\"diff\":-0.6,\"home\":3.2,\"thin_sample\":false},\"form_last_5_points_against_per_game\":{\"away\":17.2,\"diff\":12.4,\"home\":29.6,\"thin_sample\":false},\"form_last_5_points_for_per_game\":{\"away\":21,\"diff\":11.8,\"home\":32.8,\"thin_sample\":false},\"form_last_5_turnover_margin\":{\"away\":1,\"diff\":-0.2,\"home\":0.8,\"thin_sample\":false},\"form_last_5_yards_per_play\":{\"away\":5.2391,\"diff\":0.6916,\"home\":5.9307,\"thin_sample\":false},\"form_last_5_yards_per_play_allowed\":{\"away\":4.7685,\"diff\":0.8638,\"home\":5.6323,\"thin_sample\":false},\"form_season_to_date_margin_per_game\":{\"away\":0.3333,\"diff\":2.8667,\"home\":3.2,\"thin_sample\":false},\"form_season_to_date_points_against_per_game\":{\"away\":20.8333,\"diff\":8.7667,\"home\":29.6,\"thin_sample\":false},\"form_season_to_date_points_for_per_game\":{\"away\":21.1667,\"diff\":11.6333,\"home\":32.8,\"thin_sample\":false},\"form_season_to_date_turnover_margin\":{\"away\":0.6667,\"diff\":0.1333,\"home\":0.8,\"thin_sample\":false},\"form_season_to_date_yards_per_play\":{\"away\":5.4258,\"diff\":0.5049,\"home\":5.9307,\"thin_sample\":false},\"form_season_to_date_yards_per_play_allowed\":{\"away\":4.6382,\"diff\":0.9941,\"home\":5.6323,\"thin_sample\":false},\"injuries_listed\":{\"away\":12,\"diff\":-9,\"home\":3,\"thin_sample\":false},\"injuries_out\":{\"away\":1,\"diff\":-1,\"home\":0,\"thin_sample\":false},\"rest_days_since_last_game\":{\"away\":7,\"diff\":7,\"home\":14,\"thin_sample\":false},\"travel_miles_from_home_base\":{\"away\":292.6,\"diff\":-292.6,\"home\":0.0,\"thin_sample\":false},\"travel_time_zones_crossed\":{\"away\":1,\"diff\":-1,\"home\":0,\"thin_sample\":false}},\"head_to_head\":{\"average_margin_for_home_team\":-0.2,\"away_team_wins\":4,\"home_team_wins\":6,\"last_meeting\":{\"away_score\":31,\"away_team\":\"GB\",\"home_score\":24,\"home_team\":\"DET\",\"kickoff_utc\":\"2025-11-27T18:00:00Z\",\"season\":2025,\"week\":13,\"winner\":\"GB\"},\"meetings\":10,\"ties\":0,\"window\":\"meetings since 2021 only\"}}},\"reference\":{\"as_of\":null,\"as_of_basis\":\"scoring values and the margins they add up to: a field goal is 3, a touchdown 6, an extra point 1, a two-point conversion 2 and a safety 2, so final margins pile up on 3, 6, 7, 10 and 14. These are how the game is scored; the packet states no frequency for any margin\",\"values\":{\"key_numbers\":[3,6,7,10,14],\"scoring\":{\"extra_point\":1,\"field_goal\":3,\"safety\":2,\"touchdown\":6,\"two_point_conversion\":2}}},\"schedule\":{\"as_of\":\"2026-10-25T18:08:48Z\",\"as_of_basis\":\"the published schedule, fixed before the game\",\"values\":{\"divisional\":true,\"game_type\":\"REG\",\"gameday\":\"2026-10-25\",\"kickoff_et\":\"16:25\",\"neutral_site\":false,\"primetime\":false,\"season\":2026,\"time_window\":\"late_afternoon\",\"venue\":{\"neutral_site\":false,\"roof\":\"dome\",\"stadium\":\"Ford Field\",\"surface\":\"fieldturf\"},\"week\":7,\"weekday\":\"Sunday\"}}},\"slots\":[{\"label\":\"GB at DET moneyline\",\"market\":\"moneyline\",\"selections\":[\"DET\",\"GB\"],\"slot_id\":\"moneyline\"},{\"label\":\"GB at DET point spread\",\"market\":\"spread\",\"selections\":[\"DET -3.5\",\"GB +3.5\"],\"slot_id\":\"spread\"},{\"label\":\"GB at DET game total points\",\"market\":\"total\",\"selections\":[\"Under 55.5\",\"Over 55.5\"],\"slot_id\":\"total\"}]}\n\nMake one call for each of these slot ids, in this order: moneyline, spread, total."
+    }
+  ]
+}
