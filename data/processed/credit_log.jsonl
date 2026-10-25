@@ -20354,3 +20354,13 @@
 {"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 88406, "credits_used_last": 0, "utc": "2026-10-25T22:58:34.394081Z"}
 {"budget_band": "live_capture", "caller": "nfl_capture.run", "credits_remaining": 88403, "credits_used_last": 0, "utc": "2026-10-25T22:59:17.143314Z"}
 {"budget_band": "allsports_capture", "caller": "allsports_capture.inplay", "credits_remaining": 88402, "credits_used_last": 1, "utc": "2026-10-25T22:59:17.742046Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 88400, "credits_used_last": 0, "utc": "2026-10-25T23:08:46.847636Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 88400, "credits_used_last": 0, "utc": "2026-10-25T23:08:49.515632Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 88400, "credits_used_last": 0, "utc": "2026-10-25T23:08:50.141840Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 88397, "credits_used_last": 3, "utc": "2026-10-25T23:09:31.382397Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 88395, "credits_used_last": 2, "utc": "2026-10-25T23:09:31.382397Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 88393, "credits_used_last": 2, "utc": "2026-10-25T23:09:31.382397Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 88391, "credits_used_last": 2, "utc": "2026-10-25T23:09:31.382397Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.inplay", "credits_remaining": 88390, "credits_used_last": 1, "utc": "2026-10-25T23:09:31.382397Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.inplay", "credits_remaining": 88389, "credits_used_last": 1, "utc": "2026-10-25T23:09:31.382397Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t2h", "credits_remaining": 88384, "credits_used_last": 5, "utc": "2026-10-25T23:09:48.518018Z"}
