@@ -5298,3 +5298,5 @@
 {"commence_utc": "2026-10-25T14:30:00Z", "event_id": "2fd479cbb110c8f057e363bb06195f2b", "kind": "phase", "observed_utc": "2026-10-25T08:36:47.487306Z", "phase": "t6h", "rows": 16, "sport_key": "soccer_germany_bundesliga"}
 {"call_kind": "pregame", "credits": 2, "events": 11, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T08:36:47.487306Z", "regions": ["us"], "rows": 121, "sport_key": "soccer_germany_bundesliga", "stored": 32}
 {"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T08:36:47.487306Z", "regions": ["us"], "rows": 47, "sport_key": "soccer_japan_j_league", "stored": 8}
+{"commence_utc": "2026-10-25T10:45:00Z", "event_id": "da3753d6380deada02ed04ab49cb230f", "kind": "phase", "observed_utc": "2026-10-25T08:49:50.305708Z", "phase": "t2h", "rows": 6, "sport_key": "soccer_russia_premier_league"}
+{"call_kind": "pregame", "credits": 2, "events": 6, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T08:49:50.305708Z", "regions": ["us"], "rows": 24, "sport_key": "soccer_russia_premier_league", "stored": 18}
