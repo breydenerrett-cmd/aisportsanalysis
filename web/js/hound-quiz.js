@@ -57,6 +57,18 @@ export const PAPER_NOTICE = "Paper bets only. Your hound never takes a price of 
 export const BACKTEST_DAYS = 14;
 export const ANY = "ANY";
 export const ALL_SPORTS_LABEL = "All sports";
+/** The steps on screen. The quiz has its four. A describe-first hound has the describe step, then the questions its draft left
+ *  open (the server asks them: src/hounds/quiz/describe.py), then name and look. An expert preset skips risk: its rules already
+ *  carry their own prices, stakes and caps. */
+export function steps() {
+  if (S.mode === "describe") {
+    const qs = (S.describe && S.describe.questions) || [];
+    return [{ id: "describe", title: "Describe it first.", sub: "Say it in plain words. Anything you leave out, we ask next." }]
+      .concat(qs.map((x) => ({ id: x.id === "finish" ? "finish" : `dq:${x.id}`, title: x.title, sub: x.sub || "" })));
+  }
+  return S.preset ? STEPS.filter((x) => x.id !== "risk") : STEPS;
+}
+
 /** What the risk choice starts on: the middle one. */
 export const DEFAULT_RISK = "balanced";
 /** The markets a quiz hound starts on. The quiz no longer asks; the builder still does. */
@@ -89,7 +101,7 @@ const S = {
   name: "", nameTouched: false, tagline: "", shownName: "", english: { text: "", draft: null, understood: [], notRead: [], assumed: [] },
   result: null, composing: false, composeError: "", seq: 0, preview: null, previewSeq: 0, drill: null, drillBusy: false,
   saving: false, saved: null, problems: [], pendingSave: false, resumed: false, notice: "", celebrated: false, bound: false,
-  keep: null, previewSettled: false,
+  keep: null, previewSettled: false, mode: "quiz", describe: null, preset: null, libWait: null,
 };
 
 // ---- the draft (localStorage, every touch guarded) ------------------------------------------------------------------
@@ -112,8 +124,9 @@ function persist() {
   try {
     const ls = storage();
     if (!ls) return;
-    if (!hasAnyAnswer() && !S.english.text && !S.nameTouched) { ls.removeItem(DRAFT_KEY); return; }
+    if (!hasAnyAnswer() && !S.english.text && !S.nameTouched && !S.describe && !S.preset) { ls.removeItem(DRAFT_KEY); return; }
     ls.setItem(DRAFT_KEY, JSON.stringify({ v: 1, answers: S.answers, step: S.step, stage: S.stage === "reveal" ? "reveal" : "quiz",
+      mode: S.mode, describe: S.describe, preset: S.preset,
       name: S.nameTouched ? S.name : "", tagline: S.tagline, english: { text: S.english.text, draft: S.english.draft },
       pendingSave: S.pendingSave, savedAt: Date.now() }));
   } catch (err) { /* a full or blocked store: no resume, nothing else */ }
@@ -132,7 +145,10 @@ function restore(d) {
   if (typeof a.risk === "string") base.risk = a.risk;
   base.look = Object.assign({ coat: null, accessory: null }, a.look && typeof a.look === "object" ? a.look : {});
   S.answers = base;
-  S.step = Number.isInteger(d.step) && d.step >= 0 && d.step < STEPS.length ? d.step : 0;
+  S.mode = d.mode === "describe" && d.describe && typeof d.describe === "object" ? "describe" : "quiz";
+  S.describe = S.mode === "describe" ? d.describe : null;
+  S.preset = typeof d.preset === "string" && ((S.lib && S.lib.expert_presets) || []).some((x) => x.id === d.preset) ? d.preset : null;
+  S.step = Number.isInteger(d.step) && d.step >= 0 && d.step < steps().length ? d.step : 0;
   S.name = typeof d.name === "string" ? d.name : "";
   S.nameTouched = !!S.name;
   S.tagline = typeof d.tagline === "string" ? d.tagline : "";
@@ -151,10 +167,16 @@ function hasAnyAnswer() {
 
 function answered(stepId) {
   const a = S.answers;
+  const dans = (S.describe && S.describe.answers) || {};
   switch (stepId) {
     case "sports": return a.sports.length > 0;
     case "personality": return !!a.personality;
     case "risk": return !!a.risk;
+    case "describe": return !!S.describe;
+    case "dq:sports": return a.sports.length > 0;
+    case "dq:risk": return !!a.risk;
+    case "dq:stats": return (dans.stats || []).length > 0;
+    case "dq:aggression": return !!dans.aggression;
     default: return true;                        // name and look are optional
   }
 }
@@ -178,10 +200,15 @@ export function riskAnswers(lib = S.lib, riskId = S.answers.risk, personalityId 
 /** The body of POST /hounds/quiz/compose's `answers`: the four answers, plus the defaults derived from them. */
 export function answersPayload() {
   const a = S.answers, out = {};
-  if (a.sports.length) out.sports = a.sports.slice();
-  if (a.personality) out.personality = a.personality;
-  out.markets = DEFAULT_MARKETS.slice();
-  Object.assign(out, riskAnswers());
+  if (draftOnly()) {
+    // the draft carries the rules, prices and caps; the answers only add the sports and the look
+    if (a.sports.length) out.sports = a.sports.slice();
+  } else {
+    if (a.sports.length) out.sports = a.sports.slice();
+    if (a.personality) out.personality = a.personality;
+    out.markets = DEFAULT_MARKETS.slice();
+    Object.assign(out, riskAnswers());
+  }
   const look = {};
   if (a.look.coat) look.coat = a.look.coat;
   if (a.look.accessory) look.accessory = a.look.accessory;
@@ -197,6 +224,8 @@ function selected(group, id) {
     case "sports": return a.sports.includes(id);
     case "personality": return a.personality === id;
     case "risk": return a.risk === id;
+    case "aggression": return !!S.describe && S.describe.answers.aggression === id;
+    case "stats": return !!S.describe && (S.describe.answers.stats || []).includes(id);
     case "coat": return a.look.coat === id;
     case "accessory": return a.look.accessory === id;
     default: return false;
@@ -206,6 +235,17 @@ function selected(group, id) {
 function toggle(group, id) {
   const a = S.answers;
   S.notice = "";
+  if (S.preset && (group === "sports" || group === "personality" || group === "risk")) {
+    // a change of its own drops the preset: the answers are the hound again
+    S.preset = null;
+    S.english.draft = null;
+  }
+  if (group === "aggression" && S.describe) { S.describe.answers.aggression = id; persist(); sync(); return; }
+  if (group === "stats" && S.describe) {
+    const cur = S.describe.answers.stats || [];
+    S.describe.answers.stats = cur.includes(id) ? cur.filter((x) => x !== id) : cur.concat([id]);
+    persist(); sync(); return;
+  }
   if (group === "sports") {
     // "All sports" and a list of sports are two different answers: picking one clears the other
     if (id === ANY) a.sports = a.sports.includes(ANY) ? [] : [ANY];
@@ -330,7 +370,7 @@ function stepPersonality() {
     h("button", { type: "button", class: "qz-btn qz-btn--ghost", "data-hook": "quiz-personality-more", text: "Show me others",
       on: { click: () => { S.personalityTouched = true; S.personalityPage = (page + 1) % pages; refreshPersonality(); } } }),
     h("span", { class: "qz-fine", "data-hook": "quiz-personality-count", text: `Page ${page + 1} of ${pages}.` })]) : null;
-  return h("div", { class: "qz-personality", "data-hook": "quiz-personality" }, [grid, more]);
+  return h("div", { class: "qz-personality", "data-hook": "quiz-personality" }, [grid, more, presetRow()]);
 }
 
 function refreshPersonality() {
@@ -367,6 +407,129 @@ function stepRisk() {
     h("p", { class: "qz-fine", text: S.lib.price_cap_note })]);
 }
 
+// ---- describe it first, and the expert presets ----------------------------------------------------------------------------
+
+function describeQuestion(id) {
+  return ((S.describe && S.describe.questions) || []).find((x) => x.id === id) || null;
+}
+
+/** The three-way pins for the aggression question (the same three levels as risk, but the answer sets only the cap and the stake). */
+function choicePins(group, rows) {
+  return h("div", { class: "qz-grid qz-grid--risk", role: "group", "aria-label": group }, rows.map((r) => pin({ group, id: r.id, title: r.name,
+    pitch: r.pitch, extra: [h("span", { class: "qz-pin__meta" }, [h("span", { class: "qz-tag", text: `${r.stake}u a bet` }),
+      h("span", { class: "qz-tag", text: `${r.bets_per_day} bets a day at most` })])] })));
+}
+
+function stepAggression() {
+  const qn = describeQuestion("aggression");
+  return h("div", { class: "qz-risk", "data-hook": "quiz-aggression" }, [choicePins("aggression", qn ? qn.choices : [])]);
+}
+
+function stepStats() {
+  const qn = describeQuestion("stats");
+  const choices = qn ? qn.choices : [];
+  return h("div", { class: "qz-chips", role: "group", "aria-label": "Stats", "data-hook": "quiz-stats" }, choices.map((c) =>
+    h("button", { type: "button", class: "qz-chip", "data-hook": "quiz-card", "data-group": "stats", "data-id": c.id,
+      "aria-pressed": selected("stats", c.id) ? "true" : "false", text: c.name, on: { click: () => toggle("stats", c.id) } })));
+}
+
+/** The describe step: one sentence in. Once it is read, the rule so far and the can't-check list show here. */
+function stepDescribe() {
+  const d = S.describe;
+  const box = h("textarea", { id: "qz-describe", class: "qz-textarea", rows: "4", maxlength: "600", "data-hook": "describe-input",
+    placeholder: "e.g. NHL underdog moneylines at plus money, four bets a day at most", text: d ? d.text : "" });
+  const status = h("span", { class: "qz-fine", "data-hook": "describe-status", "aria-live": "polite" });
+  const read = h("button", { type: "button", class: "qz-btn qz-btn--primary", "data-hook": "describe-go", text: d ? "Read it again" : "Read it",
+    on: { click: readDescribe } });
+  const parts = [box, h("div", { class: "qz-actions" }, [read, status]), presetRow()];
+  if (d) {
+    parts.push(h("ul", { class: "qz-list", "data-hook": "describe-understood" }, (d.sentences || []).map((t) => h("li", { text: t }))));
+    if ((d.cant || []).length) {
+      parts.push(h("ul", { class: "qz-list qz-list--warn", "data-hook": "describe-cant" }, [h("li", { class: "qz-fine", text: "Can't check yet:" })]
+        .concat(d.cant.map((n) => h("li", { text: n.text ? `"${n.text}": ${n.reason}` : n.reason })))));
+    }
+  }
+  return h("div", { class: "qz-describe", "data-hook": "describe" }, parts);
+}
+
+async function readDescribe() {
+  const text = String((q("describe-input") && q("describe-input").value) || "").trim();
+  const status = q("describe-status");
+  if (!text) { if (status) status.textContent = "Type something first."; return; }
+  if (status) status.textContent = "Reading...";
+  let res;
+  try {
+    res = await apiPost("/hounds/quiz/describe", { text });
+  } catch (err) {
+    if (status) status.textContent = err && err.status === 429 ? "Slow down a little; try again in a minute." : describeError(err, "the reader").text;
+    return;
+  }
+  S.describe = { text, draft: res.draft || {}, questions: res.questions || [], answers: {}, named: res.named_sports || [],
+    sentences: res.sentences || [], cant: res.not_understood || [] };
+  S.answers.risk = null;                      // the risk question answers itself when it is asked
+  S.dir = "fwd";
+  persist();
+  go(1);
+}
+
+/** The draft the describe answers make: the reader's rules, with each open field filled from the answer that was asked for it.
+ *  Only the silent fields are filled: the person's own words always win. */
+function describeDraft() {
+  const d = S.describe;
+  const draft = clone(d.draft || {});
+  const rules = draft.rules || [];
+  const levels = S.lib.risk_levels || [];
+  const riskLevel = levels.find((r) => r.id === S.answers.risk) || null;
+  const aggLevel = levels.find((r) => r.id === d.answers.aggression) || riskLevel;
+  if (riskLevel) {
+    const comfort = (S.lib.price_comforts || []).find((c) => c.id === riskLevel.price_comfort);
+    for (const r of rules) {
+      if (r.price_min == null && r.price_max == null && comfort) { r.price_min = comfort.price_min; r.price_max = comfort.price_max; }
+    }
+  }
+  if (aggLevel) {
+    if (draft.max_bets_per_day == null) draft.max_bets_per_day = aggLevel.bets_per_day;
+    if (draft.stake_units == null) draft.stake_units = aggLevel.stake;
+  }
+  if (!d.named.length && S.answers.sports.length) for (const r of rules) r.sports = S.answers.sports.slice();
+  const picked = d.answers.stats || [];
+  if (picked.length) {
+    for (const r of rules) if ((r.markets || []).some((m) => (describeQuestion("stats") || { choices: [] }).choices.some((c) => c.id === m))) r.markets = picked.slice();
+  }
+  return draft;
+}
+
+function draftOnly() {
+  return S.mode === "describe" || !!S.preset;
+}
+
+/** The expert presets: a whole validated spec (config/hounds_archetypes.json, expert_presets). Picking one fills the sports and the
+ *  rules, skips risk, and goes to the name and look. Nothing is saved until the reveal's Keep. */
+function presetRow() {
+  const presets = (S.lib && S.lib.expert_presets) || [];
+  if (!presets.length) return null;
+  return h("div", { class: "qz-presets", role: "group", "aria-label": "Expert presets", "data-hook": "quiz-presets" }, [
+    h("p", { class: "qz-fine", text: "Expert presets" }),
+    h("div", { class: "qz-chips" }, presets.map((p) => h("button", { type: "button", class: "qz-chip", "data-hook": "quiz-preset",
+      "data-id": p.id, "aria-pressed": S.preset === p.id ? "true" : "false", text: p.name, title: p.pitch,
+      on: { click: () => applyPreset(p.id) } })))]);
+}
+
+function applyPreset(id) {
+  const p = ((S.lib && S.lib.expert_presets) || []).find((x) => x.id === id);
+  if (!p) return;
+  S.mode = "quiz";
+  S.describe = null;
+  S.preset = p.id;
+  S.answers.sports = p.sports.slice();
+  S.answers.personality = null;
+  S.english.draft = clone(p.draft);
+  S.dir = "fwd";
+  S.step = steps().findIndex((x) => x.id === "finish");
+  persist();
+  renderStep();
+}
+
 // ---- the last step: a name and a look ---------------------------------------------------------------------------------------
 
 function stepFinish() {
@@ -394,12 +557,14 @@ function refreshLook() {
   if (host) swap(host, h("div", { class: "qz-look__preview", "data-hook": "quiz-look-preview" }, [dogSpan(previewLook(), "happy", 200, previewBreed(), "qz-dog qz-dog--big")]));
 }
 
-const STEP_BUILDERS = { sports: stepSports, personality: stepPersonality, risk: stepRisk, finish: stepFinish };
+const STEP_BUILDERS = { sports: stepSports, personality: stepPersonality, risk: stepRisk, finish: stepFinish,
+  describe: () => stepDescribe(), "dq:sports": stepSports, "dq:risk": stepRisk, "dq:stats": () => stepStats(),
+  "dq:aggression": () => stepAggression() };
 
 // ---- the shell: stage, progress, bar ---------------------------------------------------------------------------------------
 
 function renderStep() {
-  const step = STEPS[S.step];
+  const step = steps()[S.step];
   const stage = clearNode(q("quiz-stage"));
   stage.setAttribute("data-dir", S.dir);
   const body = STEP_BUILDERS[step.id]();
@@ -424,8 +589,9 @@ function sync() {
 }
 
 function syncBar() {
-  const last = S.step === STEPS.length - 1;
-  const step = STEPS[S.step];
+  const list = steps();
+  const last = S.step === list.length - 1;
+  const step = list[S.step];
   const next = q("quiz-next");
   if (!next) return;
   next.textContent = last ? "Meet my hound" : "Next";
@@ -434,17 +600,21 @@ function syncBar() {
   const restart = q("quiz-restart");
   if (restart) restart.hidden = !(hasAnyAnswer() || S.nameTouched);
   const bar = q("quiz-progress");
-  const pct = Math.round(((S.step + 1) / STEPS.length) * 100);
+  const pct = Math.round(((S.step + 1) / list.length) * 100);
   bar.setAttribute("style", `--p:${pct}%`);
   bar.setAttribute("aria-valuenow", String(S.step + 1));
-  bar.setAttribute("aria-valuemax", String(STEPS.length));
-  q("quiz-step").textContent = `Step ${S.step + 1} of ${STEPS.length}`;
+  bar.setAttribute("aria-valuemax", String(list.length));
+  q("quiz-step").textContent = `Step ${S.step + 1} of ${list.length}`;
 }
 
 function go(delta) {
   const target = S.step + delta;
   if (target < 0) return;
-  if (target >= STEPS.length) { showReveal(); return; }
+  if (target >= steps().length) {
+    if (S.mode === "describe") S.english.draft = describeDraft();
+    showReveal();
+    return;
+  }
   S.dir = delta > 0 ? "fwd" : "back";
   S.step = target;
   persist();
@@ -454,6 +624,8 @@ function go(delta) {
 function show(which) {
   q("quiz-shell").hidden = which !== "quiz";
   q("quiz-reveal").hidden = which !== "reveal";
+  const entry = q("quiz-entry");
+  if (entry) entry.hidden = which !== "entry";
   const noscript = q("quiz-noscript");
   if (noscript) noscript.hidden = true;
 }
@@ -471,6 +643,7 @@ function resetAll() {
   S.result = null; S.preview = null; S.drill = null; S.saved = null; S.pendingSave = false; S.problems = []; S.moreSports = false;
   S.personalityTouched = false; S.personalityPage = 0; S.step = 0; S.resumed = false;
   S.previewSettled = false;
+  S.mode = "quiz"; S.describe = null; S.preset = null;
   clearDraft();
 }
 
@@ -478,7 +651,7 @@ function resetAll() {
 
 function showReveal() {
   S.stage = "reveal";
-  S.step = STEPS.length - 1;
+  S.step = steps().length - 1;
   persist();
   show("reveal");
   if (typeof window.scrollTo === "function") window.scrollTo(0, 0);
@@ -937,6 +1110,14 @@ function libraryError(err) {
       h("a", { class: "qz-btn qz-btn--ghost", href: BUILDER_HREF, text: "Open the builder instead" })])]));
 }
 
+/** Run `fn` once the library is in hand (the entry doors can be pressed before it arrives). A failed library shows its own error. */
+async function whenLibrary(fn) {
+  if (!S.lib && S.libWait) {
+    try { await S.libWait; } catch (err) { return; }
+  }
+  if (S.lib) fn();
+}
+
 async function boot() {
   const params = new URLSearchParams(location.search);
   if (!S.bound) {
@@ -944,9 +1125,12 @@ async function boot() {
     q("quiz-next").addEventListener("click", () => go(1));
     q("quiz-back").addEventListener("click", () => go(-1));
     q("quiz-restart").addEventListener("click", () => { resetAll(); S.dir = "back"; startQuiz(); });
+    q("quiz-take").addEventListener("click", () => whenLibrary(() => { resetAll(); S.dir = "fwd"; startQuiz(); }));
+    q("quiz-describe").addEventListener("click", () => whenLibrary(() => { resetAll(); S.mode = "describe"; S.dir = "fwd"; startQuiz(); }));
   }
   try {
-    S.lib = await apiGet("/hounds/quiz/library");
+    S.libWait = apiGet("/hounds/quiz/library");
+    S.lib = await S.libWait;
   } catch (err) {
     libraryError(err);
     return;
@@ -960,9 +1144,10 @@ async function boot() {
     setMessage("You are signed in. Your hound is ready to send in.", "ok");
     return;
   }
-  // A saved quiz opens at the step it was left on; a new one opens at the first. There is no intro screen: the landing page explains it.
+  // A saved quiz opens at the step it was left on. A new visit opens the two-door entry: take the quiz, or describe it first.
   S.dir = "fwd";
-  startQuiz();
+  if (draft) startQuiz();
+  else { S.stage = "entry"; show("entry"); }
 }
 
 /** Resolves when the quiz has loaded its library and drawn the first screen (the tests wait for it). */

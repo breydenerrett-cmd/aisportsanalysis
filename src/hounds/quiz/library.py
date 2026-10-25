@@ -199,7 +199,7 @@ def validate_library(lib: Optional[Mapping] = None) -> list:
         check_copy(f"preset {pid}.name", pr.get("name"), user_spec.NAME_MAX + 6)
         check_copy(f"preset {pid}.pitch", pr.get("pitch"), 200)
         for field in ("name", "pitch"):
-            if isinstance(pr.get(field), str) and re.search(r"dogs?", pr[field], re.I):
+            if isinstance(pr.get(field), str) and re.search(r"\bdogs?\b", pr[field], re.I):
                 problems.append(f"preset {pid}.{field}: says dog, the product says hound")
         if pr.get("icon") not in ICON_KEYS:
             problems.append(f"preset {pid}: unknown icon {pr.get('icon')!r}")
