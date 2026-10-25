@@ -5288,3 +5288,4 @@
 {"call_kind": "pregame", "credits": 2, "events": 11, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T08:11:26.691933Z", "regions": ["us"], "rows": 98, "sport_key": "soccer_spl", "stored": 30}
 {"commence_utc": "2026-10-25T14:00:00Z", "event_id": "6037cdc305007989f1a5660a9b08fcdd", "kind": "phase", "observed_utc": "2026-10-25T08:11:26.691933Z", "phase": "t6h", "rows": 14, "sport_key": "soccer_sweden_superettan"}
 {"call_kind": "pregame", "credits": 2, "events": 6, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T08:11:26.691933Z", "regions": ["us"], "rows": 63, "sport_key": "soccer_sweden_superettan", "stored": 42}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T08:22:19.272331Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 1}
