@@ -885,7 +885,11 @@ class TwoAppliesAtOnceMakeOneVersion(Case):
             t.join(30)
         made = [r for r in results if isinstance(r, dict)]
         refused = [r for r in results if isinstance(r, rites.RiteError)]
-        self.assertEqual((len(made), [r.code for r in refused]), (1, ["proposal_stale"]), results)
+        # which refusal the loser gets depends on thread timing (CI 2026-10-25): "proposal_stale" if it sees the new
+        # version's spec, "training_too_soon" if it sees the limit first. Either way exactly one version is made.
+        self.assertEqual(len(made), 1, results)
+        self.assertEqual(len(refused), 1, results)
+        self.assertIn(refused[0].code, ("proposal_stale", "training_too_soon"), results)
         self.assertEqual(len(user_store.lineage(hound["id"])), 2)
         self.assertEqual(len(user_store.list_events(root_id=hound["root_id"])), 1, "one training event, not two")
 
