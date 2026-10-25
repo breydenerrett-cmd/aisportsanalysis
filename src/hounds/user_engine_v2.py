@@ -119,10 +119,35 @@ def _stream(path: str, prefilter: str) -> Iterable[dict]:
                 continue
 
 
+ALLSPORTS_PROP_STORE = os.path.join("data", "processed", "allsports_props.jsonl")
+
+
+def _iter_allsports_props(date: str, base: str) -> Iterable[dict]:
+    """NBA and NHL prop rows of one slate date from the all-sports prop store (the Odds API's per-event
+    capture, src/pipeline/allsports_props.py). Only a (sport, market) pair the menu names is kept: the store
+    holds NFL and college props too, which no hound can bet, and a market key shared by two sports is kept
+    only for the sport that carries it. The store is read as a stream with the same substring prefilter as
+    the MLB stores; `since` skips archive segments that end before the date."""
+    from src.pipeline import store_archive
+    path = os.path.join(base, ALLSPORTS_PROP_STORE)
+    marker = f'"game_date": "{date}"'
+    for line in store_archive.iter_lines(path, since=date):
+        if marker not in line:
+            continue
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        sport, market = str(row.get("sport") or "").upper(), row.get("market")
+        if sport in R.PROP_SPORT_MARKETS and market in R.PROP_SPORT_MARKETS[sport] and sport != "MLB":
+            yield row
+
+
 def iter_prop_rows(date: str, *, root: Optional[str] = None) -> Iterable[dict]:
     """The stored prop rows of one slate date, streamed one at a time (the stores are tens of MB and
     the engine must never hold one whole). The prefilter is a plain substring test on the row's
-    `game_date`, the same over-match-never-under-match rule the multibook reader uses."""
+    `game_date`, the same over-match-never-under-match rule the multibook reader uses. MLB comes from the
+    batter and pitcher stores; NBA and NHL from the all-sports prop store (one reader, one row shape)."""
     from src import paths
     base = root or str(paths.repo_root())
     marker = f'"game_date": "{date}"'
@@ -131,6 +156,7 @@ def iter_prop_rows(date: str, *, root: Optional[str] = None) -> Iterable[dict]:
             if needs_market and row.get("market") != "pitcher_strikeouts":
                 continue
             yield row
+    yield from _iter_allsports_props(date, base)
 
 
 def add_prop_rows(games: dict, rows: Iterable[Mapping]) -> int:
@@ -146,7 +172,12 @@ def add_prop_rows(games: dict, rows: Iterable[Mapping]) -> int:
         for slim in prop_rows_from(raw):
             game = games.get(event_id)
             if game is None:
-                game = games[event_id] = E.GameBoards(event_id, "MLB")
+                # a props-only game takes its sport from its row (an NBA or NHL prop row carries it; an MLB batter
+                # or pitcher row does not, and stays MLB) and the Odds API key the all-sports settlement reads
+                sport = str(raw.get("sport") or "MLB").upper()
+                game = games[event_id] = E.GameBoards(event_id, sport)
+                if sport != "MLB":
+                    game.league = raw.get("league")
             game.add_prop(slim["market"], observed, slim)
             touched.add(event_id)
             added += 1

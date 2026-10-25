@@ -38,8 +38,10 @@ class OwnerSentenceTests(unittest.TestCase):
     def test_hockey_sets_the_rule_sport_and_no_mlb_anywhere(self):
         self.assertEqual(self.rule["sports"], ["NHL"])
         self.assertNotIn("MLB", self.rule["sports"])
+        mlb_props = R.PROP_SPORT_MARKETS["MLB"]
         for market in self.rule["markets"]:
-            self.assertNotIn(market, R.PROP_MARKETS)
+            self.assertNotIn(market, mlb_props)
+            self.assertIn(market, R.PROP_SPORT_MARKETS["NHL"])   # NHL props exist since 2026-10-25
 
     def test_aggressive_unit_sizing_takes_the_top_of_the_stake_menu(self):
         self.assertEqual(self.spec["stake_units"], max(R.STAKE_CHOICES))
@@ -48,15 +50,14 @@ class OwnerSentenceTests(unittest.TestCase):
     def test_aggressive_bet_count_takes_the_top_of_the_bets_menu(self):
         self.assertEqual(self.spec["max_bets_per_day"], user_spec.MAX_BETS_RANGE[1])
 
-    def test_min_books_keeps_the_spec_default_and_is_not_set_to_one(self):
-        self.assertEqual(self.rule["min_books"], 3)
+    def test_min_books_is_the_validator_default_for_the_rule_kind(self):
+        # prop rules default to DEFAULT_MIN_BOOKS_PROP (props are quoted by fewer books); the parser never invents one
+        self.assertEqual(self.rule["min_books"], user_spec.DEFAULT_MIN_BOOKS_PROP)
 
-    def test_props_and_value_are_said_to_be_not_checkable_in_plain_words(self):
+    def test_value_is_said_to_be_not_checkable_in_plain_words(self):
         missing = not_understood_texts(self.res)
-        self.assertIn("player props for hockey", missing)
+        self.assertNotIn("player props for hockey", missing)
         self.assertIn("undervalued prices", missing)
-        reasons = " ".join(item["reason"] for item in self.res["not_understood"])
-        self.assertIn("not available yet", reasons)
 
     def test_the_understood_list_reports_the_sport_and_both_sizing_words(self):
         self.assertIn("NHL", understood_meanings(self.res))
@@ -66,30 +67,18 @@ class OwnerSentenceTests(unittest.TestCase):
 
 
 class SportWordTests(unittest.TestCase):
-    def test_nba_player_props_read_as_basketball_not_mlb(self):
-        res = parse("nba player props")
-        rule = res["spec"]["rules"][0]
+    # NHL and NBA props exist since 2026-10-25; a sport with no priced props is refused in words, never switched to MLB
+    def test_nba_player_props_read_as_nba_props_not_mlb(self):
+        rule = parse("nba player props")["spec"]["rules"][0]
         self.assertEqual(rule["sports"], ["NBA"])
-        self.assertNotIn("MLB", rule["sports"])
         for market in rule["markets"]:
-            self.assertNotIn(market, R.PROP_MARKETS)
-        self.assertIn("player props for basketball", not_understood_texts(res))
-
-    def test_hockey_props_with_no_nhl_prop_menu_says_so_honestly(self):
-        res = parse("hockey player props")
-        rule = res["spec"]["rules"][0]
-        self.assertEqual(rule["sports"], ["NHL"])
-        self.assertEqual(rule["markets"], ["moneyline"])
-        self.assertIn("player props for hockey", not_understood_texts(res))
-        reason = dict((i["text"], i["reason"]) for i in res["not_understood"])["player props for hockey"]
-        self.assertIn("MLB only", reason)
+            self.assertIn(market, R.PROP_SPORT_MARKETS["NBA"])
 
     def test_plain_player_props_still_reads_every_mlb_prop_market(self):
         res = parse("player props")
         rule = res["spec"]["rules"][0]
         self.assertEqual(rule["sports"], ["MLB"])
-        self.assertEqual(sorted(rule["markets"]), sorted(R.PROP_MARKETS))
-        self.assertEqual(not_understood_texts(res), [])
+        self.assertEqual(sorted(rule["markets"]), sorted(R.PROP_SPORT_MARKETS["MLB"]))
 
 
 if __name__ == "__main__":

@@ -165,6 +165,14 @@ def load_box_index(pks: set, *, path: Optional[str] = None) -> dict:
     return out
 
 
+# An NBA / NHL prop verdict (src/pipeline/allsports_props_grade.py) as the card ledger's result. UNRESOLVED is not
+# here on purpose: it is pending, and the caller skips it.
+_ALLSPORTS_PROP_RESULT = {
+    "win": card_ledger.RESULT_WIN, "loss": card_ledger.RESULT_LOSS,
+    "push": card_ledger.RESULT_PUSH, "void": card_ledger.RESULT_VOID,
+}
+
+
 def grade_prop(bet: Mapping, game_box: Optional[Mapping]) -> dict:
     """A player-prop bet against the final box score of its game.
 
@@ -210,7 +218,8 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
            close_fn: Optional[Callable[[Mapping], Optional[int]]] = None,
            box_index: Optional[Mapping] = None,
            allsports_results: Optional[Callable] = None,
-           void_after_hours: float = 72.0) -> dict:
+           void_after_hours: float = 72.0,
+           props_client=None) -> dict:
     """Grade every settled-able ungraded bet (every owed date, or the last `lookback_days` when a
     number is given). Returns a report.
 
@@ -224,7 +233,9 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
     (default: read from the captured board; None leaves CLV null, never a guess).
     allsports_results: {event_id: score row} (or a callable returning it) for every family other than MLB and
     NFL (default: the all-sports scores store, read once, lazily). A cancelled game, or one with no completed
-    score `void_after_hours` after its start, is a VOID with the reason named."""
+    score `void_after_hours` after its start, is a VOID with the reason named.
+    props_client: the data service an NBA or NHL prop reads its ESPN box score from (default: the process's
+    DataClient, created on the first such bet)."""
     now = now or datetime.now(timezone.utc)
     store = HashChainLedger(user_engine.ledger_path(ledger))
     rows = store.read()
@@ -256,6 +267,8 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
         game_pk_index = user_engine._load_game_pk_index()
     nfl_cache: dict = {}
     allsports_index = None          # read lazily, only when a bet on another family is owed
+    allsports_box_client = props_client  # the data service, read lazily, only when an NBA or NHL prop is owed
+    prop_box_cache: dict = {}       # one ESPN box per game for the whole pass
     close_fn = close_fn or make_close_fn()
 
     # Player props are graded from the box score of the game. Resolve their games first so the box
@@ -276,7 +289,24 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
         if start is not None and start > now:
             report["pending"] += 1
             continue
-        if bet["sport"] not in RESULT_STORE_SPORTS:
+        if bet["market"] in user_rules.ALLSPORTS_PROP_MARKETS and bet["sport"] in ("NBA", "NHL"):
+            # An NBA or NHL player prop is graded from its player's line in the ESPN box score, never from the
+            # game's final score (the all-sports branch below would grade it as a moneyline). Not final, no box
+            # yet, an ambiguous name or game: pending. A player who did not play: void, as the books settle it.
+            if allsports_box_client is None:
+                from src.datasvc.client import DataClient
+                allsports_box_client = DataClient()
+            from src.pipeline import allsports_props_grade
+            verdict = allsports_props_grade.settle_prop(bet, allsports_box_client, prop_box_cache)
+            status = verdict["status"]
+            if status == allsports_props_grade.UNRESOLVED:
+                report["pending"] += 1
+                continue
+            graded = {"result": _ALLSPORTS_PROP_RESULT[status], "reason": verdict["reason"],
+                      "away_score": None, "home_score": None}
+            identity = bet.get("event_id")
+            is_prop = True
+        elif bet["sport"] not in RESULT_STORE_SPORTS:
             # Every other family (NBA, soccer, cricket, ...): graded from the all-sports scores store
             # (src/pipeline/allsports_scores.py). Cancelled or no score 72 hours after the start is a named VOID.
             if allsports_index is None:
