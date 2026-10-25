@@ -6126,3 +6126,10 @@
 {"call_kind": "pregame", "credits": 2, "events": 12, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-25T21:11:03.063333Z", "regions": ["us"], "rows": 74, "sport_key": "soccer_mexico_ligamx", "stored": 48}
 {"commence_utc": "2026-10-25T23:10:00Z", "event_id": "cd9f65faa44f221a72638e49afb134fb", "kind": "phase", "observed_utc": "2026-10-25T21:11:03.063333Z", "phase": "t2h", "rows": 32, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 8, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-25T21:11:03.063333Z", "regions": ["us"], "rows": 228, "sport_key": "icehockey_nhl", "stored": 228}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-10-26T03:23:06.191872Z", "observed_utc": "2026-10-25T21:23:06.191872Z", "sport_key": "icehockey_sweden_allsvenskan"}
+{"events": 4, "kind": "peek", "next_check_utc": "2026-10-26T03:23:06.191872Z", "observed_utc": "2026-10-25T21:23:06.191872Z", "sport_key": "soccer_finland_veikkausliiga"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-10-26T03:23:06.191872Z", "observed_utc": "2026-10-25T21:23:06.191872Z", "sport_key": "soccer_japan_j_league"}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T21:23:06.191872Z", "regions": ["us"], "rows": 2, "sport_key": "icehockey_ahl", "stored": 2}
+{"call_kind": "inplay", "credits": 1, "events": 21, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T21:23:06.191872Z", "regions": ["us"], "rows": 107, "sport_key": "soccer_italy_serie_a", "stored": 6}
+{"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T21:23:06.191872Z", "regions": ["us"], "rows": 43, "sport_key": "soccer_portugal_primeira_liga", "stored": 12}
+{"call_kind": "inplay", "credits": 1, "events": 22, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-25T21:23:06.191872Z", "regions": ["us"], "rows": 106, "sport_key": "soccer_spain_la_liga", "stored": 14}
