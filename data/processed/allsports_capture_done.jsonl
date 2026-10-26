@@ -6397,3 +6397,6 @@
 {"call_kind": "pregame", "credits": 1, "events": 16, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T07:46:07.160267Z", "regions": ["us"], "rows": 126, "sport_key": "tennis_atp_swiss_indoors", "stored": 126}
 {"commence_utc": "2026-10-26T13:40:00Z", "event_id": "4e8affe5c736072143aed4c30a548c66", "kind": "phase", "observed_utc": "2026-10-26T07:46:07.160267Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
 {"call_kind": "pregame", "credits": 1, "events": 16, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T07:46:07.160267Z", "regions": ["us"], "rows": 121, "sport_key": "tennis_atp_vienna_open", "stored": 121}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-26T14:01:16.506008Z", "observed_utc": "2026-10-26T08:01:16.506008Z", "sport_key": "soccer_conmebol_copa_sudamericana"}
+{"commence_utc": "2026-10-27T08:00:00Z", "event_id": "aa3adb5941dbd7caad00fab5b9ddbb2a", "kind": "phase", "observed_utc": "2026-10-26T08:01:16.506008Z", "phase": "t24h", "rows": 1, "sport_key": "cricket_odi"}
+{"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T08:01:16.506008Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 2}
