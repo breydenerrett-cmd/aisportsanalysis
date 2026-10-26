@@ -6508,3 +6508,12 @@
 {"call_kind": "pregame", "credits": 2, "events": 10, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-26T12:45:47.377769Z", "regions": ["eu"], "rows": 177, "sport_key": "soccer_saudi_arabia_pro_league", "stored": 20}
 {"call_kind": "inplay", "credits": 1, "events": 16, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T12:45:47.377769Z", "regions": ["us"], "rows": 132, "sport_key": "tennis_atp_swiss_indoors", "stored": 132}
 {"events": 0, "kind": "peek", "next_check_utc": "2026-10-26T18:58:48.119424Z", "observed_utc": "2026-10-26T12:58:48.119424Z", "sport_key": "baseball_kbo"}
+{"events": 21, "kind": "peek", "next_check_utc": "2026-10-26T19:13:23.341653Z", "observed_utc": "2026-10-26T13:13:23.341653Z", "sport_key": "soccer_epl"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-26T19:13:23.341653Z", "observed_utc": "2026-10-26T13:13:23.341653Z", "sport_key": "soccer_germany_bundesliga"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-10-26T19:13:23.341653Z", "observed_utc": "2026-10-26T13:13:23.341653Z", "sport_key": "soccer_poland_ekstraklasa"}
+{"commence_utc": "2026-10-26T13:40:00Z", "event_id": "fc557e2864fbe07964a9d288a81d5009", "kind": "phase", "observed_utc": "2026-10-26T13:13:23.341653Z", "phase": "t30m", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
+{"commence_utc": "2026-10-26T19:00:00Z", "event_id": "4e0a2e9c11be94414228a1a7579f4f8b", "kind": "phase", "observed_utc": "2026-10-26T13:13:23.341653Z", "phase": "t6h", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
+{"call_kind": "pregame", "credits": 1, "events": 16, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T13:13:23.341653Z", "regions": ["us"], "rows": 126, "sport_key": "tennis_atp_swiss_indoors", "stored": 126}
+{"commence_utc": "2026-10-26T13:40:00Z", "event_id": "4e8affe5c736072143aed4c30a548c66", "kind": "phase", "observed_utc": "2026-10-26T13:13:23.341653Z", "phase": "t30m", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
+{"commence_utc": "2026-10-26T19:00:00Z", "event_id": "d4f7bc6b1f48bf445af411adfb5ba9d6", "kind": "phase", "observed_utc": "2026-10-26T13:13:23.341653Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
+{"call_kind": "pregame", "credits": 1, "events": 16, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T13:13:23.341653Z", "regions": ["us"], "rows": 125, "sport_key": "tennis_atp_vienna_open", "stored": 125}
