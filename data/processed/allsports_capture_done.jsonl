@@ -6459,3 +6459,9 @@
 {"events": 9, "kind": "peek", "next_check_utc": "2026-10-26T17:29:25.650591Z", "observed_utc": "2026-10-26T11:29:25.650591Z", "sport_key": "soccer_uefa_champs_league_women"}
 {"events": 10, "kind": "peek", "next_check_utc": "2026-10-26T17:38:51.622835Z", "observed_utc": "2026-10-26T11:38:51.622835Z", "sport_key": "soccer_mexico_ligamx"}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T11:38:51.622835Z", "regions": ["us"], "rows": 7, "sport_key": "baseball_kbo", "stored": 7}
+{"commence_utc": "2026-10-26T13:40:00Z", "event_id": "fc557e2864fbe07964a9d288a81d5009", "kind": "phase", "observed_utc": "2026-10-26T11:46:07.680983Z", "phase": "t2h", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
+{"commence_utc": "2026-10-26T13:40:00Z", "event_id": "7484e86bb920b4e17ec18fde7f1487a5", "kind": "phase", "observed_utc": "2026-10-26T11:46:07.680983Z", "phase": "t2h", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
+{"call_kind": "pregame", "credits": 1, "events": 16, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T11:46:07.680983Z", "regions": ["us"], "rows": 126, "sport_key": "tennis_atp_swiss_indoors", "stored": 126}
+{"commence_utc": "2026-10-26T13:40:00Z", "event_id": "4e8affe5c736072143aed4c30a548c66", "kind": "phase", "observed_utc": "2026-10-26T11:46:07.680983Z", "phase": "t2h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
+{"commence_utc": "2026-10-26T17:40:00Z", "event_id": "99827d08921946ed376bd9378a91ce9b", "kind": "phase", "observed_utc": "2026-10-26T11:46:07.680983Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
+{"call_kind": "pregame", "credits": 1, "events": 16, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T11:46:07.680983Z", "regions": ["us"], "rows": 124, "sport_key": "tennis_atp_vienna_open", "stored": 124}
