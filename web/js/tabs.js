@@ -37,6 +37,10 @@ export function mountTabs(list, { scope = document, onChange } = {}) {
       tab.setAttribute("aria-selected", on ? "true" : "false");
       tab.setAttribute("tabindex", on ? "0" : "-1");
       if (on && focus && tab.focus) tab.focus();
+      // a tab bar that scrolls sideways (data-scrollactive: the studio's, on a phone) brings the chosen tab into view
+      if (on && list.hasAttribute("data-scrollactive") && tab.scrollIntoView) {
+        try { tab.scrollIntoView({ block: "nearest", inline: "center" }); } catch (err) { /* a fake DOM */ }
+      }
     });
     keys.forEach((k) => { const p = panelOf(k); if (p) { if (k === key) p.removeAttribute("hidden"); else p.setAttribute("hidden", ""); } });
     if (push) {

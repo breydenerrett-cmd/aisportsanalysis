@@ -585,3 +585,120 @@
 .kn-page .kn-card__name { font-size: 24px; font-family: var(--lh-font-display); letter-spacing: var(--lh-track-display); }
 .kn-page .kn-stat dd { font-size: 24px; }
 @media (max-width: 520px) { .kn-page .kn-card { flex-direction: column; } .kn-page .kn-card__avatar { width: 96px; height: 96px; } .kn-page .kn-card__avatar svg, .kn-page .kn-card__avatar .dk-badge { width: 96px; height: 96px; } }
+
+/* ======================================================================================================================
+ * THE HOUND SHEET (owner, 2026-10-26: "looks like trash"). One redesign of the studio drawer that every hound opens in (a member's own,
+ * a house copy, Gematria, the Learner): a hero with the FULL name, one status line and the ticket counts; the destructive action in a
+ * menu behind the three-dot button; a sticky segmented tab bar that scrolls sideways and keeps the chosen tab in view; a Record tab with
+ * a clean 3 + 2 grid; the Rules tab leading with the current rule. Tokens only (css/lh.css); nothing here can widen the page.
+ * ==================================================================================================================== */
+.kn-studio { width: min(640px, 100vw); max-width: 100vw; }
+.kn-studio__head { display: block; padding: var(--lh-s2) var(--lh-s4) var(--lh-s4); flex: none; }
+.kn-studio__top { display: flex; align-items: center; justify-content: flex-end; gap: var(--lh-s2); min-height: 36px; }
+.kn-studio__top .lh-btn { height: 32px; padding: 0 var(--lh-s3); font-size: var(--lh-fs-sm); }
+.kn-studio__close, .kn-studio__more { flex: none; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: var(--lh-soft);
+  color: var(--lh-ink); font: 400 20px/1 var(--lh-font-text); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.kn-studio__more { font-size: 22px; padding-bottom: 6px; }
+.kn-studio__more[hidden] { display: none; }
+.kn-studio__close:hover, .kn-studio__more:hover { background: var(--lh-soft-2); }
+.kn-studio__close:focus-visible, .kn-studio__more:focus-visible, .kn-studio__menuitem:focus-visible { outline: 2px solid var(--lh-accent); outline-offset: 2px; }
+.kn-studio__menuwrap { position: relative; }
+.kn-studio__menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 6; min-width: 230px; padding: var(--lh-s1); border-radius: var(--lh-r-md);
+  background: var(--lh-bg-2); box-shadow: var(--lh-e3), 0 0 0 1px var(--lh-line-2); }
+.kn-studio__menu[hidden], .kn-studio__menuitem[hidden] { display: none; }
+.kn-studio__menuitem { display: block; width: 100%; min-height: 44px; padding: 0 var(--lh-s3); border: 0; border-radius: var(--lh-r-sm); background: none; text-align: left;
+  color: var(--lh-loss); font: 600 var(--lh-fs-base)/1 var(--lh-font-text); cursor: pointer; }
+.kn-studio__menuitem:hover { background: var(--lh-loss-soft); color: #FFD7DB; }
+
+.kn-studio__hero { display: flex; align-items: flex-start; gap: var(--lh-s4); padding-top: var(--lh-s1); min-width: 0; }
+.kn-studio__avatar { flex: none; line-height: 0; }
+.kn-studio__avatar svg, .kn-studio__avatar .dk-badge { width: 80px; height: 80px; }
+.kn-studio__who { flex: 1 1 0; min-width: 0; }
+/* the FULL name over as many lines as it needs, and the whole record line: never an ellipsis */
+.hounds-page .kn-studio .kn-studio__who h2 { margin: 0; overflow: visible; text-overflow: clip; white-space: normal; overflow-wrap: anywhere; hyphens: auto;
+  font-family: var(--lh-font-display); font-size: 32px; font-weight: 700; line-height: 1.02; letter-spacing: var(--lh-track-display); }
+.kn-studio__chips { display: flex; flex-wrap: wrap; gap: var(--lh-s1) var(--lh-s2); margin: var(--lh-s2) 0 0; }
+.kn-studio__chips:empty { display: none; }
+.kn-chip { display: inline-flex; align-items: center; max-width: 100%; height: 24px; padding: 0 var(--lh-s3); border-radius: var(--lh-r-pill); background: var(--lh-soft);
+  color: var(--lh-ink2); font-size: var(--lh-fs-xs); font-weight: 600; letter-spacing: .02em; overflow-wrap: anywhere; }
+.kn-studio__status { display: block; margin: var(--lh-s2) 0 0; font-size: var(--lh-fs-base); color: var(--lh-ink2); min-width: 0; }
+.kn-studio__status:empty { display: none; }
+.kn-studio__status strong { color: var(--lh-ink); font-weight: 600; }
+.kn-studio__dot { display: inline-block; width: 8px; height: 8px; margin-right: 8px; vertical-align: 1px; border-radius: 50%; background: var(--lh-accent); box-shadow: 0 0 0 3px var(--lh-accent-soft); }
+.kn-studio__status[data-status="idle"] .kn-studio__dot { background: var(--lh-pending); box-shadow: 0 0 0 3px var(--lh-pending-soft); }
+.kn-studio__status[data-status="retired"] .kn-studio__dot { background: var(--lh-faint); box-shadow: none; }
+.kn-studio__who .kn-studio__sub { margin: var(--lh-s2) 0 0; overflow: visible; text-overflow: clip; white-space: normal; overflow-wrap: anywhere;
+  font-size: var(--lh-fs-sm); color: var(--lh-mute); }
+
+/* the tab bar: a segmented control that sticks and scrolls sideways inside itself */
+.lh-tabs--studio { position: sticky; top: 0; z-index: 4; flex: none; display: flex; gap: 2px; margin: 0 var(--lh-s4); padding: 4px; border-radius: var(--lh-r-md);
+  background: var(--lh-soft); box-shadow: none; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x proximity; max-width: calc(100% - 2 * var(--lh-s4)); }
+.lh-tabs--studio [role="tab"] { height: 38px; padding: 0 var(--lh-s4); border-radius: var(--lh-r-sm); font-size: var(--lh-fs-base); scroll-snap-align: center; white-space: nowrap; }
+.lh-tabs--studio [role="tab"]::after { display: none; }
+.lh-tabs--studio [role="tab"][aria-selected="true"] { background: var(--lh-soft-2); box-shadow: inset 0 0 0 1px var(--lh-line-2); color: var(--lh-ink); font-weight: 600; }
+.lh-tabs--studio [role="tab"]:focus-visible { outline: 2px solid var(--lh-accent); outline-offset: -2px; }
+.kn-studio__body { padding: var(--lh-s5) var(--lh-s4) 40px; min-width: 0; overflow-x: hidden; }
+
+/* a long, unbroken word or example can never push the sheet wider than the phone */
+.kn-studio__body p, .kn-studio__body li, .kn-studio__body h3, .kn-studio__body button { overflow-wrap: anywhere; }
+.kn-studio .bd-step [data-hook="example-chips"] { flex-wrap: wrap; overflow-x: visible; }
+.hounds-page .bd-chips .bd-chip.bd-chip--example { flex: 0 1 auto; max-width: 100%; white-space: normal; text-align: left; line-height: 1.35; border-radius: var(--lh-r-md); padding: var(--lh-s2) var(--lh-s3); }
+.hounds-page .bd-step [data-hook="example-chips"] { flex-wrap: wrap; overflow-x: visible; }
+
+/* RECORD: the open tickets and the settled ones, side by side, then a 3 + 2 grid of equal cards */
+.kn-rec__counts { display: inline-flex; align-items: center; gap: var(--lh-s1); margin: 0 0 var(--lh-s4); padding: var(--lh-s2) var(--lh-s4); border-radius: var(--lh-r-pill);
+  background: var(--lh-soft); font-size: var(--lh-fs-base); font-weight: 600; color: var(--lh-ink); }
+.kn-rec__counts[data-open="0"] { color: var(--lh-ink2); }
+.kn-stats--rec { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--lh-s2); margin: 0; }
+.kn-stats--rec .kn-stat { grid-column: span 2; min-width: 0; padding: var(--lh-s3); border-radius: var(--lh-r-md); background: var(--lh-soft); }
+.kn-stats--rec .kn-stat:nth-child(n + 4) { grid-column: span 3; }
+.kn-stats--rec .kn-stat dt { font-size: var(--lh-fs-xs); letter-spacing: .04em; color: var(--lh-mute); }
+.kn-stats--rec .kn-stat dd { margin: var(--lh-s1) 0 0; font-size: 26px; line-height: 1.05; white-space: normal; overflow-wrap: anywhere; }
+.kn-spark { margin: var(--lh-s2) 0 0; padding: var(--lh-s3) var(--lh-s4); border-radius: var(--lh-r-md); background: var(--lh-soft); }
+.kn-spark svg { display: block; width: 100%; height: auto; max-height: 64px; }
+.kn-spark figcaption { margin: var(--lh-s1) 0 0; }
+.kn-rec__note { margin: var(--lh-s3) 0 var(--lh-s5); color: var(--lh-mute); }
+.hounds-page .kn-rec__h { margin: var(--lh-s5) 0 var(--lh-s2); font-family: var(--lh-font-display); font-size: var(--lh-fs-lg); font-weight: 700; text-transform: none; letter-spacing: var(--lh-track-display); color: var(--lh-ink); }
+/* "Grading 18 games..." is a quiet inline status here, not a dashed chip */
+.kn-studio .hd-graded { margin: 0 0 var(--lh-s3); gap: var(--lh-s2); font-size: var(--lh-fs-sm); color: var(--lh-mute); }
+.kn-studio .hd-graded__pill { padding: 0; border: 0; border-radius: 0; background: none; font-size: var(--lh-fs-sm); font-weight: 500; letter-spacing: 0; color: var(--lh-pending); }
+.kn-studio .hd-graded__pill::after { content: " \00b7"; color: var(--lh-faint); }
+/* the sheet is never wider than 640px, so a ticket is always the stacked row, never the five-column grid that squeezes "Game / pick" to a letter wide */
+.kn-studio .hd-tickets__head { display: none; }
+.kn-studio .hd-ticket { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "bet res" "when price" "rec rec"; gap: var(--lh-s1) var(--lh-s3); padding: var(--lh-s3) var(--lh-s4); }
+.kn-studio .hd-ticket__bet { grid-area: bet; }
+.kn-studio .hd-ticket__res { grid-area: res; flex-direction: column; align-items: flex-end; gap: 2px; }
+.kn-studio .hd-ticket__when { grid-area: when; grid-auto-flow: column; justify-content: start; gap: var(--lh-s2); align-items: baseline; }
+.kn-studio .hd-ticket__price { grid-area: price; justify-self: end; }
+.kn-studio .hd-ticket__rec { grid-area: rec; }
+.kn-studio .hd-tickets { border: 0; border-radius: var(--lh-r-md); background: var(--lh-soft); overflow: hidden; }
+
+/* RULES: the current rule first, big, with the editor behind "Edit rules" */
+.kn-rule { margin: 0 0 var(--lh-s5); padding: var(--lh-s5); border-radius: var(--lh-r-lg); background: var(--lh-soft); box-shadow: var(--lh-e1); }
+.kn-rule[hidden] { display: none; }
+.kn-rule__eyebrow { margin: 0; font-size: var(--lh-fs-xs); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--lh-accent); }
+.hounds-page .kn-rule__title { margin: var(--lh-s1) 0 var(--lh-s3); font-family: var(--lh-font-display); font-size: var(--lh-fs-lg); font-weight: 700; letter-spacing: var(--lh-track-display); color: var(--lh-mute); }
+.kn-rule__list { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--lh-s3); }
+.kn-rule__list li { font-size: var(--lh-fs-lg); line-height: 1.3; font-weight: 500; color: var(--lh-ink); }
+.kn-rule__fixed, .kn-rule__note { margin: var(--lh-s3) 0 0; color: var(--lh-mute); }
+.kn-rule__actions { margin: var(--lh-s4) 0 0; }
+.kn-rule__edit { min-height: 44px; padding: 0 var(--lh-s5); }
+
+/* UNLEASH, state-aware: what a hound that is already going shows */
+.ul-state { margin: 0 0 var(--lh-s4); padding: var(--lh-s4); border-radius: var(--lh-r-md); background: var(--lh-soft); }
+.ul-state__head { display: block; margin: 0; font-size: var(--lh-fs-md); color: var(--lh-ink2); }
+.ul-state__head strong { color: var(--lh-ink); font-weight: 600; }
+.ul-state__counts { margin: var(--lh-s2) 0 0; font-size: var(--lh-fs-base); color: var(--lh-ink2); }
+.ul-now { margin: var(--lh-s4) 0; }
+
+@media (max-width: 760px) {
+  .kn-studio__head { padding: var(--lh-s2) var(--lh-s3) var(--lh-s3); }
+  .kn-studio__top .lh-btn { display: none; }
+  .hounds-page .kn-studio .kn-studio__who h2 { font-size: 28px; }
+  .kn-studio__avatar svg, .kn-studio__avatar .dk-badge { width: 72px; height: 72px; }
+  .lh-tabs--studio { margin: 0 var(--lh-s3); max-width: calc(100% - 2 * var(--lh-s3)); }
+  .kn-studio__body { padding: var(--lh-s4) var(--lh-s3) 90px; }
+  .kn-stats--rec .kn-stat dd { font-size: 24px; }
+  .kn-rule { padding: var(--lh-s4); }
+  .kn-rule__list li { font-size: 20px; }
+}

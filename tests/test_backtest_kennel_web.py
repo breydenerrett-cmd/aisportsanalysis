@@ -189,8 +189,9 @@ class TheCopyInTheKennel(unittest.TestCase):
             dict(do="click", sel="[data-tab='backtest']", label="tab", wait=200, capture=[q("windows", hook("backtest-window"), "texts")]),
             dict(do="click", sel=hook("backtest-window") + "[data-window='s2']", label="run", wait=200, capture=BACKTEST_QUERIES)])
         self.assertEqual(out["captures"]["tab"]["windows"], ["7 days", "14 days", "30 days", "Season 2"])
-        post = [p for p in out["posts"] if p["url"] == "/hounds/drill"][0]
-        self.assertEqual(post["body"], {"dog_id": "u-1", "season": "s2"})
+        # the tab runs the 7 day window as it opens (2026-10-26); a tap on Season 2 then asks for that window too
+        bodies = [p["body"] for p in out["posts"] if p["url"] == "/hounds/drill"]
+        self.assertEqual(bodies, [{"dog_id": "u-1", "days": 7}, {"dog_id": "u-1", "season": "s2"}])
         self.assertIn(LABEL, out["captures"]["run"]["label"])
         self.assertEqual(out["captures"]["run"]["usd"], "+$12.00 on the $1,000 paper bankroll")
 

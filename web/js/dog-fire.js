@@ -413,11 +413,42 @@ export function renderUnleashDay(box, data, { name, id } = {}) {
   box.appendChild(h("p", { class: "hd-fine", "data-hook": "unleash-note", text: PAPER_NOTE }));
 }
 
+/**
+ * WHAT THE PANEL SAYS FOR A HOUND THAT IS ALREADY GOING (owner, 2026-10-26: "Unleash" was offered, in the same words, to a hound with
+ * tickets). A running hound is bet for by the server's own runner (src/hounds/user_runner.py); Unleash is only the first push, and on a
+ * hound that has already bet it re-checks today's board. So `running` ({key, word, detail, counts}, from the kennel) turns the panel
+ * into a status: what state it is in, its tickets, and, from the READ-ONLY preview (POST /hounds/{id}/fire: it places nothing), today's
+ * checks and the next game. The button stays, as a quiet "Check today's games now". There is no pause route for a member's hound (the
+ * only way to stop one betting is Remove from my kennel), so the panel says that instead of showing a Pause button that does nothing.
+ */
+function runningHead(running) {
+  return h("div", { class: "ul-state", "data-hook": "unleash-state", "data-state": running.key }, [
+    h("p", { class: "ul-state__head" }, [h("i", { class: "kn-studio__dot", "aria-hidden": "true" }), h("strong", { text: running.word }), ` · ${running.detail}`]),
+    running.counts ? h("p", { class: "ul-state__counts hd-num", "data-hook": "unleash-counts", text: running.counts }) : null]);
+}
+
 /** The owner's Unleash panel: one button, the working state while the request runs, then the day. */
-function mountUnleashToday(section, body, { id, name, avatar, onDone, gematria = false }) {
-  body.appendChild(h("p", { class: "hd-muted" }, `Unleash starts ${name || "this hound"} betting today. It checks every game on today's board that is still open for its placing time, places the bets that fit its rule, and from then on it keeps going on its own. It also shows what it would have taken earlier today, kept apart from its record. Paper only.`));
+function mountUnleashToday(section, body, { id, name, avatar, onDone, gematria = false, running = null }) {
+  if (running && running.key !== "running") {          // paused or retired: nothing to unleash, and the server would refuse
+    body.appendChild(runningHead(running));
+    body.appendChild(h("p", { class: "hd-muted", "data-hook": "unleash-not-running", text: running.key === "retired"
+      ? `${name || "This hound"} is retired. It stopped betting and its record stays on the ledger.` : `${name || "This hound"} is not betting right now.` }));
+    section.removeAttribute("hidden");
+    return;
+  }
+  if (running) {
+    body.appendChild(runningHead(running));
+    body.appendChild(h("p", { class: "hd-muted", "data-hook": "unleash-running-note" },
+      `${name || "This hound"} bets on its own, paper only: each game when its placing time comes, if it fits the rule. To stop it, use Remove from my kennel in the ⋯ menu.`));
+    const now = h("div", { class: "dk-result ul-now", "data-hook": "unleash-now", "aria-live": "polite" }, [
+      h("div", { class: "lh-skel lh-skel--rows", "data-hook": "unleash-now-loading", "aria-hidden": "true" })]);
+    body.appendChild(now);
+    unleash(id).then((data) => renderFireResult(now, data, { id, name: name || "This hound" }))
+      .catch((err) => { clearNode(now).appendChild(h("p", { class: "hd-fine", text: errorText(err, "Today's checks could not be read just now.") })); });
+  } else body.appendChild(h("p", { class: "hd-muted" }, `Unleash starts ${name || "this hound"} betting today. It checks every game on today's board that is still open for its placing time, places the bets that fit its rule, and from then on it keeps going on its own. It also shows what it would have taken earlier today, kept apart from its record. Paper only.`));
   const result = h("div", { class: "dk-result", "data-hook": "fire-result", "aria-live": "polite" });
   const btn = h("button", { type: "button", class: "btn btn--primary", "data-hook": "fire-btn", text: "Unleash" });
+  if (running) { btn.setAttribute("class", "btn btn--ghost"); btn.textContent = "Check today's games now"; }
   const status = statusLine("fire-status");
   btn.addEventListener("click", async () => {
     btn.setAttribute("disabled", "");
@@ -459,11 +490,11 @@ function mountUnleashToday(section, body, { id, name, avatar, onDone, gematria =
 /** The "Unleash" panel on a dog's page: a button, a status line and the result. With `today` (the kennel studio, for the owner of a
  *  member dog) the button starts the hound instead of previewing it; `avatar` is {look, id, vibe} for the sniffing dog and `onDone`
  *  hears the server's answer (the kennel redraws its cards when bets were placed). */
-export function mountFire(section, { id, name, kit, onRecord, today = false, avatar = null, onDone = null }) {
+export function mountFire(section, { id, name, kit, onRecord, today = false, avatar = null, onDone = null, running = null }) {
   const body = section.querySelector("[data-hook='dog-fire']");
   if (!body) return;
   clearNode(body);
-  if (today && kit && kit.is_owner) return mountUnleashToday(section, body, { id, name, avatar, onDone, gematria: !!kit.gematria });
+  if (today && kit && kit.is_owner) return mountUnleashToday(section, body, { id, name, avatar, onDone, gematria: !!kit.gematria, running });
   const canRecord = !!(kit && kit.can_record_manual);
   body.appendChild(h("p", { class: "hd-muted" }, `Run ${name || "this model"}'s current rule on the latest stored boards and see what it would pick. Nothing is recorded${canRecord ? " unless you choose to" : ""}.`));
   const result = h("div", { class: "dk-result", "data-hook": "fire-result", "aria-live": "polite" });
