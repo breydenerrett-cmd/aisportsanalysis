@@ -6454,3 +6454,5 @@
 {"commence_utc": "2026-10-27T11:00:00Z", "event_id": "4131305472a4538a7dd867552b8a5154", "kind": "phase", "observed_utc": "2026-10-26T11:05:15.701438Z", "phase": "t24h", "rows": 4, "sport_key": "tennis_atp_swiss_indoors"}
 {"call_kind": "pregame", "credits": 1, "events": 16, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T11:05:15.701438Z", "regions": ["us"], "rows": 126, "sport_key": "tennis_atp_swiss_indoors", "stored": 126}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T11:05:15.701438Z", "regions": ["us"], "rows": 6, "sport_key": "baseball_kbo", "stored": 6}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-10-26T17:18:20.973843Z", "observed_utc": "2026-10-26T11:18:20.973843Z", "sport_key": "americanfootball_cfl"}
+{"events": 17, "kind": "peek", "next_check_utc": "2026-10-26T17:18:20.973843Z", "observed_utc": "2026-10-26T11:18:20.973843Z", "sport_key": "soccer_england_league1"}
