@@ -52,7 +52,8 @@ class TheTicketRowRendersInTheViewersZone(unittest.TestCase):
                f'const t = {json.dumps(TICKET)};\n'
                'console.log(JSON.stringify({ row: visibleText(ticketItem(t, { showModel: true })), '
                'live: visibleText(liveTag(t)), recorded: B.recordedText(t).text, books: B.booksText(t) }));')
-        self.out = run_js(src, viewer=None)
+        # a viewer in Pacific time: on a UTC machine (CI) the zone name really is "UTC"
+        self.out = run_js(src, viewer=None, tz="America/Los_Angeles")
 
     def test_no_utc_text_in_the_rendered_row(self):
         self.assertNotIn("UTC", self.out["row"])

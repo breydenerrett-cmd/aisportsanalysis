@@ -111,7 +111,7 @@ def run_page(page: str, viewer=PIN_REFERENCE, **scenario) -> dict:
     return out
 
 
-def run_js(source: str, viewer=PIN_REFERENCE) -> object:
+def run_js(source: str, viewer=PIN_REFERENCE, tz: str = None) -> object:
     """Evaluate a snippet that imports hounds-core.js / hounds-chart.js-free pure helpers and prints JSON. The snippet
     runs as a viewer who chose ``viewer`` (see PIN_REFERENCE); ``viewer=None`` leaves storage untouched."""
     work = _workdir()
@@ -124,7 +124,9 @@ def run_js(source: str, viewer=PIN_REFERENCE) -> object:
                f"globalThis.window.localStorage = {{ getItem: (k) => (k === {json.dumps(SIZING_KEY)} ? {json.dumps(json.dumps(viewer))} : null), setItem() {{}} }};")
         source = marker.join(lines[:at] + [pre] + lines[at:])
     (work / "snippet.mjs").write_text(source, encoding="utf-8")
-    proc = subprocess.run(["node", "snippet.mjs"], cwd=work, capture_output=True, text=True, encoding="utf-8", timeout=60)
+    env = dict(os.environ, TZ=tz) if tz else None      # ``tz``: the viewer's zone (the machine's when None)
+    proc = subprocess.run(["node", "snippet.mjs"], cwd=work, env=env, capture_output=True, text=True, encoding="utf-8",
+                          timeout=60)
     if proc.returncode != 0:
         raise AssertionError(proc.stderr[-2000:])
     return json.loads(proc.stdout.strip().splitlines()[-1])
