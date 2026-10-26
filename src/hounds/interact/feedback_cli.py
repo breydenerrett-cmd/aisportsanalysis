@@ -31,6 +31,11 @@ def add_parser(sub) -> None:
     r.add_argument("--id", required=True, help="the feedback id on the backlog line, e.g. FB-1A2B3C4D")
     r.add_argument("--note", required=True, help="what was fixed, in a sentence the member will read")
     r.add_argument("--db", default=None, help="app database (default: the app database)")
+    a = inner.add_parser("add-sports", help="give a member hound more sports as a NEW VERSION (old version and record untouched)")
+    a.add_argument("--id", required=True, help="the hound's current version id, e.g. u-f000af253e")
+    a.add_argument("--sports", required=True, help="comma list of sport codes (nba,nhl,nfl,ncaaf,...) or 'all'")
+    a.add_argument("--dry-run", dest="dry_run", action="store_true", help="print the new rule and the notes; write nothing")
+    a.add_argument("--db", default=None, help="app database (default: the app database)")
 
 
 def digest(args, *, out: Callable = print, now: Optional[datetime] = None) -> int:
@@ -64,11 +69,31 @@ def resolve(args, *, out: Callable = print, now: Optional[datetime] = None) -> i
     return EXIT_OK
 
 
+def add_sports_cmd(args, *, out: Callable = print) -> int:
+    from src.hounds import add_sports, user_spec, user_store
+    try:
+        res = add_sports.apply(args.id.strip(), args.sports, dry_run=args.dry_run, db=Path(args.db) if args.db else None)
+    except (add_sports.AddSportsError, user_spec.SpecError, user_store.StoreError) as exc:
+        out(f"ERROR: {exc}")
+        return EXIT_ERROR
+    out(("DRY RUN (nothing written): " if res["dry_run"] else "") + "adds " + ", ".join(res["added"]))
+    for code, why in res["skipped"]:
+        out(f"skipped {code}: {why}")
+    for note in res["notes"]:
+        out(f"note: {note}")
+    out(f"rule: {res['sentence']}")
+    if res["new_id"]:
+        out(f"new version {res['new_id']} (the old version {res['old_id']} is retired with its record intact)")
+    return EXIT_OK
+
+
 def main(args, *, out: Callable = print) -> int:
     command = getattr(args, "hounds_command", None)
     if command == "feedback-digest":
         return digest(args, out=out)
     if command == "feedback-resolve":
         return resolve(args, out=out)
+    if command == "add-sports":
+        return add_sports_cmd(args, out=out)
     out(f"unknown hounds subcommand: {command}")
     return EXIT_ERROR

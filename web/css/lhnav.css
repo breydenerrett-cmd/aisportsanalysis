@@ -134,3 +134,17 @@ a[href^="tel:"] { white-space: nowrap; }
   .lh-nav[data-bottom="off"] .lh-nav__account { gap: 6px; min-width: 0; }
   .lh-nav[data-bottom="off"] .lh-nav__account .lh-btn { padding-left: 10px; padding-right: 10px; font-size: 13px; white-space: nowrap; }
 }
+
+/* One-time member announcements (web/js/announcements.js): a full-screen card over everything. The flicker is for no-preference only. */
+.lh-announce { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(8, 6, 6, .94); color: #fff; }
+.lh-announce__card { max-width: 440px; width: 100%; text-align: center; display: grid; gap: 18px; justify-items: center; }
+.lh-announce__flame { font-size: 56px; margin: 0; line-height: 1; }
+.lh-announce__title { font-size: 24px; line-height: 1.25; margin: 0; }
+.lh-announce__lead { margin: 0; opacity: .75; }
+.lh-announce__steps { text-align: left; margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.lh-announce__x { position: absolute; top: 14px; right: 18px; background: none; border: 0; color: inherit; font-size: 30px; line-height: 1; cursor: pointer; }
+.lh-announce[data-kind="kennel_fire"][data-step="1"] { background: radial-gradient(ellipse at 50% 100%, #7a1d00 0%, #1a0603 70%); }
+@media (prefers-reduced-motion: no-preference) {
+  .lh-announce[data-step="1"] .lh-announce__flame { animation: lh-flicker 0.7s ease-in-out infinite alternate; }
+}
+@keyframes lh-flicker { from { transform: scale(1) rotate(-2deg); opacity: .85; } to { transform: scale(1.12) rotate(2deg); opacity: 1; } }

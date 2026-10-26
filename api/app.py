@@ -40,6 +40,7 @@ from api.hounds_create import router as hounds_create_router
 from api.hounds_quiz import router as hounds_quiz_router
 from api.hounds_interview import router as hounds_interview_router
 from api.hounds_interact import router as hounds_interact_router
+from api.announcements import router as announcements_router
 from api.hounds_apprentice import router as hounds_apprentice_router
 from api.hounds_learning import router as hounds_learning_router
 from api.hounds_breeding import router as hounds_breeding_router
@@ -116,6 +117,7 @@ app.include_router(hounds_tips_router)
 # fire now / ask / feedback / locker room / drill / camp (api/hounds_interact.py): /hounds/looks, /hounds/camp/mine
 # and POST /hounds/drill are literal paths next to /hounds/{id}, so this is mounted before api.hounds too.
 app.include_router(hounds_interact_router)
+app.include_router(announcements_router)       # one-time member announcements: /me/announcements (api/announcements.py)
 app.include_router(hounds_apprentice_router)   # the Apprentice hound's lessons: /hounds/{id}/apprentice/...
 # where a ticket's game stands right now, and the "Grading" indicator (api/hounds_live.py): /hounds/live is a literal path
 # under /hounds/{id}, so it is mounted before api.hounds too (tests/test_live_settle_api.py pins the order).
