@@ -4,16 +4,17 @@ Rules: one or two cheap workers at a time (Haiku by default, Sonnet only where a
 
 | # | Item | Status |
 |---|---|---|
-| 1 | Apprentice Hound + DraftKings screenshot import (owner, evidence grades A–D, append-only lessons, parlay = all legs) | in progress |
-| 2 | QA walk of the live site on phone and desktop, every page and main flow, logging broken or ugly items | queued |
-| 3 | Fix batch from #2 | queued |
-| 4 | NHL odds captured in time for 3-hours-out rule checks (HOCKEYCHIEF "no fresh board yet"), within the data budget | queued |
-| 5 | Jarvis pre-game briefing, built on LINEHOUND data only, with experimental labels | queued |
+| 1 | Apprentice Hound + DraftKings screenshot import (owner, evidence grades A–D, append-only lessons, parlay = all legs) | pushed (02720c080); NFL props graded from ticket status only, no recommendation route yet |
+| 2 | QA walk of the live site on phone and desktop, every page and main flow, logging broken or ugly items | done: 0 P0, 6 P1, 3 P2 |
+| 3 | Fix batch from #2 | pushed (8e9df66c0); quiz reveal textarea overlap still open (needs an open-state measurement) |
+| 4 | NHL odds captured in time for 3-hours-out rule checks (HOCKEYCHIEF "no fresh board yet"), within the data budget | pushed (574b56854): lock-time captures + 90-credit reserve, ~25 credits/day inside the same cap; details docs/NHL_LOCK_CAPTURE.md |
+| 5 | Jarvis pre-game briefing, built on LINEHOUND data only, with experimental labels | in progress |
 | 6 | Feedback loop: owner votes feed training; Bad call gets what-was-wrong chips; daily digest; backlog entry; a reply when fixed | queued |
 | 7 | Learner Hound (merged with Apprentice phase 2) and the AI-hound mascot | queued |
 | 8 | Live page redesign (low priority) | queued |
 
 ## Parked (needs Brey)
+- Two stuck local test processes (PIDs 34780, 35168, 26120): kill was denied for me; close them in Task Manager if the PC is slow
 - Desk hounds: block both-lose pairs? (recommended yes)
 - Privacy/terms blanks: name, contact email, postal address, governing-law state (branch worker/legal-pages)
 - Apple Developer ($99) / Google Play ($25) enrollment, then TestFlight via docs/mobile/MAC_SETUP.md
