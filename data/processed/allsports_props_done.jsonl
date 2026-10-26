@@ -932,3 +932,4 @@
 {"events": 15, "kind": "peek", "next_check_utc": "2026-10-26T04:15:03.504500Z", "observed_utc": "2026-10-26T01:15:03.504500Z", "sport_key": "basketball_nba"}
 {"commence_utc": "2026-10-26T02:10:00Z", "event_id": "ccf447f1bbe822d28f87352436f70c7c", "kind": "phase", "observed_utc": "2026-10-26T01:42:52.644332Z", "phase": "t30m", "rows": 491, "sport_key": "icehockey_nhl", "status": "done"}
 {"books": 8, "credits": 5, "event_id": "ccf447f1bbe822d28f87352436f70c7c", "family": "NHL", "kind": "call", "markets": ["player_points", "player_assists", "player_shots_on_goal", "player_goal_scorer_anytime", "player_total_saves"], "observed_utc": "2026-10-26T01:42:52.644332Z", "phase": "t30m", "regions": ["us"], "remaining": 88190, "sport_key": "icehockey_nhl", "stored": 491}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-10-26T05:10:07.476874Z", "observed_utc": "2026-10-26T02:10:07.476874Z", "sport_key": "icehockey_nhl"}
