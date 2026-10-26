@@ -6553,3 +6553,7 @@
 {"events": 20, "kind": "peek", "next_check_utc": "2026-10-26T21:11:34.209499Z", "observed_utc": "2026-10-26T15:11:34.209499Z", "sport_key": "soccer_germany_liga3"}
 {"commence_utc": "2026-10-26T21:00:00Z", "event_id": "14963031ba4c05d10ad1024978773bb1", "kind": "phase", "observed_utc": "2026-10-26T15:11:34.209499Z", "phase": "t6h", "rows": 15, "sport_key": "soccer_chile_campeonato"}
 {"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-26T15:11:34.209499Z", "regions": ["us"], "rows": 73, "sport_key": "soccer_chile_campeonato", "stored": 15}
+{"events": 32, "kind": "peek", "next_check_utc": "2026-10-26T21:27:53.953936Z", "observed_utc": "2026-10-26T15:27:53.953936Z", "sport_key": "boxing_boxing"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-26T21:27:53.953936Z", "observed_utc": "2026-10-26T15:27:53.953936Z", "sport_key": "soccer_netherlands_eredivisie"}
+{"call_kind": "inplay", "credits": 1, "events": 14, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T15:27:53.953936Z", "regions": ["us"], "rows": 108, "sport_key": "tennis_atp_swiss_indoors", "stored": 79}
+{"call_kind": "inplay", "credits": 1, "events": 15, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T15:27:53.953936Z", "regions": ["us"], "rows": 117, "sport_key": "tennis_atp_vienna_open", "stored": 86}
