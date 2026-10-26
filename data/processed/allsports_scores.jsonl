@@ -3593,3 +3593,12 @@
 {"away_score": 1.0, "away_team": "Fenerbahce", "commence_time": "2026-10-26T18:30:00Z", "completed": true, "event_id": "a05d15a5f230d25da72b18dc92084f8f", "home_score": 2.0, "home_team": "Galatasaray", "kind": "score", "last_update": "2026-10-26T21:16:12Z", "observed_utc": "2026-10-26T21:16:27.284370+00:00", "outcome": "home", "scores": [{"name": "Galatasaray", "score": "2"}, {"name": "Fenerbahce", "score": "1"}], "sport_key": "soccer_turkey_super_league"}
 {"credits": 2, "days_from": 3, "events": 17, "kind": "poll", "observed_utc": "2026-10-26T21:16:27.284370+00:00", "sport_key": "soccer_turkey_super_league"}
 {"errors": [], "events": 9, "family": "MMA", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-10-26T21:16:28.073794Z", "source": "espn_mma", "unmatched": 9, "unmatched_ids": ["dd470cbd14db5495be63ef412da4db09", "25a46b662f028f31b49392152cf1ca6b", "b73426a077d1cd8f919d90252fc594dc", "66bced574101dc81a282a6bde5898d8e", "32b120f8588858714faea1616400dec7", "4ca80986802a53598e9b7a0aaebad69e", "78d6472a61824019c0d8f1a535e3d475", "3d66abf1b70ac44a10b9a31964c4f4af", "73e2bada18e572af297a62064bd02d95"], "void": 0, "written": 0}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-26T21:49:29.909672+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 31, "kind": "poll", "observed_utc": "2026-10-26T21:49:29.909672+00:00", "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 9, "kind": "poll", "observed_utc": "2026-10-26T21:49:29.909672+00:00", "sport_key": "aussierules_aflw"}
+{"credits": 2, "days_from": 3, "events": 8, "kind": "poll", "observed_utc": "2026-10-26T21:49:29.909672+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-10-26T21:49:29.909672+00:00", "sport_key": "baseball_kbo"}
+{"credits": 2, "days_from": 3, "events": 3, "kind": "poll", "observed_utc": "2026-10-26T21:49:29.909672+00:00", "sport_key": "cricket_odi"}
+{"credits": 2, "days_from": 3, "events": 3, "kind": "poll", "observed_utc": "2026-10-26T21:49:29.909672+00:00", "sport_key": "icehockey_mestis"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-10-26T21:49:29.909672+00:00", "sport_key": "baseball_npb"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-26T21:49:29.909672+00:00", "sport_key": "cricket_international_t20"}
