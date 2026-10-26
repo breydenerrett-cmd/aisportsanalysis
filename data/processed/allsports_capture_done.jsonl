@@ -6548,3 +6548,8 @@
 {"commence_utc": "2026-10-27T14:30:00Z", "event_id": "0808b146b67fdb08a2bc82e84a902b1f", "kind": "phase", "observed_utc": "2026-10-26T14:44:32.543167Z", "phase": "t24h", "rows": 3, "sport_key": "cricket_international_t20"}
 {"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T14:44:32.543167Z", "regions": ["us"], "rows": 6, "sport_key": "cricket_international_t20", "stored": 6}
 {"call_kind": "inplay", "credits": 1, "events": 15, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T14:44:32.543167Z", "regions": ["us"], "rows": 117, "sport_key": "tennis_atp_swiss_indoors", "stored": 88}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-10-26T21:11:34.209499Z", "observed_utc": "2026-10-26T15:11:34.209499Z", "sport_key": "basketball_nbl"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-26T21:11:34.209499Z", "observed_utc": "2026-10-26T15:11:34.209499Z", "sport_key": "soccer_germany_bundesliga2"}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-10-26T21:11:34.209499Z", "observed_utc": "2026-10-26T15:11:34.209499Z", "sport_key": "soccer_germany_liga3"}
+{"commence_utc": "2026-10-26T21:00:00Z", "event_id": "14963031ba4c05d10ad1024978773bb1", "kind": "phase", "observed_utc": "2026-10-26T15:11:34.209499Z", "phase": "t6h", "rows": 15, "sport_key": "soccer_chile_campeonato"}
+{"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-26T15:11:34.209499Z", "regions": ["us"], "rows": 73, "sport_key": "soccer_chile_campeonato", "stored": 15}
