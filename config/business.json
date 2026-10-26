@@ -131,10 +131,9 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-10-25 (1:30 pm PT run): NFL brief published for Chiefs at Seahawks (5:20 pm PT); four briefs today in all.",
-    "The checker struck the word 'lock' inside Seattle quarterback Drew Lock's name; fixed so names from the data are not scanned, first freeze kept on record.",
-    "No MLB game today; World Series Game 3 (Brewers at Rays) is Monday 5:00 pm PT.",
-    "Working-branch tests red on two quiz browser tests after the new quiz entry; another session's fix is in CI.",
+    "2026-10-26 (8:30 am PT run): all four Sunday NFL briefs graded complete; the public sample now shows Chiefs at Seahawks.",
+    "World Series Game 3 (Brewers at Rays) is today 5:00 pm PT; Monday night NFL (Cowboys at Eagles) 5:15 pm PT; briefs in the afternoon run.",
+    "Working-branch tests green on the newest finished run; the scheduled daily loop on the default branch is still red.",
     "Public MLB value picks remain paused. Sends 0, replies 0, testers 0."
   ],
   "next_customer_action": "Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.",
