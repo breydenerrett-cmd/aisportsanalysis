@@ -6390,3 +6390,10 @@
 {"call_kind": "pregame", "credits": 3, "events": 1, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-26T07:34:51.181750Z", "regions": ["us"], "rows": 27, "sport_key": "baseball_kbo", "stored": 27}
 {"commence_utc": "2026-10-27T07:30:00Z", "event_id": "96d658b6a8b01790845515be4d1410a2", "kind": "phase", "observed_utc": "2026-10-26T07:34:51.181750Z", "phase": "t24h", "rows": 1, "sport_key": "cricket_odi"}
 {"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T07:34:51.181750Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 2}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-10-26T13:46:07.160267Z", "observed_utc": "2026-10-26T07:46:07.160267Z", "sport_key": "basketball_ncaab"}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-10-26T13:46:07.160267Z", "observed_utc": "2026-10-26T07:46:07.160267Z", "sport_key": "icehockey_sweden_hockey_league"}
+{"commence_utc": "2026-10-26T13:40:00Z", "event_id": "fc557e2864fbe07964a9d288a81d5009", "kind": "phase", "observed_utc": "2026-10-26T07:46:07.160267Z", "phase": "t6h", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
+{"commence_utc": "2026-10-26T13:40:00Z", "event_id": "7484e86bb920b4e17ec18fde7f1487a5", "kind": "phase", "observed_utc": "2026-10-26T07:46:07.160267Z", "phase": "t6h", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
+{"call_kind": "pregame", "credits": 1, "events": 16, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T07:46:07.160267Z", "regions": ["us"], "rows": 126, "sport_key": "tennis_atp_swiss_indoors", "stored": 126}
+{"commence_utc": "2026-10-26T13:40:00Z", "event_id": "4e8affe5c736072143aed4c30a548c66", "kind": "phase", "observed_utc": "2026-10-26T07:46:07.160267Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
+{"call_kind": "pregame", "credits": 1, "events": 16, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T07:46:07.160267Z", "regions": ["us"], "rows": 121, "sport_key": "tennis_atp_vienna_open", "stored": 121}
