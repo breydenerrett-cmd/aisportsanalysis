@@ -9,6 +9,8 @@ from __future__ import annotations
 import dataclasses
 import json
 import unittest
+from datetime import datetime
+from unittest import mock
 
 from src.hounds import contract
 from tests import hounds_web_fixtures as F
@@ -34,8 +36,12 @@ def open_rows(*specs):
 
 
 def payload(rows, status):
-    return json.loads(json.dumps(contract.bets_payload("closer", {"items": rows, "page": 1, "page_size": 50,
-                                                                  "total": len(rows), "pages": 1}, "2026-10-24"), default=str))
+    # the server stamps UNGRADED from the wall clock; pin it to the page's NOW so the fixtures never age past 36h
+    stamp = contract.with_status
+    pinned = datetime.fromisoformat(NOW.replace("Z", "+00:00"))
+    with mock.patch.object(contract, "with_status", lambda items, now=None: stamp(items, pinned)):
+        return json.loads(json.dumps(contract.bets_payload("closer", {"items": rows, "page": 1, "page_size": 50,
+                                                                      "total": len(rows), "pages": 1}, "2026-10-24"), default=str))
 
 
 def graded_rows():
