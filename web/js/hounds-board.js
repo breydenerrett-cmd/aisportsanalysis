@@ -26,8 +26,10 @@
 
 import {
   isNum, signed, fmtPrice, fmtWhen, shortDate, verdictLabel, verdictTone, categoryOf, categoryLabel,
-  americanDecimal, dayKey, NOT_REPORTED,
+  americanDecimal, dayKey, NOT_REPORTED, NO_BETS_YET,
 } from "./hounds-core.js";
+import { formatStamp } from "./local-time.js";
+import { bookLabel } from "./labels.js";
 import { unitsOf } from "./hounds-voice.js";
 import { MIN_RANKED_BETS } from "./hounds-season.js";
 import { lensBlock, getSizing, startText, unitWords, unitSentence, rulesSentence, stakeWords, sizingTag } from "./unitsize.js";
@@ -542,7 +544,7 @@ export function isNewDog(hound) {
 
 /** "3/10 bets": settled bets so far over the bar (never shown above the bar). A member's brand-new dog says so. */
 export function progressText(hound, min = MIN_RANKED_BETS) {
-  if (isNewDog(hound)) return "New: no bets yet";
+  if (isNewDog(hound)) return NO_BETS_YET;
   return `${Math.min(settledOf(hound), min)}/${min} bets`;
 }
 
@@ -605,7 +607,8 @@ export function recordedText(ticket) {
   const t = ticket || {};
   const rec = parseMs(t.recorded_utc);
   if (rec === null) return { kind: "none", text: NA };
-  const when = fmtWhen(t.recorded_utc);
+  // The viewer's own zone, never UTC: a person reads a ticket's time in the zone on their clock (owner, 2026-10-25).
+  const when = formatStamp("d", t.recorded_utc);
   const start = parseMs(t.start_utc);
   if (start === null) return { kind: "recorded", text: when };
   const diff = Math.round((start - rec) / 60000);
@@ -637,7 +640,8 @@ export function booksText(ticket) {
   const t = ticket || {};
   const n = isNum(t.book_count) && t.book_count > 0 ? t.book_count : null;
   const parts = [];
-  if (t.book) parts.push(String(t.book));
+  // The raw feed key ("williamhill_us") is never shown: the label map names it, and a key it does not know is spelled out.
+  if (t.book) parts.push(bookLabel(String(t.book)));
   if (n !== null) parts.push(`${n} ${n === 1 ? "book" : "books"}`);
   return parts.join(", ");
 }

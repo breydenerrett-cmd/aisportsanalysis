@@ -7,6 +7,7 @@
  */
 
 import { h, isNum, signed, fmtPrice, shortDate, houndHref, NOT_REPORTED } from "./hounds-core.js";
+import { formatStamp } from "./local-time.js";
 import { signedMoney } from "./hound-money.js";
 import { liveSpan, liveAttrs, watchTickets } from "./ticket-live.js";
 import {
@@ -136,13 +137,12 @@ export function recordedCell(ticket) {
  * One ticket as a list row. `showModel` adds the model's name (the cross-model feed); the model's own pages
  * leave it off. The row is a grid: when, the game and pick, the price, the record line and the result.
  */
-/** "Live bet · price at 20:14 UTC": an in-play ticket's label (the capture time of the live price it took, in UTC like the
- *  "recorded" time on the same ticket). null on every ordinary ticket. */
+/** "Live bet · price at 8:14 PM PT": an in-play ticket's label (the capture time of the live price it took, in the viewer's
+ *  zone like the "recorded" time on the same ticket). null on every ordinary ticket. */
 export function liveTag(t) {
   if (!t || !t.live_price_at_utc) return null;
-  const at = new Date(t.live_price_at_utc);
-  const pad = (v) => String(v).padStart(2, "0");
-  const when = Number.isNaN(at.getTime()) ? "" : ` · price at ${pad(at.getUTCHours())}:${pad(at.getUTCMinutes())} UTC`;
+  const clock = formatStamp("c", t.live_price_at_utc);
+  const when = clock ? ` · price at ${clock}` : "";
   return h("span", { class: "hd-ticket__live", "data-hook": "ticket-live", text: `Live bet${when}` });
 }
 

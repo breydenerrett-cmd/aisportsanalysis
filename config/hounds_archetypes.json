@@ -56,7 +56,7 @@
   {
    "id": "primetime_underdog",
    "name": "Primetime Underdog",
-   "pitch": "Night games, plus money, underdogs only. The lights are on and so is the dog.",
+   "pitch": "Night games, plus money, underdogs only. The lights are on and so is the underdog.",
    "short": "Bets underdogs in night games",
    "icon": "moon",
    "stance": "dog",
@@ -777,7 +777,7 @@
   {
    "id": "plus_money_only",
    "name": "Plus Money Only",
-   "pitch": "Moneylines at plus money, either side. If it pays more than even, the dog will look at it.",
+   "pitch": "Moneylines at plus money, either side. If it pays more than even, the hound will look at it.",
    "short": "Bets any side that pays plus money",
    "icon": "plus",
    "stance": "dog",
@@ -1478,7 +1478,7 @@
   },
   {
    "id": "touchdown_dog",
-   "name": "Touchdown Dog",
+   "name": "Touchdown Hound",
    "pitch": "Football underdogs getting 7 or more points. A big number is a big cushion.",
    "short": "Bets underdogs getting seven or more points",
    "icon": "football",
@@ -1498,7 +1498,7 @@
    "fragment": {
     "rules": [
      {
-      "label": "Touchdown Dog",
+      "label": "Touchdown Hound",
       "sports": [
        "NFL",
        "NCAAF"
@@ -1735,7 +1735,7 @@
   },
   {
    "id": "home_dog_howl",
-   "name": "Home Dog Howl",
+   "name": "Home Field Howl",
    "pitch": "Home underdogs only, plus money. The crowd noise is a rumour, the price is a number.",
    "short": "Bets home underdogs at plus money",
    "icon": "house",
@@ -1753,7 +1753,7 @@
    "fragment": {
     "rules": [
      {
-      "label": "Home Dog Howl",
+      "label": "Home Field Howl",
       "sports": [
        "ANY"
       ],
@@ -1973,7 +1973,7 @@
   {
    "id": "contrarian_corgi",
    "name": "Contrarian Corgi",
-   "pitch": "Takes the underdog when the market moved toward the favourite and the dog is rested. Small legs, big opinions.",
+   "pitch": "Takes the underdog when the market moved toward the favourite and the hound is rested. Small legs, big opinions.",
    "short": "Backs rested underdogs when the line moves against them",
    "icon": "target",
    "stance": "dog",
@@ -2111,7 +2111,7 @@
    "fragment": {
     "rules": [
      {
-      "label": "Road dogs",
+      "label": "Road underdogs",
       "sports": [
        "MLB"
       ],
@@ -2171,7 +2171,7 @@
   {
    "id": "underdog_hunter",
    "name": "Underdog Hunter",
-   "pitch": "Plus money or nothing. Sniffs out the dog everyone else walked past.",
+   "pitch": "Plus money or nothing. Sniffs out the underdog everyone else walked past.",
    "icon": "paw",
    "vibe": "degen",
    "breed": "husky",
@@ -3065,7 +3065,7 @@
   "stats_nerd": [
    "Professor Pawsworth",
    "Spreadsheet Sam",
-   "Doctor Data Dog",
+   "Doctor Data Hound",
    "Pocket Protector",
    "Slide Rule Sally",
    "Regression Rex"
