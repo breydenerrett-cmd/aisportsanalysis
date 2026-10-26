@@ -6313,3 +6313,6 @@
 {"events": 5, "kind": "peek", "next_check_utc": "2026-10-26T10:21:28.242108Z", "observed_utc": "2026-10-26T04:21:28.242108Z", "sport_key": "soccer_league_of_ireland"}
 {"events": 10, "kind": "peek", "next_check_utc": "2026-10-26T10:21:28.242108Z", "observed_utc": "2026-10-26T04:21:28.242108Z", "sport_key": "soccer_spl"}
 {"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T04:21:28.242108Z", "regions": ["us"], "rows": 44, "sport_key": "soccer_mexico_ligamx", "stored": 4}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-10-26T06:30:00Z", "observed_utc": "2026-10-26T04:33:09.848845Z", "sport_key": "cricket_odi"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-10-26T10:33:09.848845Z", "observed_utc": "2026-10-26T04:33:09.848845Z", "sport_key": "soccer_efl_champ"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-26T10:33:09.848845Z", "observed_utc": "2026-10-26T04:33:09.848845Z", "sport_key": "soccer_uefa_champs_league"}
