@@ -265,7 +265,7 @@ def stream() -> dict:
                    result="loss", units=-1.0, decided_utc="2026-10-24T22:12:00Z",
                    start_utc="2026-10-24T22:10:00Z", recorded_utc="2026-10-24T21:30:00Z", book_count=7),
     ]
-    return contract.stream_payload(paginate(items, 1, 25), AS_OF)
+    return contract.stream_payload(paginate(items, 1, 25), AS_OF, now=BANKROLL_NOW)
 
 
 def _retired_block(rec: Record, day: str) -> dict:
@@ -352,8 +352,9 @@ def bets(hid="closer", n=45) -> list:
 
 def bets_payload(hid="closer", n=45, page=1, page_size=25, segment=None, status=None) -> dict:
     rows = [b for b in bet_rows(hid, n) if segment is None or b.segment == segment]
-    rows = contract.filter_by_status(rows, status)
-    return contract.bets_payload(hid, paginate(rows, page, page_size), AS_OF)
+    rows = contract.filter_by_status(rows, status, BANKROLL_NOW)
+    # the UNGRADED line is judged on the fixture's clock, not the wall clock: the fixture dates never age out
+    return contract.bets_payload(hid, paginate(rows, page, page_size), AS_OF, now=BANKROLL_NOW)
 
 
 def detail(hid="closer", forward=True, n=45) -> dict:

@@ -495,16 +495,18 @@ def refine_bets(rows: list, outcome: Optional[str] = None, sort: Optional[str] =
     return rows
 
 
-def bets_payload(hound_id: str, bets_page: dict, as_of: Optional[str], season: Optional[dict] = None) -> dict:
-    out = {"hound_id": hound_id, "as_of": as_of, **{**bets_page, "items": to_json(with_status(bets_page["items"]))}}
+def bets_payload(hound_id: str, bets_page: dict, as_of: Optional[str], season: Optional[dict] = None,
+                 now: Optional[datetime] = None) -> dict:
+    """``now``: the clock the UNGRADED status is judged by (the wall clock when None; tests pin it)."""
+    out = {"hound_id": hound_id, "as_of": as_of, **{**bets_page, "items": to_json(with_status(bets_page["items"], now))}}
     if season is not None:
         out["season"] = season
     return envelope(out)
 
 
-def stream_payload(page: dict, as_of: Optional[str]) -> dict:
+def stream_payload(page: dict, as_of: Optional[str], now: Optional[datetime] = None) -> dict:
     return envelope({"as_of": as_of,
-                     **{**page, "items": to_json(with_status(page["items"]))}})
+                     **{**page, "items": to_json(with_status(page["items"], now))}})
 
 
 def graveyard_payload(entries: list, as_of: Optional[str]) -> dict:
