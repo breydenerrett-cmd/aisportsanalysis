@@ -6355,3 +6355,5 @@
 {"events": 9, "kind": "peek", "next_check_utc": "2026-10-26T11:23:41.320036Z", "observed_utc": "2026-10-26T05:23:41.320036Z", "sport_key": "soccer_uefa_champs_league_women"}
 {"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T05:23:41.320036Z", "regions": ["us"], "rows": 34, "sport_key": "tennis_wta_pan_pacific_open", "stored": 34}
 {"events": 10, "kind": "peek", "next_check_utc": "2026-10-26T11:29:43.854172Z", "observed_utc": "2026-10-26T05:29:43.854172Z", "sport_key": "soccer_mexico_ligamx"}
+{"commence_utc": "2026-10-26T06:00:00Z", "event_id": "ef090e77f33d7b44822fe9c36c1a3b6f", "kind": "phase", "observed_utc": "2026-10-26T05:38:17.872621Z", "phase": "t30m", "rows": 6, "sport_key": "tennis_wta_pan_pacific_open"}
+{"call_kind": "pregame", "credits": 1, "events": 10, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T05:38:17.872621Z", "regions": ["us"], "rows": 51, "sport_key": "tennis_wta_pan_pacific_open", "stored": 51}
