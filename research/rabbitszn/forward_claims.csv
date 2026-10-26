@@ -13,3 +13,8 @@ F001,53 = 16th prime,prime_index,53,,16,16,ARITHMETIC_OK,
 F001,Jazz get 45th Wednesday win against the Southwest / 45th road loss against Grizzlies since Memphis,history,,,,,UNVERIFIED_HISTORY,our NBA store holds this season only; a franchise or player record is not in it
 F002,82nd week since Bulls last beat Raptors; 81 Wednesdays since Raptors last lost to Bulls; Splitter's 82nd game,history,,,,,UNVERIFIED_HISTORY,our NBA store holds this season only; a franchise or player record is not in it
 F003,Giannis' 16th win against the Wolves; 160th day since Wolves last played; teams last met 1/6; 26th franchise,history,,,,,UNVERIFIED_HISTORY,our NBA store holds this season only; a franchise or player record is not in it
+F007,Ohio = 29 FR,cipher,Ohio,FR,29,29,ARITHMETIC_OK,
+F007,299th DOY,date,2026-10-26,DOY,299,299,ARITHMETIC_OK,
+F008,Georgia = 44 FR,cipher,Georgia,FR,44,44,ARITHMETIC_OK,
+F009,299th DOY,date,2026-10-26,DOY,299,299,ARITHMETIC_OK,
+F009,Lisalo = 29 FR,cipher,Lisalo,FR,29,23,MISMATCH,"FR of 'Lisalo' is 3+9+1+1+3+6 = 23, not 29; the spelling or cipher may differ from what was posted"
