@@ -1,0 +1,9 @@
+# Good call / Bad call feedback loop (built 2026-10-25, TODO item 3)
+
+- **Chips.** A Bad call posts at once, then asks "What was wrong?" (Wrong pick, Bad price, Ignored injury/news, Wrong sport/market, Too risky, Confusing answer, Other; any number) plus a note. "Send details" posts the Bad call again with them. Ids live in `store.CHIPS`; `web/js/dog-feedback.js` CHIPS must match (a test pins it).
+- **Append-only.** `hound_feedback` has no UNIQUE key now and a trigger refuses UPDATE. A change of mind appends a row; readers use the view `hound_feedback_current` (latest row per person and target). The old table is rebuilt in place on first connect, ids kept.
+- **Training.** `training.review` returns `owner_feedback` ("3 Bad calls: 2 bad price, 1 wrong pick") from the OWNER's current votes on the hound's lineage. The review card shows it. It is not an input to the coach cache, menu or mapper, so it changes no proposal; only Apply changes a hound.
+- **Digest.** `python -m src.cli hounds feedback-digest --date D [--backlog]`. D is a Pacific day. Writes `digest-D.md` to `FEEDBACK_DIGEST_DIR` or `feedback/` beside the app database. No model, no network.
+- **Email (off by default).** Set `FEEDBACK_DIGEST_TO` (comma-separated) and `RESEND_API_KEY`; it goes through `src/notify/email.py` (once per recipient per date).
+- **Backlog.** `--backlog` registers each issue (same chip on 2+ current Bad calls for one hound in the day, or any vote with a note) and appends `- [FB-XXXXXXXX] ...` to `docs/BACKLOG.md` under "Member feedback", creating the file if missing. The id is a hash, so a re-run adds nothing.
+- **Fix notice.** `python -m src.cli hounds feedback-resolve --id FB-XXXXXXXX --note "..."` appends a resolution. Members whose votes backed that issue read "Fixed: <note>" (with a local `[[w:ISO]]` time) in the hound page's Ask panel and "What fans think" panel for 30 days. Only reachable on the hound's own page (no global inbox yet).

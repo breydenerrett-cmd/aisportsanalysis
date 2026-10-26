@@ -19,8 +19,8 @@
 import { getSizing } from "./unitsize.js";
 import { localizeTimes } from "./local-time.js";
 import { h, clearNode } from "./hounds-core.js";
-import { get, post, errorText, statusLine } from "./dog-common.js";
-import { voteRow } from "./dog-feedback.js";
+import { get, post, errorText, statusLine, signedIn } from "./dog-common.js";
+import { voteRow, fixedNotice } from "./dog-feedback.js";
 import { isUpgradeRefusal, upgradePrompt } from "./upgrade.js";
 import { startRetune } from "./dog-rites.js";
 import { runGematriaStream, gematriaAnalysis, analysisLog, reducedMotion } from "./dog-gematria-stream.js";
@@ -199,6 +199,14 @@ export async function bootAsk(section, { id, name, gematria = false }) {
   const chat = mountAsk(body, { id, name, gematria });
   const thread = body.querySelector("[data-hook='ask-thread']");
   thread.appendChild(dogMessage(hello.greeting, "hello"));
+  // a fix that shipped for something this member flagged ("Fixed: <note>"); a signed-out visitor has no votes, so no call is made
+  if (signedIn()) {
+    try {
+      const fb = await get(`/hounds/${encodeURIComponent(id)}/feedback`);
+      const fixed = fixedNotice(fb && fb.fixed);
+      if (fixed) thread.appendChild(h("div", { class: "dk-msg dk-msg--dog", "data-hook": "ask-fixed" }, [h("p", { text: "Something you flagged was fixed." }), fixed]));
+    } catch (err) { /* no notice is better than a broken panel */ }
+  }
   const chips = body.querySelector("[data-hook='ask-suggestions']");
   for (const q of (hello.suggestions || []).slice(0, 6)) {
     const b = h("button", { type: "button", class: "dk-chipbtn", "data-hook": "ask-chip", text: q });

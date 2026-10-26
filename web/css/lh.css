@@ -400,7 +400,7 @@
 .hounds-page .dk-msg--you { background: rgba(47, 208, 122, .16); }
 .hounds-page .dk-msg--dog { background: var(--lh-soft); }
 .hounds-page .dk-chipbtn, .hounds-page .dk-opt, .hounds-page .dk-vote__btn { border: 0; border-radius: 999px; background: var(--lh-soft); min-height: 36px; }
-.hounds-page .dk-opt[aria-pressed="true"], .hounds-page .dk-vote__btn[aria-pressed="true"] { background: rgba(47, 208, 122, .18); }
+.hounds-page .dk-opt[aria-pressed="true"], .hounds-page .dk-vote__btn[aria-pressed="true"], .hounds-page .dk-chipbtn[aria-pressed="true"] { background: rgba(47, 208, 122, .18); color: #fff; }
 .hounds-page .dk-swatch { border-width: 0; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .12); }
 .hounds-page .dk-swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px #0F1317, 0 0 0 4px var(--lh-accent); }
 .hounds-page .dk-preview { border: 0; border-radius: 18px; background: var(--lh-soft); }

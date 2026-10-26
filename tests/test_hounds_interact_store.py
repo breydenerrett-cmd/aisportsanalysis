@@ -42,7 +42,7 @@ class Feedback(Db):
                          ("u-1", "ticket", "2026-10-18|Boston Red Sox to win", "good", "Fair price", 1,
                           "2026-10-19T18:00:00Z"))
 
-    def test_a_second_vote_replaces_the_first_and_does_not_double_count(self):
+    def test_a_second_vote_supersedes_the_first_and_does_not_double_count(self):
         self.vote(verdict="good")
         self.vote(verdict="bad", note="changed my mind")
         c = store.counts("u-1")
@@ -72,7 +72,7 @@ class Feedback(Db):
         self.vote(note="Good price", user=11)
         notes = store.notes_for_owner("u-1")
         self.assertEqual(notes[0]["note"], "Good price")
-        self.assertEqual(set(notes[0]), {"target_kind", "target_id", "verdict", "note", "created_at"})
+        self.assertEqual(set(notes[0]), {"target_kind", "target_id", "verdict", "note", "chips", "created_at"})
         self.assertNotIn(11, notes[0].values())
 
     def test_a_note_is_trimmed_limited_and_filtered(self):

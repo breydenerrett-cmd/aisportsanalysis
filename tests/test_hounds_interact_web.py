@@ -425,6 +425,60 @@ class SuggestionsAndTraining(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
+class TheBadCallChipsAndTheFixNotice(unittest.TestCase):
+    """Owner request 2026-10-25: a Bad call asks what was wrong (single or multi select, plus a note), and a member is told
+    when a fix ships for something they flagged."""
+    BAD = hook("fans-tickets") + " .dk-vote__btn[data-verdict='bad']"
+
+    def test_a_bad_call_posts_at_once_then_opens_the_chips_and_send_details_posts_it_again_with_them(self):
+        out = page(dog_routes(), actions=[
+            dict(do="click", sel=self.BAD, index=0, wait=60, capture=[q("shown", hook("fans-tickets") + " " + hook("vote-chips"), "hidden"), q("n", hook("fans-tickets") + " " + hook("vote-chip"), "count")]),
+            dict(do="click", sel=hook("fans-tickets") + " " + hook("vote-chip") + "[data-chip='bad_price']", index=0, wait=10),
+            dict(do="click", sel=hook("fans-tickets") + " " + hook("vote-chip") + "[data-chip='wrong_pick']", index=0, wait=10, capture=[
+                q("pressed", hook("fans-tickets") + " " + hook("vote-chip") + "[data-chip='bad_price']", "attr", attr="aria-pressed")]),
+            dict(do="set", sel=hook("fans-tickets") + " " + hook("vote-note"), value="paid too much", wait=10),
+            dict(do="click", sel=hook("fans-tickets") + " " + hook("vote-note-save"), index=0, wait=60, capture=[q("status", hook("fans-tickets") + " " + hook("vote-status"))])])
+        votes = [p for p in out["posts"] if p["url"].endswith("/feedback")]
+        self.assertEqual(len(votes), 2)
+        self.assertNotIn("chips", votes[0]["body"])                                     # the Bad call itself is saved first
+        self.assertEqual(votes[1]["body"]["verdict"], "bad")
+        self.assertEqual(votes[1]["body"]["chips"], ["wrong_pick", "bad_price"])
+        self.assertEqual(votes[1]["body"]["note"], "paid too much")
+        c = out["captures"]
+        self.assertEqual((c["0"]["shown"], c["0"]["n"] % 7), (False, 0))              # the chips are open; seven choices a row
+        self.assertEqual(c["2"]["pressed"], "true")
+        self.assertEqual(c["4"]["status"], "Saved with your details.")
+
+    def test_a_good_call_never_sends_chips(self):
+        out = page(dog_routes(), actions=[
+            dict(do="click", sel=hook("fans-tickets") + " .dk-vote__btn[data-verdict='good']", index=0, wait=60, capture=[q("hidden", hook("fans-tickets") + " " + hook("vote-chips"), "hidden")]),
+            dict(do="click", sel=hook("fans-tickets") + " " + hook("vote-note-save"), index=0, wait=60)])
+        for p in [p for p in out["posts"] if p["url"].endswith("/feedback")]:
+            self.assertNotIn("chips", p["body"])
+        self.assertTrue(out["captures"]["0"]["hidden"])
+
+    def test_a_member_whose_vote_backed_a_resolved_issue_reads_fixed_with_a_local_time(self):
+        routes = dog_routes()
+        routes[f"/hounds/{HID}/feedback"] = [200, {"dog_id": HID, "counts": {"good": 0, "bad": 0, "notes": 0, "by_kind": {}, "by_target": {}, "suggestions": 0},
+                                                    "fixed": [{"feedback_id": "FB-1A2B3C4D", "note": "Prices now use the average line.", "resolved_at": "2026-10-24T20:00:00Z"}]}]
+        out = page(routes, queries=[q("fans", hook("fans-fixed")), q("ask", hook("ask-fixed")), q("raw", hook("fixed-notices"))])
+        for key in ("fans", "ask"):
+            self.assertIn("Fixed: Prices now use the average line.", out["final"][key])
+            self.assertNotIn("[[", out["final"][key])                                   # the token became the viewer's own zone
+            self.assertRegex(out["final"][key], r"(Sat|Fri|Sun) \d{1,2}:\d{2} (AM|PM)")
+        self.assertIsNone(re.search(r"dogs?|beta", out["final"]["fans"], re.I))
+
+    def test_nothing_fixed_shows_nothing(self):
+        out = page(dog_routes(), queries=[q("fans", hook("fans-fixed"), "count"), q("ask", hook("ask-fixed"), "count")])
+        self.assertEqual((out["final"]["fans"], out["final"]["ask"]), (0, 0))
+
+    def test_the_owners_training_review_names_their_own_votes(self):
+        js = (WEB / "js" / "dog-review.js").read_text(encoding="utf-8")
+        self.assertIn("review-owner-feedback", js)
+        self.assertIn("card.owner_feedback", js)
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
 class TheTrainingCamp(unittest.TestCase):
     def camp_payload(self):
         return {"dogs": [{
