@@ -846,6 +846,11 @@ class RunnerAndKillSwitchTests(Case):
             return []
 
     def run_pass(self, **kw):
+        # These tests are about the Gematria Hound; the Learner shares the pass (tests/test_learner_hound.py) and is kept out of it.
+        with mock.patch.dict("os.environ", {"LEARNER_HOUND": "off"}):
+            return self._run_pass(**kw)
+
+    def _run_pass(self, **kw):
         return ai_runner.run_pass(now=NOW_AS, router=self.NoProviders(), stores=allsports_stores(nba_rows()), ledger=self.ledger,
                                   decisions=str(self.dir / "ai_dec.jsonl"), refresh_stats=lambda: None, **kw)
 
