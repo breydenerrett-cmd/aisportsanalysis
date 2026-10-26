@@ -1,7 +1,7 @@
 /*
  * The live board (web/live.html, web/js/live-board.js): "What's on". A sportsbook's live tab in the site's own dark slate (the
- * hounds.css custom properties): a sticky row of sport chips, a LIVE section with a pulsing dot, the next 24 hours, and
- * one dense row per game with the two sides and the best price quoted for each. Phone first: one column, 16px gutters, every tap
+ * hounds.css custom properties): a now strip of the games in play, a sticky row of sport chips, one group per sport under its own
+ * sticky header, and one dense card per game with the two sides, the best price quoted for each and the hounds on it. Phone first: one column, 16px gutters, every tap
  * target at least 44px, the chip row scrolls inside its own box and the document never scrolls sideways.
  *
  * Colour never carries meaning alone: a live game says "Live", a missing price says "no price". The pulse is off for
@@ -15,14 +15,15 @@
 .lv-note { margin: 4px 0 8px; font-size: 14px; }
 
 /* ---- the sport chips: sticky under the bar, scrolls sideways inside its own box on a phone ------------------ */
+.lv-page { --lv-bar-h: 62px; }   /* the chip bar: 8 + 44 + 8 + 2 of padding, one row at every width, so the sport headers know where to stick */
 .lv-bar {
+  box-sizing: border-box; height: var(--lv-bar-h);
   position: sticky; top: 52px; z-index: 20; margin: 0 -16px; padding: 8px 16px; background: rgba(14, 17, 22, .94);
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 1px 0 var(--hd-line);
 }
 @media (min-width: 761px) { .lv-bar { top: 56px; } }
 .lv-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .lv-chips::-webkit-scrollbar { display: none; }
-@media (min-width: 761px) { .lv-chips { flex-wrap: wrap; overflow: visible; } }
 .lv-chip {
   flex: none; display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 14px; border: 1px solid var(--hd-line);
   border-radius: 999px; background: transparent; color: var(--hd-text-2); font: 600 14px/1 var(--font-body, 'Instrument Sans', system-ui, sans-serif);
@@ -45,28 +46,59 @@
   100% { box-shadow: 0 0 0 0 rgba(47, 208, 122, 0); }
 }
 
-/* ---- sections and rows -------------------------------------------------------------------------------------- */
-.lv-section { margin: 20px 0 8px; }
-.lv-section__head { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
-.lv-section__title { margin: 0; font-size: 18px; letter-spacing: .01em; }
-.lv-section__n { margin: 0; }
+/* ---- the now strip: the games in play, one card each, scrolling inside its own box ------------------------- */
+.lv-now { margin: 4px 0 14px; }
+.lv-now[hidden] { display: none; }
+.lv-now__head { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
+.lv-now__title { margin: 0; font-size: 18px; letter-spacing: .01em; }
+.lv-now__n { margin: 0; }
+.lv-now__list {
+  display: flex; gap: 10px; overflow-x: auto; margin: 0 -16px; padding: 2px 16px 8px; scroll-snap-type: x proximity; scroll-padding: 0 16px;
+  scrollbar-width: thin; -webkit-overflow-scrolling: touch;
+}
+.lv-now__item { flex: none; scroll-snap-align: start; }
+.lv-now__card {
+  display: grid; gap: 3px; width: 190px; min-height: 104px; padding: 10px 12px; box-sizing: border-box; border: 1px solid var(--hd-line);
+  border-radius: 10px; background: var(--hd-card); color: var(--hd-text); text-decoration: none;
+}
+.lv-now__card:hover { border-color: var(--hd-accent); }
+.lv-now__card:focus-visible { outline: 2px solid var(--hd-accent); outline-offset: 2px; }
+.lv-now__top { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.lv-now__state--live { color: #5BE39A; }
+.lv-now__state--final, .lv-now__state--off { color: var(--hd-mute); }
+.lv-now__sport { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--hd-mute); }
+.lv-now__side { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
+.lv-now__team { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14.5px; font-weight: 600; }
+.lv-now__score { flex: none; font-size: 16px; font-weight: 700; color: #fff; }
+.lv-now__detail { font-size: 12.5px; color: var(--hd-mute); font-variant-numeric: tabular-nums; }
+
+/* ---- one group per sport: a sticky header under the chip bar, then its games -------------------------------- */
+.lv-sport { margin: 0 0 12px; }
+.lv-sport__head {
+  position: sticky; top: calc(52px + var(--lv-bar-h)); z-index: 10; display: flex; align-items: center; gap: 10px; min-height: 40px;
+  margin: 0 -16px 8px; padding: 6px 16px; background: rgba(14, 17, 22, .94);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 1px 0 var(--hd-line);
+}
+@media (min-width: 761px) { .lv-sport__head { top: calc(56px + var(--lv-bar-h)); } }
+.lv-sport__title { margin: 0; font-size: 18px; letter-spacing: .01em; }
+.lv-sport__n { margin: 0; font-variant-numeric: tabular-nums; }
 .lv-quiet { margin: 4px 0 8px; }
-.lv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+.lv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; align-items: start; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 900px) { .lv-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .lv-row {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 14px; padding: 12px 14px;
-  background: var(--hd-card); border: 1px solid var(--hd-line); border-radius: 6px; min-width: 0;
+  display: grid; gap: 6px; padding: 10px 14px 12px; align-content: start; min-width: 0;
+  background: var(--hd-card); border: 1px solid var(--hd-line); border-radius: 6px;
+  scroll-margin-top: calc(52px + var(--lv-bar-h) + 48px);
 }
 .lv-row[data-live="true"] { border-left: 3px solid var(--hd-accent); }
-.lv-row__body { min-width: 0; }
-.lv-row__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 6px; font-size: 12.5px; color: var(--hd-mute); }
+.lv-row__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.lv-row__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; font-size: 12.5px; color: var(--hd-mute); }
 .lv-pill {
   display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px; border: 1px solid var(--hd-line); border-radius: 4px;
   font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--hd-text-2); background: var(--hd-card-2);
 }
 .lv-pill--live { color: #5BE39A; border-color: rgba(47, 208, 122, .5); background: rgba(47, 208, 122, .08); }
 .lv-league { color: var(--hd-text-2); font-weight: 600; }
-.lv-family { color: var(--hd-mute); }
 .lv-when, .lv-detail { font-variant-numeric: tabular-nums; }
 .lv-teams { display: grid; gap: 3px; }
 .lv-team { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
@@ -74,16 +106,30 @@
 .lv-team__score { flex: none; font-size: 16px; font-weight: 700; color: #fff; min-width: 1.4em; text-align: right; }
 .lv-price { flex: none; min-width: 4.2em; text-align: right; font-size: 15px; font-weight: 600; color: var(--hd-text-2); }
 .lv-price--none { font-weight: 400; font-size: 12.5px; color: var(--hd-mute); }
-.lv-row__act { align-self: center; }
-.lv-send { min-height: 44px; padding: 0 16px; font-size: 14px; }
+/* "Send a hound": small and quiet. The 44px tap target is the button's invisible padding, so the card stays short. */
+.lv-send {
+  position: relative; flex: none; margin: 0; padding: 4px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--hd-mute);
+  font: 500 13px/1.2 var(--font-body, 'Instrument Sans', system-ui, sans-serif); cursor: pointer;
+}
+.lv-send::after { content: ""; position: absolute; inset: -10px -4px; }
+.lv-send:hover { color: var(--hd-text); background: var(--hd-card-2); }
 .lv-send[aria-expanded="true"] { border-color: var(--hd-accent); color: #fff; }
 .lv-more { margin: 10px 0 0; min-height: 44px; }
 
-/* narrow phones: the button drops under the teams, full width, so the names keep their room */
-@media (max-width: 480px) {
-  .lv-row { grid-template-columns: minmax(0, 1fr); }
-  .lv-row__act .btn { width: 100%; }
+/* ---- the hounds on a game: the viewer's own, then the house pack ------------------------------------------- */
+.lv-hounds { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; min-width: 0; padding-top: 6px; border-top: 1px solid var(--hd-line); }
+.lv-hounds__mine, .lv-hounds__pack { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
+.lv-hounds__label { font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--hd-mute); }
+.lv-hounds__more { font-size: 12.5px; color: var(--hd-mute); font-variant-numeric: tabular-nums; }
+.lv-mine {
+  display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; padding: 2px 10px 2px 3px; border-radius: 999px;
+  background: var(--hd-card-2); border: 1px solid var(--hd-line); font-size: 13px; font-weight: 600; color: var(--hd-text);
 }
+.lv-mine__face { display: inline-flex; flex: none; width: 26px; height: 26px; }
+.lv-mine__side { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lv-faces { display: inline-flex; align-items: center; }
+.lv-faces__one { display: inline-flex; width: 24px; height: 24px; margin-left: -6px; border-radius: 50%; box-shadow: 0 0 0 2px var(--hd-card); }
+.lv-faces__one:first-child { margin-left: 0; }
 
 /* ---- the tray under a row (sign in, pick a dog, the answer) -------------------------------------------------- */
 .lv-tray { grid-column: 1 / -1; padding: 10px 0 2px; border-top: 1px solid var(--hd-line); }
@@ -121,13 +167,22 @@
 .hounds-page.lv-page .lv-chip[aria-pressed="true"] { background: var(--lh-ink); color: var(--lh-bg); }
 .hounds-page.lv-page .lv-chip[aria-pressed="true"] .lv-chip__n { color: var(--lh-bg); }
 .hounds-page.lv-page .lv-row { background: var(--lh-soft); border: 0; border-radius: var(--lh-r-md); padding: var(--lh-s3) var(--lh-s4); }
+.hounds-page.lv-page .lv-bar { background: rgba(11, 13, 16, .94); }
+.hounds-page.lv-page .lv-sport__head { background: rgba(11, 13, 16, .94); box-shadow: 0 1px 0 var(--lh-line); }
+.hounds-page.lv-page .lv-sport__title, .hounds-page.lv-page .lv-now__title { font-family: var(--lh-font-display); font-size: var(--lh-fs-lg); letter-spacing: var(--lh-track-display); }
+.hounds-page.lv-page .lv-now__card { border: 0; background: var(--lh-soft); border-radius: var(--lh-r-md); }
+.hounds-page.lv-page .lv-now__card:hover { background: var(--lh-soft-2); }
+.hounds-page.lv-page .lv-now__card[data-kind="live"] { box-shadow: inset 0 2px 0 var(--lh-accent); }
+.hounds-page.lv-page .lv-mine { background: var(--lh-soft-2); border: 0; }
+.hounds-page.lv-page .lv-hounds { border-top: 1px solid var(--lh-line); }
+.hounds-page.lv-page .lv-faces__one { box-shadow: 0 0 0 2px var(--lh-bg-2); }
 .hounds-page.lv-page .lv-row[data-live="true"] { box-shadow: inset 3px 0 0 var(--lh-accent); }
 .hounds-page.lv-page .lv-pill { border: 0; border-radius: var(--lh-r-pill); background: var(--lh-soft-2); }
 .hounds-page.lv-page .lv-pill--live { background: var(--lh-accent-soft); }
 /* "Send a hound" is the SECONDARY action on a row (QA 2026-10-21: a solid green button on every card made each screen all primary). The
    page's one accent-filled control is the chip that is pressed; this stays a quiet grey pill, with the accent only as text when its tray is open. */
-.hounds-page.lv-page .lv-send { border: 0; border-radius: var(--lh-r-sm); background: var(--lh-soft-2); color: var(--lh-ink2); font-weight: 500; box-shadow: inset 0 0 0 1px var(--lh-line); }
-.hounds-page.lv-page .lv-send:hover { background: var(--lh-soft); color: var(--lh-ink); }
+.hounds-page.lv-page .lv-send { border: 0; border-radius: var(--lh-r-sm); background: transparent; color: var(--lh-mute); font-weight: 500; box-shadow: none; }
+.hounds-page.lv-page .lv-send:hover { background: var(--lh-soft-2); color: var(--lh-ink); }
 .hounds-page.lv-page .lv-send[aria-expanded="true"] { background: var(--lh-soft-2); color: var(--lh-accent); box-shadow: inset 0 0 0 1px var(--lh-accent); }
 .hounds-page.lv-page .lv-tray { border-top: 1px solid var(--lh-line); }
 .hounds-page.lv-page .lv-dog, .hounds-page.lv-page .lv-result__line { border: 0; background: var(--lh-soft-2); }

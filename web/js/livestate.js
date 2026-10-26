@@ -160,3 +160,41 @@ export function renderPregameLabel(game, observedUtc, { hook = "pregame-label" }
   if (!text) return null;
   return el("p", { class: "pregame-label", "data-hook": hook, text });
 }
+
+// ---- the Live page's now strip (web/live.html) -----------------------------------------------------------
+
+const BARE_DETAIL = /^(live|final)$/i;
+
+/**
+ * One in-play game for the Live page's strip, as plain data (testable without a DOM). `ev` is a GET /sports/now row; `state` is the
+ * state GET /hounds/live holds for the same event id (the grader's cache: {state, home_score, away_score, detail}), or null.
+ * The cache's own score wins while it is fresh (its `state` is "unknown" once the feed goes quiet, and then it says nothing); the
+ * row's own `score` is the fallback; a score that is neither is left out, never invented.
+ * Returns {kind, label, away: {name, score}, home: {name, score}, detail}; kind is live | final | off.
+ */
+export function eventLiveModel(ev, state) {
+  if (!ev) return null;
+  const st = state && typeof state === "object" ? state : null;
+  const num = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  let kind = "live";
+  let label = "LIVE";
+  if (st && st.state === "final") { kind = "final"; label = "FINAL"; }
+  else if (st && (st.state === "postponed" || st.state === "cancelled")) { kind = "off"; label = String(st.state).toUpperCase(); }
+  let away = null;
+  let home = null;
+  let detail = "";
+  if (st && st.state !== "unknown" && num(st.away_score) !== null && num(st.home_score) !== null) {
+    away = num(st.away_score);
+    home = num(st.home_score);
+    detail = st.detail ? String(st.detail) : "";
+  }
+  const own = ev.score;
+  if (own && typeof own === "object") {
+    if (away === null || home === null) { away = num(own.away); home = num(own.home); }
+    if (!detail && own.detail) detail = String(own.detail);
+  } else if (typeof own === "string" && !detail) {
+    detail = own;
+  }
+  if (BARE_DETAIL.test(detail.trim())) detail = "";
+  return { kind, label, away: { name: ev.away || "TBD", score: away }, home: { name: ev.home || "TBD", score: home }, detail };
+}

@@ -144,29 +144,28 @@ class TheLivePageIsPartOfTheSite(unittest.TestCase):
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
 class TheBoardRenders(unittest.TestCase):
-    def test_the_fixture_renders_live_first_then_the_next_24_hours(self):
+    def test_the_fixture_renders_one_group_per_sport_live_games_first(self):
         out = board(queries=[
             q("chips", hook("live-chip"), "texts"), q("pressed", "[data-hook='live-chip'][aria-pressed='true']", "texts"),
-            q("sections", ".lv-section__title", "texts"),
-            q("live_n", hook("live-live-count")), q("up_n", hook("live-upcoming-count")),
-            q("live_rows", "[data-hook='live-live-list'] [data-hook='live-row']", "count"),
-            q("up_rows", "[data-hook='live-upcoming-list'] [data-hook='live-row']", "count"),
+            q("titles", ".lv-sport__title", "texts"), q("counts", hook("live-sport-count"), "texts"),
+            q("live_rows", "[data-hook='live-row'][data-live='true']", "count"), q("up_rows", "[data-hook='live-row'][data-live='false']", "count"),
+            q("order", "[data-hook='live-sport'][data-family='soccer'] [data-hook='live-row']", "attrs", attr="data-live"),
             q("status", hook("live-status"))])
         self.assertFalse(out.get("crashed"), out.get("crashed"))
         f = out["final"]
         live = sum(len(x["live"]) for x in FIXTURE["families"])
         up = sum(len(x["upcoming_24h"]) for x in FIXTURE["families"])
-        self.assertEqual(f["sections"], ["Live now", "Next 24 hours"])
         self.assertEqual((f["live_rows"], f["up_rows"]), (live, up))
-        self.assertEqual((f["live_n"], f["up_n"]), (str(live), str(up)))
+        # sports with games, live first then busiest; football and cricket have none and get no group (their chips stay)
+        self.assertEqual(f["titles"], ["Tennis", "Soccer", "Basketball", "Baseball", "Hockey"])
+        self.assertEqual(f["counts"], ["7 games \u00b7 4 live", "6 games \u00b7 3 live", "3 games \u00b7 1 live", "2 games", "1 game"])
+        self.assertEqual(f["order"], ["true"] * 3 + ["false"] * 3)
         self.assertTrue(f["chips"][0].startswith("All"))
         self.assertEqual(f["pressed"], [f["chips"][0]])
         labels = {x["label"] for x in FIXTURE["families"]}
         self.assertEqual({re.sub(r"\s*\d+$", "", c) for c in f["chips"][1:]}, labels)
-        self.assertIn("Board as of 4:30 PM PDT", f["status"])
+        self.assertIn("Board as of 4:30 PM PT", f["status"])
         self.assertIn("refreshes every minute", f["status"])
-        text = out["text"]
-        self.assertLess(text.index("Live now"), text.index("Next 24 hours"))
 
     def test_a_row_shows_both_sides_the_league_the_prices_and_the_viewers_clock(self):
         out = board(queries=[
@@ -180,15 +179,15 @@ class TheBoardRenders(unittest.TestCase):
         self.assertEqual(f["prices"], ["+310", "-135"])
         self.assertEqual(f["score"], ["0", "1"])
         self.assertEqual(f["pill"], "Live")
-        self.assertIn("Started 3:45 PM", f["row"])                                       # 22:45Z in Los Angeles
-        self.assertEqual(f["when"], "6:30 PM · in 2 h")                                  # 01:30Z the next day is 6:30 PM PDT today
+        self.assertIn("Started 3:45 PM PT", f["row"])                                       # 22:45Z in Los Angeles
+        self.assertEqual(f["when"], "6:30 PM PT · in 2 h")                                  # 01:30Z the next day is 6:30 PM PDT today, said with the zone
         self.assertEqual(f["strwhen"], "0-0, 31'")                                       # a string score is shown as the server wrote it
         self.assertIn("Send a hound", f["row"])  # owner ruling 2026-10-20 kennel-first
 
     def test_the_same_board_in_another_zone_shows_that_zones_clock(self):
         out = board(tz="Europe/London", queries=[q("when", "[data-event='soc-4'] [data-hook='live-when']")])
         # 23:30Z is already 12:30 AM on the 20th in London, so 01:30Z is 2:30 AM the same day there (and 6:30 PM the day before in Los Angeles)
-        self.assertEqual(out["final"]["when"], "2:30 AM · in 2 h")
+        self.assertEqual(out["final"]["when"], "2:30 AM GMT+1 · in 2 h")
 
     def test_a_missing_price_says_so_and_a_row_never_shows_not_reported(self):
         data = json.loads(json.dumps(FIXTURE))
@@ -208,10 +207,16 @@ class TheBoardRenders(unittest.TestCase):
         self.assertEqual(f["league_tag"], 0)                                              # the sport tag is only for the All view
         self.assertEqual(out["replaced"], ["live.html?sport=tennis"])
 
-    def test_the_all_view_tags_each_row_with_its_sport(self):
-        out = board(queries=[q("tags", ".lv-family", "texts")])
-        self.assertIn("Tennis", out["final"]["tags"])
-        self.assertIn("Soccer", out["final"]["tags"])
+    def test_the_all_view_groups_rows_under_their_sport_and_a_row_carries_no_sport_tag(self):
+        out = board(queries=[q("titles", ".lv-sport__title", "texts"), q("tags", ".lv-family", "count"),
+                             q("tennis", "[data-hook='live-sport'][data-family='tennis'] [data-hook='live-row']", "attrs", attr="data-family"),
+                             q("soccer", "[data-hook='live-sport'][data-family='soccer'] [data-hook='live-row']", "attrs", attr="data-family")])
+        f = out["final"]
+        self.assertIn("Tennis", f["titles"])
+        self.assertIn("Soccer", f["titles"])
+        self.assertEqual(f["tags"], 0)
+        self.assertEqual(set(f["tennis"]), {"tennis"})
+        self.assertEqual(set(f["soccer"]), {"soccer"})
 
     def test_a_sport_in_the_address_opens_on_it_and_an_unknown_one_falls_back_to_all(self):
         out = board(search="?sport=hockey", queries=[q("rows", "[data-hook='live-row']", "attrs", attr="data-family")])
@@ -223,31 +228,34 @@ class TheBoardRenders(unittest.TestCase):
     def test_an_empty_sport_says_when_the_next_game_is(self):
         out = board(actions=[dict(do="click", sel="[data-hook='live-chip'][data-family='football']", label="f", wait=60)], queries=[q("empty", hook("live-empty"))])
         # 2026-10-22T00:15Z is Wednesday 5:15 PM in Los Angeles
-        self.assertEqual(out["final"]["empty"], "Nothing on in Football right now. Next: Wed 5:15 PM.")
+        self.assertEqual(out["final"]["empty"], "Nothing on in Football right now. Next: Wed 5:15 PM PT.")
 
     def test_an_empty_sport_with_no_known_next_game_does_not_invent_one(self):
         out = board(actions=[dict(do="click", sel="[data-hook='live-chip'][data-family='cricket']", label="c", wait=60)], queries=[q("empty", hook("live-empty"))])
         self.assertEqual(out["final"]["empty"], "Nothing on in Cricket right now.")
 
-    def test_a_sport_with_games_to_come_but_none_live_says_so_in_the_live_section(self):
+    def test_a_sport_with_games_to_come_but_none_live_has_no_live_card_and_no_strip(self):
         out = board(actions=[dict(do="click", sel="[data-hook='live-chip'][data-family='hockey']", label="h", wait=60)], queries=[
-            q("live_empty", hook("live-live-empty")), q("rows", "[data-hook='live-upcoming-list'] [data-hook='live-row']", "count")])
-        self.assertEqual(out["final"]["live_empty"], "Nothing live in Hockey right now.")
-        self.assertEqual(out["final"]["rows"], 1)
+            q("live_rows", "[data-hook='live-row'][data-live='true']", "count"), q("rows", "[data-hook='live-row']", "count"),
+            q("strip_hidden", hook("live-now"), "hidden"), q("cards", hook("live-now-card"), "count")])
+        f = out["final"]
+        self.assertEqual((f["live_rows"], f["rows"]), (0, 1))
+        self.assertTrue(f["strip_hidden"])
+        self.assertEqual(f["cards"], 0)
 
     def test_a_long_list_is_capped_and_the_rest_is_one_tap_away(self):
         data = json.loads(json.dumps(FIXTURE))
         fam = data["families"][0]
         fam["upcoming_24h"] = [dict(fam["upcoming_24h"][0], event_id=f"many-{i}", start_utc=f"2026-10-20T{(i % 20) + 1:02d}:00:00Z") for i in range(30)]
         out = board({"/sports/now": [200, data]}, actions=[dict(do="click", sel="[data-hook='live-chip'][data-family='soccer']", label="s", wait=60)],
-                    queries=[q("rows", "[data-hook='live-upcoming-list'] [data-hook='live-row']", "count"), q("more", hook("live-upcoming-more"))],
+                    queries=[q("rows", "[data-hook='live-sport-list'] [data-hook='live-row']", "count"), q("more", hook("live-sport-more"))],
                     captureInitial=[])
-        self.assertEqual(out["final"]["rows"], 20)
-        self.assertEqual(out["final"]["more"], "Show 10 more")
+        self.assertEqual(out["final"]["rows"], 20)                                       # one sport chosen: 20 cards, then one tap
+        self.assertEqual(out["final"]["more"], "Show 13 more Soccer")
         out = board({"/sports/now": [200, data]}, actions=[dict(do="click", sel="[data-hook='live-chip'][data-family='soccer']", label="s", wait=60),
-                                                         dict(do="click", sel="[data-hook='live-upcoming-more']", label="m", wait=60)],
-                    queries=[q("rows", "[data-hook='live-upcoming-list'] [data-hook='live-row']", "count")])
-        self.assertEqual(out["final"]["rows"], 30)
+                                                         dict(do="click", sel="[data-hook='live-sport-more']", label="m", wait=60)],
+                    queries=[q("rows", "[data-hook='live-sport-list'] [data-hook='live-row']", "count")])
+        self.assertEqual(out["final"]["rows"], 33)
 
     def test_the_board_is_not_there_message_when_the_server_has_no_route(self):
         out = board({"/sports/now": [404, {"detail": "Not Found"}]}, queries=[q("err", hook("live-error"))])
@@ -324,7 +332,7 @@ class SendADog(unittest.TestCase):
         self.assertIn("Sign in to send one of your hounds at Portland Timbers at Seattle Sounders FC", f["tray"])
         self.assertEqual(f["href"], "index.html#/signin")
         self.assertEqual(f["expanded"], "true")
-        self.assertFalse([g for g in out["gets"] if "/hounds/" in g])
+        self.assertFalse([g for g in out["gets"] if "/hounds/camp/mine" in g])       # nothing private is asked for a visitor
         self.assertEqual(out["posts"], [])
 
     def test_a_second_tap_closes_the_tray(self):
