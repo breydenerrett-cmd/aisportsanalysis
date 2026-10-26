@@ -6481,3 +6481,6 @@
 {"call_kind": "pregame", "credits": 2, "events": 6, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-26T12:06:54.331571Z", "regions": ["us"], "rows": 57, "sport_key": "soccer_denmark_superliga", "stored": 15}
 {"commence_utc": "2026-10-26T18:05:00Z", "event_id": "1890564c20db109024daf7095a8b8ee0", "kind": "phase", "observed_utc": "2026-10-26T12:06:54.331571Z", "phase": "t6h", "rows": 14, "sport_key": "soccer_sweden_superettan"}
 {"call_kind": "pregame", "credits": 2, "events": 6, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-26T12:06:54.331571Z", "regions": ["us"], "rows": 60, "sport_key": "soccer_sweden_superettan", "stored": 28}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-26T18:21:31.018650Z", "observed_utc": "2026-10-26T12:21:31.018650Z", "sport_key": "aussierules_aflw"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-26T18:21:31.018650Z", "observed_utc": "2026-10-26T12:21:31.018650Z", "sport_key": "soccer_uefa_europa_league"}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T12:21:31.018650Z", "regions": ["us"], "rows": 5, "sport_key": "baseball_kbo", "stored": 5}
