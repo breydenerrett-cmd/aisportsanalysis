@@ -33,6 +33,7 @@
 import { getToken, TOKEN_CHANGED_EVENT } from "./api.js";
 import { h, clearNode } from "./hounds-core.js";
 import { redirectMemberHome, MY_KENNEL_HREF } from "./home-route.js";
+import { startAnnouncements } from "./announcements.js";
 
 export const SIGNIN_HREF = "index.html#/signin";
 export const PASSWORD_HREF = "index.html#/signin?password=1";
@@ -205,6 +206,7 @@ export function bootNav() {
   // a member on the landing page goes home (My Kennel) before anything else is drawn
   if (typeof window !== "undefined" && redirectMemberHome(window, signedIn())) return null;
   const out = mountNav(host);
+  if (signedIn()) startAnnouncements();       // a one-time card a member sees once (web/js/announcements.js); silent on any failure
   if (!followed && typeof window !== "undefined" && typeof window.addEventListener === "function") {
     followed = true;
     const again = () => { mountNav(document.querySelector(".lh-nav")); };

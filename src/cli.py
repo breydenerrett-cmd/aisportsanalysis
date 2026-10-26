@@ -5012,6 +5012,9 @@ def build_parser() -> argparse.ArgumentParser:
     from src.hounds.interact import feedback_cli
     feedback_cli.add_parser(sub)
 
+    from src.hounds import announce_cli
+    announce_cli.add_parser(sub)
+
     eod_cmd = sub.add_parser(
         "eod", help="build and write the end-of-day self-review (S7)")
     eod_cmd.add_argument("--date", required=True, help="YYYY-MM-DD")
@@ -5044,6 +5047,12 @@ def cmd_hounds(args) -> int:
     """`hounds feedback-digest --date D [--backlog]` / `hounds feedback-resolve --id X --note ...` (src/hounds/interact/feedback_cli.py)."""
     from src.hounds.interact import feedback_cli
     return feedback_cli.main(args)
+
+
+def cmd_announce(args) -> int:
+    """`announce --user U --kind kennel_fire [--steps-file F] | --list | --find-user HOUND_ID` (src/hounds/announce_cli.py)."""
+    from src.hounds import announce_cli
+    return announce_cli.main(args)
 
 
 def cmd_datasvc(args) -> int:
@@ -5100,6 +5109,7 @@ COMMANDS = {
     "situation": cmd_situation,
     "jarvis": cmd_jarvis,
     "hounds": cmd_hounds,
+    "announce": cmd_announce,
     "nfl": cmd_nfl,
     "tennis": cmd_tennis,
     "allsports": cmd_allsports,
