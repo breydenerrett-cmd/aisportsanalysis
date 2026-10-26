@@ -238,3 +238,29 @@ class TheRiskChoiceMapsToRealAnswers(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def _user_strings(node, found, key=""):
+    """Every string a person can read in the library: all string values except the stance enum ("dog" is a stance key, not copy)."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            _user_strings(v, found, str(k))
+    elif isinstance(node, list):
+        for v in node:
+            _user_strings(v, found, key)
+    elif isinstance(node, str) and key not in ("stance", "_note"):
+        # "stance" is an enum value; "_note" is the author's own note to the config file, never shown to a person
+        found.append(node)
+    return found
+
+
+class TheCopyNeverSaysDog(unittest.TestCase):
+    """The product says hound, never dog (owner rule). A regression on 2026-10-25: "Sniffs out the dog everyone else walked
+    past" shipped on the live quiz. The scan covers every archetype and expert preset, not just the presets the validator checks."""
+
+    def test_no_user_string_in_the_library_says_dog(self):
+        bad = [s for s in _user_strings(LIB, []) if re.search(r"(?<![\w-])dogs?(?![\w-])", s, re.I)]
+        self.assertEqual(bad, [], f"copy says dog: {bad}")
+
+    def test_the_underdog_still_reads_as_a_betting_term(self):
+        self.assertTrue(any("Sniffs out the underdog everyone else walked past." in s for s in _user_strings(LIB, [])))

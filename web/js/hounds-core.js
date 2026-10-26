@@ -75,6 +75,9 @@ export const VERDICT_MEANING = {
 
 export const NOT_REPORTED = "not reported";
 
+/** A member's hound with no bet yet. Owner copy rule (2026-10-25): never "New", the product says what the hound has, not its age. */
+export const NO_BETS_YET = "No bets yet";
+
 // ---- tiny DOM builders (no dependency on dom.js: these pages load light) --------------------------
 
 export const SVG_NS = "http://www.w3.org/2000/svg";

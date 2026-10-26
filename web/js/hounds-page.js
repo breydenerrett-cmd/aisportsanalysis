@@ -37,7 +37,7 @@
 import { apiGet } from "./api.js";
 import {
   h, clearNode, filterHounds, presentCategories, categoryOf, categoryLabel, monogram, fmtPrice,
-  fmtWhen, shortDate, isNum, houndHref, describeError, createPoller, NOT_REPORTED, isWarming, retryWhileWarming,
+  fmtWhen, shortDate, isNum, houndHref, describeError, createPoller, NOT_REPORTED, NO_BETS_YET, isWarming, retryWhileWarming,
   stopWarmingRetry, WARMING_FALLBACK_TEXT, kennelHref, kennelName,
 } from "./hounds-core.js";
 import { wlText, unitsOf, causeText } from "./hounds-voice.js";
@@ -384,7 +384,7 @@ async function loadDrawer(id, force) {
 export function warmingNote(hound, min) {
   const settled = settledOf(hound);
   const open = openBetsOf(hound);
-  if (isNewDog(hound)) return "New: no bets yet";
+  if (isNewDog(hound)) return NO_BETS_YET;
   const parts = [];
   if (settled > 0) parts.push(`${recordText(hound)} so far`);
   parts.push(`${settled} of ${min} settled bets`);

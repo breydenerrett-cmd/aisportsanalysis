@@ -448,7 +448,7 @@ class MemberDogsAreAlwaysListed(unittest.TestCase):
             q("rest", "[data-hook='qualifying-rest']")])
         f = out["final"]
         self.assertEqual(f["ids"], ["top", "u-d151fe52c7", "u-fcc8e8c168"])      # the two member dogs are rows, after the one with a bet
-        self.assertEqual(f["pills"], ["6/10 bets", "New: no bets yet", "New: no bets yet"])
+        self.assertEqual(f["pills"], ["6/10 bets", "No bets yet", "No bets yet"])
         self.assertEqual(f["rest"], "1 more hound has no settled bet yet.")           # only the HOUSE model is counted in the line
 
     def test_the_builders_count_is_the_number_of_member_dogs_the_page_shows(self):
@@ -476,14 +476,14 @@ class MemberDogsAreAlwaysListed(unittest.TestCase):
                 q("warm", ".hd-tr--warm", "attrs", attr="data-hound"), q("notes", "[data-hook='warming-note']", "texts")])])
         cap = out["captures"]["builders"]
         self.assertEqual(cap["warm"], ["u-d151fe52c7", "u-fcc8e8c168"])
-        self.assertEqual(cap["notes"], ["New: no bets yet"] * 2)
+        self.assertEqual(cap["notes"], ["No bets yet"] * 2)
 
     def test_pure_helpers_flag_only_a_member_dog_with_nothing_yet(self):
         out = run_js('import * as B from "./hounds-board.js";'
                      'const u = {kind: "user", record: {bets: 0}}, hs = {kind: "house", record: {bets: 0}}, ub = {kind: "user", record: {bets: 2, wins: 1, losses: 1}};'
                      'console.log(JSON.stringify([B.isNewDog(u), B.isNewDog(hs), B.isNewDog(ub), B.progressText(u), B.progressText(ub),'
                      'B.qualifyingRows([u, hs, ub]).length]));')
-        self.assertEqual(out, [True, False, False, "New: no bets yet", "2/10 bets", 2])
+        self.assertEqual(out, [True, False, False, "No bets yet", "2/10 bets", 2])
 
 
 # ---------------------------------------------------------------------------------------------------

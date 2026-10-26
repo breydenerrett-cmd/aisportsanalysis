@@ -623,7 +623,7 @@ class TheKennelsIndex(unittest.TestCase):
         f = out["final"]
         self.assertEqual(f["hrefs"], ["kennel.html?u=handler-21e8", "kennel.html?u=handler-0001"])
         self.assertEqual(f["names"], ["Handler 21E8's kennel", "Handler 0001's kennel"])
-        self.assertEqual(f["meta"], ["2 hounds · New: no bets yet", "1 hound · Best: Rex, 5-2"])   # owner ruling 2026-10-20 kennel-first: hound, not dog
+        self.assertEqual(f["meta"], ["2 hounds · No bets yet", "1 hound · Best: Rex, 5-2"])   # owner ruling 2026-10-20 kennel-first: hound, not dog
         self.assertEqual((f["faces"], f["count"]), (3, "2 kennels"))
 
     def test_no_kennels_is_an_empty_state_with_a_build_link(self):

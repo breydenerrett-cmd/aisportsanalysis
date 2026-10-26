@@ -149,6 +149,27 @@ class FireRoute(ApiCase):
                              "not_firable")
 
 
+class RightNowRoute(ApiCase):
+    """The Gematria Hound is an AI hound: forward-only, so fire.fire has no rule to run and the route used to answer 422
+    not_firable (QA, 2026-10-25: the hound page logged it as a failed card). It is a real hound with nothing firable right
+    now, so it answers 200 with an empty candidate list. A desk model (a listed dog of another kind) still answers 422."""
+
+    def test_the_gematria_hound_answers_200_with_nothing_right_now(self):
+        gem = common.Dog(id="gematria", kind=common.KIND_OTHER, name="Gematria Hound", status="running", root_id="gematria",
+                         forward_only=True)
+        with mock.patch.object(common, "resolve", lambda i: gem):
+            out = self.api.right_now_pick("gematria", Response(), authorization=None, _rl=None)
+        self.assertEqual(out["candidates"], [])
+        self.assertTrue(out["nothing"])
+        self.assertTrue(out["paper_only"])
+
+    def test_a_desk_model_still_answers_422(self):
+        desk = common.Dog(id="desk-x", kind=common.KIND_OTHER, name="Desk", status="running", root_id="desk-x")
+        with mock.patch.object(common, "resolve", lambda i: desk):
+            exc = self.err(self.api.right_now_pick, "desk-x", Response(), authorization=None, _rl=None)
+        self.assertEqual(self.code(exc), "not_firable")
+
+
 class ManualRoutes(ApiCase):
     def record(self, **body):
         user = self.owner

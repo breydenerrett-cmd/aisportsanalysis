@@ -323,6 +323,13 @@ def build(dog: common.Dog, viewer_id: Optional[int] = None, *, now: Optional[dat
     payload's recorded tickets and the owner's manual tickets unless a test injects it. Raises ``fire.NotFirable`` for a hound
     that has no rule to run."""
     now = now or common.now_utc()
+    if payload is None and getattr(dog, "forward_only", False):
+        # An AI hound (the Gematria Hound, config/ai_hounds.json) has no rule to run on demand: it weighs each game once, at
+        # its lock, and is never replayed. fire.fire refuses it with NotFirable, which the route turned into a 422 that the
+        # hound page read as a broken card (QA, 2026-10-25). Its honest answer is an empty card, with its voice: nothing
+        # fits right now, and no pick is invented.
+        return view_from_payload({}, dog_id=dog.id, dog_name=dog.name, kind=dog.kind, spec=None, persona=_persona(dog),
+                                 held=[], now=now)
     live = payload is None
     if live:
         payload = camp.decorate_fire(dog, fire.fire(dog, now=now), viewer_id, now=now)

@@ -59,7 +59,8 @@ body.landing .kh-strip__title, body.landing .kh-how__title {
 }
 .kh-hound__link:hover { background: var(--lh-soft-2); }
 .kh-hound__face { grid-area: face; align-self: center; line-height: 0; }
-.kh-hound__name { grid-area: name; align-self: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--lh-fs-base); font-weight: 600; }
+/* a hound's name may run to two lines before it is cut (QA, 2026-10-25: "Gematria Ho..." at 390); a longer name still ends in "…" */
+.kh-hound__name { grid-area: name; align-self: center; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; text-overflow: ellipsis; white-space: normal; overflow-wrap: anywhere; font-size: var(--lh-fs-base); font-weight: 600; line-height: 1.25; }
 .kh-hound__rec { grid-area: rec; align-self: start; margin-top: var(--lh-s1); white-space: nowrap; font-size: var(--lh-fs-sm); color: var(--lh-mute); font-variant-numeric: tabular-nums; }
 .kh-hound__ret { grid-area: ret; margin-top: 0; font-family: var(--lh-font-display); font-size: 30px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; color: var(--lh-ink2); }
 .kh-hound__ret small { font-family: var(--lh-font-text); font-size: var(--lh-fs-xs); font-weight: 500; color: var(--lh-mute); }

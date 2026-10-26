@@ -77,7 +77,10 @@ def ticket_routes(hid="closer", n=45):
 @unittest.skipUnless(HAS_NODE, "node not installed")
 class ThePureHelpers(unittest.TestCase):
     def js(self, body):
-        return run_js('import * as B from "./hounds-board.js";\nimport * as C from "./hounds-core.js";\n' + body)
+        # the zone is pinned: a ticket's time is written in the viewer's zone (owner, 2026-10-25), and Node honours a
+        # process.env.TZ set at run time, so the expected clock is the same on every machine
+        return run_js('import * as B from "./hounds-board.js";\nimport * as C from "./hounds-core.js";\n'
+                      'process.env.TZ = "America/Los_Angeles";\n' + body)
 
     def test_roi_is_units_per_bet_as_a_percent_and_null_without_a_graded_bet(self):
         out = self.js('console.log(JSON.stringify([B.roiOf({record:{bets:50,units_average_price:5}}),'
@@ -152,8 +155,9 @@ class ThePureHelpers(unittest.TestCase):
                       'B.recordedText({recorded_utc:"2026-10-24T23:30:00Z",start_utc:"2026-10-24T23:10:00Z"}),'
                       'B.recordedText({recorded_utc:"2026-10-24T23:30:00Z"}), B.recordedText({})]));')
         self.assertEqual([r["kind"] for r in rec], ["before", "before", "after", "recorded", "none"])
-        self.assertEqual(rec[0]["text"], "Oct 24 22:41 UTC, 29m before the start")
-        self.assertEqual(rec[1]["text"], "Oct 24 20:00 UTC, 3h 10m before the start")
+        # the viewer's own zone, never UTC (2026-10-25): the zone name depends on the machine, the clock and the gap do not
+        self.assertEqual(rec[0]["text"], "Oct 24 at 3:41 PM PT, 29m before the start")      # 22:41 UTC, pinned to Pacific
+        self.assertEqual(rec[1]["text"], "Oct 24 at 1:00 PM PT, 3h 10m before the start")     # 20:00 UTC
         self.assertIn("after the start", rec[2]["text"])
         self.assertEqual(rec[4]["text"], "n/a")
 
@@ -404,10 +408,10 @@ class TheLatestTicketsFeed(unittest.TestCase):
         # the headline price is the average price; the best quote and its book, and the book count, are small print
         self.assertIn("-120", f["price"][0])
         self.assertIn("best -115", f["price"][0])
-        self.assertIn("bookB", f["price"][0])
+        self.assertIn("Bookb", f["price"][0])                       # an unknown feed key is spelled out, never shown raw
         self.assertIn("5 books", f["price"][0])
         self.assertIn("7 books", f["price"][1])
-        self.assertEqual(f["rec"][0], "Oct 24 22:41 UTC, 29m before the start")
+        self.assertRegex(f["rec"][0], r"^Oct 2[34] at \d{1,2}:\d{2} (AM|PM) \S+, 29m before the start$")
         self.assertEqual(f["links"], ["hound.html?id=closer", "hound.html?id=coin-flip"])
 
     def test_the_feed_is_paged_by_the_server(self):
