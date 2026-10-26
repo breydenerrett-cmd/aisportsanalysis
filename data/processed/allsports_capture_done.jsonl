@@ -6422,3 +6422,4 @@
 {"events": 10, "kind": "peek", "next_check_utc": "2026-10-26T15:32:17.654861Z", "observed_utc": "2026-10-26T09:32:17.654861Z", "sport_key": "soccer_japan_j_league"}
 {"events": 29, "kind": "peek", "next_check_utc": "2026-10-26T15:32:17.654861Z", "observed_utc": "2026-10-26T09:32:17.654861Z", "sport_key": "soccer_usa_mls"}
 {"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T09:32:17.654861Z", "regions": ["us"], "rows": 63, "sport_key": "tennis_wta_pan_pacific_open", "stored": 61}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T09:45:22.892513Z", "regions": ["us"], "rows": 6, "sport_key": "baseball_kbo", "stored": 6}
