@@ -1,5 +1,7 @@
 # The hound loop: making the app feel guided, not random (owner ask, 2026-10-26)
 
+**Approved by the owner 2026-10-26: all four phases, including the tab bar change.**
+
 Owner: "we need a much better rules editor, sports selection, track record page... it should feel like the app is always trying to keep people investigating, researching, making or taking bets based on hounds, backtesting; it feels chaotic and random right now."
 
 ## The loop every screen serves
