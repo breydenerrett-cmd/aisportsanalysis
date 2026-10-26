@@ -71,6 +71,13 @@ def capture_config(config: Optional[Mapping] = None) -> dict:
         "enabled": True, "daily_cap_credits": 1500, "inplay_daily_cap_credits": 450,
         "scores_daily_cap_credits": 300, "max_calls_per_run": 60, "regions": ["us"],
         "phases_minutes": {"t24h": 1440, "t6h": 360, "t2h": 120, "t30m": 30},
+        # PRE-LOCK PHASES (2026-10-26, docs/NHL_LOCK_CAPTURE.md): a member dog checks a game at its lock (start minus
+        # lock_minutes: 60, 120 or 180) and refuses a board older than 75 minutes. The phases above leave a 4-hour hole
+        # (t6h then t2h), so a 180-minute lock found only a stale board. For a family with ``lock_capture`` true each
+        # game also gets one capture 45 minutes BEFORE each lock choice, so the board at the lock is at most ~45
+        # minutes old. lock_reserve_credits is held back from every non-lock call so the day's cap cannot be spent
+        # before the evening locks (it was, at 18:35Z on 2026-10-24).
+        "lock_phases_minutes": {"lock60": 105, "lock120": 165, "lock180": 225}, "lock_reserve_credits": 90,
         "store_horizon_hours": 36, "inplay_cadence_minutes": 30, "inplay_markets": ["h2h"],
         "events_idle_recheck_hours": 6, "events_lookahead_hours": 25, "dark_after_empty_captures": 2,
         "dark_retry_hours": 24, "scores_poll_interval_hours": 8, "scores_days_from": 3,
@@ -84,6 +91,19 @@ def capture_config(config: Optional[Mapping] = None) -> dict:
     }
     base.update((config if config is not None else load()).get("capture") or {})
     return base
+
+
+def lock_capture(code: str, config: Optional[Mapping] = None) -> bool:
+    """True when a family's games get the extra pre-lock capture phases (catalog ``lock_capture``)."""
+    fam = family(code, config) or {}
+    return bool(fam.get("lock_capture"))
+
+
+def lock_phases(code: str, config: Optional[Mapping] = None) -> dict:
+    """{phase name: minutes before the start} of the pre-lock phases for a family ({} when it has none)."""
+    if not lock_capture(code, config):
+        return {}
+    return {str(k): int(v) for k, v in dict(capture_config(config)["lock_phases_minutes"]).items()}
 
 
 def daily_cap_credits(config: Optional[Mapping] = None) -> int:

@@ -464,8 +464,13 @@ def allsports_daily_cap(config=None) -> int:
 
 
 def can_spend_allsports(est_credits: int, now=None, store=None, remaining=None, config=None,
-                        sub_cap=None, caller_prefix=None) -> Decision:
+                        sub_cap=None, caller_prefix=None, reserve=0) -> Decision:
     """May the all-sports capture spend `est_credits` right now?
+
+    `reserve` credits of the daily cap are held back from the caller (a non-lock capture call): it is refused once
+    spent + est would eat into them, so the pre-lock captures that follow still have credits (2026-10-24: the whole
+    cap was gone by 18:35Z and no NHL board was bought for the evening locks). Reserve refusals say "pre-lock
+    reserve", never "daily cap", so the caller skips that call and carries on rather than halting.
 
     Checked in order: (1) a non-positive request is allowed; (2) the absolute credit floor, failing
     CLOSED when the quota is unreadable; (3) the band's daily cap; (4) when given, a sub-cap read from
@@ -485,6 +490,10 @@ def can_spend_allsports(est_credits: int, now=None, store=None, remaining=None, 
     spent = allsports_spent_today(now=now, store=store)
     if spent + est_credits > cap:
         return Decision(False, f"refused: all-sports daily cap (spent={spent}, requested={est_credits}, cap={cap})")
+    reserve = min(int(reserve or 0), cap // 10)         # a reserve is a slice of the cap, never most of it
+    if reserve and spent + est_credits > cap - reserve:
+        return Decision(False, f"refused: all-sports pre-lock reserve (spent={spent}, requested={est_credits}, "
+                               f"cap={cap}, reserve={reserve})")
     if sub_cap is not None and caller_prefix is not None:
         sub_spent = allsports_spent_today(now=now, store=store, caller_prefix=caller_prefix)
         if sub_spent + est_credits > sub_cap:
