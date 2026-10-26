@@ -1,20 +1,26 @@
 /**
- * THE LIVE BOARD (web/live.html): "What's on". Every sport the server prices, as a sportsbook's live tab: a chip per sport family,
- * LIVE first (a pulsing dot), then the next 24 hours, each row with its teams or players, its league, its start time in the
- * VIEWER'S zone and the best price quoted for each side, and a "Send a dog" button.
+ * THE LIVE BOARD (web/live.html): "What's on". Every sport the server prices, as a sportsbook's live tab: a "now" strip of the games in
+ * play (clock, score, state), then one group per sport with a sticky header and its count, each game a card with its teams or players,
+ * its league, its start time in the VIEWER'S zone and the best price quoted for each side. A chip per sport family filters the groups.
  *
  *   GET /sports/now   {generated_utc, families: [{code, label, live: [row], upcoming_24h: [row], next_start_utc}]}
  *       row = {event_id, league_title, home, away, start_utc, in_play, best_price_home, best_price_away, score?}
  *       `score` is read leniently: a string ("2-1, 62'") or {home, away, detail?}.
+ *   GET /hounds/live?ids=   the grader's cache for the games in play: state, score and detail (web/js/livestate.js eventLiveModel).
  *
- * SEND A DOG. A signed-out visitor is asked to sign in. A member sees their own dogs (GET /hounds/camp/mine, the Training camp's
- * list) and picks one; the page then calls the existing preview route (POST /hounds/{id}/fire, web/js/dog-fire.js unleash)
- * and says what that dog did with THIS game: the pick it made, the reason it passed, or that the game was not among its answers.
- * That route runs the dog's rule over the stored boards and writes nothing. Nothing here places a bet and nothing here claims a
- * price is an advantage: a best price is the best number any book is quoting, no more.
+ * HOUNDS ON A GAME. Each card says which hounds have an OPEN ticket on that game. The viewer's own hounds (GET /hounds/camp/mine, then
+ * GET /hounds/{id}/bets?status=open for each that says it has some, the kennel page's own reads) show as an avatar and the side they
+ * took; the house pack (GET /hounds for who is in it, GET /hounds/stream for its tickets) shows as a compact row of avatars and
+ * "+3 more". All of it is read softly: a read that fails leaves the card as it was and says nothing, never a guess.
+ *
+ * SEND A HOUND. A small secondary button on the card. A signed-out visitor is asked to sign in. A member sees their own hounds (the
+ * Training camp's list) and picks one; the page then calls the existing preview route (POST /hounds/{id}/fire, web/js/dog-fire.js
+ * unleash) and says what that hound did with THIS game: the pick it made, the reason it passed, or that the game was not among its
+ * answers. That route runs the hound's rule over the stored boards and writes nothing. Nothing here places a bet and nothing here
+ * claims a price is an advantage: a best price is the best number any book is quoting, no more.
  *
  * It refreshes itself every 60 seconds while the page is visible (createPoller), keeps the board it has when a refresh fails and
- * says so, and keeps any open "Send a dog" tray across a refresh. Written against attributes only (no classList, no dataset), so
+ * says so, and keeps any open "Send a hound" tray across a refresh. Written against attributes only (no classList, no dataset), so
  * it runs under the small fake DOM of tests/hounds_web_harness.mjs as well as in a browser.
  */
 
@@ -24,9 +30,17 @@ import { dogFace } from "./dog-avatar.js";
 import { get, errorText, errorCode, signInPrompt, spanText, PAPER_NOTE } from "./dog-common.js";
 import { renderFireResult, unleash } from "./dog-fire.js";
 import { showUpgrade } from "./upgrade.js";
+import { formatStamp } from "./local-time.js";
+import { eventLiveModel } from "./livestate.js";
 
 export const REFRESH_MS = 60000;
-const ROW_CAP = 20;
+const ROW_CAP = 20;          // one sport chosen
+const GROUP_CAP = 8;         // a group in the All view: its live games always show, then upcoming up to this many rows
+const NOW_CAP = 30;          // cards in the now strip
+const PACK_SHOW = 4;         // house hounds drawn on a card before "+N more"
+const MINE_SHOW = 3;         // the viewer's own hounds drawn on a card before "+N more"
+const MINE_READS = 10;       // at most this many of the viewer's hounds are asked for open tickets
+const PACK_TTL_MS = 10 * 60 * 1000;
 const STALE_MINUTES = 5;
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
@@ -37,48 +51,35 @@ const state = {
   family: "all",
   loadedAt: null,
   failed: false,
-  more: { live: false, upcoming: false },
+  more: new Set(),       // sport codes whose whole list is open
   trays: new Map(),      // event_id -> the open tray node, kept across refreshes
-  dogs: null,            // Promise of the member's dogs, once asked
+  dogs: null,            // Promise of the member's hounds, once asked
   busy: false,
+  states: new Map(),     // event_id -> the grader's state for a game in play (GET /hounds/live)
+  pack: { at: 0, hounds: null },   // the house pack: Map(id -> hound), read at most every PACK_TTL_MS
+  onGame: { mine: new Map(), pack: new Map() },   // event_id -> [{hound, side}]: open tickets by game
 };
 
-// ---- time ------------------------------------------------------------------------------------------------
+// ---- time (the viewer's own zone: web/js/local-time.js) ------------------------------------------------
 
 function toDate(stamp) {
   const d = new Date(stamp);
   return !stamp || Number.isNaN(d.getTime()) ? null : d;
 }
 
-function clock(d) {
-  try { return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); } catch (err) { return ""; }
-}
-
-function zoneName(d) {
-  try { return d.toLocaleTimeString([], { timeZoneName: "short" }).split(" ").pop(); } catch (err) { return ""; }
-}
-
 function dayStart(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
 
-/** "7:05 PM" today, "Tomorrow 1:30 AM", "Thu 7:15 PM" later, in the viewer's own zone; "" when unreadable. */
+/** "7:05 PM PT" today, "Tomorrow 1:30 AM PT", "Thu 7:15 PM PT" later, in the viewer's own zone; "" when unreadable. */
 export function dayClock(stamp, ref = now()) {
   const d = toDate(stamp);
   if (!d) return "";
-  const days = Math.round((dayStart(d) - dayStart(ref)) / 86400000);
-  if (days === 0) return clock(d);
-  if (days === 1) return `Tomorrow ${clock(d)}`;
-  if (days === -1) return `Yesterday ${clock(d)}`;
-  let wd = "";
-  try { wd = d.toLocaleDateString([], { weekday: "short" }); } catch (err) { wd = ""; }
-  return `${wd} ${clock(d)}`.trim();
+  const today = Math.round((dayStart(d) - dayStart(ref)) / 86400000) === 0;
+  return formatStamp(today ? "c" : "t", stamp, ref);
 }
 
-/** "Today 7:15 PM" / "Tomorrow 7:15 PM" / "Thu 7:15 PM": the day always said, for "Next: ...". */
+/** "Today 7:15 PM PT" / "Tomorrow 7:15 PM PT" / "Thu 7:15 PM PT": the day always said, for "Next: ...". */
 export function nextText(stamp, ref = now()) {
-  const d = toDate(stamp);
-  if (!d) return "";
-  const text = dayClock(stamp, ref);
-  return Math.round((dayStart(d) - dayStart(ref)) / 86400000) === 0 ? `Today ${text}` : text;
+  return toDate(stamp) ? formatStamp("t", stamp, ref) : "";
 }
 
 // ---- reading the payload ---------------------------------------------------------------------------------
@@ -94,11 +95,22 @@ function families() {
 
 const byStart = (a, b) => String(a.start_utc || "").localeCompare(String(b.start_utc || "")) || String(a.event_id).localeCompare(String(b.event_id));
 
+/** Sports with something on first, busiest first; quiet sports stay reachable at the end. The chips and the groups use one order. */
+function busiestFirst(list) {
+  return list.slice().sort((a, b) => (b.live.length - a.live.length) || ((b.live.length + b.upcoming.length) - (a.live.length + a.upcoming.length)));
+}
+
 function selected() {
   const all = families();
   const pick = state.family === "all" ? all : all.filter((f) => f.code === state.family);
-  const tag = (kind) => pick.flatMap((f) => f[kind].map((ev) => Object.assign({}, ev, { _family: f.code, _familyLabel: f.label }))).sort(byStart);
-  return { families: pick, live: tag("live"), upcoming: tag("upcoming") };
+  const tag = (f, ev) => Object.assign({}, ev, { _family: f.code, _familyLabel: f.label });
+  // one group per sport that has a game: its live games, then the upcoming ones, each by start time
+  const groups = busiestFirst(pick).map((f) => ({
+    code: f.code, label: f.label,
+    live: f.live.map((ev) => tag(f, ev)).sort(byStart), upcoming: f.upcoming.map((ev) => tag(f, ev)).sort(byStart),
+  })).filter((g) => g.live.length || g.upcoming.length);
+  const flat = (kind) => groups.flatMap((g) => g[kind]).sort(byStart);
+  return { families: pick, groups, live: flat("live"), upcoming: flat("upcoming") };
 }
 
 /** The earliest known start among the chosen families, for "Next: ..." when nothing is on. */
@@ -128,21 +140,90 @@ function renderChips() {
   const total = all.reduce((n, f) => n + f.live.length + f.upcoming.length, 0);
   const totalLive = all.reduce((n, f) => n + f.live.length, 0);
   host.appendChild(chip("all", "All", total, totalLive));
-  // sports with something on first, busiest first; quiet sports stay reachable at the end
-  const ordered = all.slice().sort((a, b) => (b.live.length - a.live.length) || ((b.live.length + b.upcoming.length) - (a.live.length + a.upcoming.length)));
-  for (const f of ordered) host.appendChild(chip(f.code, f.label, f.live.length + f.upcoming.length, f.live.length));
+  for (const f of busiestFirst(all)) host.appendChild(chip(f.code, f.label, f.live.length + f.upcoming.length, f.live.length));
 }
 
 function selectFamily(code) {
   if (state.family === code) return;
   state.family = code;
-  state.more = { live: false, upcoming: false };
+  state.more = new Set();
   try {
     if (typeof window !== "undefined" && window.history && window.history.replaceState) {
       window.history.replaceState(null, "", code === "all" ? "live.html" : `live.html?sport=${encodeURIComponent(code)}`);
     }
   } catch (err) { /* a blocked history is not a failure */ }
   render();
+}
+
+// ---- the now strip ---------------------------------------------------------------------------------------
+
+function nowCard(ev) {
+  const m = eventLiveModel(ev, state.states.get(ev.event_id));
+  const side = (t) => h("span", { class: "lv-now__side" }, [
+    h("span", { class: "lv-now__team", text: t.name }),
+    t.score === null ? null : h("span", { class: "lv-now__score hd-num", text: String(t.score) })]);
+  const scored = m.away.score !== null && m.home.score !== null;
+  const word = m.label.charAt(0) + m.label.slice(1).toLowerCase();
+  return h("a", { class: "lv-now__card", href: `#lv-ev-${ev.event_id}`, "data-hook": "live-now-card", "data-event": ev.event_id, "data-kind": m.kind,
+    "aria-label": `${ev._familyLabel || ""} ${m.away.name} at ${m.home.name}${scored ? `, ${m.away.score} to ${m.home.score}` : ""}${m.detail ? `, ${m.detail}` : ""}, ${word.toLowerCase()}`.trim() }, [
+    h("span", { class: "lv-now__top" }, [
+      m.kind === "live" ? h("span", { class: "lv-dot", "aria-hidden": "true" }) : null,
+      h("span", { class: `lv-now__state lv-now__state--${m.kind}`, "data-hook": "live-now-state", text: word }),
+      h("span", { class: "lv-now__sport", text: ev._familyLabel || "" })]),
+    side(m.away), side(m.home),
+    m.detail ? h("span", { class: "lv-now__detail hd-num", "data-hook": "live-now-detail", text: m.detail }) : null]);
+}
+
+function renderNow(sel) {
+  const host = q("live-now");
+  if (!host) return;
+  clearNode(host);
+  const rows = sel.live;
+  if (!rows.length) { host.setAttribute("hidden", ""); return; }
+  host.removeAttribute("hidden");
+  host.appendChild(h("div", { class: "lv-now__head" }, [
+    h("span", { class: "lv-dot", "aria-hidden": "true" }),
+    h("h2", { class: "lv-now__title", text: "In play now" }),
+    h("span", { class: "lv-now__n hd-fine", "data-hook": "live-now-count", text: String(rows.length) })]));
+  host.appendChild(h("div", { class: "lv-now__list", "data-hook": "live-now-list", role: "list", tabindex: "0", "aria-label": "Games in play" },
+    rows.slice(0, NOW_CAP).map((ev) => h("div", { role: "listitem", class: "lv-now__item" }, [nowCard(ev)]))));
+}
+
+// ---- hounds on a game ------------------------------------------------------------------------------------
+
+const houndLine = (list) => list.map((x) => `${x.hound.name} backs ${x.side}`).join("; ");
+
+function mineChip(entry) {
+  return h("span", { class: "lv-mine", "data-hook": "live-mine", "data-dog": entry.hound.id, title: `${entry.hound.name} backs ${entry.side}`,
+    "aria-label": `${entry.hound.name} backs ${entry.side}` }, [
+    h("span", { class: "lv-mine__face", "aria-hidden": "true" }, [dogFace(entry.hound, { size: 26 })]),
+    h("span", { class: "lv-mine__side", text: entry.side })]);
+}
+
+const moreText = (n) => `+${n} more`;
+
+function houndsOnGame(ev) {
+  const mine = state.onGame.mine.get(ev.event_id) || [];
+  const pack = state.onGame.pack.get(ev.event_id) || [];
+  if (!mine.length && !pack.length) return null;
+  const kids = [];
+  if (mine.length) {
+    const hidden = mine.length - MINE_SHOW;
+    kids.push(h("div", { class: "lv-hounds__mine", "data-hook": "live-mine-row", role: "group", "aria-label": `Your hounds on this game: ${houndLine(mine)}` }, [
+      h("span", { class: "lv-hounds__label", text: "Yours" }),
+      ...mine.slice(0, MINE_SHOW).map(mineChip),
+      hidden > 0 ? h("span", { class: "lv-hounds__more", "data-hook": "live-mine-more", text: moreText(hidden) }) : null]));
+  }
+  if (pack.length) {
+    const hidden = pack.length - PACK_SHOW;
+    kids.push(h("div", { class: "lv-hounds__pack", "data-hook": "live-pack", role: "group",
+      "aria-label": `House pack on this game: ${pack.slice(0, PACK_SHOW).map((x) => x.hound.name).join(", ")}${hidden > 0 ? ` and ${hidden} more` : ""}` }, [
+      h("span", { class: "lv-hounds__label", text: "Pack" }),
+      h("span", { class: "lv-faces" }, pack.slice(0, PACK_SHOW).map((x) =>
+        h("span", { class: "lv-faces__one", "data-hook": "live-pack-face", "data-dog": x.hound.id, title: `${x.hound.name} backs ${x.side}`, "aria-hidden": "true" }, [dogFace(x.hound, { size: 24 })]))),
+      hidden > 0 ? h("span", { class: "lv-hounds__more", "data-hook": "live-pack-more", text: moreText(hidden) }) : null]));
+  }
+  return h("div", { class: "lv-hounds", "data-hook": "live-hounds" }, kids);
 }
 
 // ---- rows ------------------------------------------------------------------------------------------------
@@ -177,64 +258,59 @@ function rowFor(ev, live) {
   if (live) meta.push(h("span", { class: "lv-pill lv-pill--live", "data-hook": "live-pill" }, [h("span", { class: "lv-dot", "aria-hidden": "true" }), "Live"]));
   else meta.push(h("span", { class: "lv-pill", text: "Upcoming" }));
   if (ev.league_title) meta.push(h("span", { class: "lv-league", text: ev.league_title }));
-  if (state.family === "all" && ev._familyLabel) meta.push(h("span", { class: "lv-family", text: ev._familyLabel }));
   const timing = live ? (when ? `Started ${when}` : "") : [when, until !== null && until > 0 ? `in ${spanText(until)}` : ""].filter(Boolean).join(" · ");
   if (timing) meta.push(h("span", { class: "lv-when", "data-hook": "live-when", text: timing }));
   if (sc.detail) meta.push(h("span", { class: "lv-detail", text: sc.detail }));
-  const li = h("li", { class: "lv-row", "data-hook": "live-row", "data-event": ev.event_id, "data-family": ev._family, "data-live": live ? "true" : "false" });
-  li.appendChild(h("div", { class: "lv-row__body" }, [
-    h("div", { class: "lv-row__meta" }, meta),
-    h("div", { class: "lv-teams" }, [teamLine(ev.away, ev.best_price_away, sc.away), teamLine(ev.home, ev.best_price_home, sc.home)])]));
+  const li = h("li", { class: "lv-row", id: `lv-ev-${ev.event_id}`, "data-hook": "live-row", "data-event": ev.event_id, "data-family": ev._family, "data-live": live ? "true" : "false" });
   const open = state.trays.has(ev.event_id);
-  const btn = h("button", { type: "button", class: "btn btn--ghost lv-send", "data-hook": "live-send", "data-event": ev.event_id,
+  const btn = h("button", { type: "button", class: "lv-send", "data-hook": "live-send", "data-event": ev.event_id,
     "aria-expanded": open ? "true" : "false", "aria-label": `Send a hound at ${ev.away || "TBD"} versus ${ev.home || "TBD"}`, text: "Send a hound",
     on: { click: () => toggleTray(ev, li, btn) } });
-  li.appendChild(h("div", { class: "lv-row__act" }, [btn]));
+  li.appendChild(h("div", { class: "lv-row__top" }, [h("div", { class: "lv-row__meta" }, meta), btn]));   // the small secondary action sits at the end of the card's top line
+  li.appendChild(h("div", { class: "lv-teams" }, [teamLine(ev.away, ev.best_price_away, sc.away), teamLine(ev.home, ev.best_price_home, sc.home)]));
+  const on = houndsOnGame(ev);
+  if (on) li.appendChild(on);
   if (open) li.appendChild(state.trays.get(ev.event_id));
   return li;
 }
 
-function section(kind, title, rows, live, emptyText) {
-  const sec = h("section", { class: `lv-section lv-section--${kind}`, "data-hook": `live-${kind}-section`, "aria-label": title });
-  const head = h("div", { class: "lv-section__head" }, [
-    live && rows.length ? h("span", { class: "lv-dot", "aria-hidden": "true" }) : null,
-    h("h2", { class: "lv-section__title", text: title }),
-    h("span", { class: "lv-section__n hd-fine", "data-hook": `live-${kind}-count`, text: String(rows.length) })]);
-  sec.appendChild(head);
-  if (!rows.length) {
-    sec.appendChild(h("p", { class: "hd-muted lv-quiet", "data-hook": `live-${kind}-empty`, text: emptyText }));
-    return sec;
-  }
-  const shown = state.more[kind] ? rows : rows.slice(0, ROW_CAP);
-  sec.appendChild(h("ul", { class: "lv-list", "data-hook": `live-${kind}-list` }, shown.map((ev) => rowFor(ev, live))));
+function group(g, capped) {
+  const total = g.live.length + g.upcoming.length;
+  const sec = h("section", { class: "lv-sport", "data-hook": "live-sport", "data-family": g.code, "aria-label": g.label });
+  const counts = [`${total} ${total === 1 ? "game" : "games"}`];
+  if (g.live.length) counts.push(`${g.live.length} live`);
+  sec.appendChild(h("div", { class: "lv-sport__head", "data-hook": "live-sport-head" }, [
+    g.live.length ? h("span", { class: "lv-dot", "aria-hidden": "true" }) : null,
+    h("h2", { class: "lv-sport__title", text: g.label }),
+    h("span", { class: "lv-sport__n hd-fine", "data-hook": "live-sport-count", text: counts.join(" · ") })]));
+  const rows = g.live.map((ev) => ({ ev, live: true })).concat(g.upcoming.map((ev) => ({ ev, live: false })));
+  const cap = state.more.has(g.code) ? rows.length : Math.max(capped, g.live.length);
+  const shown = rows.slice(0, cap);
+  sec.appendChild(h("ul", { class: "lv-list", "data-hook": "live-sport-list" }, shown.map((r) => rowFor(r.ev, r.live))));
   if (rows.length > shown.length) {
-    sec.appendChild(h("button", { type: "button", class: "btn btn--ghost lv-more", "data-hook": `live-${kind}-more`,
-      text: `Show ${rows.length - shown.length} more`, on: { click: () => { state.more[kind] = true; render(); } } }));
+    sec.appendChild(h("button", { type: "button", class: "btn btn--ghost lv-more", "data-hook": "live-sport-more", "data-family": g.code,
+      text: `Show ${rows.length - shown.length} more ${g.label}`, on: { click: () => { state.more.add(g.code); render(); } } }));
   }
   return sec;
 }
 
-function famLabel(pick) { return pick.length === 1 ? pick[0].label : "any sport"; }
-
-function renderBoard() {
+function renderBoard(sel) {
   const host = q("live-board");
   if (!host) return;
   const active = typeof document.activeElement !== "undefined" ? document.activeElement : null;
   const wasSend = active && active.getAttribute ? active.getAttribute("data-event") : null;
   clearNode(host);
-  const sel = selected();
   const ids = new Set(sel.live.concat(sel.upcoming).map((e) => e.event_id));
   for (const id of [...state.trays.keys()]) if (!ids.has(id)) state.trays.delete(id);
   if (!sel.live.length && !sel.upcoming.length) {
     const next = nextText(earliestNext(sel.families));
+    const named = sel.families.length === 1 ? sel.families[0].label : "any sport";
     host.appendChild(h("div", { class: "hd-state hd-state--missing lv-empty", "data-hook": "live-empty", role: "status" }, [
-      h("p", { text: `Nothing on in ${state.family === "all" ? "any sport we price" : famLabel(sel.families)} right now.${next ? ` Next: ${next}.` : ""}` })]));
+      h("p", { text: `Nothing on in ${state.family === "all" ? "any sport we price" : named} right now.${next ? ` Next: ${next}.` : ""}` })]));
     return;
   }
-  const label = famLabel(sel.families);
-  host.appendChild(section("live", "Live now", sel.live, true, `Nothing live in ${label} right now.`));
-  host.appendChild(section("upcoming", "Next 24 hours", sel.upcoming, false,
-    `Nothing else starts in ${label} in the next 24 hours.${earliestNext(sel.families) && !sel.live.length ? ` Next: ${nextText(earliestNext(sel.families))}.` : ""}`));
+  const capped = state.family === "all" ? GROUP_CAP : ROW_CAP;
+  for (const g of sel.groups) host.appendChild(group(g, capped));
   if (wasSend) {
     const again = host.querySelector(`[data-hook='live-send'][data-event='${wasSend}']`);
     if (again && again.focus) again.focus();
@@ -248,7 +324,7 @@ function renderStatus() {
   const gen = toDate(state.data && state.data.generated_utc);
   if (gen) {
     const age = Math.max(0, Math.round((now().getTime() - gen.getTime()) / 60000));
-    parts.push(`Board as of ${clock(gen)} ${zoneName(gen)}`.trim());
+    parts.push(`Board as of ${formatStamp("c", state.data.generated_utc)}`);
     if (age >= STALE_MINUTES) parts.push(`${spanText(age)} old, so prices may have moved`);
   }
   parts.push("refreshes every minute");
@@ -262,12 +338,14 @@ function renderStatus() {
 }
 
 function render() {
+  const sel = selected();
   renderChips();
-  renderBoard();
+  renderNow(sel);
+  renderBoard(sel);
   renderStatus();
 }
 
-// ---- send a dog ------------------------------------------------------------------------------------------
+// ---- send a hound ------------------------------------------------------------------------------------------
 
 function myDogs() {
   if (!state.dogs) {
@@ -404,6 +482,76 @@ async function sendDog(tray, ev, dog) {
   tray.appendChild(h("p", { class: "hd-fine", text: data.preview_note || PAPER_NOTE }));
 }
 
+// ---- reading what is on the board: live state and open tickets ---------------------------------------------
+
+async function soft(path) {
+  try { return await apiGet(path); } catch (err) { return null; }
+}
+
+/** The grader's state for the games in play, 60 ids a call (GET /hounds/live). A failed read keeps what was there. */
+async function loadStates() {
+  const ids = families().flatMap((f) => f.live.map((ev) => ev.event_id)).filter(Boolean);
+  if (!ids.length) { state.states = new Map(); return; }
+  const next = new Map();
+  let read = false;
+  for (let i = 0; i < ids.length; i += 60) {
+    const out = await soft(`/hounds/live?ids=${ids.slice(i, i + 60).map(encodeURIComponent).join(",")}`);
+    const games = out && out.games && typeof out.games === "object" ? out.games : null;
+    if (!games) continue;
+    read = true;
+    for (const [id, st] of Object.entries(games)) next.set(id, st);
+  }
+  if (read) state.states = next;
+}
+
+const isOpenTicket = (t) => t && t.event_id && t.segment !== "replay" && !t.refused
+  && (t.status ? String(t.status).toUpperCase() === "OPEN" : !t.result);
+
+function addTicket(map, hound, t) {
+  const side = String(t.selection || "").trim();
+  if (!side) return;
+  const list = map.get(t.event_id) || [];
+  const have = list.find((x) => x.hound.id === hound.id);
+  if (have) { if (!have.side.split(" · ").includes(side) && have.side.split(" · ").length < 2) have.side += ` · ${side}`; }
+  else list.push({ hound, side });
+  map.set(t.event_id, list);
+}
+
+/** The house pack: Map(id -> hound) from GET /hounds (kind "house"), read at most every ten minutes. null when unreadable. */
+async function loadPack() {
+  if (state.pack.hounds && now().getTime() - state.pack.at < PACK_TTL_MS) return state.pack.hounds;
+  const data = await soft("/hounds");
+  if (!data || !Array.isArray(data.hounds)) return state.pack.hounds;
+  const map = new Map();
+  for (const x of data.hounds) if (x && x.id && x.kind === "house" && !x.retired) map.set(x.id, x);
+  state.pack = { at: now().getTime(), hounds: map };
+  return map;
+}
+
+async function loadHounds() {
+  const shown = new Set(families().flatMap((f) => f.live.concat(f.upcoming)).map((ev) => ev.event_id));
+  const pack = new Map();
+  const mine = new Map();
+  const [house, stream, dogs] = await Promise.all([
+    loadPack(), soft("/hounds/stream?page=1&page_size=100"),
+    getToken() ? myDogs().catch(() => null) : Promise.resolve(null)]);
+  if (house && stream && Array.isArray(stream.items)) {
+    for (const t of stream.items) if (isOpenTicket(t) && shown.has(t.event_id) && house.has(t.hound_id)) addTicket(pack, house.get(t.hound_id), t);
+    state.onGame.pack = pack;
+  }
+  if (Array.isArray(dogs)) {
+    const asked = dogs.filter((d) => d && d.status !== "retired" && isNum(d.open_bets) && d.open_bets > 0).slice(0, MINE_READS);
+    let read = 0;
+    await Promise.all(asked.map(async (d) => {
+      const out = await soft(`/hounds/${encodeURIComponent(d.id)}/bets?page=1&page_size=8&segment=forward&status=open`);
+      if (!out || !Array.isArray(out.items)) return;
+      read += 1;
+      for (const t of out.items) if (isOpenTicket(t) && shown.has(t.event_id)) addTicket(mine, d, t);
+    }));
+    if (read || !asked.length) state.onGame.mine = mine;
+  }
+}
+
 // ---- loading ---------------------------------------------------------------------------------------------
 
 export async function load() {
@@ -419,6 +567,9 @@ export async function load() {
     if (state.family !== "all" && !families().some((f) => f.code === state.family)) state.family = "all";
     state.failed = false;
     state.loadedAt = now();
+    render();
+    // the board is on the page; the live scores and the hounds on each game arrive after it, and each read is soft
+    await Promise.all([loadStates(), loadHounds()]).catch(() => null);
     render();
   } catch (err) {
     if (!state.data) {
