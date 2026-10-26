@@ -123,6 +123,46 @@ class ForwardStoreWriteAttempt(RuntimeError):
 
 
 # ---------------------------------------------------------------------------
+# 0. One temp root per test process, removed when the process ends
+# ---------------------------------------------------------------------------
+# Hundreds of tests make a ``mkdtemp()`` and never remove it; on the owner's PC that left ~23,000 folders (~120 GB) in
+# %TEMP% and filled the disk (2026-10-26). Every temp path this process or its children make now lands under one root
+# that goes at exit, and a root left by a killed run is swept after a day. Nothing outside the ``aisports-tests-``
+# prefix is touched.
+
+_TEMP_PREFIX = "aisports-tests-"
+
+
+def _sweep_stale_temp_roots(base: str, max_age_s: float = 86400.0) -> None:
+    import time
+    try:
+        names = os.listdir(base)
+    except OSError:
+        return
+    for name in names:
+        if not name.startswith(_TEMP_PREFIX):
+            continue
+        path = os.path.join(base, name)
+        try:
+            if time.time() - os.path.getmtime(path) > max_age_s:
+                shutil.rmtree(path, ignore_errors=True)
+        except OSError:
+            pass
+
+
+if not os.environ.get("AISPORTS_TEST_TEMP_ROOT"):
+    _system_temp = tempfile.gettempdir()
+    _sweep_stale_temp_roots(_system_temp)
+    _temp_root = tempfile.mkdtemp(prefix=_TEMP_PREFIX, dir=_system_temp)
+    os.environ["AISPORTS_TEST_TEMP_ROOT"] = _temp_root      # a child test process shares the root, never re-sweeps
+    for _var in ("TMPDIR", "TEMP", "TMP"):
+        os.environ[_var] = _temp_root
+    tempfile.tempdir = _temp_root
+    atexit.register(shutil.rmtree, _temp_root, True)
+else:
+    tempfile.tempdir = os.environ["AISPORTS_TEST_TEMP_ROOT"]
+
+# ---------------------------------------------------------------------------
 # 1. Redirect the app db away from data/app/app.db
 # ---------------------------------------------------------------------------
 
