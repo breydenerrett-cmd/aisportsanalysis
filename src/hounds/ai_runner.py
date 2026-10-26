@@ -79,7 +79,9 @@ def loop_enabled(env: Optional[Mapping] = None) -> bool:
     the two on, so a laptop, a test client and staging start nothing."""
     from src.hounds.gematria import runtime as gem_rt
 
-    return enabled(env) or gem_rt.explicitly_on(env)
+    from src.hounds.pack import learner_hound
+
+    return enabled(env) or gem_rt.explicitly_on(env) or learner_hound.explicitly_on(env)
 
 
 def interval_seconds(env: Optional[Mapping] = None) -> float:
@@ -110,7 +112,8 @@ def run_pass(*, now: Optional[datetime] = None, router=None, stores=None, ledger
     from src.appstate import freshness
     from src.hounds import pack_run, pack_settle, user_runner
     from src.hounds.gematria import runtime as gem_rt
-    from src.hounds.pack import ai_hounds, base, gematria_hound
+    from src.hounds.learner import HOUND_ID as LEARNER_ID, state as learner_state
+    from src.hounds.pack import ai_hounds, base, gematria_hound, learner_hound
     from src.ledger.chain import HashChainLedger
 
     moment = now or _utcnow()
@@ -121,9 +124,11 @@ def run_pass(*, now: Optional[datetime] = None, router=None, stores=None, ledger
     ai_on = bool(router.enabled_providers())
     gem_entry = ai_defs.entry_for(gematria_hound.HOUND_ID, hounds_config)
     gem_on = bool(gem_entry) and gem_entry.get("enabled") is not False and (gematria_on() if gem_enabled is None else gem_enabled)
+    learner_entry = ai_defs.entry_for(LEARNER_ID, hounds_config)
+    learner_on = bool(learner_entry) and learner_entry.get("enabled") is not False and learner_hound.enabled()
     if not ai_on:
         report["skipped"] = "no AI provider is enabled (no key, or switched off in config/ai_providers.json)"
-    if not ai_on and not gem_on and not Path(ledger_file).exists():
+    if not ai_on and not gem_on and not learner_on and not Path(ledger_file).exists():
         return report
     with freshness._gated_build():
         dates = user_runner.pass_dates(moment)
@@ -144,11 +149,17 @@ def run_pass(*, now: Optional[datetime] = None, router=None, stores=None, ledger
             gem_runtime = gem_rt.GematriaRuntime(ledger=HashChainLedger(gem_rt.decisions_path(ledger_file)),
                                                  now_fn=lambda: moment)
             hounds.append(gematria_hound.GematriaHound(gem_entry, gem_runtime))
+        if learner_on:
+            # No model, no key, no cost: it draws from the lock board, logs its features, and reads only the focus the owner applied.
+            hounds.append(learner_hound.LearnerHound(learner_entry, now_fn=lambda: moment,
+                                                     events=learner_state.events_path(ledger_file)).bind(stores))
         if not hounds:
             report["skipped"] = "no AI hound is enabled in config/ai_hounds.json"
         else:
             if gem_on:
                 report["gematria"] = True
+            if learner_on:
+                report["learner"] = True
             counts = pack_run.run(stores, dates, replay=False, now=moment, path=ledger_file, hounds=hounds,
                                   out=lambda *_a, **_k: None)
             report["run"] = counts

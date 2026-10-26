@@ -23,10 +23,21 @@
       "kind": "house",
       "enabled": true,
       "family": "claude",
-      "providers": ["anthropic"],
-      "sports": ["dog_menu"],
-      "markets": ["moneyline", "spread", "total"],
-      "price_band": [-199, 400],
+      "providers": [
+        "anthropic"
+      ],
+      "sports": [
+        "dog_menu"
+      ],
+      "markets": [
+        "moneyline",
+        "spread",
+        "total"
+      ],
+      "price_band": [
+        -199,
+        400
+      ],
       "who_decided": "model",
       "forward_only": true,
       "rule_text": "Every sport we capture (the whole dog menu: baseball, football, basketball, hockey, soccer, tennis, MMA, cricket, rugby and the rest), moneyline everywhere and spread or total only where we capture them (tennis and MMA are moneyline only; soccer is moneyline and total, three-way, and a draw loses a team moneyline). An hour before the game, Claude Haiku 5.5 is shown only the board as it stood then (teams, each book's prices, the average and best price, the books' de-vigged number, how the moneyline moved since it opened) and, for MLB and NFL, the clubs' recent results from our stores (other sports get prices and movement only, and the packet says so), and answers bet or pass with a side, a confidence from 1 to 5 and a reason of 25 words or fewer. Code bets one unit on its answer only if the market is on the board and the average price is better than -200 (never -200 or worse), at most 3 bets a day. If the model is down, over its monthly cap or gives an answer that is not valid, the hound passes. Forward only: it is never replayed over old games. One model reading, unproven; paper only.",
@@ -62,9 +73,18 @@
       "enabled": false,
       "family": "council",
       "providers": [],
-      "sports": ["dog_menu"],
-      "markets": ["moneyline", "spread", "total"],
-      "price_band": [-199, 400],
+      "sports": [
+        "dog_menu"
+      ],
+      "markets": [
+        "moneyline",
+        "spread",
+        "total"
+      ],
+      "price_band": [
+        -199,
+        400
+      ],
       "who_decided": "model",
       "forward_only": true,
       "rule_text": "Every sport the model hounds cover. Asks no model itself. For each game it reads the answers the model hounds gave at the lock and bets only when at least 3 of them returned a valid answer and a strict majority of those backed the same side (home or away, over or under), in the market most of them chose. Same price rules as the model hounds: never -200 or worse, at most 3 bets a day. Forward only. Paper only.",
@@ -133,6 +153,53 @@
         ],
         "epitaph": "Found a pattern in everything and in nothing.",
         "verb": "counted it up and took"
+      }
+    },
+    {
+      "id": "learner",
+      "name": "The Learner",
+      "tagline": "Starts with no rules. Bets small and wide on paper, then shows what held up. Graded in public like every hound; the record shows whether it learns, never a promise.",
+      "category": "learner",
+      "style": "starts with no rules and learns from its own record",
+      "kind": "house",
+      "enabled": true,
+      "family": "learner",
+      "providers": [],
+      "sports": [
+        "dog_menu"
+      ],
+      "markets": [
+        "moneyline",
+        "spread",
+        "total"
+      ],
+      "price_band": [
+        -199,
+        400
+      ],
+      "who_decided": "rule",
+      "forward_only": true,
+      "max_per_day": 50,
+      "stake_units": 0.25,
+      "explore_share": 0.25,
+      "rule_text": "Every sport we capture, moneyline everywhere and spread or total only where we capture them. It starts with no rules. An hour before each game it lists every side on the board whose average price is better than -200 (the band is -199 to +400) and takes one of them by a fixed draw, one side per game, at most 50 small bets a day (a quarter of a unit each), earliest games first. Each bet logs about 28 facts known at that moment: sport, market, price band, favourite or plus-money side, home or away, the move since the open, how many books, the gap between the best and the average price, hours to the start, day of the week, and rest days where we have them. Once a week a plain-Python model is fitted on settled bets before a cutoff and tested on the week after; with fewer than 200 settled bets it says it has not learned enough yet and proposes nothing. A proposal is a hypothesis for the owner to review and is never applied by itself. Forward only. Paper only. Experimental and unproven: with the book's cut most patterns found this way are luck, and the record is the only evidence of whether it learns.",
+      "persona": {
+        "bio": "Walked in with no opinions and a notebook. Bets a little on everything, writes down what it knew at the time, and waits to see which of its hunches survive a week it has not seen.",
+        "catchphrase": "Ask me again when the record is long enough.",
+        "vibe": "nerd",
+        "roasts": [
+          "Wrote down twenty-eight facts about the bet and the bet had its own plans.",
+          "Studied for a week and the week did not read the notes.",
+          "Found a pattern in forty bets. Forty is not a lot of bets.",
+          "Learned something, then the next week took it back."
+        ],
+        "brags": [
+          "A pattern that held on a week it had not seen. One line in the record, nothing more.",
+          "Right this time, and the notebook says how often.",
+          "The record is longer now. That is the whole point of it."
+        ],
+        "epitaph": "Never claimed to know. Kept good notes.",
+        "verb": "drew from the board and took"
       }
     }
   ]

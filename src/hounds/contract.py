@@ -89,8 +89,10 @@ KINDS = (KIND_HOUSE, KIND_USER, KIND_BASELINE)
 # "numerology" is the Gematria Hound's (config/ai_hounds.json, family "gematria"; src/hounds/gematria): a rule that counts
 # numerical coincidences for each side. Experimental, paper only, forward only; it is listed with the AI hounds' config
 # because it shares their ledger, sports gate and runner, but it asks no model.
+# "learner" is The Learner's (config/ai_hounds.json, family "learner"; src/hounds/learner): no starting rules, small paper bets
+# across every sport we capture, features logged at placement. Paper only, forward only, and it asks no model.
 CATEGORIES = ("stats", "history", "market", "math", "intangibles", "esoteric", "random",
-              "simple", "mixed", "baseline", "ai-desk", "persona", "ai", "numerology")
+              "simple", "mixed", "baseline", "ai-desk", "persona", "ai", "numerology", "learner")
 
 # A hound that has never made a bet of any kind (the desk before its first publish) is "not_started":
 # not benched (nothing has stopped), not running (nothing has run). Only a definition that says it is

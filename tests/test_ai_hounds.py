@@ -64,7 +64,7 @@ class HoundCase(unittest.TestCase):
         # These tests are about the CLAUDE hound. The Gematria Hound shares the pass and, under rules v2 (2026-10-22: names alone are enough
         # for a sport with no stored results), now bets on the all-sports fixtures too; its own tests are tests/test_gematria_hound.py and
         # tests/test_gematria_v2.py. Its kill switch keeps it out of a pass about someone else.
-        env = mock.patch.dict(os.environ, {"GEMATRIA_HOUND": "off"})
+        env = mock.patch.dict(os.environ, {"GEMATRIA_HOUND": "off", "LEARNER_HOUND": "off"})
         env.start()
         self.addCleanup(env.stop)
 
@@ -93,9 +93,9 @@ class RegistryAndConfigTests(unittest.TestCase):
             self.assertNotIn(hid, pack_mod.BY_ID)
 
     def test_shipped_config_runs_one_claude_hound_and_parks_the_council(self):
-        # the Gematria Hound shares this config (ledger, sports gate, runner) but asks no model: tests/test_gematria_hound.py
-        self.assertEqual([e["id"] for e in ai_defs.entries()], ["ai_claude", "gematria"])
-        self.assertEqual(ai_defs.ids(), frozenset({"ai_claude", "ai_council", "gematria"}))
+        # the Gematria Hound and the Learner share this config (ledger, sports gate, runner) but ask no model: tests/test_gematria_hound.py, tests/test_learner_hound.py
+        self.assertEqual([e["id"] for e in ai_defs.entries()], ["ai_claude", "gematria", "learner"])
+        self.assertEqual(ai_defs.ids(), frozenset({"ai_claude", "ai_council", "gematria", "learner"}))
         entry = ai_defs.entry_for("ai_claude")
         self.assertEqual((entry["name"], entry["category"], entry["who_decided"], entry["providers"]),
                          ("Claude Hound", "ai", "model", ["anthropic"]))
@@ -105,7 +105,7 @@ class RegistryAndConfigTests(unittest.TestCase):
         defs = house.definitions(ROOT / "config" / "house_hounds.json", ROOT / "config" / "house_pack.json",
                                  ROOT / "config" / "desk_hounds.json", ROOT / "config" / "ai_hounds.json")
         ai = [d for d in defs if d["source"] == "ai_cfg"]
-        self.assertEqual([d["id"] for d in ai], ["ai_claude", "gematria"])
+        self.assertEqual([d["id"] for d in ai], ["ai_claude", "gematria", "learner"])
         self.assertEqual((ai[0]["category"], ai[0]["not_started_when_empty"]), ("ai", True))
         self.assertEqual(ai[1]["category"], "numerology")
         from src.hounds.contract import CATEGORIES
