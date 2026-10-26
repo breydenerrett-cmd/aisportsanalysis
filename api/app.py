@@ -26,6 +26,7 @@ from src.providers import mlb
 from api.bodylimit import BodyLimitMiddleware
 from api.admin import router as admin_router
 from api.ai import router as ai_admin_router
+from api.jarvis import router as jarvis_router
 from api.auth import get_current_user, require_paid_access, router as auth_router
 from fastapi import Depends
 from api.billing import router as billing_router
@@ -241,6 +242,7 @@ app.include_router(free_signup_router)
 app.include_router(admin_router)
 # GET /admin/ai/status (admin token): the AI hounds' switch, providers, usage, paid spend vs cap, last errors (api/ai.py).
 app.include_router(ai_admin_router)
+app.include_router(jarvis_router)   # owner-only Jarvis briefing: /admin/jarvis/brief (admin token)
 # GET/POST /email/unsubscribe (public, signed link) and /admin/email/status|test (admin token): api/email_routes.py.
 app.include_router(email_router)
 # Bet alerts (settings, test, push/SMS enrolment, secret RSS feed, one-click off, Twilio STOP): api/alerts_routes.py.
