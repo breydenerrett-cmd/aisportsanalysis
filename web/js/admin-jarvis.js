@@ -177,7 +177,7 @@ export function renderJarvis(host, view, ctx) {
   singlesPanel.appendChild(el("div", { class: "adm-panel__head" }, [el("h3", { class: "adm-panel__title", text: "Picks" }),
     el("span", { class: "adm-panel__meta", text: `${singles.length} shown` })]));
   if (!singles.length) {
-    const why = brief.status === "no_board" ? "There was no board for this date." : "Nothing cleared the bar on this board.";
+    const why = brief.status === "no_board" ? "There was no board for this date." : "Jarvis made no picks from this board.";
     singlesPanel.appendChild(el("p", { class: "adm-empty", "data-hook": "admin-jarvis-no-picks", text: why }));
   } else {
     const list = el("ul", { class: "adm-jv-list" });

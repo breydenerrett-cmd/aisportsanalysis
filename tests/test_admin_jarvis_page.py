@@ -138,7 +138,7 @@ class TheJarvisTab(unittest.TestCase):
         empty = brief(singles=[], parlays=[], status="nothing_cleared", parlay_note="no parlay: fewer than two legs cleared the bar")
         out = run(routes=routes(**{BRIEF_PATH: [200, empty]}), actions=OPEN, queries=[
             q("none", "[data-hook='admin-jarvis-no-picks']"), q("par", "[data-hook='admin-jarvis-no-parlays']")])
-        self.assertEqual(out["final"]["none"], "Nothing cleared the bar on this board.")
+        self.assertEqual(out["final"]["none"], "Jarvis made no picks from this board.")
         self.assertIn("no parlay", out["final"]["par"])
 
     def test_a_401_returns_to_the_sign_in_card_and_leaves_no_briefing_on_the_page(self):
