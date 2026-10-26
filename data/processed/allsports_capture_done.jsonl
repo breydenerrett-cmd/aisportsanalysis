@@ -6296,3 +6296,8 @@
 {"call_kind": "inplay", "credits": 1, "events": 15, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T03:06:25.278725Z", "regions": ["us"], "rows": 101, "sport_key": "basketball_nba", "stored": 88}
 {"call_kind": "inplay", "credits": 1, "events": 30, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T03:06:25.278725Z", "regions": ["us"], "rows": 161, "sport_key": "soccer_usa_mls", "stored": 7}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-10-26T09:13:13.693913Z", "observed_utc": "2026-10-26T03:13:13.693913Z", "sport_key": "soccer_netherlands_eredivisie"}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-10-26T09:28:06.987887Z", "observed_utc": "2026-10-26T03:28:06.987887Z", "sport_key": "icehockey_sweden_allsvenskan"}
+{"events": 4, "kind": "peek", "next_check_utc": "2026-10-26T09:28:06.987887Z", "observed_utc": "2026-10-26T03:28:06.987887Z", "sport_key": "soccer_finland_veikkausliiga"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-10-26T09:28:06.987887Z", "observed_utc": "2026-10-26T03:28:06.987887Z", "sport_key": "soccer_japan_j_league"}
+{"events": 29, "kind": "peek", "next_check_utc": "2026-10-26T09:28:06.987887Z", "observed_utc": "2026-10-26T03:28:06.987887Z", "sport_key": "soccer_usa_mls"}
+{"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T03:28:06.987887Z", "regions": ["us"], "rows": 37, "sport_key": "icehockey_nhl", "stored": 37}
