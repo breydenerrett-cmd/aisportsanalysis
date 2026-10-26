@@ -453,9 +453,9 @@ class Ask(ApiCase):
 
     def test_the_greeting_has_the_dogs_name_and_questions_to_try(self):
         out = self.api.ask_open(self.id, Response(), authorization=None, _rl=None)
-        self.assertEqual(len(out["greeting"]), 1)                  # one line: the rules live on the Rules tab, not in the chat
-        self.assertTrue(out["greeting"][0].startswith("Dog Days"))
-        self.assertNotIn("What I do", out["greeting"][0])
+        self.assertIn(len(out["greeting"]), (2, 3))               # name, what it bets, its record: the full rules live on the Rules tab
+        self.assertEqual(out["greeting"][0], "Dog Days")
+        self.assertNotIn("What I do", " ".join(out["greeting"]))
         self.assertGreaterEqual(len(out["suggestions"]), 5)
 
     def test_empty_and_overlong_questions_are_refused(self):
