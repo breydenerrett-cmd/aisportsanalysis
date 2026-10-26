@@ -5006,6 +5006,9 @@ def build_parser() -> argparse.ArgumentParser:
     from src.situation import cli as situation_cli
     situation_cli.add_parser(sub)
 
+    from src.jarvis import cli as jarvis_cli
+    jarvis_cli.add_parser(sub)
+
     eod_cmd = sub.add_parser(
         "eod", help="build and write the end-of-day self-review (S7)")
     eod_cmd.add_argument("--date", required=True, help="YYYY-MM-DD")
@@ -5026,6 +5029,12 @@ def cmd_situation(args) -> int:
     """`situation ingest-postseasons|rest-vs-rhythm`: the situation layer (src/situation/)."""
     from src.situation import cli as situation_cli
     return situation_cli.main(args)
+
+
+def cmd_jarvis(args) -> int:
+    """`jarvis brief --date D [--as-of ISO]`: the owner's paper-only pre-game briefing (src/jarvis/)."""
+    from src.jarvis import cli as jarvis_cli
+    return jarvis_cli.main(args)
 
 
 def cmd_datasvc(args) -> int:
@@ -5080,6 +5089,7 @@ COMMANDS = {
     "eod": cmd_eod,
     "analyst": cmd_analyst,
     "situation": cmd_situation,
+    "jarvis": cmd_jarvis,
     "nfl": cmd_nfl,
     "tennis": cmd_tennis,
     "allsports": cmd_allsports,
