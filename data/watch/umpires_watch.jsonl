@@ -8006,3 +8006,5 @@
 {"game_date": "2026-10-26", "observed_utc": "2026-10-26T20:09:19.864907+00:00", "poll": true}
 {"commence_time": "2026-10-27T00:00:00Z", "crew": [{"id": 544728, "name": "Nic Lentz", "officialType": "Home Plate"}, {"id": 483569, "name": "Vic Carapazza", "officialType": "First Base"}, {"id": 483564, "name": "Dan Bellino", "officialType": "Second Base"}, {"id": 503586, "name": "Tripp Gibson", "officialType": "Third Base"}, {"id": 573597, "name": "Gabe Morales", "officialType": "Left Field"}, {"id": 427554, "name": "Jim Wolf", "officialType": "Right Field"}], "game_date": "2026-10-26", "game_pk": 849804, "game_state": "Pre-Game", "home_plate_umpire": "Nic Lentz", "observed_utc": "2026-10-26T20:09:19.864907+00:00", "prev_poll_utc": "2026-10-26T19:59:11.031408+00:00", "revealed": true}
 {"game_date": "2026-10-27", "observed_utc": "2026-10-26T20:09:19.964842+00:00", "poll": true}
+{"game_date": "2026-10-26", "observed_utc": "2026-10-26T20:26:19.674699+00:00", "poll": true}
+{"game_date": "2026-10-27", "observed_utc": "2026-10-26T20:26:19.846015+00:00", "poll": true}
