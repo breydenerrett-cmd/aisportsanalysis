@@ -38,6 +38,7 @@ import { mountKeep, keepLabel } from "./keep.js";
 import { playReveal, countTo, previewState, priceText } from "./reveal-fx.js";
 import { watchFirstGrade } from "./first-grade.js";
 import { MY_KENNEL_HREF } from "./home-route.js";
+import { formatStamp } from "./local-time.js";
 
 export const PAPER_NOTICE =
   "Paper bets only. Your hound never places a real bet, and it never takes a price of -200 or worse.";
@@ -52,6 +53,12 @@ export const EXAMPLES = [
 ];
 
 const PREVIEW_DEBOUNCE_MS = 250;
+/** The 14 day hindsight preview (POST /hounds/drill) shares a five-an-hour allowance with the member's own Backtest, cached or not. So it waits for
+ *  the edits to stop, runs on its own at most twice an hour, and after that says "preview paused" and waits for a tap. */
+export const HIND_DEBOUNCE_MS = 1200;
+export const HIND_AUTO_PER_HOUR = 2;
+export const HIND_DAYS = 14;
+export const EMPTY_STEPS_TEXT = "Build it in steps: sports, markets, conditions, price range and limits. Or say it in words above and I will fill the steps in for you.";
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 
@@ -73,6 +80,8 @@ const S = {
   jobTimer: null, jobPolls: 0, jobId: null, copiedFrom: "", pendingTranslation: null,
   jobBusy: false, jobElapsed: 0, jobStart: 0, jobNextPoll: 0, jobErrors: 0, bound: false,
   keep: null, previewSettled: false,
+  season: null,      // {code: {in_season, games_7d, phase, chip, reason}} from GET /sports/season, or null when it did not load
+  hind: { timer: null, seq: 0, last: null, lastKey: "", answered: new Map(), autoRuns: [], paused: false, stale: false, busy: false },
   kept: null,        // {id, name} once THIS draft is a hound: the Keep button becomes "Open in My Kennel" (a second keep is a duplicate name)
 };
 
@@ -154,7 +163,7 @@ const nextId = (p) => `${p}-${++uid}`;
 
 function field(labelText, control, hint) {
   const id = nextId("bd");
-  control.setAttribute("id", id);
+  (control.numberInput || control).setAttribute("id", id);
   return h("div", { class: "hd-field bd-field" }, [h("label", { for: id, text: labelText }), control,
     hint ? h("p", { class: "hd-fine", text: hint }) : null]);
 }
@@ -182,6 +191,31 @@ function numberField(param, value, onChange, attrs = {}) {
   input.addEventListener("input", fire);
   input.addEventListener("change", fire);
   return input;
+}
+
+/** A number as a slider AND a typed box, kept in step. The box is the control the rest of the page reads (`attrs` land on it); the
+ *  slider is a second way to set the same number, so a member never has to guess a value. Used only where the menu gives both bounds. */
+function sliderField(param, value, onChange, attrs = {}) {
+  const lo = Number(param.min), hi = Number(param.max);
+  const isInt = param.kind === "int" || (isNum(param.step) && Number.isInteger(param.step));
+  const span = hi - lo;
+  const step = isNum(param.step) ? param.step : isInt ? 1 : span <= 5 ? 0.1 : span <= 60 ? 0.5 : 1;
+  const box = numberField(Object.assign({}, param, { step }), value, (v) => { sync(v); onChange(v); }, attrs);
+  const range = h("input", { type: "range", class: "bd-range", min: String(lo), max: String(hi), step: String(step), "data-slider": attrs["data-param"] || attrs["data-hook"] || "",
+    "aria-label": param.label || "Value" });
+  const clampTo = (v) => Math.min(hi, Math.max(lo, v));
+  const sync = (v) => { range.value = String(isNum(v) ? clampTo(v) : (isNum(param.default) ? param.default : lo)); };
+  sync(value);
+  const fire = () => {
+    const v = Number(range.value);
+    box.value = String(v);
+    onChange(v);
+  };
+  range.addEventListener("input", fire);
+  range.addEventListener("change", fire);
+  const wrap = h("div", { class: "bd-slider" }, [range, box]);
+  wrap.numberInput = box;
+  return wrap;
 }
 
 function chipButton(label, pressed, onClick, attrs = {}) {
@@ -218,7 +252,9 @@ function paramControl(cond, param, item, rule, onChange) {
     return field(param.label, sel);
   }
   if (param.kind === "int" || param.kind === "number") {
-    const input = numberField(param, value, (v) => { item[param.name] = v; onChange(); }, { "data-param": param.name });
+    const set = (v) => { item[param.name] = v; onChange(); };
+    const bounded = isNum(param.min) && isNum(param.max);
+    const input = bounded ? sliderField(param, value, set, { "data-param": param.name }) : numberField(param, value, set, { "data-param": param.name });
     return field(param.label, input);
   }
   if (param.kind === "multi") {
@@ -404,7 +440,17 @@ function countConditions(tree) { return tree.items.reduce((n, i) => n + (i.items
 function sportGrid(rule, onChange) {
   const menu = S.menu;
   const wrap = h("div", { class: "bd-sportgrid", "data-hook": "rule-sport-grid" });
-  const list = menu.sports.slice().sort((a, b) => (isAny(b) ? 1 : 0) - (isAny(a) ? 1 : 0));
+  const season = S.season;                                     // null when GET /sports/season did not load: plain chips, nothing dimmed
+  const entry = (sp) => (season && !isAny(sp) ? season[sp.value] || null : null);
+  const dimmed = (sp) => { const e = entry(sp); return !!e && !(e.games_7d > 0); };
+  // "Any sport" first, then what has games this week (most first), then the dimmed ones: the member sees what is on before what is not
+  const list = menu.sports.slice().sort((a, b) => {
+    if (isAny(a) !== isAny(b)) return isAny(a) ? -1 : 1;
+    if (!season) return 0;
+    const da = dimmed(a) ? 1 : 0, db = dimmed(b) ? 1 : 0;
+    if (da !== db) return da - db;
+    return ((entry(b) || {}).games_7d || 0) - ((entry(a) || {}).games_7d || 0);
+  });
   const grid = h("div", { class: "bd-chips bd-sportchips", role: "group", "aria-label": "Sports", "data-hook": "rule-sports" });
   const none = h("p", { class: "hd-fine", "data-hook": "sport-none", role: "status", hidden: true, text: "No sport matches that." });
   let needle = "";
@@ -414,8 +460,20 @@ function sportGrid(rule, onChange) {
     const shown = list.filter((sp) => !needle || rule.sports.includes(sp.value) || isAny(sp) || String(sp.label).toLowerCase().includes(needle));
     for (const sp of shown) {
       const blocked = !allowed.includes(sp.value);
-      grid.appendChild(chipButton(sp.label, rule.sports.includes(sp.value), () => chooseSport(rule, sp.value, onChange),
-        Object.assign({ "data-sport": sp.value }, blocked ? { disabled: true, title: "Not offered for the markets chosen" } : {})));
+      const e = entry(sp);
+      const dim = dimmed(sp);
+      const attrs = Object.assign({ "data-sport": sp.value }, blocked ? { disabled: true, title: "Not offered for the markets chosen" } : {});
+      if (e) {
+        attrs["data-games"] = String(e.games_7d);
+        attrs["data-season"] = e.in_season ? "in" : "out";
+        if (dim) { attrs["data-dim"] = e.in_season ? "no_games" : "out_of_season"; attrs.class = "bd-chip bd-chip--dim"; attrs.title = e.reason || "Nothing scheduled this week."; }
+      }
+      const chip = chipButton(e ? e.chip : sp.label, rule.sports.includes(sp.value), () => chooseSport(rule, sp.value, onChange), attrs);
+      if (e && dim) {
+        chip.appendChild(h("span", { class: "bd-chip__why", text: e.reason || "Nothing scheduled this week." }));
+        chip.setAttribute("aria-label", `${e.chip}. ${e.reason || "Nothing scheduled this week."}`);
+      }
+      grid.appendChild(chip);
     }
     if (needle && shown.every((sp) => isAny(sp) || rule.sports.includes(sp.value))) none.removeAttribute("hidden"); else none.setAttribute("hidden", "");
   };
@@ -426,12 +484,132 @@ function sportGrid(rule, onChange) {
     search.addEventListener("change", fire);
     wrap.appendChild(search);
   }
+  if (season) {
+    const pickNote = h("p", { class: "hd-fine bd-note", "data-hook": "pick-in-season-note", role: "status", hidden: true });
+    wrap.appendChild(h("p", { class: "bd-pickseason" }, [h("button", { type: "button", class: "btn btn--ghost", "data-hook": "pick-in-season", text: "Pick for me: in-season now",
+      on: { click: () => {
+        const allowed = allowedSports(rule);
+        const picks = menu.sports.filter((sp) => !isAny(sp) && allowed.includes(sp.value) && entry(sp) && entry(sp).in_season && entry(sp).games_7d > 0).map((sp) => sp.value);
+        if (!picks.length) { pickNote.textContent = "Nothing has games in the next 7 days for these markets. Pick any sport you like; it will bet when its games are on."; pickNote.hidden = false; return; }
+        rule.sports = picks;
+        const before = rule.when ? countConditions(rule.when) : 0;
+        rule.when = pruneConditions(rule, rule.when);
+        const dropped = before - (rule.when ? countConditions(rule.when) : 0);
+        if (dropped > 0) droppedNotes.set(rule, `${dropped} stat ${dropped === 1 ? "condition was" : "conditions were"} removed because a sport you picked does not have that data.`);
+        else droppedNotes.delete(rule);
+        onChange(true);
+      } } }), " ", h("span", { class: "hd-fine", text: "Counts are the games the program has stored for the next 7 days." })]));
+    wrap.appendChild(pickNote);
+  }
   draw();
   wrap.appendChild(grid);
   wrap.appendChild(none);
   const dropped = droppedNotes.get(rule);
   if (dropped) wrap.appendChild(h("p", { class: "hd-fine bd-note", "data-hook": "sport-dropped", role: "status", text: dropped }));
   return wrap;
+}
+
+// ---- the price range: one dual slider with the -200 floor drawn -------------------------------------
+
+/** American prices have no values between -100 and +100, so the slider runs on a position axis: 0 is the shortest price the program
+ *  allows (-199), 99 is -100 (a step of 1), 100 is +100, then +100 to +300 in steps of 5 and +300 to the longest price in steps of 50, so the
+ *  underdog prices people actually use are not squeezed into a corner. The typed boxes keep exact values. The floor (-200 and worse) is drawn
+ *  to the left of the axis, so there is nowhere on the slider to put a thumb past it. */
+const NEAR_STEP = 5, NEAR_TO = 300, FAR_STEP = 50;
+const NEAR_COUNT = (NEAR_TO - 100) / NEAR_STEP;           // positions 100..140 are +100..+300
+export const priceToPos = (price, menu = S.menu) => {
+  const lowest = menu.price.lowest, highest = menu.price.highest;
+  const p = Math.min(highest, Math.max(lowest, Math.round(Number(price))));
+  if (p < 0) return Math.min(99, p - lowest);
+  if (p <= NEAR_TO) return 100 + Math.round((Math.max(100, p) - 100) / NEAR_STEP);
+  return 100 + NEAR_COUNT + Math.round((p - NEAR_TO) / FAR_STEP);
+};
+export const posToPrice = (pos, menu = S.menu) => {
+  const x = Math.round(Number(pos));
+  if (x < 100) return x + menu.price.lowest;
+  const k = x - 100;
+  const price = k <= NEAR_COUNT ? 100 + k * NEAR_STEP : NEAR_TO + (k - NEAR_COUNT) * FAR_STEP;
+  return Math.min(menu.price.highest, price);
+};
+
+function priceRange(rule, onChange, minBox, maxBox) {
+  const menu = S.menu;
+  const lowest = menu.price.lowest, highest = menu.price.highest;
+  const axisMax = priceToPos(highest, menu);
+  const readout = h("p", { class: "bd-pricerange__read", "data-hook": "price-readout", "aria-live": "polite" });
+  const note = h("p", { class: "hd-fine bd-note", "data-hook": "price-floor-note", role: "status", hidden: true });
+  const mk = (cls, label, slider) => h("input", { type: "range", class: `bd-range bd-range--pair ${cls}`, min: "0", max: String(axisMax), step: "1", "aria-label": label,
+    "data-slider": slider });
+  const lo = mk("bd-range--lo", "Shortest average price", "price-min"), hi = mk("bd-range--hi", "Longest average price", "price-max");
+  const fmt = (p) => fmtPrice(p);
+  const track = h("div", { class: "bd-pricerange__track" }, [h("span", { class: "bd-pricerange__fill", "aria-hidden": "true" }), lo, hi]);
+  const paint = () => {
+    const a = isNum(rule.price_min) ? rule.price_min : lowest, b = isNum(rule.price_max) ? rule.price_max : highest;
+    lo.value = String(priceToPos(a, menu)); hi.value = String(priceToPos(b, menu));
+    readout.textContent = `Average price from ${fmt(Math.max(a, lowest))} to ${fmt(Math.min(b, highest))}`;
+    track.setAttribute("style", `--lo:${(priceToPos(a, menu) / axisMax) * 100}%;--hi:${(priceToPos(b, menu) / axisMax) * 100}%`);
+  };
+  const clampFloor = (v, box, words) => {
+    if (isNum(v) && v < lowest) { note.textContent = `${menu.price_cap_note} ${words} ${fmt(lowest)}.`; note.hidden = false; box.value = String(lowest); return lowest; }
+    note.hidden = true;
+    return v;
+  };
+  const setLo = (price) => {
+    let v = clampFloor(price, minBox, "The shortest price is");
+    if (isNum(v) && isNum(rule.price_max) && priceToPos(v, menu) > priceToPos(rule.price_max, menu)) v = rule.price_max;
+    rule.price_min = v; minBox.value = v === null ? "" : String(v); paint(); onChange();
+  };
+  const setHi = (price) => {
+    let v = clampFloor(price, maxBox, "The longest price cannot be shorter than");
+    if (isNum(v) && isNum(rule.price_min) && priceToPos(v, menu) < priceToPos(rule.price_min, menu)) v = rule.price_min;
+    rule.price_max = v; maxBox.value = v === null ? "" : String(v); paint(); onChange();
+  };
+  lo.addEventListener("input", () => setLo(posToPrice(lo.value, menu)));
+  hi.addEventListener("input", () => setHi(posToPrice(hi.value, menu)));
+  // the typed boxes stay (exact entry, and what the page always had): they drive the same two setters, clamped at the floor
+  const rebind = (box, key, setter) => {
+    const fire = () => {
+      const raw = String(box.value).trim();
+      if (raw === "") { rule[key] = null; paint(); onChange(); return; }
+      setter(Number(raw));
+    };
+    box.addEventListener("input", fire);
+    box.addEventListener("change", fire);
+  };
+  rebind(minBox, "price_min", setLo);
+  rebind(maxBox, "price_max", setHi);
+  const floor = h("div", { class: "bd-pricerange__floor", "data-hook": "price-floor", title: menu.price_cap_note }, [
+    h("span", { class: "bd-pricerange__floor-no", text: "-200" }), h("span", { class: "bd-pricerange__floor-why", text: "never" })]);
+  const ends = h("div", { class: "bd-pricerange__ends hd-fine" }, [h("span", { text: fmt(lowest) }), h("span", { text: "-100 | +100" }), h("span", { text: fmt(highest) })]);
+  paint();
+  return h("div", { class: "bd-pricerange", "data-hook": "price-range" }, [readout, h("div", { class: "bd-pricerange__bar" }, [floor, track]), ends, note]);
+}
+
+/** The shortcuts that add a plain-English block to a rule's conditions. The MENU names them (`quick_blocks`: a condition id, its words and
+ *  the starting values); whether one is offered for the rule's sports and markets is that condition's own say. Nothing here is a condition. */
+function quickBlocks(rule, group, onChange) {
+  const box = h("div", { class: "bd-chips bd-quick", role: "group", "aria-label": "Common conditions", "data-hook": "quick-blocks" });
+  for (const qb of S.menu.quick_blocks || []) {
+    const cond = condMenu(qb.id);
+    if (!cond) continue;
+    const fits = cond.available && conditionOptionsFor(rule).some((c) => c.id === qb.id);
+    const chip = chipButton(`+ ${qb.label}`, false, () => {
+      if (!fits) return;
+      const item = { id: qb.id };
+      for (const p of cond.params) item[p.name] = Array.isArray(p.default) ? p.default.slice() : p.default;
+      Object.assign(item, qb.set || {});
+      group.items.push(item);
+      onChange(true);
+    }, { "data-quick": qb.id });
+    if (!fits) { chip.setAttribute("disabled", ""); chip.setAttribute("title", cond.available ? `Not for ${onlyNote(cond)}, or for this kind of bet.` : "Not available yet."); }
+    box.appendChild(chip);
+  }
+  return box;
+}
+
+function stepHead(no, title, note) {
+  return h("div", { class: "bd-stephead" }, [h("span", { class: "bd-stephead__no", text: String(no) }), h("h4", { class: "bd-stephead__title", text: title }),
+    note ? h("p", { class: "hd-fine bd-stephead__note", text: note }) : null]);
 }
 
 // ---- the rule cards ---------------------------------------------------------------------------------
@@ -445,8 +623,11 @@ function ruleCard(rule, index, onChange) {
     S.spec.rules.length > 1 ? h("button", { type: "button", class: "btn btn--ghost bd-x", "data-hook": "remove-rule", text: "Remove rule",
       on: { click: () => { S.spec.rules.splice(index, 1); onChange(true); } } }) : null]));
 
-  // sports
+  // 1. sports
+  card.appendChild(stepHead(1, "Sports", "Chips show what is in season and how many games are on in the next 7 days. A dimmed sport can still be picked."));
   card.appendChild(h("div", { class: "hd-field bd-field" }, [h("span", { class: "bd-label", text: "Sport" }), sportGrid(rule, onChange)]));
+  // 2. markets
+  card.appendChild(stepHead(2, "Markets"));
 
   // markets, grouped by kind; a rule is one kind
   const markets = h("div", { class: "bd-marketgroups", "data-hook": "rule-markets" });
@@ -484,18 +665,31 @@ function ruleCard(rule, index, onChange) {
   card.appendChild(h("div", { class: "hd-field bd-field" }, [h("span", { class: "bd-label", text: "Market" }), markets,
     h("p", { class: "hd-fine", text: "A rule is one kind of bet: game bets, totals or player props. Picking another kind switches the rule." })]));
 
-  // side
+  // 3. conditions: which side, then the blocks
+  card.appendChild(stepHead(3, "Conditions", "Add as many as you like, or none. Each one narrows the bets."));
   const sideLabels = Object.fromEntries(menu.sides.map((x) => [x.value, x.label]));
   const sideOptions = (menu.side_by_kind[kind] || ["either"]).map((v) => ({ value: v, label: sideLabels[v] || v }));
-  card.appendChild(field("Which side it backs", selectOf(sideOptions, rule.side, (v) => { rule.side = v; onChange(true); },
+  card.appendChild(field("Which side it backs (home, away, either)", selectOf(sideOptions, rule.side, (v) => { rule.side = v; onChange(true); },
     { "data-hook": "rule-side" })));
+  const condBox = h("div", { class: "bd-conds", "data-hook": "conditions" });
+  if (!rule.when) rule.when = { op: "all", items: [] };
+  condBox.appendChild(h("h4", { class: "bd-subhead", text: "Only when" }));
+  const greyed = greyedNote(rule);
+  if (greyed) condBox.appendChild(h("p", { class: "hd-fine bd-note", "data-hook": "conditions-greyed", text: greyed }));
+  condBox.appendChild(quickBlocks(rule, rule.when, onChange));
+  condBox.appendChild(renderGroup(rule, rule.when, 1, null, onChange));
+  card.appendChild(condBox);
 
-  // price, line, books
+  // 4. price range, line, books
+  card.appendChild(stepHead(4, "Price range", menu.price_cap_note));
+  const minBox = numberField({ min: menu.price.lowest, max: menu.price.highest, step: 1 }, rule.price_min,
+    () => {}, { "data-hook": "price-min", list: "bd-price-short" });
+  const maxBox = numberField({ min: menu.price.lowest, max: menu.price.highest, step: 1 }, rule.price_max,
+    () => {}, { "data-hook": "price-max", list: "bd-price-long" });
+  card.appendChild(priceRange(rule, onChange, minBox, maxBox));
   const row = h("div", { class: "bd-row" });
-  row.appendChild(field("Shortest average price", numberField({ min: menu.price.lowest, max: menu.price.highest, step: 1 }, rule.price_min,
-    (v) => { rule.price_min = v; onChange(); }, { "data-hook": "price-min", list: "bd-price-short" })));
-  row.appendChild(field("Longest average price", numberField({ min: menu.price.lowest, max: menu.price.highest, step: 1 }, rule.price_max,
-    (v) => { rule.price_max = v; onChange(); }, { "data-hook": "price-max", list: "bd-price-long" })));
+  row.appendChild(field("Shortest average price", minBox));
+  row.appendChild(field("Longest average price", maxBox));
   if (rule.markets.some((v) => (market(menu, v) || {}).has_line !== false)) {
     row.appendChild(field("Line from (optional)", numberField({ min: menu.line.min, max: menu.line.max, step: 0.5 }, rule.line_min,
       (v) => { rule.line_min = v; onChange(); }, { "data-hook": "line-min" })));
@@ -505,16 +699,7 @@ function ruleCard(rule, index, onChange) {
   row.appendChild(field("Books quoting at least", numberField({ min: menu.min_books.min, max: menu.min_books.max, step: 1 }, rule.min_books,
     (v) => { rule.min_books = v; onChange(); }, { "data-hook": "min-books" })));
   card.appendChild(row);
-  card.appendChild(h("p", { class: "hd-fine", text: menu.price_cap_note + " A line is the spread, total or prop line of the side it backs." }));
-
-  // conditions
-  const condBox = h("div", { class: "bd-conds", "data-hook": "conditions" });
-  if (!rule.when) rule.when = { op: "all", items: [] };
-  condBox.appendChild(h("h4", { class: "bd-subhead", text: "Only when" }));
-  const greyed = greyedNote(rule);
-  if (greyed) condBox.appendChild(h("p", { class: "hd-fine bd-note", "data-hook": "conditions-greyed", text: greyed }));
-  condBox.appendChild(renderGroup(rule, rule.when, 1, null, onChange));
-  card.appendChild(condBox);
+  card.appendChild(h("p", { class: "hd-fine", text: "A line is the spread, total or prop line of the side it backs." }));
   return card;
 }
 
@@ -530,7 +715,7 @@ function globalsGrid(onChange, grid = clearNode(q("globals-grid")), gem = false)
   const m = S.menu;
   if (!gem) grid.appendChild(field("Decide this long before the start", selectOf(m.lock_minutes.choices.map((v) => ({ value: String(v), label: `${v} minutes` })),
     String(S.spec.lock_minutes), (v) => { S.spec.lock_minutes = Number(v); onChange(); }, { "data-hook": "g-lock" })));
-  grid.appendChild(field("Most bets a day", numberField({ min: m.max_bets_per_day.min, max: m.max_bets_per_day.max, step: 1 }, S.spec.max_bets_per_day,
+  grid.appendChild(field("Most bets a day", sliderField({ min: m.max_bets_per_day.min, max: m.max_bets_per_day.max, step: 1, kind: "int", default: m.max_bets_per_day.default }, S.spec.max_bets_per_day,
     (v) => { S.spec.max_bets_per_day = v; onChange(); }, { "data-hook": "g-bets" })));
   // The stake in dollars, live, at the VIEWER's unit size (web/js/unitsize.js): the picker reads "2u · $50" (or "2u · 2%
   // of bankroll" in percent mode) and the line below it says "1 unit = $25 of your $2,500; this dog bets 2 units ($50 a
@@ -717,14 +902,24 @@ function renderPreview(res, err = null) {
   }
   const nEl = setCountParts(st.parts);
   for (const [i, p] of st.picks.entries()) {
-    const start = p.start_utc ? new Date(p.start_utc) : null;
-    const when = start && !Number.isNaN(start.getTime()) ? start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "";
+    const when = p.start_utc ? formatStamp("t", p.start_utc) : "";           // the viewer's zone, web/js/local-time.js
     list.appendChild(h("li", { class: `bd-pick${p.would_bet ? "" : " bd-pick--over"}`, "data-hook": "preview-pick", style: `--i:${Math.min(i, 5)}` }, [
       h("strong", { text: p.selection }),
       h("span", { class: "bd-pick__price", text: ` ${priceText(p.price)}` }),
       h("span", { class: "hd-fine", text: ` ${p.away_team} at ${p.home_team}${when ? ", " + when : ""}${p.locked ? "" : ", not decided yet"}${p.would_bet ? "" : ", over your daily cap"}` })]));
   }
   if (playReveal(panel) === "play") countTo(nEl, st.fit, panel);
+}
+
+/** The rule as the server wrote it today, repeated at the top of the preview so it sits beside the numbers it produced. */
+function renderPreviewRule() {
+  const box = q("preview-rule");
+  if (!box) return;
+  clearNode(box);
+  if (!S.sentences.length) { box.hidden = true; return; }
+  box.hidden = false;
+  box.appendChild(h("p", { class: "bd-prule__lead", text: "Your rule" }));
+  box.appendChild(h("p", { class: "bd-prule__text", "data-hook": "preview-rule-text", text: S.sentences.join(" ") }));
 }
 
 function previewBody() {
@@ -773,13 +968,17 @@ async function runPreview() {
     S.sentences = res.sentences || [];
     renderSentences();
     renderPreview(res);
+    renderPreviewRule();
     updateDogCard();
+    scheduleHind();
   } catch (err) {
     if (seq !== S.previewSeq) return;
     if (err && err.status === 422) {
       S.problems = problemsFrom(err.detail);
       renderSentences();
       renderPreview(null);
+      renderPreviewRule();
+      renderHind("blocked");
     } else {
       S.problems = [];
       renderPreview(null, err || new Error("preview failed"));
@@ -807,6 +1006,105 @@ function changed(structural) {
   else if (S.saveProblems.length) { S.saveProblems = []; renderSentences(); }
   schedulePreview();
   updateSave();
+}
+
+// ---- the 14 day hindsight preview ---------------------------------------------------------------------
+
+const HIND_LABEL = "Hindsight, not counted in the record";
+const hindUnits = (u) => (isNum(u) ? `${u > 0 ? "+" : ""}${u.toFixed(2)}u` : "n/a");
+
+/** "Over the last 14 days this rule would have bet N times: W-L, +x.xxu (hindsight, not counted)." Every number is the server's. */
+export function hindSentence(data, days = HIND_DAYS) {
+  const rec = (data && data.record) || {};
+  const bets = rec.bets || 0;
+  if (!bets) return `Over the last ${days} days this rule would not have placed a bet (hindsight, not counted).`;
+  const graded = rec.graded || 0;
+  const wl = `${rec.wins || 0}-${rec.losses || 0}${rec.pushes ? `-${rec.pushes}` : ""}`;
+  const times = `${bets} ${bets === 1 ? "time" : "times"}`;
+  if (!graded) return `Over the last ${days} days this rule would have bet ${times}, none settled yet (hindsight, not counted).`;
+  return `Over the last ${days} days this rule would have bet ${times}: ${wl}, ${hindUnits(data.units_average_price)} (hindsight, not counted).`;
+}
+
+function hindName() { return String((S.spec && S.spec.name) || "").trim() || "Draft Hound"; }
+function hindSpec() { const spec = clone(S.spec); spec.name = hindName(); return cleanSpec(spec); }
+
+/** Draw the preview's one state into its box. `kind` is idle, blocked, signin, pending, result, paused, error or gematria. */
+function renderHind(kind, { data = null, text = "", err = null } = {}) {
+  const box = q("hind-box");
+  if (!box) return;
+  S.hind.kind = kind;
+  box.setAttribute("data-state", kind);
+  if (kind === "upgrade" && showUpgrade(box, err)) return;
+  clearNode(box);
+  const line = (t) => h("p", { class: "bd-hind__line", "data-hook": "hind-line", role: "status", text: t });
+  const chip = h("span", { class: "dk-chip dk-chip--hind", "data-hook": "hind-label", text: HIND_LABEL });
+  const stale = S.hind.last && (kind === "paused" || kind === "error");
+  if (kind === "idle") { box.appendChild(line("Build a rule to see how it would have done over the last 14 days.")); return; }
+  if (kind === "blocked") { box.appendChild(line("Fix the rules to see the last 14 days.")); return; }
+  if (kind === "gematria") { box.appendChild(line("A Gematria hound is only tested going forward, so there is no hindsight preview for it.")); return; }
+  if (kind === "signin") {
+    const ask = line("Sign in to see how this rule would have done over the last 14 days (hindsight, not counted). ");
+    ask.appendChild(signInLink("Sign in"));
+    box.appendChild(ask);
+    return;
+  }
+  box.appendChild(chip);
+  if (kind === "pending") { box.appendChild(line(S.hind.last ? `Checking the last ${HIND_DAYS} days again...` : `Checking the last ${HIND_DAYS} days...`)); return; }
+  if (kind === "result") {
+    box.appendChild(line(hindSentence(data)));
+    if (data && data.sample_note) box.appendChild(h("p", { class: "hd-fine", "data-hook": "hind-sample", text: data.sample_note }));
+    box.appendChild(h("p", { class: "hd-fine", text: "Units are at the board-average price, replayed over boards already stored. You can see how those games ended, so this is a rehearsal." }));
+    return;
+  }
+  // paused (a limit) or error: the last result stays, marked out of date, and one tap asks again
+  if (stale) box.appendChild(h("p", { class: "bd-hind__old", "data-hook": "hind-old", text: `Out of date: ${hindSentence(S.hind.last)}` }));
+  box.appendChild(line(text || "Preview paused, tap to refresh."));
+  box.appendChild(h("p", {}, [h("button", { type: "button", class: "btn btn--ghost", "data-hook": "hind-refresh", text: "Refresh preview",
+    on: { click: () => hindRun(true) } })]));
+}
+
+async function hindRun(manual) {
+  const hs = S.hind;
+  if (hs.timer) { clearTimeout(hs.timer); hs.timer = null; }
+  if (!S.started || !S.menu) return;
+  if (S.problems.length) { renderHind("blocked"); return; }
+  if (isGem()) { renderHind("gematria"); return; }
+  if (!S.signedIn) { renderHind("signin"); return; }
+  const spec = hindSpec();
+  const key = JSON.stringify(spec);
+  if (hs.answered.has(key)) { hs.last = hs.answered.get(key); hs.lastKey = key; renderHind("result", { data: hs.last }); return; }     // a rule already answered: nothing to ask
+  const now = Date.now();
+  if (!manual) {
+    hs.autoRuns = hs.autoRuns.filter((t) => now - t < 3600 * 1000);
+    if (hs.autoRuns.length >= HIND_AUTO_PER_HOUR) { renderHind("paused"); return; }
+    hs.autoRuns.push(now);
+  }
+  const seq = ++hs.seq;
+  renderHind("pending");
+  try {
+    const data = await apiPost("/hounds/drill", { spec, days: HIND_DAYS });
+    if (seq !== hs.seq) return;
+    hs.last = data; hs.lastKey = key;
+    hs.answered.set(key, data);
+    if (hs.answered.size > 8) hs.answered.delete(hs.answered.keys().next().value);
+    renderHind("result", { data });
+  } catch (err) {
+    if (seq !== hs.seq) return;
+    const code = err && err.detail && typeof err.detail === "object" ? err.detail.error : "";
+    if (err && (err.status === 429 || code === "rate_limited" || code === "drill_busy")) renderHind("paused", { text: "Preview paused, tap to refresh." });
+    else if (err && err.status === 402) renderHind("upgrade", { err });
+    else if (err && err.status === 401) { S.signedIn = false; renderHind("signin"); }
+    else if (err && err.status === 422) renderHind("error", { text: describeError(err, "the hindsight preview").text });
+    else renderHind("error", { text: "The last 14 days could not be checked just now. Tap to try again." });
+  }
+}
+
+/** The rule changed: wait for the edits to stop, then ask once (and never more than the allowance lets). */
+function scheduleHind() {
+  const hs = S.hind;
+  if (hs.timer) clearTimeout(hs.timer);
+  if (!S.started) { renderHind("idle"); return; }
+  hs.timer = setTimeout(() => hindRun(false), HIND_DEBOUNCE_MS);
 }
 
 // ---- step 3: identity ---------------------------------------------------------------------------------
@@ -1167,7 +1465,7 @@ async function readEnglish() {
     setStatus("I read it but could not draw the result. Your text is still here; press Read my strategy to try again, or start from a blank rule.", "error");
     return;
   }
-  setStatus(res.spec || (res.draft && res.draft.rules && res.draft.rules.length) ? "Read. Your draft is in step 2 below." : "I could not make a rule from that. Step 2 has a blank rule to fill in.");
+  setStatus(res.spec || (res.draft && res.draft.rules && res.draft.rules.length) ? "Read. I filled in the steps below. Check each one before you keep it." : "I could not make a rule from that, so the steps below are blank for you to fill in.");
   const step = q("step-rules");
   if (!embedded() && step && typeof step.scrollIntoView === "function") step.scrollIntoView();
   if (res.job_id && res.status === "translating" && S.notRead.length) startJobPolling(res.job_id);
@@ -1285,6 +1583,8 @@ function updateSave() {
   btn.disabled = S.busy || !S.started;
   btn.hidden = !S.signedIn && !editing;               // a signed-out visitor keeps through the form under the identity fields
   syncKeep();
+  const vnote = q("version-note");
+  if (vnote) vnote.textContent = editing ? `Saving makes version ${S.edit.version_no + 1}; the old version keeps its record.` : "";
   const hint = q("save-hint");
   if (hint) hint.textContent = S.started ? "" : "The save button wakes up once your strategy is read (step 1) or you start a blank rule.";
   const limit = q("limit-text");
@@ -1577,6 +1877,9 @@ export function openBlank() {
   stopJobPolling();
   S.edit = null; S.copiedFrom = ""; S.diffReady = false; S.started = false;
   S.spec = blankSpec(); S.sentences = []; S.problems = []; S.saveProblems = [];
+  S.hind.last = null; S.hind.lastKey = ""; S.hind.seq += 1;
+  if (S.hind.timer) { clearTimeout(S.hind.timer); S.hind.timer = null; }
+  renderHind("idle");
   q("diff").hidden = true;
   setMessage("");
   serverError("");
@@ -1643,6 +1946,17 @@ function stateBox(kind, text) {
   return h("div", { class: `hd-state hd-state--${kind}`, role: kind === "down" ? "alert" : "status", "data-hook": "section-state", "data-kind": kind }, [h("p", { text })]);
 }
 
+/** GET /sports/season once: which sports are in season and how many games each has in the next 7 days. A failure leaves plain chips. */
+async function loadSeason() {
+  S.season = null;
+  try {
+    const res = await apiGet("/sports/season");
+    const map = {};
+    for (const sp of (res && res.sports) || []) if (sp && sp.code) map[sp.code] = sp;
+    S.season = Object.keys(map).length ? map : null;
+  } catch (err) { S.season = null; }
+}
+
 async function boot() {
   if (!S.bound) {                       // a retry after a failed menu load runs the rest of this again, but binds once
     S.bound = true;
@@ -1666,6 +1980,13 @@ async function boot() {
       onSignIn: saveDraft, prefix: "build-keep" });
     q("edit-cancel").addEventListener("click", stopEdit);
     q("english-input").addEventListener("input", updateCount);
+    // the live preview is open beside the steps on a wide screen and folded away on a phone (one tap opens it)
+    const panel = q("preview-panel");
+    const dock = panel && panel.closest ? panel.closest("details") : null;
+    if (dock) {
+      const wide = typeof window.matchMedia === "function" && window.matchMedia("(min-width: 1000px)").matches;
+      if (wide) dock.setAttribute("open", ""); else dock.removeAttribute("open");
+    }
   }
   updateCount();
   q("build-submit").disabled = true;
@@ -1684,7 +2005,8 @@ async function boot() {
     q("blank-rule").disabled = true;
     return;
   }
-  clearNode(q("rules-empty")).appendChild(h("p", { text: "Describe a strategy above, or start from a blank rule." }));
+  clearNode(q("rules-empty")).appendChild(h("p", { text: EMPTY_STEPS_TEXT }));
+  await loadSeason();
   S.spec = blankSpec();
   S.started = false;
   bindIdentity();

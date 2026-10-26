@@ -124,7 +124,7 @@ class TheDraftIsNeverHeldBackByTheSecondReader(unittest.TestCase):
         self.assertEqual(f["translator"], "A second reader is translating the rest (about 30 seconds)...")
         self.assertFalse(f["go_disabled"])
         self.assertFalse(f["blank_disabled"])
-        self.assertEqual(f["status"], "Read. Your draft is in step 2 below.")
+        self.assertEqual(f["status"], "Read. I filled in the steps below. Check each one before you keep it.")
         self.assertEqual(out["intervals"], [1000])
 
     def test_the_cards_hold_the_new_conditions_from_the_menu(self):
@@ -222,7 +222,7 @@ class EveryWayAReadCanFailEndsInWordsAndAUsableBuilder(unittest.TestCase):
                         dict(do="click", sel="[data-hook='blank-rule']", wait=150)], queries=[q("cards", "[data-hook='rule-card']", "count")])
         self.assertEqual(out["captures"]["initial"], {"go": True, "retry": 1})
         self.assertEqual(out["captures"]["retry"], {"go": False, "blank": False, "retry": 0,
-                                                    "empty": "Describe a strategy above, or start from a blank rule."})
+                                                    "empty": "Build it in steps: sports, markets, conditions, price range and limits. Or say it in words above and I will fill the steps in for you."})
         self.assertEqual(out["final"]["cards"], 1)
 
     def test_a_server_error_says_so(self):

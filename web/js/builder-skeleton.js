@@ -18,8 +18,24 @@ export function builderSkeleton() {
       h("a", { class: "bd-textlink", href: "interview.html", "data-hook": "build-interview-cta", text: "Turn your strategy into a hound" })]),
     h("div", hook("build-gate", { class: "hd-state hd-state--missing", role: "status", hidden: true })),
 
+    h("details", { class: "bd-advanced bd-advanced--preview bd-dock", "data-dock": "" }, [
+      h("summary", { text: "Live preview" }),
+      h("section", hook("preview-panel", { class: "bd-preview" }), [
+        h("div", hook("preview-rule", { class: "bd-prule", hidden: true })),
+        h("h3", { class: "bd-preview__sub", text: "Today's board" }),
+        h("p", hook("preview-count", { class: "bd-preview__count", "aria-live": "polite", text: "Nothing to preview yet." })),
+        h("p", hook("preview-sub", { class: "hd-fine" })),
+        h("p", hook("preview-retry-row", { class: "bd-preview__retry", hidden: true }), [
+          h("button", hook("preview-retry", { type: "button", class: "btn btn--ghost", text: "Check again" }))]),
+        h("ul", hook("preview-list", { class: "bd-picks" })),
+        h("p", hook("preview-note", { class: "hd-fine", text: "A read-only look at today's board. It places nothing, and it is never counted." })),
+        h("h3", { class: "bd-preview__sub", text: "Last 14 days" }),
+        h("div", hook("hind-box", { class: "bd-hind", "aria-live": "polite" }), [h("p", { class: "bd-hind__line", text: "Build a rule to see how it would have done over the last 14 days." })])])]),
+
+
     h("section", hook("step-describe", { class: "bd-step", "aria-label": "Describe your strategy" }), [
-      h("p", { class: "bd-step__no", text: "1. Say it" }),
+      h("p", { class: "bd-step__no", text: "Say it in words" }),
+      h("p", { class: "hd-fine bd-shortcut", text: "A shortcut. Type it, and I will fill in the steps below. Then you check each step." }),
       h("label", { class: "bd-sr", for: "english-input", text: "Your strategy in plain English" }),
       h("textarea", hook("english-input", { id: "english-input", class: "bd-english", rows: "3", "aria-describedby": "english-count-note",
         placeholder: "e.g. Bet home underdogs between +120 and +200 on 2+ days rest. Max 2 bets a day." })),
@@ -30,7 +46,7 @@ export function builderSkeleton() {
         h("div", hook("style-picker", { class: "bd-chips", role: "group", "aria-label": "Base style" }))]),
       h("div", { class: "bd-actions" }, [
         h("button", hook("english-go", { type: "button", class: "btn btn--primary", text: "Read my strategy" })),
-        h("button", hook("blank-rule", { type: "button", class: "btn btn--ghost", text: "Start from a blank rule" })),
+        h("button", hook("blank-rule", { type: "button", class: "btn btn--ghost", text: "Build it in steps instead" })),
         h("span", hook("english-status", { class: "hd-fine", role: "status", "aria-live": "polite" }))]),
       h("div", hook("english-read", { class: "bd-read", hidden: true }), [
         h("h4", { class: "hd-h3", text: "How I read it" }),
@@ -45,8 +61,8 @@ export function builderSkeleton() {
         h("p", hook("english-assumed", { class: "hd-fine", hidden: true }))])]),
 
     h("section", hook("step-rules", { class: "bd-step", "aria-label": "What your hound will do" }), [
-      h("p", { class: "bd-step__no", text: "2. Check it" }),
-      h("div", hook("rules-empty", { class: "bd-empty" }), [h("p", { text: "Describe a strategy above, or start from a blank rule." })]),
+      h("p", { class: "bd-step__no", text: "Build the rule" }),
+      h("div", hook("rules-empty", { class: "bd-empty" }), [h("p", { text: "Build it in steps: sports, markets, conditions, price range and limits. Or say it in words above and I will fill the steps in for you." })]),
       h("div", hook("style-gematria", { class: "bd-gematria", hidden: true }), [
         h("h4", { class: "hd-h3", text: "Gematria" }),
         h("p", hook("style-explain")),
@@ -57,13 +73,12 @@ export function builderSkeleton() {
       h("div", hook("rules-body", { hidden: true }), [
         h("div", hook("rule-sentences", { class: "bd-sentences", "aria-live": "polite" })),
         h("div", hook("build-problems", { class: "bd-problems", role: "alert", hidden: true })),
-        h("details", hook("rules-advanced", { class: "bd-advanced" }), [
-          h("summary", { text: "Edit rules" }),
+        h("div", hook("rules-advanced", { class: "bd-steps" }), [
           h("div", hook("rule-cards", { class: "bd-cards" })),
           h("p", {}, [h("button", hook("add-rule", { type: "button", class: "btn btn--ghost", text: "Add another rule" })),
             h("span", hook("rule-limit", { class: "hd-fine" }))]),
           h("fieldset", hook("globals", { class: "hd-fieldset bd-globals" }), [
-            h("legend", { text: "For the whole hound" }),
+            h("legend", { text: "5. Limits, for the whole hound" }),
             h("div", hook("globals-grid", { class: "bd-globals__grid" }))])])])]),
 
     h("section", hook("step-identity", { class: "bd-step", "aria-label": "Make it yours" }), [
@@ -94,17 +109,8 @@ export function builderSkeleton() {
         h("button", hook("build-submit", { type: "button", class: "btn btn--primary btn--lg", text: "Keep your hound" })),
         h("button", hook("edit-cancel", { type: "button", class: "btn btn--ghost", hidden: true, text: "Stop editing" })),
         h("span", hook("limit-text", { class: "hd-fine" })),
-        h("span", hook("save-hint", { class: "hd-fine" }))])]),
-
-    h("details", { class: "bd-advanced bd-advanced--preview" }, [
-      h("summary", { text: "Would have bet today" }),
-      h("section", hook("preview-panel", { class: "bd-preview" }), [
-        h("p", hook("preview-count", { class: "bd-preview__count", "aria-live": "polite", text: "Nothing to preview yet." })),
-        h("p", hook("preview-sub", { class: "hd-fine" })),
-        h("p", hook("preview-retry-row", { class: "bd-preview__retry", hidden: true }), [
-          h("button", hook("preview-retry", { type: "button", class: "btn btn--ghost", text: "Check again" }))]),
-        h("ul", hook("preview-list", { class: "bd-picks" })),
-        h("p", hook("preview-note", { class: "hd-fine", text: "A read-only look at today's board. It places nothing, and it is never counted." }))])]),
+        h("span", hook("save-hint", { class: "hd-fine" }))]),
+      h("p", hook("version-note", { class: "hd-fine bd-versionnote", "aria-live": "polite" }))]),
 
     // the builder keeps its own "my hounds" list; the studio shows the dogs itself, so these stay out of sight
     h("div", { hidden: true }, [h("p", hook("my-dogs-state")), h("ul", hook("my-dogs"))]),

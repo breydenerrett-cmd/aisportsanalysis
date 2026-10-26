@@ -2,6 +2,7 @@
 
     GET /sports/now       {generated_utc, families: [{code, label, live: [...], upcoming_24h: [...],
                           next_start_utc}]} -- from STORED rows; no call to The Odds API per request
+    GET /sports/season    {sports: [{code, in_season, games_7d, phase, chip, reason}]} -- the editor's sport chips (PUBLIC, cached)
     GET /sports/catalog   {families: [{code, label, markets, dog_menu, ...}]} -- the sport families, their
                           labels, the markets captured for each and whether a dog may bet it (PUBLIC)
 
@@ -14,7 +15,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from src.sports import allsports_view, catalog
+from src.sports import allsports_view, catalog, season_view
 
 router = APIRouter()
 public_router = APIRouter()
@@ -28,3 +29,9 @@ def get_sports_now() -> dict:
 @public_router.get("/sports/catalog")
 def get_sports_catalog() -> dict:
     return {"families": catalog.public_catalog(), "paper_only": True}
+
+
+@public_router.get("/sports/season")
+def get_sports_season() -> dict:
+    """What is in season and how many stored games start in the next 7 days (the rules editor's sport chips). Public, cached 10 min."""
+    return season_view.cached_season_overview()

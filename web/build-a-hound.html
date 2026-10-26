@@ -72,7 +72,8 @@
 
 <section class="hd-panel bd-step" aria-labelledby="s1-h" data-hook="step-describe">
   <p class="bd-step__no"><span class="bd-sr">Step </span>1</p>
-  <h2 id="s1-h">Say it</h2>
+  <h2 id="s1-h">Say it in words</h2>
+  <p class="hd-fine bd-shortcut">A shortcut. Type it, and I will fill in the steps below. Then you check each step.</p>
   <label class="bd-sr" for="english-input">Your strategy in plain English</label>
   <textarea id="english-input" class="bd-english" rows="4" data-hook="english-input" aria-describedby="english-count-note"
     placeholder="e.g. Bet home underdogs between +120 and +200 when they're on 2+ days rest. Max 2 bets a day."></textarea>
@@ -84,7 +85,7 @@
   </fieldset>
   <div class="bd-actions">
     <button type="button" class="btn btn--primary" data-hook="english-go">Read my strategy</button>
-    <button type="button" class="bd-textbtn" data-hook="blank-rule">Start from a blank rule</button>
+    <button type="button" class="btn btn--ghost" data-hook="blank-rule">Build it in steps instead</button>
     <span class="hd-fine" data-hook="english-status" role="status" aria-live="polite"></span>
   </div>
   <div class="bd-read" data-hook="english-read" hidden>
@@ -105,9 +106,9 @@
 
 <section class="hd-panel bd-step" aria-labelledby="s2-h" data-hook="step-rules">
   <p class="bd-step__no"><span class="bd-sr">Step </span>2</p>
-  <h2 id="s2-h">Check it</h2>
+  <h2 id="s2-h">Build the rule</h2>
   <div class="bd-empty" data-hook="rules-empty">
-    <p>Describe a strategy above, or start from a blank rule.</p>
+    <p>Build it in steps: sports, markets, conditions, price range and limits. Or say it in words above and I will fill the steps in for you.</p>
   </div>
   <div class="bd-gematria" data-hook="style-gematria" hidden>
     <h3 class="hd-h3">Gematria</h3>
@@ -120,16 +121,15 @@
   <div data-hook="rules-body" hidden>
     <div class="bd-sentences" data-hook="rule-sentences" aria-live="polite"></div>
     <div class="bd-problems" data-hook="build-problems" role="alert" hidden></div>
-    <details class="bd-advanced" data-hook="rules-advanced">
-      <summary>Edit rules</summary>
+    <div class="bd-steps" data-hook="rules-advanced">
       <div class="bd-cards" data-hook="rule-cards"></div>
       <p><button type="button" class="btn btn--ghost" data-hook="add-rule">Add another rule</button>
          <span class="hd-fine" data-hook="rule-limit"></span></p>
       <fieldset class="hd-fieldset bd-globals" data-hook="globals">
-        <legend>For the whole hound</legend>
+        <legend>5. Limits, for the whole hound</legend>
         <div class="bd-globals__grid" data-hook="globals-grid"></div>
       </fieldset>
-    </details>
+    </div>
   </div>
 </section>
 
@@ -166,21 +166,29 @@
     <span class="hd-fine" data-hook="limit-text"></span>
     <span class="hd-fine" data-hook="save-hint"></span>
   </p>
+  <p class="hd-fine bd-versionnote" data-hook="version-note" aria-live="polite"></p>
 </section>
 
 </div>
 
-<aside class="bd-side" aria-label="Preview and my hounds">
-  <section class="hd-panel bd-preview" aria-labelledby="pv-h" data-hook="preview-panel">
+<div class="bd-rail">
+<details class="bd-dock bd-dock--page" data-dock open>
+  <summary>Live preview</summary>
+  <section class="hd-panel bd-preview" aria-label="Live preview" data-hook="preview-panel">
     <span class="bd-side__dog" data-side-dog="preview" aria-hidden="true"></span>
-    <h2 id="pv-h">Would have bet today</h2>
+    <div class="bd-prule" data-hook="preview-rule" hidden></div>
+    <h3 class="bd-preview__sub">Today's board</h3>
     <p class="bd-preview__count" data-hook="preview-count" aria-live="polite">Nothing to preview yet.</p>
     <p class="hd-fine" data-hook="preview-sub"></p>
     <p class="bd-preview__retry" data-hook="preview-retry-row" hidden><button type="button" class="btn btn--ghost" data-hook="preview-retry">Check again</button></p>
     <ul class="bd-picks" data-hook="preview-list"></ul>
     <p class="hd-fine" data-hook="preview-note">A read-only look at today's board. It places nothing, and it is never counted.</p>
+    <h3 class="bd-preview__sub">Last 14 days</h3>
+    <div class="bd-hind" data-hook="hind-box" aria-live="polite"><p class="bd-hind__line">Build a rule to see how it would have done over the last 14 days.</p></div>
   </section>
+</details>
 
+<aside class="bd-side" aria-label="My hounds">
   <section class="hd-panel bd-mine" aria-labelledby="mine-h" data-hook="my-dogs-panel">
     <span class="bd-side__dog" data-side-dog="mine" aria-hidden="true"></span>
     <h2 id="mine-h">My hounds</h2>
@@ -189,6 +197,7 @@
     <p class="hd-fine"><a href="kennel.html">Open my kennel</a></p>
   </section>
 </aside>
+</div>
 </div>
 
 </main>
