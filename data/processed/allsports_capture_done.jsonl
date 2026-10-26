@@ -6614,3 +6614,7 @@
 {"call_kind": "pregame", "credits": 3, "events": 14, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-26T17:11:16.505945Z", "regions": ["us"], "rows": 349, "sport_key": "basketball_nba", "stored": 297}
 {"commence_utc": "2026-10-26T23:10:00Z", "event_id": "daa5166685c4ca1a4f033d8bff91a6ba", "kind": "phase", "observed_utc": "2026-10-26T17:11:16.505945Z", "phase": "t6h", "rows": 32, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 14, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-26T17:11:16.505945Z", "regions": ["us"], "rows": 341, "sport_key": "icehockey_nhl", "stored": 341}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-10-26T23:29:26.354189Z", "observed_utc": "2026-10-26T17:29:26.354189Z", "sport_key": "americanfootball_cfl"}
+{"events": 17, "kind": "peek", "next_check_utc": "2026-10-26T18:45:00Z", "observed_utc": "2026-10-26T17:29:26.354189Z", "sport_key": "soccer_england_league1"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-26T23:29:26.354189Z", "observed_utc": "2026-10-26T17:29:26.354189Z", "sport_key": "soccer_germany_bundesliga_women"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-26T23:29:26.354189Z", "observed_utc": "2026-10-26T17:29:26.354189Z", "sport_key": "soccer_uefa_champs_league_women"}
