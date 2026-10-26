@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-26 15:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-26 20:45Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,8 +151,8 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-26 (8:30 am PT run): all four Sunday NFL briefs graded complete; the public sample now shows Chiefs at Seahawks.
-- World Series Game 3 (Brewers at Rays) is today 5:00 pm PT; Monday night NFL (Cowboys at Eagles) 5:15 pm PT; briefs in the afternoon run.
-- Working-branch tests green on the newest finished run; the scheduled daily loop on the default branch is still red.
+- 2026-10-26 (1:30 pm PT run): World Series Game 3 brief (Brewers at Rays) published before first pitch; one model reading, passes on every market.
+- Monday night NFL brief (Cowboys at Eagles) published before kickoff; passes on moneyline, spread and total.
+- Both briefs grade Tuesday morning. Working-branch tests green; the scheduled daily loop on the default branch is still red.
 - Public MLB value picks remain paused. Sends 0, replies 0, testers 0.
 

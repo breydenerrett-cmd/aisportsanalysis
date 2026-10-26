@@ -1,0 +1,235 @@
+{
+ "summary": "Dallas is the better team on the numbers we have. It gains 5.4907 yards per play against Philadelphia's 4.38 and scores more, but it also allows more points, and both teams are 2-4 on six games, so everything here is thin. The best Dallas moneyline is -205, which is past the point where I will bet, and Philadelphia at 196 is close to the fair price the books hold, so I pass. On the spread, Dallas lays 4.5 and the number has moved toward Dallas since it was first captured; the season margin gap in the data is close to what the number asks, so the price already holds the case and I pass. The total has dropped from 47.5 to 44. Philadelphia scores 17.6667 points per game and Dallas allows 26.5, so the two pull against each other and the price probably holds both. The unknowns that matter are Jalen Hurts, projected to start after Tanner McKee played last time, two Philadelphia receivers listed out, and weather, which the data lacks for an outdoor game. I make no bet in any market.",
+ "calls": [
+  {
+   "slot_id": "moneyline",
+   "market": "moneyline",
+   "selection": "DAL",
+   "verdict": "PASS",
+   "price": -205,
+   "book": "draftkings",
+   "fair_estimate": 0.65,
+   "confidence": "low",
+   "pass_price": -186,
+   "reasons": [
+    {
+     "claim": "Dallas is better on yards per play over six games each, and the books agree it is the favourite; the question is only whether the price is fair.",
+     "evidence": [
+      {
+       "path": "sections.away.values.form.season_to_date.yards_per_play.value",
+       "value": 5.4907
+      },
+      {
+       "path": "sections.home.values.form.season_to_date.yards_per_play.value",
+       "value": 4.38
+      },
+      {
+       "path": "markets.moneyline.options[0].fair_probability",
+       "value": 0.6639
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The best Dallas price is -205, which is -200 or worse, so Dallas cannot be a bet here. Philadelphia's best price of 196 implies about 0.3378, a hair above the books' fair 0.3361, so the underdog needs a view that Philadelphia wins more often than that, and the data does not give one.",
+     "evidence": [
+      {
+       "path": "markets.moneyline.options[0].best.price",
+       "value": -205
+      },
+      {
+       "path": "markets.moneyline.options[1].best.price",
+       "value": 196
+      },
+      {
+       "path": "markets.moneyline.options[1].fair_probability",
+       "value": 0.3361
+      }
+     ],
+     "derived": [
+      {
+       "value": 0.3378,
+       "unit": "probability",
+       "op": "implied_probability",
+       "inputs": [
+        "markets.moneyline.options[1].best.price"
+       ],
+       "note": "chance implied by the best Philadelphia price"
+      }
+     ]
+    },
+    {
+     "claim": "Philadelphia is on a long losing streak with a projected quarterback change from last game and two receivers out, but all of it rests on six games and the market likely knows it; I do not see enough to back the underdog.",
+     "evidence": [
+      {
+       "path": "sections.home.values.streak.length",
+       "value": 4
+      },
+      {
+       "path": "sections.home.values.qb.listed_for_this_game.changed_since_last_game",
+       "value": true
+      },
+      {
+       "path": "sections.home.values.injuries.by_position_group.WR.out",
+       "value": 2
+      },
+      {
+       "path": "sections.home.values.form.season_to_date.games",
+       "value": 6
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "what_would_change_it": "A Dallas price of -186 or better, where my number breaks even, would make Dallas worth taking.",
+   "case_against": null
+  },
+  {
+   "slot_id": "spread",
+   "market": "spread",
+   "selection": "PHI +4.5",
+   "verdict": "PASS",
+   "price": -108,
+   "book": "betmgm",
+   "fair_estimate": 0.5,
+   "confidence": "low",
+   "pass_price": 100,
+   "reasons": [
+    {
+     "claim": "The season margin differential, home minus away, is -3.8334 points per game on six games each, which is close to the 4.5 the number asks of Dallas, so the price already holds the gap between the teams.",
+     "evidence": [
+      {
+       "path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff",
+       "value": -3.8334
+      },
+      {
+       "path": "markets.spread.options[1].line",
+       "value": -4.5
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The two sides are priced as a coin flip, and the number has moved toward Dallas since it was first captured; nothing in the data shows why that move is wrong, and 4.5 is not on or next to a key number.",
+     "evidence": [
+      {
+       "path": "markets.spread.options[0].fair_probability",
+       "value": 0.5062
+      },
+      {
+       "path": "markets.spread.options[1].fair_probability",
+       "value": 0.4938
+      },
+      {
+       "path": "markets.spread.context.away_number_first_captured",
+       "value": 1.0
+      },
+      {
+       "path": "sections.reference.values.key_numbers[0]",
+       "value": 3
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Quarterback and injury questions on the Philadelphia side cut both ways and could move the number: Jalen Hurts is projected, not confirmed, and two receivers are out.",
+     "evidence": [
+      {
+       "path": "sections.home.values.qb.listed_for_this_game.name",
+       "value": "Jalen Hurts"
+      },
+      {
+       "path": "sections.home.values.qb.listed_for_this_game.projected",
+       "value": true
+      },
+      {
+       "path": "sections.home.values.injuries.skill_players_listed[3].report_status",
+       "value": "out"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "what_would_change_it": "A report that Jalen Hurts is ruled out, or the number moving onto a key number of 3 or 6 points, would be worth another look.",
+   "case_against": null
+  },
+  {
+   "slot_id": "total",
+   "market": "total",
+   "selection": "Over 44",
+   "verdict": "PASS",
+   "price": -110,
+   "book": "betrivers",
+   "fair_estimate": 0.5,
+   "confidence": "low",
+   "pass_price": 100,
+   "reasons": [
+    {
+     "claim": "The scoring numbers pull in opposite directions: Dallas scores 25.1667 and allows 26.5, while Philadelphia scores 17.6667 and allows 22.8333, so the price of 44 plausibly already holds them.",
+     "evidence": [
+      {
+       "path": "sections.away.values.form.season_to_date.points_for_per_game",
+       "value": 25.1667
+      },
+      {
+       "path": "sections.away.values.form.season_to_date.points_against_per_game",
+       "value": 26.5
+      },
+      {
+       "path": "sections.home.values.form.season_to_date.points_for_per_game",
+       "value": 17.6667
+      },
+      {
+       "path": "sections.home.values.form.season_to_date.points_against_per_game",
+       "value": 22.8333
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The total has come down from where it was first captured, and the data does not say why, so I read the market as having already priced something I cannot see.",
+     "evidence": [
+      {
+       "path": "markets.total.context.number_first_captured",
+       "value": 47.5
+      },
+      {
+       "path": "markets.total.options[0].line",
+       "value": 44.0
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Philadelphia's offense is weak on yards per play and its recent three-game window is thin, turnover margins are negative for both teams, and weather is missing for an outdoor game, so I do not lean either way.",
+     "evidence": [
+      {
+       "path": "sections.home.values.form.last_3.yards_per_play.value",
+       "value": 3.5169
+      },
+      {
+       "path": "sections.away.values.form.season_to_date.turnover_margin.value",
+       "value": -0.6667
+      },
+      {
+       "path": "sections.home.values.form.season_to_date.turnover_margin.value",
+       "value": -0.3333
+      },
+      {
+       "path": "sections.schedule.values.venue.roof",
+       "value": "outdoors"
+      },
+      {
+       "path": "missing[1].item",
+       "value": "weather"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "what_would_change_it": "A report that Jalen Hurts is ruled out, or a weather forecast for this outdoor game, would change how I read the number.",
+   "case_against": null
+  }
+ ],
+ "summary_derived": []
+}
