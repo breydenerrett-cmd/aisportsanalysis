@@ -219,6 +219,13 @@ class State:
 # phases and the plan
 # ---------------------------------------------------------------------------
 
+LOCK_PREFIX = "lock"             # phase names of the pre-lock captures (catalog.lock_phases)
+
+
+def is_lock_phase(phase) -> bool:
+    return str(phase).startswith(LOCK_PREFIX)
+
+
 def due_pairs(key: str, events: list, state: State, now: datetime, phases: dict) -> list:
     """(event_id, phase) pairs due now: the event has not started, the phase window has opened, and the
     (key, event, phase) is not done. Events that have started are never due (in-play has its own path)."""
@@ -268,7 +275,7 @@ def choose_regions(key: str, family_code: str, state: State, now: datetime, cap:
 def build_plan(eligible: list, listings: dict, state: State, now: datetime, cap: dict,
                config: Optional[dict] = None) -> list:
     """Calls to make this run, in priority order: pre-game first (soonest start first), then in-play."""
-    phases = dict(cap["phases_minutes"])
+    base_phases = dict(cap["phases_minutes"])
     pregame, inplay = [], []
     for item in eligible:
         key, code = item["key"], item["family"]
@@ -279,6 +286,8 @@ def build_plan(eligible: list, listings: dict, state: State, now: datetime, cap:
         if regions is None:
             continue
         markets = [m for m in catalog.markets_for(code, config) if m in odds_provider.ALLSPORTS_MARKETS]
+        phases = dict(base_phases)
+        phases.update(catalog.lock_phases(code, config))      # NHL: a capture 45 min before each lock choice
         pairs = due_pairs(key, events, state, now, phases)
         if pairs:
             starts = [_parse(e.get("commence_time")) for e in events
@@ -287,7 +296,7 @@ def build_plan(eligible: list, listings: dict, state: State, now: datetime, cap:
             pregame.append({"kind": "pregame", "sport_key": key, "family": code, "title": item["title"],
                             "markets": markets, "regions": regions, "pairs": pairs,
                             "est_credits": len(markets) * len(regions), "starts_in": (soonest - now),
-                            "note": note})
+                            "lock": any(is_lock_phase(p[1]) for p in pairs), "note": note})
             continue
         live = live_events(events, now, catalog.live_window_hours(code, config))
         if live:
@@ -467,11 +476,14 @@ def run(*, now=None, env=None, config: Optional[dict] = None,
         LOG.warning("allsports_capture: quota unreadable: %s", exc)
     if remaining is None and real_provider:
         remaining = budget.remaining_today(now=clock, store=credit_store)
+    injected_guard = spend_guard
     if spend_guard is None:
-        def spend_guard(est, caller_prefix, sub_cap, unlogged):  # noqa: E306
+        def spend_guard(est, caller_prefix, sub_cap, unlogged, reserve=0):  # noqa: E306
             return budget.can_spend_allsports(est + unlogged, now=clock, store=credit_store,
                                               remaining=remaining, config=config, sub_cap=sub_cap,
-                                              caller_prefix=caller_prefix)
+                                              caller_prefix=caller_prefix, reserve=reserve)
+    reserve = int(cap.get("lock_reserve_credits") or 0)
+    reserve_aware = injected_guard is None
     unlogged = 0
     calls_made = 0
     for call in plan:
@@ -480,7 +492,12 @@ def run(*, now=None, env=None, config: Optional[dict] = None,
             continue
         caller = CALLER_INPLAY if call["kind"] == "inplay" else CALLER_PREGAME
         sub_cap = int(cap["inplay_daily_cap_credits"]) if call["kind"] == "inplay" else None
-        decision = spend_guard(call["est_credits"], caller if sub_cap is not None else None, sub_cap, unlogged)
+        guard_args = (call["est_credits"], caller if sub_cap is not None else None, sub_cap, unlogged)
+        if reserve_aware:
+            # a call that is not buying a pre-lock board may not spend the credits held for the locks
+            decision = spend_guard(*guard_args, 0 if call.get("lock") else reserve)
+        else:
+            decision = spend_guard(*guard_args)
         if not decision.allowed:
             result["skipped"][call["sport_key"]] = decision.reason
             if "credit floor" in decision.reason or "daily cap" in decision.reason \
