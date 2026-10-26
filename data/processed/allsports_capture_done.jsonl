@@ -6366,3 +6366,21 @@
 {"events": 8, "kind": "peek", "next_check_utc": "2026-10-26T12:02:29.172154Z", "observed_utc": "2026-10-26T06:02:29.172154Z", "sport_key": "soccer_uefa_nations_league"}
 {"commence_utc": "2026-10-26T08:00:00Z", "event_id": "cab7e48d92c08d09218484064e9e02ff", "kind": "phase", "observed_utc": "2026-10-26T06:02:29.172154Z", "phase": "t2h", "rows": 8, "sport_key": "tennis_wta_pan_pacific_open"}
 {"call_kind": "pregame", "credits": 1, "events": 10, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T06:02:29.172154Z", "regions": ["us"], "rows": 70, "sport_key": "tennis_wta_pan_pacific_open", "stored": 70}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-26T12:17:06.748896Z", "observed_utc": "2026-10-26T06:17:06.748896Z", "sport_key": "aussierules_aflw"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-26T12:17:06.748896Z", "observed_utc": "2026-10-26T06:17:06.748896Z", "sport_key": "soccer_uefa_europa_league"}
+{"events": 56, "kind": "peek", "next_check_utc": "2026-10-26T12:43:22.939723Z", "observed_utc": "2026-10-26T06:43:22.939723Z", "sport_key": "americanfootball_ncaaf"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-26T12:43:22.939723Z", "observed_utc": "2026-10-26T06:43:22.939723Z", "sport_key": "icehockey_ahl"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-10-26T12:43:22.939723Z", "observed_utc": "2026-10-26T06:43:22.939723Z", "sport_key": "soccer_australia_aleague"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-10-26T12:43:22.939723Z", "observed_utc": "2026-10-26T06:43:22.939723Z", "sport_key": "soccer_austria_bundesliga"}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-10-26T12:43:22.939723Z", "observed_utc": "2026-10-26T06:43:22.939723Z", "sport_key": "soccer_italy_serie_b"}
+{"commence_utc": "2026-10-26T12:30:00Z", "event_id": "4fcca39f1c6a31253c07fe75fbb849c8", "kind": "phase", "observed_utc": "2026-10-26T06:43:22.939723Z", "phase": "t6h", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
+{"commence_utc": "2026-10-26T12:30:00Z", "event_id": "ff981b830d19b181bbd9c6a6a092eb5a", "kind": "phase", "observed_utc": "2026-10-26T06:43:22.939723Z", "phase": "t6h", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
+{"call_kind": "pregame", "credits": 1, "events": 16, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T06:43:22.939723Z", "regions": ["us"], "rows": 124, "sport_key": "tennis_atp_swiss_indoors", "stored": 124}
+{"commence_utc": "2026-10-26T12:30:00Z", "event_id": "1ca1cacba4f84c42c3419ef268f6b3b9", "kind": "phase", "observed_utc": "2026-10-26T06:43:22.939723Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
+{"call_kind": "pregame", "credits": 1, "events": 16, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T06:43:22.939723Z", "regions": ["us"], "rows": 121, "sport_key": "tennis_atp_vienna_open", "stored": 121}
+{"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T06:43:22.939723Z", "regions": ["us"], "rows": 66, "sport_key": "tennis_wta_pan_pacific_open", "stored": 66}
+{"events": 21, "kind": "peek", "next_check_utc": "2026-10-26T13:09:22.782445Z", "observed_utc": "2026-10-26T07:09:22.782445Z", "sport_key": "soccer_epl"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-26T13:09:22.782445Z", "observed_utc": "2026-10-26T07:09:22.782445Z", "sport_key": "soccer_germany_bundesliga"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-10-26T13:09:22.782445Z", "observed_utc": "2026-10-26T07:09:22.782445Z", "sport_key": "soccer_poland_ekstraklasa"}
+{"commence_utc": "2026-10-27T07:00:00Z", "event_id": "34e0208f0dbb09bce1c9bd19ef569234", "kind": "phase", "observed_utc": "2026-10-26T07:09:22.782445Z", "phase": "t24h", "rows": 3, "sport_key": "cricket_international_t20"}
+{"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T07:09:22.782445Z", "regions": ["us"], "rows": 5, "sport_key": "cricket_international_t20", "stored": 5}
