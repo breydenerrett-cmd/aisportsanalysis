@@ -460,6 +460,8 @@ def rule_fields(spec: Mapping) -> dict:
         if is_gematria(spec):
             # the style and the rules stamp it was made under are part of the rule; an ordinary hound's hash is unchanged
             out["style"], out["gematria"] = STYLE_GEMATRIA, spec["gematria"]
+        elif is_apprentice(spec):
+            out["style"] = STYLE_APPRENTICE
         return out
     return {k: spec[k] for k in RULE_FIELDS}
 
@@ -560,6 +562,8 @@ def sports_phrase(sports: Iterable[str]) -> str:
 
 def rule_text(spec: Mapping) -> str:
     """The plain-English rule, generated from the validated spec and nothing else."""
+    if is_apprentice(spec) and not spec.get("rules"):
+        return APPRENTICE_RULE_TEXT
     if spec.get("version") == SPEC_VERSION_V2:
         from src.hounds.english import render
         return render.rule_text(spec)
@@ -628,7 +632,11 @@ V2_TOP_KEYS = ("version", "name", "tagline", "color", "badge", "lock_minutes", "
 # The base style (src/hounds/user_gematria.py): "rules" is every ordinary hound (the key is simply absent), "gematria" is the
 # member Gematria style, whose pick logic is the house Gematria Hound's. `gematria` is its creation stamp (rules version + hash).
 STYLE_RULES, STYLE_GEMATRIA = "rules", "gematria"
-STYLES = (STYLE_RULES, STYLE_GEMATRIA)
+# The member Apprentice style (src/hounds/apprentice, owner 2026-10-24/25): a hound that starts with NO rules and learns only
+# from its owner's real, logged bets. ``rules`` may be empty (the one style where that is valid); a proposal the owner applies
+# fills them in, and then it bets paper tickets like any other hound, kept apart from the lessons.
+STYLE_APPRENTICE = "apprentice"
+STYLES = (STYLE_RULES, STYLE_GEMATRIA, STYLE_APPRENTICE)
 V2_STYLE_KEYS = ("style", "gematria")
 RULE_LABEL_MAX = 40
 DEFAULT_MIN_BOOKS_GAME, DEFAULT_MIN_BOOKS_PROP = 3, 1
@@ -763,7 +771,7 @@ def _validate_v2(raw: Mapping, *, taken_names: Iterable[str], extra_real_names) 
     if style not in STYLES:
         errors["style"] = f"choose one of {', '.join(STYLES)}"
         style = STYLE_RULES
-    if style == STYLE_RULES and raw.get("gematria") is not None:
+    if style != STYLE_GEMATRIA and raw.get("gematria") is not None:
         errors["gematria"] = "belongs to the Gematria style only"
     if raw.get("version", SPEC_VERSION_V2) != SPEC_VERSION_V2:
         errors["version"] = f"must be {SPEC_VERSION_V2}"
@@ -806,6 +814,8 @@ def _validate_v2(raw: Mapping, *, taken_names: Iterable[str], extra_real_names) 
     rules: list = []
     if style == STYLE_GEMATRIA and fixed is None:
         pass                                    # `normalize` already said what is wrong
+    elif style == STYLE_APPRENTICE and rules_raw in (None, [], ()):
+        pass                                    # an Apprentice begins with no rules at all
     elif not isinstance(rules_raw, (list, tuple)) or not rules_raw:
         errors["rules"] = "add at least one rule"
     elif len(rules_raw) > R.MAX_RULES:
@@ -815,10 +825,20 @@ def _validate_v2(raw: Mapping, *, taken_names: Iterable[str], extra_real_names) 
             norm = _validate_rule(item, i, errors)
             if norm is not None:
                 rules.append(norm)
+    app_sports = None
+    if style == STYLE_APPRENTICE and not rules:
+        # no rules to derive from: the sports it may be logged in are the owner's choice (default: the whole menu)
+        given = raw.get("sports")
+        app_sports = list(SPORTS) if given is None else normalize_sports(given)
+        if app_sports is None:
+            errors["sports"] = sports_error_text()
     if errors:
         raise SpecError(errors)
-    sports = [s for s in SPORTS if any(s in r["sports"] for r in rules)]
-    markets = [m for m in R.ALL_MARKETS if any(m in r["markets"] for r in rules)]
+    if app_sports is not None:
+        sports, markets = [s for s in SPORTS if s in app_sports], list(R.ALL_MARKETS)
+    else:
+        sports = [s for s in SPORTS if any(s in r["sports"] for r in rules)]
+        markets = [m for m in R.ALL_MARKETS if any(m in r["markets"] for r in rules)]
     out = {
         "version": SPEC_VERSION_V2, "name": name, "tagline": tagline, "color": color, "badge": badge,
         "sports": sports, "markets": markets, "side_rule": "custom", "lock_minutes": lock,
@@ -826,6 +846,8 @@ def _validate_v2(raw: Mapping, *, taken_names: Iterable[str], extra_real_names) 
     }
     if fixed is not None:
         out["style"], out["gematria"] = STYLE_GEMATRIA, fixed["stamp"]
+    elif style == STYLE_APPRENTICE:
+        out["style"] = STYLE_APPRENTICE
     if in_play is True:
         out[IN_PLAY_FIELD] = True
     return out
@@ -833,6 +855,14 @@ def _validate_v2(raw: Mapping, *, taken_names: Iterable[str], extra_real_names) 
 
 def is_v2(spec: Mapping) -> bool:
     return spec.get("version") == SPEC_VERSION_V2
+
+
+APPRENTICE_RULE_TEXT = ("No rules yet. This hound learns only from the bets its owner logs, and bets nothing until its owner "
+                        "applies a proposal. Paper only, not advice.")
+
+
+def is_apprentice(spec: Mapping) -> bool:
+    return bool(spec) and spec.get("style") == STYLE_APPRENTICE
 
 
 def upgrade_v1(spec: Mapping) -> dict:

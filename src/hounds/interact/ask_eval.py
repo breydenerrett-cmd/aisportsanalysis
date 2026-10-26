@@ -295,7 +295,7 @@ def fire_v2(dog: common.Dog, *, now: Optional[datetime] = None, ledger: Optional
     looked = 0
     newest = None
     wanted = {s for r in spec["rules"] for s in r["sports"]}
-    for date in _dates(spec, now):
+    for date in (_dates(spec, now) if wanted else []):       # an Apprentice with no rules yet reads no board at all
         slate = slate_for(date, _with_props(spec))
         games = {}
         for event_id, game in slate.games.items():

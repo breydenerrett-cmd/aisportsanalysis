@@ -52,6 +52,7 @@ import { mountFire } from "./dog-fire.js";
 import { mountBacktest, money } from "./dog-backtest.js";
 import { bootAsk } from "./dog-ask.js";
 import { mountManual } from "./dog-manual.js";
+import { mountApprentice } from "./apprentice-studio.js";
 import { ticketList } from "./hounds-tickets.js";
 import { gradingBadge } from "./ticket-live.js";
 import { bankrollNow, bankrollOf, returnPctOf, fmtUsd, fmtPct, isSmallSample, smallSampleTitle, onlyTickets, ticketState } from "./hounds-board.js";
@@ -74,7 +75,7 @@ const state = {
   upgradeTapped: false,     // the studio showed the server's upgrade prompt for a paid tool
 };
 
-const STUDIO_TABS = ["look", "fire", "backtest", "ask", "record"];   // the tabs that are cleared between dogs (rules is the builder's)
+const STUDIO_TABS = ["look", "fire", "backtest", "ask", "record", "lessons"];   // the tabs that are cleared between dogs (rules is the builder's)
 
 const stop = (e) => { if (e && e.stopPropagation) e.stopPropagation(); };
 
@@ -673,6 +674,8 @@ async function buildTab(tab) {
     await bootAsk(sec, { id: dog.id, name: dog.name, gematria: !!kit.gematria });
   } else if (tab === "record") {
     await buildRecord(host, dog, kit);
+  } else if (tab === "lessons" && dog.style === "apprentice") {
+    await mountApprentice(host, { hound: dog });
   }
 }
 
@@ -751,6 +754,15 @@ function refreshCards() {
   }
 }
 
+// The Lessons tab belongs to an Apprentice hound only (its owner logs real bets there); every other hound's studio is unchanged.
+function syncLessonsTab() {
+  const dog = studioDog();
+  const show = !!(dog && dog.style === "apprentice" && !dog.retired);
+  for (const t of document.querySelectorAll("[data-hook='studio-tabs'] [data-tab='lessons']")) {
+    if (show) t.removeAttribute("hidden"); else t.setAttribute("hidden", "");
+  }
+}
+
 export function openStudio(id, tab = "look", opener = null, { autofire = false } = {}) {
   const studio = q("studio");
   if (!studio || state.mode !== "mine") return;
@@ -770,6 +782,7 @@ export function openStudio(id, tab = "look", opener = null, { autofire = false }
     if (t.getAttribute("data-tab") === "rules") t.removeAttribute("hidden");
     else if (fresh) t.setAttribute("hidden", ""); else t.removeAttribute("hidden");
   }
+  syncLessonsTab();
   paintStudioHead();
   q("studio-scrim").hidden = false;
   studio.hidden = false;
@@ -823,6 +836,7 @@ function bindStudio() {
       state.loaded = {};
       for (const t of document.querySelectorAll("[data-hook='studio-tabs'] [role='tab']")) t.removeAttribute("hidden");
       for (const k of STUDIO_TABS) clearNode(q(`studio-${k}`));
+      syncLessonsTab();
       paintStudioHead();
       if (state.tabs) state.tabs.select("look");
       writeUrl(detail.id, "look");

@@ -67,6 +67,7 @@ MAX_TIMEOUT_S = 20.0
 DEFAULT_PAID_CAP_USD = 5.0
 PAID_CAP_ENV = "AI_PAID_CAP_USD"
 CHARS_PER_TOKEN_WORST = 3.0           # a prompt's token count is over-estimated, never under
+IMAGE_TOKENS_WORST = 2000             # one image block: Anthropic bills about width*height/750, at most ~1600; over-estimated
 CHARS_PER_TOKEN_TYPICAL = 4.0         # ...except when asking "is this prefix big enough to cache": there it
                                       # is under-estimated, so a prefix near the line is not cached
 CACHE_WRITE_FACTOR = 1.25             # Anthropic prices: a cache write is 1.25x the input price, a read 0.1x
@@ -358,20 +359,27 @@ class AnthropicAdapter:
         return self._clients[key]
 
     @staticmethod
-    def params(spec: ProviderSpec, model: str, system: str, user: str, max_tokens: int, cache_system: bool) -> dict:
+    def params(spec: ProviderSpec, model: str, system: str, user: str, max_tokens: int, cache_system: bool,
+               images: Sequence[Mapping] = ()) -> dict:
+        content: Any = user
+        if images:
+            # vision: the images first, the instruction text after them (each image is {"media_type", "data" (base64)})
+            content = [{"type": "image", "source": {"type": "base64", "media_type": im["media_type"], "data": im["data"]}}
+                       for im in images] + [{"type": "text", "text": user}]
         out: dict = {"model": model, "max_tokens": max_tokens,
                      "system": ([{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
                                 if cache_system else system),
-                     "messages": [{"role": "user", "content": user}]}
+                     "messages": [{"role": "user", "content": content}]}
         if spec.effort:
             out["output_config"] = {"effort": spec.effort}
         return out
 
     def complete(self, spec: ProviderSpec, model: str, system: str, user: str, *, api_key: str,
-                 timeout_s: float, max_tokens: int, cache_system: bool = False) -> AdapterResult:
+                 timeout_s: float, max_tokens: int, cache_system: bool = False,
+                 images: Sequence[Mapping] = ()) -> AdapterResult:
         client = self._client(api_key, timeout_s)
         try:
-            resp = client.messages.create(**self.params(spec, model, system, user, max_tokens, cache_system))
+            resp = client.messages.create(**self.params(spec, model, system, user, max_tokens, cache_system, images))
         except AdapterError:
             raise
         except Exception as exc:  # noqa: BLE001 -- classified, never swallowed
@@ -526,10 +534,10 @@ class Router:
         return bool(spec.cache_min_tokens) and len(system) / CHARS_PER_TOKEN_TYPICAL >= spec.cache_min_tokens
 
     def estimate_cost(self, spec: ProviderSpec, system: str, user: str, max_tokens: int, *,
-                      cache_system: bool = False, discount: float = 1.0) -> float:
+                      cache_system: bool = False, discount: float = 1.0, images: int = 0) -> float:
         """The most a call could cost: the prompt's tokens (over-estimated; the system part at the cache-write
         price when it is being cached) plus every output token ``max_tokens`` allows, times the batch discount."""
-        user_tokens = math.ceil(len(user) / CHARS_PER_TOKEN_WORST)
+        user_tokens = math.ceil(len(user) / CHARS_PER_TOKEN_WORST) + images * IMAGE_TOKENS_WORST
         system_tokens = math.ceil(len(system) / CHARS_PER_TOKEN_WORST)
         in_cost = (user_tokens + system_tokens * (CACHE_WRITE_FACTOR if cache_system else 1.0)) * spec.price_in_per_m / 1e6
         return (in_cost + max_tokens * spec.price_out_per_m / 1e6) * discount
@@ -608,7 +616,11 @@ class Router:
                       output=None, ok=False, reason=reason, attempts=attempts)
 
     def ask(self, system: str, user: str, *, schema: dict, validator: Optional[Callable[[dict], List[str]]] = None,
-            providers: Optional[Sequence[str]] = None, purpose: str = "", max_tokens: Optional[int] = None) -> Answer:
+            providers: Optional[Sequence[str]] = None, purpose: str = "", max_tokens: Optional[int] = None,
+            images: Sequence[Mapping] = ()) -> Answer:
+        """``images``: optional vision input, each ``{"media_type": "image/png", "data": <base64>}``. The cap counts them
+        (``IMAGE_TOKENS_WORST`` each), the PII guard reads the text only, and an adapter that cannot take ``images`` fails that
+        attempt (a TypeError is classified and accounted like any adapter bug), never answers from the text alone."""
         started = time.monotonic()
         attempts: List[Attempt] = []
         secrets = secret_values(self.env, self.specs)
@@ -628,7 +640,7 @@ class Router:
                 break
             budget = int(max_tokens or spec.max_tokens)
             cache = self.wants_cache(spec, system)
-            est = self.estimate_cost(spec, system, user, budget, cache_system=cache) if spec.paid else 0.0
+            est = self.estimate_cost(spec, system, user, budget, cache_system=cache, images=len(images)) if spec.paid else 0.0
             if spec.paid:
                 self._paid_lock.acquire()
             try:
@@ -637,7 +649,8 @@ class Router:
                     attempts.append(Attempt(spec.id, spec.model or None, "skipped", detail=skip))
                     continue
                 tried += 1
-                attempt, answer = self._call(spec, system, user, schema, validator, budget, est, purpose, secrets, cache)
+                attempt, answer = self._call(spec, system, user, schema, validator, budget, est, purpose, secrets, cache,
+                                             images)
             finally:
                 if spec.paid:
                     self._paid_lock.release()
@@ -656,13 +669,14 @@ class Router:
 
     def _call(self, spec: ProviderSpec, system: str, user: str, schema: dict,
               validator: Optional[Callable[[dict], List[str]]], budget: int, est: float, purpose: str,
-              secrets: Sequence[str], cache: bool = False):
+              secrets: Sequence[str], cache: bool = False, images: Sequence[Mapping] = ()):
         """One provider call, fully accounted. Returns ``(Attempt, Answer or None)``."""
         adapter = self._adapter(spec)
         began = time.monotonic()
+        extra = {"images": images} if images else {}        # an image-free call is byte-identical to before
         try:
             result = adapter.complete(spec, spec.model, system, user, api_key=self._api_key(spec),
-                                      timeout_s=spec.timeout_s, max_tokens=budget, cache_system=cache)
+                                      timeout_s=spec.timeout_s, max_tokens=budget, cache_system=cache, **extra)
         except AdapterError as err:
             return self._failed(spec, err, began, purpose, secrets), None
         except Exception as exc:  # noqa: BLE001 -- an adapter bug must still be accounted, not raised into a pass
