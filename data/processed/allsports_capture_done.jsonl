@@ -6578,3 +6578,7 @@
 {"commence_utc": "2026-10-27T16:00:00Z", "event_id": "c4e4775eca81f44e2d5691133b892e4b", "kind": "phase", "observed_utc": "2026-10-26T16:03:46.092027Z", "phase": "t24h", "rows": 3, "sport_key": "icehockey_ahl"}
 {"call_kind": "pregame", "credits": 3, "events": 2, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-26T16:03:46.092027Z", "regions": ["us"], "rows": 6, "sport_key": "icehockey_ahl", "stored": 6}
 {"call_kind": "inplay", "credits": 1, "events": 14, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T16:03:46.092027Z", "regions": ["us"], "rows": 108, "sport_key": "tennis_atp_swiss_indoors", "stored": 79}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-10-26T16:45:28.749653Z", "observed_utc": "2026-10-26T16:15:28.749653Z", "sport_key": "soccer_italy_serie_a"}
+{"commence_utc": "2026-10-26T18:05:00Z", "event_id": "1890564c20db109024daf7095a8b8ee0", "kind": "phase", "observed_utc": "2026-10-26T16:15:28.749653Z", "phase": "t2h", "rows": 14, "sport_key": "soccer_sweden_superettan"}
+{"call_kind": "pregame", "credits": 2, "events": 6, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-26T16:15:28.749653Z", "regions": ["us"], "rows": 60, "sport_key": "soccer_sweden_superettan", "stored": 28}
+{"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T16:15:28.749653Z", "regions": ["us"], "rows": 42, "sport_key": "soccer_turkey_super_league", "stored": 16}
