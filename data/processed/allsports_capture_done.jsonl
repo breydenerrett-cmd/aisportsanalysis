@@ -6457,3 +6457,5 @@
 {"events": 2, "kind": "peek", "next_check_utc": "2026-10-26T17:18:20.973843Z", "observed_utc": "2026-10-26T11:18:20.973843Z", "sport_key": "americanfootball_cfl"}
 {"events": 17, "kind": "peek", "next_check_utc": "2026-10-26T17:18:20.973843Z", "observed_utc": "2026-10-26T11:18:20.973843Z", "sport_key": "soccer_england_league1"}
 {"events": 9, "kind": "peek", "next_check_utc": "2026-10-26T17:29:25.650591Z", "observed_utc": "2026-10-26T11:29:25.650591Z", "sport_key": "soccer_uefa_champs_league_women"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-10-26T17:38:51.622835Z", "observed_utc": "2026-10-26T11:38:51.622835Z", "sport_key": "soccer_mexico_ligamx"}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T11:38:51.622835Z", "regions": ["us"], "rows": 7, "sport_key": "baseball_kbo", "stored": 7}
