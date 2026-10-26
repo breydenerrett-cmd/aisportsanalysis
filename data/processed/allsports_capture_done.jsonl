@@ -6517,3 +6517,5 @@
 {"commence_utc": "2026-10-26T13:40:00Z", "event_id": "4e8affe5c736072143aed4c30a548c66", "kind": "phase", "observed_utc": "2026-10-26T13:13:23.341653Z", "phase": "t30m", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
 {"commence_utc": "2026-10-26T19:00:00Z", "event_id": "d4f7bc6b1f48bf445af411adfb5ba9d6", "kind": "phase", "observed_utc": "2026-10-26T13:13:23.341653Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
 {"call_kind": "pregame", "credits": 1, "events": 16, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T13:13:23.341653Z", "regions": ["us"], "rows": 125, "sport_key": "tennis_atp_vienna_open", "stored": 125}
+{"commence_utc": "2026-10-26T13:50:00Z", "event_id": "7484e86bb920b4e17ec18fde7f1487a5", "kind": "phase", "observed_utc": "2026-10-26T13:26:22.869750Z", "phase": "t30m", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
+{"call_kind": "pregame", "credits": 1, "events": 16, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T13:26:22.869750Z", "regions": ["us"], "rows": 126, "sport_key": "tennis_atp_swiss_indoors", "stored": 126}
