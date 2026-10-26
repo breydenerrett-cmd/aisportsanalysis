@@ -6402,3 +6402,7 @@
 {"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T08:01:16.506008Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 2}
 {"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T08:11:05.932920Z", "regions": ["us"], "rows": 67, "sport_key": "tennis_wta_pan_pacific_open", "stored": 65}
 {"events": 14, "kind": "peek", "next_check_utc": "2026-10-26T14:26:12.005862Z", "observed_utc": "2026-10-26T08:26:12.005862Z", "sport_key": "soccer_greece_super_league"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-26T14:40:30.708472Z", "observed_utc": "2026-10-26T08:40:30.708472Z", "sport_key": "soccer_belgium_first_div"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-26T14:40:30.708472Z", "observed_utc": "2026-10-26T08:40:30.708472Z", "sport_key": "soccer_norway_eliteserien"}
+{"commence_utc": "2026-10-27T08:30:00Z", "event_id": "4fbcb9927e282c2d4bdc699ca7fde3d9", "kind": "phase", "observed_utc": "2026-10-26T08:40:30.708472Z", "phase": "t24h", "rows": 8, "sport_key": "cricket_test_match"}
+{"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T08:40:30.708472Z", "regions": ["au"], "rows": 15, "sport_key": "cricket_test_match", "stored": 8}
