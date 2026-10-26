@@ -6465,3 +6465,6 @@
 {"commence_utc": "2026-10-26T13:40:00Z", "event_id": "4e8affe5c736072143aed4c30a548c66", "kind": "phase", "observed_utc": "2026-10-26T11:46:07.680983Z", "phase": "t2h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
 {"commence_utc": "2026-10-26T17:40:00Z", "event_id": "99827d08921946ed376bd9378a91ce9b", "kind": "phase", "observed_utc": "2026-10-26T11:46:07.680983Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
 {"call_kind": "pregame", "credits": 1, "events": 16, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T11:46:07.680983Z", "regions": ["us"], "rows": 124, "sport_key": "tennis_atp_vienna_open", "stored": 124}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-10-26T17:53:47.916228Z", "observed_utc": "2026-10-26T11:53:47.916228Z", "sport_key": "soccer_russia_premier_league"}
+{"events": 16, "kind": "peek", "next_check_utc": "2026-10-26T17:00:00Z", "observed_utc": "2026-10-26T11:53:47.916228Z", "sport_key": "soccer_sweden_allsvenskan"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-10-26T17:53:47.916228Z", "observed_utc": "2026-10-26T11:53:47.916228Z", "sport_key": "soccer_switzerland_superleague"}
