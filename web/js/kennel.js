@@ -46,6 +46,8 @@ import { loadFoundingOffer } from "./pricing.js";
 import { startTraining, startOutBack } from "./dog-rites.js";
 import { headstoneCard, trainedBadge } from "./dog-headstone.js";
 import { mountTabs } from "./tabs.js";
+import { formatStamp } from "./local-time.js";
+import { renderSparkline } from "./hounds-chart.js";
 import { mountKennelRoom } from "./room-scene.js";
 import { mountLocker } from "./dog-locker.js";
 import { mountFire } from "./dog-fire.js";
@@ -56,7 +58,7 @@ import { mountApprentice } from "./apprentice-studio.js";
 import { ticketList } from "./hounds-tickets.js";
 import { gradingBadge } from "./ticket-live.js";
 import { bankrollNow, bankrollOf, returnPctOf, fmtUsd, fmtPct, isSmallSample, smallSampleTitle, onlyTickets, ticketState } from "./hounds-board.js";
-import { getSizing, startText, unitSentence, sizingTag } from "./unitsize.js";
+import { getSizing, priced, startText, unitSentence, sizingTag } from "./unitsize.js";
 import { unitChip } from "./unitchip.js";
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
@@ -123,6 +125,39 @@ export function statusOf(dog) {
   return { key: "running", text: "Running" };
 }
 
+/** "1 open · 0 settled": the hound's tickets, open ones first. `record.bets` counts SETTLED bets only, so a hound with one open
+ *  ticket and nothing settled used to read as if it had done nothing; this line says both counts and says "No tickets yet" only
+ *  when there really are none. */
+export function ticketCountsText(dog) {
+  const rec = (dog && dog.record) || {};
+  const open = Number.isFinite(dog && dog.open_bets) ? dog.open_bets : 0;
+  const settled = Number.isFinite(dog && dog.settled) ? dog.settled : (rec.wins || 0) + (rec.losses || 0) + (rec.pushes || 0);
+  if (!open && !settled) return "No tickets yet";
+  return `${open} open · ${settled} settled`;
+}
+
+/** The hero's one-line status: Running / Paused / Retired, and the next lock of an open ticket in the viewer's own zone when it is
+ *  known. `info` is tonightInfo's byId entry. Nothing here invents a check time: the only time the page has is a ticket's lock. */
+export function heroStatus(dog, info) {
+  if (dog.retired || dog.status === "retired") return { key: "retired", word: "Retired", detail: "Its record stays on the ledger." };
+  const word = dog.status === "benched" ? "Paused" : "Running";
+  const key = dog.status === "benched" ? "idle" : "running";
+  const open = Number.isFinite(dog.open_bets) ? dog.open_bets : 0;
+  if (word === "Paused") return { key, word, detail: "It is not betting right now." };
+  if (open > 0 && info && info.next) return { key, word, detail: `Next lock ${formatStamp("c", new Date(info.next).toISOString())}` };
+  if (open > 0) return { key, word, detail: `${open} ${open === 1 ? "ticket" : "tickets"} waiting on a result` };
+  return { key, word, detail: "Bets when a game fits its rule" };
+}
+
+/** The tab a hound opens on: its Record when it has tickets (open or settled), else Look. */
+export function defaultTab(dog) {
+  if (!dog) return "look";
+  const open = Number.isFinite(dog.open_bets) ? dog.open_bets : 0;
+  const settled = Number.isFinite(dog.settled) ? dog.settled : 0;
+  const bets = dog.record && Number.isFinite(dog.record.bets) ? dog.record.bets : 0;
+  return open + settled + bets > 0 ? "record" : "look";
+}
+
 function lastPickText(dog) {
   const last = dog.last_pick;
   if (!last) return dog.new ? "No picks yet. It bets when a game fits its rule." : "No pick in this season yet.";
@@ -151,7 +186,7 @@ function dogCard(dog, { mine }, index) {
   const status = statusOf(dog);
   const rec = dog.record || {};
   const mood = moodOf(dog);
-  const open = () => openStudio(dog.id, "look", card);
+  const open = () => openStudio(dog.id, defaultTab(dog), card);
   // KENNEL-FIRST (owner ruling 2026-10-20): the card offers Unleash, Send to training, Edit and Take them out back, and nothing else. Ask, Backtest and Remove live in
   // the studio (tap the card's art); the hound's page is its name.
   const actions = mine && !dog.retired
@@ -608,22 +643,48 @@ function studioDog() {
   return state.open && state.open !== "new" ? dogById(state.open) : null;
 }
 
+/** The ⋯ menu (Remove from my kennel lives in it, behind the person's own confirmation: dog-common.js removeDog). */
+function setMenu(open) {
+  const menu = q("studio-menu");
+  const more = q("studio-more");
+  if (menu) menu.hidden = !open;
+  if (more) more.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+const chip = (text, extra = {}) => h("span", Object.assign({ class: "kn-chip", text }, extra));
+
 function paintStudioHead(look) {
   const dog = studioDog();
   const av = clearNode(q("studio-avatar"));
   const sub = q("studio-sub");
   const remove = q("studio-remove");
-  if (remove) remove.hidden = !(dog && !dog.retired);
+  const more = q("studio-more");
+  const chips = clearNode(q("studio-chips"));
+  const status = clearNode(q("studio-status"));
+  const canRemove = !!(dog && !dog.retired);
+  if (remove) remove.hidden = !canRemove;
+  if (more) more.hidden = !canRemove;
+  setMenu(false);
   if (!dog) {
-    av.appendChild(dogBadge(look || DEFAULT_LOOK, { size: 64, id: "new-dog", mood: "thinking" }));
+    av.appendChild(dogBadge(look || DEFAULT_LOOK, { size: 80, id: "new-dog", mood: "thinking" }));
     q("studio-title").textContent = "New hound";
     sub.textContent = "Say a strategy and it becomes a hound.";
     q("studio-open").hidden = true;
     return;
   }
-  av.appendChild(dogBadge(look || dog.look || lookFor(dog.root_id || dog.id), { size: 64, mood: moodOf(dog), id: dog.root_id || dog.id, name: dog.name, vibe: dog.persona && dog.persona.vibe, version: dog.version_no }));
+  av.appendChild(dogBadge(look || dog.look || lookFor(dog.root_id || dog.id), { size: 80, mood: moodOf(dog), id: dog.root_id || dog.id, name: dog.name, vibe: dog.persona && dog.persona.vibe, version: dog.version_no }));
+  // the FULL name, wrapped over as many lines as it needs: never an ellipsis (owner, 2026-10-26: "Gema..." and "0-3, $2,35...")
   q("studio-title").textContent = dog.name;
-  sub.textContent = `${recordText(dog.record)}, ${accountText(dog)}${dog.tagline ? ` · ${dog.tagline}` : ""}`;
+  chips.appendChild(chip(`v${dog.version_no || 1}`, { "data-hook": "studio-version" }));
+  chips.appendChild(chip(`By ${(state.data && state.data.display) || "you"}`, { "data-hook": "studio-owner" }));
+  if (dog.style === "gematria") chips.appendChild(chip("Gematria"));
+  const st = heroStatus(dog, state.tonight && state.tonight.byId[dog.id]);
+  status.setAttribute("data-status", st.key);
+  status.appendChild(h("i", { class: "kn-studio__dot", "aria-hidden": "true" }));
+  status.appendChild(h("strong", { text: st.word }));
+  status.appendChild(document.createTextNode(` · ${st.detail}`));
+  // tickets first, then the account: "1 open · 0 settled · 0-0 · $2,500 (+0.0%)"
+  sub.textContent = `${ticketCountsText(dog)} · ${recordText(dog.record)} · ${accountText(dog)}${dog.tagline ? ` · ${dog.tagline}` : ""}`;
   const link = q("studio-open");
   link.hidden = false;
   link.setAttribute("href", houndHref(dog.id));
@@ -661,13 +722,17 @@ async function buildTab(tab) {
     const sec = section("dog-fire");
     host.appendChild(sec);
     // the owner's Unleash STARTS the hound today (dog-fire.js `today`); the cards redraw when it placed bets so the counts are true
+    // a hound that already has tickets, or is not running, gets a status panel instead of the first-time "Unleash starts it" copy (dog-fire.js)
+    const hero = heroStatus(dog, state.tonight && state.tonight.byId[dog.id]);
+    const going = hero.key !== "running" || defaultTab(dog) === "record";
     mountFire(sec, { id: dog.id, name: dog.name, kit, onRecord: () => { state.loaded.record = null; }, today: true,
+      running: going ? { key: hero.key, word: hero.word, detail: hero.detail, counts: ticketCountsText(dog) } : null,
       avatar: { look: dog.look || lookFor(dog.id), id: dog.id, vibe: dog.persona && dog.persona.vibe },
       onDone: (out) => { if (out && out.placed_now) { state.loaded.record = null; load({ quiet: true }); } } });
   } else if (tab === "backtest") {
     const sec = section("dog-backtest");
     host.appendChild(sec);
-    mountBacktest(sec, { id: dog.id, name: dog.name });
+    mountBacktest(sec, { id: dog.id, name: dog.name, autoRun: true });
   } else if (tab === "ask") {
     const sec = section("dog-ask");
     host.appendChild(sec);
@@ -679,23 +744,70 @@ async function buildTab(tab) {
   }
 }
 
+/** The paper account over its settled bets as a line: balance minus the start after each settled bet, from the bankroll block's own
+ *  events (already on the kennel payload) at the viewer's sizing. Null with fewer than two settled bets: a line through one point is
+ *  nothing, and the page says so in words instead (never a made-up curve). */
+export function bankrollSeries(dog) {
+  const b = bankrollOf(dog);
+  const events = b && Array.isArray(b.events) ? b.events : null;
+  if (!events) return null;
+  const usd = priced(events, getSizing());
+  const values = [0];
+  let run = 0;
+  events.forEach((e, i) => {
+    if (e[4] === "w" || e[4] === "l" || e[4] === "p") { run += usd[i][0]; values.push(Math.round(run * 100) / 100); }
+  });
+  return values.length >= 3 ? values : null;
+}
+
+const ticketId = (t) => `${(t && t.event_id) || ""}|${(t && t.market) || ""}|${(t && t.selection) || ""}`;
+
 async function buildRecord(host, dog, kit) {
   const rec = dog.record || {};
-  host.appendChild(h("dl", { class: "kn-stats kn-stats--wide", "data-hook": "studio-record-stats" }, [
+  const open = Number.isFinite(dog.open_bets) ? dog.open_bets : 0;
+  host.appendChild(h("p", { class: "kn-rec__counts", "data-hook": "studio-counts", "data-open": String(open) }, [
+    open > 0 ? h("i", { class: "lh-live", "aria-hidden": "true" }) : null, ticketCountsText(dog)]));
+  host.appendChild(h("dl", { class: "kn-stats kn-stats--wide kn-stats--rec", "data-hook": "studio-record-stats" }, [
     stat("Record", recordText(rec)), stat("Bankroll", bankrollText(dog)), stat("Return", returnText(dog)),
     stat("Bets", betsText(dog), { "data-hook": "studio-bets" }),
-    stat("Open", String(dog.open_bets || 0))]));
-  host.appendChild(h("p", { class: "hd-fine", text: `${state.data.season && state.data.season.label ? state.data.season.label : "This season"}, a paper account that started with ${startText()} (${unitSentence()}), bets settled at the average price.` }));
+    stat("Open", String(open))]));
+  const series = bankrollSeries(dog);
+  if (series) {
+    const last = series[series.length - 1];
+    host.appendChild(h("figure", { class: "kn-spark", "data-hook": "studio-spark" }, [
+      renderSparkline({ values: series, color: last >= 0 ? "#5BE39A" : "#FF8A96", width: 320, height: 56,
+        label: `Paper bankroll after each of ${series.length - 1} settled bets, now ${bankrollText(dog)}` }),
+      h("figcaption", { class: "hd-fine", text: `Bankroll after each of its ${series.length - 1} settled bets` })]));
+  }
+  host.appendChild(h("p", { class: "hd-fine kn-rec__note", text: `${state.data.season && state.data.season.label ? state.data.season.label : "This season"}, a paper account that started with ${startText()} (${unitSentence()}), bets settled at the average price.` }));
+  const id = encodeURIComponent(dog.id);
+  // THE OPEN TICKETS FIRST. `record.bets` counts settled bets only, so a hound with one open ticket and nothing settled used to look like it
+  // had done nothing; its open tickets come before everything settled, in their own list.
+  const openHost = h("div", { "data-hook": "studio-open-tickets" });
+  const openIds = new Set();
+  if (open > 0) {
+    host.appendChild(h("h3", { class: "hd-h3 kn-rec__h", "data-hook": "studio-open-title", text: open === 1 ? "Open ticket" : `Open tickets (${open})` }));
+    host.appendChild(openHost);
+    try {
+      const out = await apiGet(`/hounds/${id}/bets?page=1&page_size=8&segment=forward&status=open`);
+      const items = onlyTickets(out && out.items);
+      for (const t of items) openIds.add(ticketId(t));
+      if (items.length) openHost.appendChild(ticketList(items, { showModel: false, hook: "studio-open-ticket-list" }));
+      else openHost.appendChild(h("p", { class: "hd-muted", text: `${open} open, waiting on a result.` }));
+    } catch (err) {
+      openHost.appendChild(h("p", { class: "hd-muted", text: `${open} open, waiting on a result.` }));
+    }
+  }
   const tickets = h("div", { "data-hook": "studio-tickets" });
-  host.appendChild(h("h3", { class: "hd-h3", text: "Last tickets" }));
+  host.appendChild(h("h3", { class: "hd-h3 kn-rec__h", text: open > 0 ? "Settled and recent" : "Last tickets" }));
   // "Last graded 02:14" and a "Grading" pill while games wait on a final; a new grade reloads the kennel's numbers at once
   host.appendChild(gradingBadge({ onGraded: () => { state.loaded.record = null; load({ quiet: true }); } }));
   host.appendChild(tickets);
   try {
-    const out = await apiGet(`/hounds/${encodeURIComponent(dog.id)}/bets?page=1&page_size=5&segment=forward`);
-    const items = Array.isArray(out && out.items) ? out.items : [];
+    const out = await apiGet(`/hounds/${id}/bets?page=1&page_size=5&segment=forward`);
+    const items = (Array.isArray(out && out.items) ? out.items : []).filter((t) => !openIds.has(ticketId(t)));
     if (items.length) tickets.appendChild(ticketList(items, { showModel: false, hook: "studio-ticket-list" }));
-    else tickets.appendChild(h("p", { class: "hd-muted", text: "No tickets recorded yet." }));
+    else tickets.appendChild(h("p", { class: "hd-muted", text: open > 0 ? "Nothing has settled yet." : "No tickets recorded yet." }));
   } catch (err) {
     tickets.appendChild(h("p", { class: "hd-muted", text: describeError(err, "this hound's tickets").text }));
   }
@@ -714,6 +826,7 @@ async function buildRules(host, dog) {
   const { builderSkeleton } = await import("./builder-skeleton.js");
   if (!rulesSkeleton) rulesSkeleton = builderSkeleton();
   if (rulesSkeleton.parentNode !== host) host.appendChild(rulesSkeleton);
+  rulesSkeleton.hidden = false;
   const builder = await import("./hounds-build.js");
   await builder.booted;
   if (state.open !== (dog ? dog.id : "new")) return;
@@ -728,10 +841,41 @@ async function buildRules(host, dog) {
     return;
   }
   const opened = await builder.openEdit(dog.id);
+  if (opened.ok) { showRuleFirst(host, dog, builder); return; }
   if (!opened.ok) {
     host.appendChild(editProblem(opened.reason === "signed_out" ? "Your sign-in has lapsed, so this hound cannot be opened for editing. "
       : "That hound could not be found in your list just now.", dog, opened.reason === "signed_out"));
   }
+}
+
+/**
+ * The Rules tab of an EXISTING hound opens on its current rule, in plain words and big type, with "Edit rules" to reveal the editor
+ * (owner, 2026-10-26: it opened straight into an empty "Say it" box with a generic example). The editor is still the one builder
+ * element, hidden until asked for, so nothing about saving a version changes.
+ */
+function showRuleFirst(host, dog, builder) {
+  const rule = builder.currentRule();
+  const skeleton = rulesSkeleton;
+  const old = host.querySelector("[data-hook='studio-rule-now']");
+  if (old) host.removeChild(old);
+  const lines = rule.sentences.length ? rule.sentences
+    : rule.gematria ? [rule.summary || "It reads the numbers in each game."] : ["Its rule opens in the editor."];
+  const edit = h("button", { type: "button", class: "lh-btn lh-btn--solid kn-rule__edit", "data-hook": "studio-edit-rules", text: "Edit rules" });
+  const card = h("section", { class: "kn-rule", "data-hook": "studio-rule-now", "aria-label": "Current rule" }, [
+    h("p", { class: "kn-rule__eyebrow", text: `Current rule${rule.version_no ? ` · version ${rule.version_no}` : ""}` }),
+    h("h3", { class: "kn-rule__title", text: `How ${dog.name} bets` }),
+    h("ul", { class: "kn-rule__list", "data-hook": "studio-rule-lines" }, lines.map((t) => h("li", { text: t }))),
+    rule.gematria && rule.fixed ? h("p", { class: "hd-fine kn-rule__fixed", text: rule.fixed }) : null,
+    h("p", { class: "hd-fine kn-rule__note", text: "Saving a change makes a new version. The old version keeps its record." }),
+    h("div", { class: "kn-rule__actions" }, [edit])]);
+  host.insertBefore ? host.insertBefore(card, skeleton) : host.appendChild(card);
+  skeleton.hidden = true;
+  edit.addEventListener("click", () => {
+    skeleton.hidden = false;
+    card.hidden = true;
+    const body = q("studio") && q("studio").querySelector ? q("studio").querySelector(".kn-studio__body") : null;
+    if (body) body.scrollTop = 0;
+  });
 }
 
 /** Why Edit did not open, in words, with a way forward: sign in, or try again. Never a dead end. */
@@ -824,9 +968,20 @@ export function closeStudio() {
 
 function bindStudio() {
   q("studio-close").addEventListener("click", closeStudio);
-  if (q("studio-remove")) q("studio-remove").addEventListener("click", () => { const dog = studioDog(); if (dog) removeFromKennel(dog); });
+  if (q("studio-remove")) q("studio-remove").addEventListener("click", () => { setMenu(false); const dog = studioDog(); if (dog) removeFromKennel(dog); });
+  if (q("studio-more")) q("studio-more").addEventListener("click", (e) => { stop(e); const menu = q("studio-menu"); setMenu(!!(menu && menu.hidden)); });
+  const studioEl = q("studio");
+  if (studioEl) studioEl.addEventListener("click", (e) => {
+    const t = e && e.target;
+    if (t && t.closest && !t.closest("[data-hook='studio-menu'], [data-hook='studio-more']")) setMenu(false);
+  });
   q("studio-scrim").addEventListener("click", closeStudio);
-  document.addEventListener("keydown", (evt) => { if (evt.key === "Escape") closeStudio(); });
+  document.addEventListener("keydown", (evt) => {
+    if (evt.key !== "Escape") return;
+    const menu = q("studio-menu");
+    if (menu && !menu.hidden) { setMenu(false); return; }
+    closeStudio();
+  });
   window.addEventListener("linehound:dog-saved", async (evt) => {
     const detail = (evt && evt.detail) || {};
     await load({ quiet: true });
@@ -858,7 +1013,7 @@ async function boot() {
   const data = await load();
   const params = new URLSearchParams(window.location.search);
   const want = params.get("dog");
-  if (data && state.mode === "mine" && want && dogById(want)) openStudio(want, params.get("tab") || "look");
+  if (data && state.mode === "mine" && want && dogById(want)) openStudio(want, params.get("tab") || defaultTab(dogById(want)));
 }
 
 export const booted = boot();

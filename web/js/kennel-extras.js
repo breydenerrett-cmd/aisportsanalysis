@@ -158,7 +158,10 @@ export function todayLine(dog, info) {
   const open = Number.isFinite(dog.open_bets) ? dog.open_bets : 0;
   if (open > 0) {
     const when = info && info.next ? lockText(new Date(info.next).toISOString()) : "";
-    return `${open} open${when ? ` · next lock ${when}` : ""}`;
+    // "1 open · 0 settled": the open tickets sit next to the settled ones, so a hound with a ticket never reads as if it had done nothing
+    const rec = dog.record || {};
+    const settled = Number.isFinite(dog.settled) ? dog.settled : (rec.wins || 0) + (rec.losses || 0) + (rec.pushes || 0);
+    return `${open} open · ${settled} settled${when ? ` · next lock ${when}` : ""}`;
   }
   if (dog.new) return "Waiting on its first game";
   return "Nothing open right now";

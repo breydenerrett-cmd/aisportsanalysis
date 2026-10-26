@@ -88,16 +88,27 @@
 <div class="kn-scrim" data-hook="studio-scrim" hidden></div>
 <aside class="kn-studio" data-hook="studio" role="dialog" aria-modal="true" aria-labelledby="studio-title" hidden>
   <header class="kn-studio__head">
-    <div class="kn-studio__avatar" data-hook="studio-avatar"></div>
-    <div class="kn-studio__who">
-      <h2 id="studio-title" data-hook="studio-title">Hound studio</h2>
-      <p class="hd-fine" data-hook="studio-sub"></p>
+    <div class="kn-studio__top">
+      <a class="lh-btn lh-btn--soft kn-studio__open" data-hook="studio-open" href="hounds.html" hidden>Open page</a>
+      <div class="kn-studio__menuwrap">
+        <button type="button" class="kn-studio__more" data-hook="studio-more" aria-haspopup="menu" aria-expanded="false" aria-label="More for this hound" hidden>&#8943;</button>
+        <div class="kn-studio__menu" data-hook="studio-menu" role="menu" aria-label="More for this hound" hidden>
+          <button type="button" role="menuitem" class="kn-studio__menuitem" data-hook="studio-remove" hidden>Remove from my kennel</button>
+        </div>
+      </div>
+      <button type="button" class="kn-studio__close" data-hook="studio-close" aria-label="Close the studio">&times;</button>
     </div>
-    <a class="lh-btn lh-btn--soft" data-hook="studio-open" href="hounds.html" hidden>Open page</a>
-    <button type="button" class="kn-act kn-act--quiet kn-studio__remove" data-hook="studio-remove" hidden>Remove from my kennel</button>
-    <button type="button" class="kn-studio__close" data-hook="studio-close" aria-label="Close the studio">&times;</button>
+    <div class="kn-studio__hero" data-hook="studio-hero">
+      <div class="kn-studio__avatar" data-hook="studio-avatar"></div>
+      <div class="kn-studio__who">
+        <h2 id="studio-title" data-hook="studio-title">Hound studio</h2>
+        <p class="kn-studio__chips" data-hook="studio-chips"></p>
+        <p class="kn-studio__status" data-hook="studio-status" role="status"></p>
+        <p class="hd-fine kn-studio__sub" data-hook="studio-sub"></p>
+      </div>
+    </div>
   </header>
-  <div class="lh-tabs lh-tabs--studio" role="tablist" aria-label="Studio" data-hook="studio-tabs">
+  <div class="lh-tabs lh-tabs--studio" role="tablist" aria-label="Studio" data-hook="studio-tabs" data-scrollactive>
     <button type="button" role="tab" data-tab="look" aria-selected="true">Look</button>
     <button type="button" role="tab" data-tab="rules" aria-selected="false">Rules</button>
     <button type="button" role="tab" data-tab="fire" aria-selected="false">Unleash</button>

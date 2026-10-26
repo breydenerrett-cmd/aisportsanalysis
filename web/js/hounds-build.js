@@ -1611,6 +1611,17 @@ export async function refreshMine() {
 
 export const builderReady = () => !!S.menu;
 
+/**
+ * The rule the builder has open, in the words the builder itself shows (`rule_sentences`, or the Gematria style's own paragraph),
+ * for the kennel studio's Rules tab: it shows THIS first, in big type, and the editor only after "Edit rules". Read only.
+ */
+export function currentRule() {
+  const gem = isGem();
+  const def = gem ? (styleMenu(GEMATRIA) || {}) : {};
+  return { gematria: gem, sentences: (S.sentences || []).slice(), summary: def.summary || "", fixed: gem ? (gematriaFixed().text || "") : "",
+    version_no: S.edit ? S.edit.version_no : null, name: S.edit ? S.edit.name : "" };
+}
+
 /** Fetch the rules menu again after it failed to load (the kennel studio's "Try again"). True when the builder is ready. */
 export async function reboot() {
   if (!S.menu) await boot();

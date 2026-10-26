@@ -132,6 +132,8 @@ export async function runBacktest({ dogId, win, status, out, busy }) {
   if (!signedIn()) { clearNode(status); status.appendChild(signInPrompt("Sign in to run a backtest.")); return null; }
   if (busy) busy(true);
   clearNode(out);
+  // a calm placeholder while the replay runs, so the tab is never a row of chips over an empty screen
+  out.appendChild(h("div", { class: "lh-skel lh-skel--rows", "data-hook": "backtest-loading", "aria-hidden": "true" }));
   status.textContent = `Running the backtest over ${win.season ? "Season 2" : `${win.days} days`} of boards. ${win.days === 30 || win.season ? "A month can take up to a minute." : "This takes a few seconds."}`;
   try {
     const data = await post("/hounds/drill", requestBody(dogId, win), SLOW_MS);
@@ -139,6 +141,7 @@ export async function runBacktest({ dogId, win, status, out, busy }) {
     renderBacktest(out, data);
     return data;
   } catch (err) {
+    clearNode(out);
     if (showUpgrade(out, err)) { status.textContent = ""; return null; }
     status.textContent = backtestError(err);
     return null;
@@ -150,9 +153,10 @@ export async function runBacktest({ dogId, win, status, out, busy }) {
 /**
  * The "Backtest" tab body: the label, a one-line how-it-works, four window buttons, a status line and the result.
  * Signed-out visitors get the sign-in prompt in place of the buttons. `section` is the panel's section element (it
- * is un-hidden here); `body` the element to fill.
+ * is un-hidden here); `body` the element to fill. With `autoRun` (the kennel studio) the 7 day window runs as the tab opens, so the tab is
+ * never chips over an empty screen: one replay per open, and a signed-out visitor still never posts.
  */
-export function mountBacktest(section, { id, name }) {
+export function mountBacktest(section, { id, name, autoRun = false }) {
   const body = section.querySelector("[data-hook='dog-backtest']");
   if (!body) return;
   clearNode(body);
@@ -180,4 +184,5 @@ export function mountBacktest(section, { id, name }) {
   body.appendChild(status);
   body.appendChild(out);
   section.removeAttribute("hidden");
+  if (autoRun && buttons[0]) buttons[0].click();
 }

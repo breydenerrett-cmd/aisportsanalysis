@@ -399,7 +399,7 @@ class MyKennelIsTheHome(unittest.TestCase):
         self.assertEqual(f["rows"], 2)
         self.assertEqual([p.split(" ")[0] for p in f["picks"]], ["Red", "Over"])                     # 19:05 before 23:10
         self.assertRegex(f["next"], r"^Next lock 7:05 PM")
-        self.assertRegex(f["today"], r"^2 open · next lock 7:05 PM")
+        self.assertRegex(f["today"], r"^2 open · 1 settled · next lock 7:05 PM")
         self.assertTrue(all(l.startswith("Locks ") for l in f["locks"]), f["locks"])
 
     def test_with_nothing_open_tonight_is_one_quiet_line_and_asks_for_no_tickets(self):
@@ -411,7 +411,7 @@ class MyKennelIsTheHome(unittest.TestCase):
     def test_tickets_that_cannot_be_read_leave_the_payloads_own_count(self):
         out = self.go([dog("u-1", wins=1, bets=2, units=0.5, open_bets=2, new=False)], settleMs=300, queries=[
             q("quiet", "[data-hook='tonight-empty']"), q("today", "[data-hook='dog-today']")])
-        self.assertEqual((out["final"]["quiet"], out["final"]["today"]), ("2 open across your hounds.", "2 open"))
+        self.assertEqual((out["final"]["quiet"], out["final"]["today"]), ("2 open across your hounds.", "2 open · 1 settled"))
 
     def test_the_upgrade_card_shows_only_for_a_free_account_at_its_one_hound_with_the_real_founding_count(self):
         offer = [200, {"founding": {"price_cents": 1499, "cap": 50, "taken": 31, "left": 19, "reserved": 0, "available": True}, "standard": {"price_cents": 1999}}]
