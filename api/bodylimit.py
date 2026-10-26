@@ -39,6 +39,11 @@ PATH_LIMITS: Dict[str, int] = {
     "/billing/webhook": 256 * 1024,
 }
 
+# The Apprentice screenshot import is a base64 image in a JSON body: a 4 MB image is 5.4 MB of base64. The route is
+# /hounds/{id}/apprentice/import, so it is matched by shape (``limit_for``); the route's own checks (a signed-in owner of an
+# Apprentice hound, a real PNG/JPEG/WebP of at most 4 MB) still apply.
+APPRENTICE_IMPORT_MAX_BODY_BYTES = 6 * 1024 * 1024
+
 _BODY = json.dumps({
     "error": "payload_too_large",
     "message": "the request body is too large",
@@ -50,6 +55,8 @@ class BodyTooLarge(Exception):
 
 
 def limit_for(path: str, default: int = DEFAULT_MAX_BODY_BYTES) -> int:
+    if path.startswith("/hounds/") and path.endswith("/apprentice/import") and path.count("/") == 4:
+        return APPRENTICE_IMPORT_MAX_BODY_BYTES
     return PATH_LIMITS.get(path, default)
 
 

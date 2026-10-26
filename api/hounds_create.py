@@ -146,6 +146,7 @@ def hound_summary(hound: dict, *, verified: Optional[bool] = None) -> dict:
         # How the dog looks, and its rules in sentences, wherever a dog is listed.
         "color": spec.get("color", "ember"), "badge": spec.get("badge", "bone"),
         "custom_rules": user_spec.is_v2(spec), "root_id": hound["root_id"],
+        "style": spec.get("style", user_spec.STYLE_RULES),      # "apprentice" opens the studio's Lessons tab
     })
     return out
 

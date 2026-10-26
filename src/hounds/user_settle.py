@@ -219,7 +219,7 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
            box_index: Optional[Mapping] = None,
            allsports_results: Optional[Callable] = None,
            void_after_hours: float = 72.0,
-           props_client=None) -> dict:
+           props_client=None, alert: bool = True) -> dict:
     """Grade every settled-able ungraded bet (every owed date, or the last `lookback_days` when a
     number is given). Returns a report.
 
@@ -235,7 +235,9 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
     NFL (default: the all-sports scores store, read once, lazily). A cancelled game, or one with no completed
     score `void_after_hours` after its start, is a VOID with the reason named.
     props_client: the data service an NBA or NHL prop reads its ESPN box score from (default: the process's
-    DataClient, created on the first such bet)."""
+    DataClient, created on the first such bet).
+    alert: False writes no "your bet settled" alert (the Apprentice lessons ledger grades the legs of a member's real
+    tickets; a leg is not a ticket and must not notify as one)."""
     now = now or datetime.now(timezone.utc)
     store = HashChainLedger(user_engine.ledger_path(ledger))
     rows = store.read()
@@ -402,7 +404,8 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
                         "profit_stake_units": None if avg_units is None else round(avg_units * stake, 4),
                         "profit_stake_units_best": None if best_units is None else round(best_units * stake, 4)})
         store.append(row)
-        alerts.emit_settled_safe(bet, row)         # after the ledger write; can never fail the grade
+        if alert:
+            alerts.emit_settled_safe(bet, row)     # after the ledger write; can never fail the grade
         report["graded"] += 1
         report["by_result"][outcome] = report["by_result"].get(outcome, 0) + 1
     return report

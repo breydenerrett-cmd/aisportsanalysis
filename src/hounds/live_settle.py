@@ -234,8 +234,11 @@ def ledger_paths(env: Optional[Mapping] = None) -> dict:
     """{label: path} of the ledgers this loop reads: the three on the volume that it also settles, and the house pack's
     (git-tracked, in the image) READ-ONLY, so its tickets show a live state on the pages."""
     from src.hounds import ai_defs, pack_run, user_engine
+    from src.hounds.apprentice import grading as apprentice_grading
     return {"user": user_engine.ledger_path(), "manual": user_engine.manual_ledger_path(),
-            "ai": ai_defs.ledger_path(), "house": pack_run.ledger_path()}
+            "ai": ai_defs.ledger_path(), "house": pack_run.ledger_path(),
+            # the legs of members' real, logged bets (src/hounds/apprentice): graded here, never alerted, never counted
+            "lessons": apprentice_grading.ledger_path()}
 
 
 # (path) -> (mtime_ns, size, parsed open tickets); a ledger that has not changed is not parsed again
@@ -668,12 +671,12 @@ def settle_user_ledgers(now: datetime, finals: Mapping, games: Mapping, *, paths
     if nfl_fn is not None:
         kwargs["nfl_results"] = nfl_fn
     graded = 0
-    for label in ("user", "manual"):
+    for label in ("user", "manual", "lessons"):
         path = paths.get(label)
         if not path or not Path(path).exists():
             continue
         report = user_settle.settle(ledger=path, now=now, allsports_results=lambda: _merged_allsports(overlay_allsports, load_index),
-                                    **kwargs)
+                                    alert=(label != "lessons"), **kwargs)
         graded += int(report.get("graded") or 0)
     return graded
 

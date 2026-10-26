@@ -107,6 +107,9 @@ def run_pass(*, now: Optional[datetime] = None, ledger: Optional[str] = None,
 
     moment = now or _utcnow()
     running = user_store.list_running() if hounds is None else hounds
+    # An Apprentice with no rules yet (src/hounds/apprentice) has nothing to bet: leave it out so its all-sports menu does not
+    # make the pass read every sport's boards for no hound.
+    running = [h for h in running if not (h["spec"].get("style") == "apprentice" and not h["spec"].get("rules"))]
     report: dict = {"at": moment.strftime("%Y-%m-%dT%H:%M:%SZ"), "running_hounds": len(running),
                     "engine": [], "settle": None, "wrote": 0, "paper_only": True}
     if not running:
