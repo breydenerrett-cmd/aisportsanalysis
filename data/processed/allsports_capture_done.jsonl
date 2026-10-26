@@ -6564,3 +6564,5 @@
 {"commence_utc": "2026-10-26T16:00:00Z", "event_id": "54ecd2cf77168d62e84f2fd5ccc54a82", "kind": "phase", "observed_utc": "2026-10-26T15:33:48.433215Z", "phase": "t30m", "rows": 13, "sport_key": "soccer_turkey_super_league"}
 {"commence_utc": "2026-10-26T16:00:00Z", "event_id": "e1c9aa56abe5e911eb57403d78376270", "kind": "phase", "observed_utc": "2026-10-26T15:33:48.433215Z", "phase": "t30m", "rows": 13, "sport_key": "soccer_turkey_super_league"}
 {"call_kind": "pregame", "credits": 2, "events": 12, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-26T15:33:48.433215Z", "regions": ["us"], "rows": 75, "sport_key": "soccer_turkey_super_league", "stored": 39}
+{"commence_utc": "2026-10-26T17:40:00Z", "event_id": "99827d08921946ed376bd9378a91ce9b", "kind": "phase", "observed_utc": "2026-10-26T15:53:49.608526Z", "phase": "t2h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
+{"call_kind": "pregame", "credits": 1, "events": 15, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T15:53:49.608526Z", "regions": ["us"], "rows": 115, "sport_key": "tennis_atp_vienna_open", "stored": 84}
