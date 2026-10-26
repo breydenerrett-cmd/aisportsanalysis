@@ -1,0 +1,557 @@
+{
+ "summary": "I pass on every market. The moneyline between MIL and TB is priced close to even, and the data does not give me a reason to argue with that. Robert Gasser has the lower ERA, but both Gasser and Freddy Peralta have been sharp in their last few starts, and both bullpens look rested, so nothing clearly tilts the game. The run line on TB is priced at -205, which is past the limit I allow, and the total is split almost evenly with a fixed roof, so weather does not matter. The player props are the weak spot. Their prices are many hours old and only a few books quote each one, so I treat the market numbers as probably right and see no strong case to leave them. Standings and team totals are missing from the data, and the thin prop coverage matters most, since most priced props were never analyzed. I would look again if a starter is scratched, a lineup changes, or fresh prices appear.",
+ "calls": [
+  {
+   "slot_id": "moneyline",
+   "market": "moneyline",
+   "selection": "TB",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books price this as a near coin flip, and the starters, bullpens and recent form in the data do not separate the teams enough to disagree with them.",
+     "evidence": [
+      {
+       "path": "markets.moneyline.options[0].fair_probability",
+       "value": 0.52
+      },
+      {
+       "path": "markets.moneyline.options[1].fair_probability",
+       "value": 0.48
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A late scratch of a starter or a lineup change that alters the matchup would make me look again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "run_line",
+   "market": "run_line",
+   "selection": "TB +1.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The home side on the run line is priced at -205 at the best book, which is past the -200 limit, so it cannot be taken, and the other side has nothing in the data pointing to a blowout.",
+     "evidence": [
+      {
+       "path": "markets.run_line.options[0].best.price",
+       "value": -205
+      },
+      {
+       "path": "markets.run_line.options[1].fair_probability",
+       "value": 0.3518
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A better price on TB +1.5 inside the limit, or news that changes the starters, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "total",
+   "market": "total",
+   "selection": "Over 7",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The total is split almost evenly between over and under, and the fixed roof removes weather as a factor, so nothing in the data separates the two sides.",
+     "evidence": [
+      {
+       "path": "markets.total.options[0].fair_probability",
+       "value": 0.5144
+      },
+      {
+       "path": "sections.park.values.roof",
+       "value": "fixed"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A change in either starter or a sharp move in the posted total would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_01",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The prices on Sal Frelick runs scored are many hours old and only a few books quote them, so the market number may be out of date and there is no strong reason in the data to disagree with it.",
+     "evidence": [
+      {
+       "path": "markets.prop_01.as_of",
+       "value": "2026-10-26T04:03:28Z"
+      },
+      {
+       "path": "markets.prop_01.options[0].fair_probability",
+       "value": 0.7034
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books, or a confirmed lineup spot that differs from what we have, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_02",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The prices on Jackson Chourio hits are many hours old and only a few books quote them, so the market number may be out of date and there is no strong reason in the data to disagree with it.",
+     "evidence": [
+      {
+       "path": "markets.prop_02.as_of",
+       "value": "2026-10-26T04:03:28Z"
+      },
+      {
+       "path": "markets.prop_02.options[0].fair_probability",
+       "value": 0.6565
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books, or a confirmed lineup spot that differs from what we have, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_03",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The prices on Taylor Walls runs scored are many hours old and only a few books quote them, so the market number may be out of date and there is no strong reason in the data to disagree with it.",
+     "evidence": [
+      {
+       "path": "markets.prop_03.as_of",
+       "value": "2026-10-26T04:03:28Z"
+      },
+      {
+       "path": "markets.prop_03.options[0].fair_probability",
+       "value": 0.6966
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books, or a confirmed lineup spot that differs from what we have, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_04",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The prices on Cooper Pratt runs scored are many hours old and only a few books quote them, so the market number may be out of date and there is no strong reason in the data to disagree with it.",
+     "evidence": [
+      {
+       "path": "markets.prop_04.as_of",
+       "value": "2026-10-26T04:03:28Z"
+      },
+      {
+       "path": "markets.prop_04.options[0].fair_probability",
+       "value": 0.6777
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books, or a confirmed lineup spot that differs from what we have, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_05",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The prices on Brice Turang total bases are many hours old and only a few books quote them, so the market number may be out of date and there is no strong reason in the data to disagree with it.",
+     "evidence": [
+      {
+       "path": "markets.prop_05.as_of",
+       "value": "2026-10-26T04:03:28Z"
+      },
+      {
+       "path": "markets.prop_05.options[0].fair_probability",
+       "value": 0.5713
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books, or a confirmed lineup spot that differs from what we have, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_06",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The prices on Chandler Simpson hits are many hours old and only a few books quote them, so the market number may be out of date and there is no strong reason in the data to disagree with it.",
+     "evidence": [
+      {
+       "path": "markets.prop_06.as_of",
+       "value": "2026-10-26T04:03:28Z"
+      },
+      {
+       "path": "markets.prop_06.options[0].fair_probability",
+       "value": 0.6825
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books, or a confirmed lineup spot that differs from what we have, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_07",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The prices on Jonathan Aranda total bases are many hours old and only a few books quote them, so the market number may be out of date and there is no strong reason in the data to disagree with it.",
+     "evidence": [
+      {
+       "path": "markets.prop_07.as_of",
+       "value": "2026-10-26T04:03:28Z"
+      },
+      {
+       "path": "markets.prop_07.options[0].fair_probability",
+       "value": 0.6027
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books, or a confirmed lineup spot that differs from what we have, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_08",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The prices on William Contreras hits are many hours old and only a few books quote them, so the market number may be out of date and there is no strong reason in the data to disagree with it.",
+     "evidence": [
+      {
+       "path": "markets.prop_08.as_of",
+       "value": "2026-10-26T04:03:28Z"
+      },
+      {
+       "path": "markets.prop_08.options[0].fair_probability",
+       "value": 0.6191
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books, or a confirmed lineup spot that differs from what we have, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_09",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The prices on David Hamilton runs scored are many hours old and only a few books quote them, so the market number may be out of date and there is no strong reason in the data to disagree with it.",
+     "evidence": [
+      {
+       "path": "markets.prop_09.as_of",
+       "value": "2026-10-26T04:03:28Z"
+      },
+      {
+       "path": "markets.prop_09.options[0].fair_probability",
+       "value": 0.7087
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books, or a confirmed lineup spot that differs from what we have, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_10",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The prices on Ryan Vilade runs scored are many hours old and only a few books quote them, so the market number may be out of date and there is no strong reason in the data to disagree with it.",
+     "evidence": [
+      {
+       "path": "markets.prop_10.as_of",
+       "value": "2026-10-26T04:03:28Z"
+      },
+      {
+       "path": "markets.prop_10.options[0].fair_probability",
+       "value": 0.6614
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books, or a confirmed lineup spot that differs from what we have, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_11",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The prices on Christian Yelich total bases are many hours old and only a few books quote them, so the market number may be out of date and there is no strong reason in the data to disagree with it.",
+     "evidence": [
+      {
+       "path": "markets.prop_11.as_of",
+       "value": "2026-10-26T04:03:28Z"
+      },
+      {
+       "path": "markets.prop_11.options[0].fair_probability",
+       "value": 0.5869
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books, or a confirmed lineup spot that differs from what we have, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_12",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The prices on Cooper Pratt total bases are many hours old and only a few books quote them, so the market number may be out of date and there is no strong reason in the data to disagree with it.",
+     "evidence": [
+      {
+       "path": "markets.prop_12.as_of",
+       "value": "2026-10-26T04:03:28Z"
+      },
+      {
+       "path": "markets.prop_12.options[0].fair_probability",
+       "value": 0.5492
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books, or a confirmed lineup spot that differs from what we have, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_13",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The prices on Jake Bauers total bases are many hours old and only a few books quote them, so the market number may be out of date and there is no strong reason in the data to disagree with it.",
+     "evidence": [
+      {
+       "path": "markets.prop_13.as_of",
+       "value": "2026-10-26T04:03:28Z"
+      },
+      {
+       "path": "markets.prop_13.options[0].fair_probability",
+       "value": 0.5071
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books, or a confirmed lineup spot that differs from what we have, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_14",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The prices on Jonathan Aranda runs scored are many hours old and only a few books quote them, so the market number may be out of date and there is no strong reason in the data to disagree with it.",
+     "evidence": [
+      {
+       "path": "markets.prop_14.as_of",
+       "value": "2026-10-26T04:03:28Z"
+      },
+      {
+       "path": "markets.prop_14.options[0].fair_probability",
+       "value": 0.6047
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books, or a confirmed lineup spot that differs from what we have, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_15",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The prices on Chandler Simpson total bases are many hours old and only a few books quote them, so the market number may be out of date and there is no strong reason in the data to disagree with it.",
+     "evidence": [
+      {
+       "path": "markets.prop_15.as_of",
+       "value": "2026-10-26T04:03:28Z"
+      },
+      {
+       "path": "markets.prop_15.options[0].fair_probability",
+       "value": 0.6412
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books, or a confirmed lineup spot that differs from what we have, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_16",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The prices on Brice Turang hits are many hours old and only a few books quote them, so the market number may be out of date and there is no strong reason in the data to disagree with it.",
+     "evidence": [
+      {
+       "path": "markets.prop_16.as_of",
+       "value": "2026-10-26T04:03:28Z"
+      },
+      {
+       "path": "markets.prop_16.options[0].fair_probability",
+       "value": 0.5744
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books, or a confirmed lineup spot that differs from what we have, would change it.",
+   "case_against": null
+  }
+ ],
+ "summary_derived": []
+}

@@ -1,0 +1,481 @@
+{
+ "summary": "This looks close to a coin flip and I pass on every market. On the moneyline the books have TB slightly ahead and their de-vigged number is near even, with Milwaukee's starter holding the better season ERA while Tampa Bay's starter has the lower ERA over his last three starts. Those facts roughly offset, and nothing in what we have shows the price is wrong. On the run line, TB +1.5 is priced steeply and the books' number is the only support, so I pass rather than pay up for it. The total sits at 7 with both sides nearly even. The player props are the weakest part: the newest quote is very old, only a handful of books priced each one, and the data says most props were left out or thin. Where LineHound's own model leans away from the market on a few hitters, the gap is small and rests on the same stale prices. The missing inputs that matter are standings, team totals and fresh prop prices. A lineup change or a fresh price move is what would send me back to these.",
+ "calls": [
+  {
+   "slot_id": "moneyline",
+   "market": "moneyline",
+   "selection": "TB",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books price this close to even, and the starters' numbers roughly offset, so the market is probably about right.",
+     "evidence": [
+      {
+       "path": "markets.moneyline.options[0].fair_probability",
+       "value": 0.52
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A late lineup change or a clear move in the starters' status would make us reconsider.",
+   "case_against": null
+  },
+  {
+   "slot_id": "run_line",
+   "market": "run_line",
+   "selection": "TB +1.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' number is the only support for this side, and the price is too steep to pay without a reason from the data.",
+     "evidence": [
+      {
+       "path": "markets.run_line.options[0].fair_probability",
+       "value": 0.6482
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A price on TB +1.5 that is clearly shorter would make this worth a look.",
+   "case_against": null
+  },
+  {
+   "slot_id": "total",
+   "market": "total",
+   "selection": "Over 7",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "Both sides are priced nearly even and the data gives no clear push toward more or fewer runs.",
+     "evidence": [
+      {
+       "path": "markets.total.options[0].fair_probability",
+       "value": 0.5144
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed change in the lineups or a clear shift in the posted total would change the view.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_01",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is very old and only a few books priced it, so the market number is not something we can lean against.",
+     "evidence": [
+      {
+       "path": "markets.prop_01.options[0].fair_probability",
+       "value": 0.7034
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books alongside a confirmed lineup would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_02",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is very old and only a few books priced it, so the market number is not something we can lean against.",
+     "evidence": [
+      {
+       "path": "markets.prop_02.options[0].fair_probability",
+       "value": 0.6565
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books alongside a confirmed lineup would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_03",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is very old and only a few books priced it, so the market number is not something we can lean against.",
+     "evidence": [
+      {
+       "path": "markets.prop_03.options[0].fair_probability",
+       "value": 0.6966
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books alongside a confirmed lineup would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_04",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is very old and only a few books priced it, so the market number is not something we can lean against.",
+     "evidence": [
+      {
+       "path": "markets.prop_04.options[0].fair_probability",
+       "value": 0.6777
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books alongside a confirmed lineup would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_05",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is very old and only a few books priced it, so the market number is not something we can lean against.",
+     "evidence": [
+      {
+       "path": "markets.prop_05.options[0].fair_probability",
+       "value": 0.5713
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books alongside a confirmed lineup would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_06",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is very old and only a few books priced it, so the market number is not something we can lean against.",
+     "evidence": [
+      {
+       "path": "markets.prop_06.options[0].fair_probability",
+       "value": 0.6825
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books alongside a confirmed lineup would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_07",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is very old and only a few books priced it, so the market number is not something we can lean against.",
+     "evidence": [
+      {
+       "path": "markets.prop_07.options[0].fair_probability",
+       "value": 0.6027
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books alongside a confirmed lineup would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_08",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is very old and only a few books priced it, so the market number is not something we can lean against.",
+     "evidence": [
+      {
+       "path": "markets.prop_08.options[0].fair_probability",
+       "value": 0.6191
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books alongside a confirmed lineup would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_09",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is very old and only a few books priced it, so the market number is not something we can lean against.",
+     "evidence": [
+      {
+       "path": "markets.prop_09.options[0].fair_probability",
+       "value": 0.7087
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books alongside a confirmed lineup would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_10",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is very old and only a few books priced it, so the market number is not something we can lean against.",
+     "evidence": [
+      {
+       "path": "markets.prop_10.options[0].fair_probability",
+       "value": 0.6614
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books alongside a confirmed lineup would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_11",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is very old and only a few books priced it, so the market number is not something we can lean against.",
+     "evidence": [
+      {
+       "path": "markets.prop_11.options[0].fair_probability",
+       "value": 0.5869
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books alongside a confirmed lineup would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_12",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is very old and only a few books priced it, so the market number is not something we can lean against.",
+     "evidence": [
+      {
+       "path": "markets.prop_12.options[0].fair_probability",
+       "value": 0.5492
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books alongside a confirmed lineup would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_13",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is very old and only a few books priced it, so the market number is not something we can lean against.",
+     "evidence": [
+      {
+       "path": "markets.prop_13.options[0].fair_probability",
+       "value": 0.5071
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books alongside a confirmed lineup would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_14",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is very old and only a few books priced it, so the market number is not something we can lean against.",
+     "evidence": [
+      {
+       "path": "markets.prop_14.options[0].fair_probability",
+       "value": 0.6047
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books alongside a confirmed lineup would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_15",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is very old and only a few books priced it, so the market number is not something we can lean against.",
+     "evidence": [
+      {
+       "path": "markets.prop_15.options[0].fair_probability",
+       "value": 0.6412
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books alongside a confirmed lineup would let us revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_16",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is very old and only a few books priced it, so the market number is not something we can lean against.",
+     "evidence": [
+      {
+       "path": "markets.prop_16.options[0].fair_probability",
+       "value": 0.5744
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh price from several books alongside a confirmed lineup would let us revisit it.",
+   "case_against": null
+  }
+ ],
+ "summary_derived": []
+}

@@ -1,0 +1,557 @@
+{
+ "summary": "We pass on every market in this game. The moneyline is close to a coin flip: TB is -112 at best and MIL is 104 at best, and the books' own de-vigged numbers are 0.52 and 0.48. Milwaukee has the better season record and the better starter ERA, while Tampa Bay has a fixed roof at home and a lineup that mostly holds the platoon edge against a left-handed starter. Those pull in different directions and I see nothing the price has missed. The run line favourite, TB +1.5, is priced at -205 at best, which is past the -200 limit, and the MIL -1.5 side at 180 sits about where the books' fair number says it should. The total of 7 is priced almost evenly on both sides and the data gives no reason to lean either way. Every player prop quote is stale, and most props were left out or thinly quoted, so all sixteen are passes. Missing inputs that matter: fresh prop prices, standings, and team totals.",
+ "calls": [
+  {
+   "slot_id": "moneyline",
+   "market": "moneyline",
+   "selection": "TB",
+   "verdict": "PASS",
+   "price": -112,
+   "book": "betus",
+   "fair_estimate": 0.52,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books price this near a coin flip and the data does not show a clear reason to disagree.",
+     "evidence": [
+      {
+       "path": "markets.moneyline.options[0].fair_probability",
+       "value": 0.52
+      },
+      {
+       "path": "markets.moneyline.options[1].fair_probability",
+       "value": 0.48
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": -112,
+   "what_would_change_it": "A late lineup change or a scratch of either starter would change the read.",
+   "case_against": null
+  },
+  {
+   "slot_id": "run_line",
+   "market": "run_line",
+   "selection": "TB +1.5",
+   "verdict": "PASS",
+   "price": -205,
+   "book": "fanatics",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The best TB +1.5 price is -205, past the -200 limit, so it cannot be taken.",
+     "evidence": [
+      {
+       "path": "markets.run_line.options[0].best.price",
+       "value": -205
+      },
+      {
+       "path": "markets.run_line.options[1].fair_probability",
+       "value": 0.3518
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A TB +1.5 price better than -200 would make it worth a second look.",
+   "case_against": null
+  },
+  {
+   "slot_id": "total",
+   "market": "total",
+   "selection": "Over 7",
+   "verdict": "PASS",
+   "price": -107,
+   "book": "betrivers",
+   "fair_estimate": 0.51,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "Both sides are priced almost evenly and the data gives nothing beyond the price.",
+     "evidence": [
+      {
+       "path": "markets.total.options[0].fair_probability",
+       "value": 0.5144
+      },
+      {
+       "path": "markets.total.options[1].fair_probability",
+       "value": 0.4856
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A weather or lineup change that moves the line away from 7 would change this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_01",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -300,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is stale and few books price it, so the market number cannot be trusted.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 998 minutes old"
+      },
+      {
+       "path": "markets.prop_01.options[0].fair_probability",
+       "value": 0.7034
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh prices from several books would let this be judged again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_02",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -220,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is stale and few books price it, so the market number cannot be trusted.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 998 minutes old"
+      },
+      {
+       "path": "markets.prop_02.options[0].fair_probability",
+       "value": 0.6565
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh prices from several books would let this be judged again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_03",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -275,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is stale and few books price it, so the market number cannot be trusted.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 998 minutes old"
+      },
+      {
+       "path": "markets.prop_03.options[0].fair_probability",
+       "value": 0.6966
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh prices from several books would let this be judged again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_04",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -255,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is stale and few books price it, so the market number cannot be trusted.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 998 minutes old"
+      },
+      {
+       "path": "markets.prop_04.options[0].fair_probability",
+       "value": 0.6777
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh prices from several books would let this be judged again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_05",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -154,
+   "book": "williamhill_us",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is stale and few books price it, so the market number cannot be trusted.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 998 minutes old"
+      },
+      {
+       "path": "markets.prop_05.options[0].fair_probability",
+       "value": 0.5713
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh prices from several books would let this be judged again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_06",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -250,
+   "book": "betrivers",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is stale and few books price it, so the market number cannot be trusted.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 998 minutes old"
+      },
+      {
+       "path": "markets.prop_06.options[0].fair_probability",
+       "value": 0.6825
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh prices from several books would let this be judged again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_07",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -172,
+   "book": "betonlineag",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is stale and few books price it, so the market number cannot be trusted.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 998 minutes old"
+      },
+      {
+       "path": "markets.prop_07.options[0].fair_probability",
+       "value": 0.6027
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh prices from several books would let this be judged again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_08",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -189,
+   "book": "betonlineag",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is stale and few books price it, so the market number cannot be trusted.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 998 minutes old"
+      },
+      {
+       "path": "markets.prop_08.options[0].fair_probability",
+       "value": 0.6191
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh prices from several books would let this be judged again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_09",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -295,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is stale and few books price it, so the market number cannot be trusted.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 998 minutes old"
+      },
+      {
+       "path": "markets.prop_09.options[0].fair_probability",
+       "value": 0.7087
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh prices from several books would let this be judged again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_10",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -235,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is stale and few books price it, so the market number cannot be trusted.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 998 minutes old"
+      },
+      {
+       "path": "markets.prop_10.options[0].fair_probability",
+       "value": 0.6614
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh prices from several books would let this be judged again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_11",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -165,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is stale and few books price it, so the market number cannot be trusted.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 998 minutes old"
+      },
+      {
+       "path": "markets.prop_11.options[0].fair_probability",
+       "value": 0.5869
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh prices from several books would let this be judged again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_12",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -140,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is stale and few books price it, so the market number cannot be trusted.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 998 minutes old"
+      },
+      {
+       "path": "markets.prop_12.options[0].fair_probability",
+       "value": 0.5492
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh prices from several books would let this be judged again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_13",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -114,
+   "book": "betonlineag",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is stale and few books price it, so the market number cannot be trusted.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 998 minutes old"
+      },
+      {
+       "path": "markets.prop_13.options[0].fair_probability",
+       "value": 0.5071
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh prices from several books would let this be judged again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_14",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -185,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is stale and few books price it, so the market number cannot be trusted.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 998 minutes old"
+      },
+      {
+       "path": "markets.prop_14.options[0].fair_probability",
+       "value": 0.6047
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh prices from several books would let this be judged again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_15",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -205,
+   "book": "williamhill_us",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is stale and few books price it, so the market number cannot be trusted.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 998 minutes old"
+      },
+      {
+       "path": "markets.prop_15.options[0].fair_probability",
+       "value": 0.6412
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh prices from several books would let this be judged again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_16",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -157,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The newest quote for this prop is stale and few books price it, so the market number cannot be trusted.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 998 minutes old"
+      },
+      {
+       "path": "markets.prop_16.options[0].fair_probability",
+       "value": 0.5744
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh prices from several books would let this be judged again.",
+   "case_against": null
+  }
+ ],
+ "summary_derived": []
+}
