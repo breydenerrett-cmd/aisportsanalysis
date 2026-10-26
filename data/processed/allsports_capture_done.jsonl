@@ -6859,3 +6859,5 @@
 {"commence_utc": "2026-10-27T00:15:00Z", "event_id": "aaab7adc9af9f5e2964bb29120f82c1d", "kind": "phase", "observed_utc": "2026-10-26T22:24:49.603106Z", "phase": "t2h", "rows": 13, "sport_key": "soccer_argentina_primera_division"}
 {"call_kind": "pregame", "credits": 2, "events": 19, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-26T22:24:49.603106Z", "regions": ["us"], "rows": 184, "sport_key": "soccer_argentina_primera_division", "stored": 33}
 {"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T22:24:49.603106Z", "regions": ["us"], "rows": 47, "sport_key": "soccer_chile_campeonato", "stored": 4}
+{"commence_utc": "2026-10-26T23:00:00Z", "event_id": "9d5238c50f04d24ae92e556a438e188e", "kind": "phase", "observed_utc": "2026-10-26T22:32:13.338625Z", "phase": "t30m", "rows": 17, "sport_key": "soccer_brazil_campeonato"}
+{"call_kind": "pregame", "credits": 2, "events": 22, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-26T22:32:13.338625Z", "regions": ["us"], "rows": 226, "sport_key": "soccer_brazil_campeonato", "stored": 30}
