@@ -366,5 +366,8 @@ out.storedAfter = Object.fromEntries(store);
 out.clipboard = clipboard;
 out.confirms = confirms;
 out.intervals = [...intervals.values()].map((v) => v.ms);
-console.log("@@" + JSON.stringify(out));
+// the result goes to a file when asked: process.exit does not wait for a piped stdout to drain, so on Linux a result
+// over 64 KB printed to stdout is cut off mid-string (CI, 2026-10-26)
+if (process.env.RESULT_FILE) fs.writeFileSync(process.env.RESULT_FILE, "@@" + JSON.stringify(out));
+else console.log("@@" + JSON.stringify(out));
 process.exit(0);

@@ -93,12 +93,15 @@ def run_page(page: str, viewer=PIN_REFERENCE, **scenario) -> dict:
     # In a file, not the environment: Linux caps one environment variable at 128 KB.
     scenario_file = work / f"scenario_{os.getpid()}_{next(_counter)}.json"
     scenario_file.write_text(json.dumps(scenario), encoding="utf-8")
-    env = dict(os.environ, SCENARIO_FILE=str(scenario_file))
+    result_file = scenario_file.with_name(scenario_file.stem + ".result")
+    result_file.unlink(missing_ok=True)
+    env = dict(os.environ, SCENARIO_FILE=str(scenario_file), RESULT_FILE=str(result_file))
     if scenario.get("tz"):
         env["TZ"] = scenario["tz"]
     proc = subprocess.run(["node", "hounds_web_harness.mjs"], cwd=work, env=env, capture_output=True, text=True,
                           encoding="utf-8", timeout=90)
-    lines = [ln for ln in proc.stdout.splitlines() if ln.startswith("@@")]
+    written = result_file.read_text(encoding="utf-8") if result_file.exists() else ""
+    lines = [written] if written.startswith("@@") else [ln for ln in proc.stdout.splitlines() if ln.startswith("@@")]
     if proc.returncode != 0 or not lines:
         raise AssertionError(f"harness failed ({proc.returncode}): {proc.stderr[-2000:]}\n{proc.stdout[-1000:]}")
     out = json.loads(lines[-1][2:])
