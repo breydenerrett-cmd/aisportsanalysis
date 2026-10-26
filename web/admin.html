@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
 <!-- THE ADMIN DASHBOARD (owner, 2026-10-19). Private: not linked from anywhere, noindex, and every
      request carries the admin token in a header (web/js/admin.js). Page script: web/js/admin-app.js,
-     which draws five tabs from GET /admin/overview, /admin/users, /admin/testers, /admin/comps,
+     which draws six tabs (the sixth, Jarvis briefing, reads GET /admin/jarvis/brief?date= when it is opened; web/js/admin-jarvis.js) from GET /admin/overview, /admin/users, /admin/testers, /admin/comps,
      /admin/funnel, /admin/support and /admin/revenue. The sign-in card below is the only thing
      shown until a token is accepted, and it is shown again if the server rejects the saved token.
      The token field is never filled in: a saved token is not shown back. -->
@@ -68,6 +68,7 @@
       <button type="button" class="adm-nav__item" data-hook="admin-nav-item" data-route="funnel">Funnel</button>
       <button type="button" class="adm-nav__item" data-hook="admin-nav-item" data-route="health">Health<span class="adm-nav__badge adm-nav__badge--bad" data-hook="admin-nav-badge" data-for="health" hidden>0</span></button>
       <button type="button" class="adm-nav__item" data-hook="admin-nav-item" data-route="support">Support<span class="adm-nav__badge" data-hook="admin-nav-badge" data-for="support" hidden>0</span></button>
+      <button type="button" class="adm-nav__item" data-hook="admin-nav-item" data-route="jarvis">Jarvis briefing</button>
     </nav>
 
     <main class="adm-main" id="adm-main">
@@ -96,6 +97,12 @@
       <section class="adm-view" data-hook="admin-view-support" aria-label="Support" hidden>
         <h1 class="adm-view__title">Support</h1>
         <div data-hook="admin-host-support"></div>
+      </section>
+
+      <section class="adm-view" data-hook="admin-view-jarvis" aria-label="Jarvis briefing" hidden>
+        <h1 class="adm-view__title">Jarvis briefing</h1>
+        <p class="adm-note">Owner only. Paper only. Every probability is an estimate from a source not yet shown to be calibrated, so each pick says EXPERIMENTAL.</p>
+        <div data-hook="admin-host-jarvis"></div>
       </section>
     </main>
   </div>

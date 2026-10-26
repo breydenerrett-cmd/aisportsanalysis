@@ -285,11 +285,15 @@
 
 /* the reveal's "add anything in your own words" is one quiet line until it is opened (kennel-first rebuild: rules, would have bet today, then keep) */
 .qz-own { margin: 0 0 var(--lh-s5, 24px); }
-.qz-own__sum { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--qz-ink2); font-size: 15px; font-weight: 600; list-style-position: inside; }
+.qz-own__sum { position: relative; box-sizing: border-box; min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--qz-ink2); font-size: 15px; font-weight: 600; list-style: none; }
+.qz-own__sum::-webkit-details-marker { display: none; }
 .qz-own__sum:hover { color: var(--qz-ink); }
+/* the open summary and the textarea never share pixels: the summary keeps its own 44px row, the textarea is a block that starts below it
+   (tests/test_quiz_reveal_textarea.py opens the details at 390 and checks the heading's bottom is above the textarea's top) */
 .qz-own[open] .qz-own__sum { margin-bottom: 8px; }
+.qz-own > .qz-textarea { display: block; position: relative; z-index: 0; margin-top: 0; }
 .qz-own__sum::marker { content: ""; }
-.qz-own__sum::before { content: "+"; display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--qz-line2); font-weight: 600; }
+.qz-own__sum::before { content: "+"; display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; margin-right: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--qz-line2); font-weight: 600; }
 .qz-own[open] .qz-own__sum::before { content: "\2212"; }
 
 /* ---- 2026-10-21: four steps. The top row, the risk cards, the last step. ----------------------------------------------- */

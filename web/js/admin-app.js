@@ -34,9 +34,10 @@ import {
 import {
   renderOverview, renderPeople, renderFunnel, renderHealth, renderSupport, rowActions, peopleRows, storeCards,
 } from "./admin-views.js";
+import { renderJarvis, defaultBriefDate } from "./admin-jarvis.js";
 
-const ROUTES = ["overview", "people", "funnel", "health", "support"];
-const ROUTE_TITLE = { overview: "Overview", people: "People", funnel: "Funnel", health: "Health", support: "Support" };
+const ROUTES = ["overview", "people", "funnel", "health", "support", "jarvis"];
+const ROUTE_TITLE = { overview: "Overview", people: "People", funnel: "Funnel", health: "Health", support: "Support", jarvis: "Jarvis briefing" };
 
 const SOURCES = {
   overview: "/admin/overview",
@@ -97,6 +98,8 @@ function boot() {
     data: {}, errors: {}, route: "overview", loadedAt: null,
     filter: { q: "", group: "all", limit: 100 },
     supportFilter: { status: "open" },
+    // the Jarvis tab reads one date at a time, only once it is opened (GET /admin/jarvis/brief?date=); a 404 means "none built yet"
+    jarvis: { date: defaultBriefDate(Date.now()), status: "idle", brief: null, error: null, loaded: false },
   };
 
   let loadId = 0;
@@ -116,6 +119,11 @@ function boot() {
     closeMenu();
     state.data = {};
     state.errors = {};
+    state.jarvis.brief = null;                  // a signed-out tab keeps no briefing on the page
+    state.jarvis.loaded = false;
+    state.jarvis.status = "idle";
+    jarvisSeq += 1;
+    clear(hosts.hosts.jarvis);
     hosts.shell.hidden = true;
     hosts.loading.hidden = true;
     hosts.gate.hidden = false;
@@ -207,6 +215,8 @@ function boot() {
     rerenderPeople: () => renderPeople(hosts.hosts.people, state.data, ctx),
     rerenderSupport: () => { renderSupport(hosts.hosts.support, state.data.support, ctx); renderBadges(); },
     setSupportStatus,
+    jarvisLoad: (date) => loadJarvis(date),
+    jarvisSetDate: (date) => { state.jarvis.date = date; },
   };
 
   function renderAll() {
@@ -217,6 +227,39 @@ function boot() {
     renderSupport(hosts.hosts.support, state.data.support, ctx);
     renderBadges();
     showRoute();
+    if (state.jarvis.loaded || state.route === "jarvis") loadJarvis(state.jarvis.date);   // Refresh re-reads a briefing that was opened
+  }
+
+  /** The Jarvis tab's own read: one date, never part of loadAll (a date with no briefing is a 404 that is not a failure). */
+  let jarvisSeq = 0;
+  async function loadJarvis(date) {
+    const mine = state.jarvis;
+    const wanted = String(date || mine.date || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(wanted)) {
+      mine.status = "error";
+      mine.error = { status: 422 };
+      renderJarvis(hosts.hosts.jarvis, mine, ctx);
+      return;
+    }
+    mine.date = wanted;
+    mine.loaded = true;
+    mine.status = "loading";
+    mine.error = null;
+    renderJarvis(hosts.hosts.jarvis, mine, ctx);
+    const seq = ++jarvisSeq;
+    try {
+      const brief = await adminGet(`/admin/jarvis/brief?date=${encodeURIComponent(wanted)}`);
+      if (seq !== jarvisSeq) return;
+      mine.brief = brief;
+      mine.status = "ok";
+    } catch (err) {
+      if (seq !== jarvisSeq) return;
+      if (err && err.status === 401) { rejectToken(); return; }
+      mine.brief = null;
+      if (err && err.status === 404) mine.status = "none";
+      else { mine.status = "error"; mine.error = err; }
+    }
+    renderJarvis(hosts.hosts.jarvis, mine, ctx);
   }
 
   function renderBadges() {
@@ -251,6 +294,7 @@ function boot() {
       if (state.data.users) ctx.rerenderPeople();
     }
     showRoute();
+    if (route === "jarvis" && !state.jarvis.loaded && getAdminToken() && state.data.overview !== undefined) loadJarvis(state.jarvis.date);
     try {
       if (window.location.hash !== `#/${route}`) window.location.hash = `#/${route}`;
     } catch (err) {

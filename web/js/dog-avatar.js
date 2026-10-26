@@ -14,6 +14,7 @@
  */
 
 import { apiGet } from "./api.js";
+import { s as svgNode } from "./hounds-core.js";
 import { COATS, EYES, BACKGROUNDS, HEAD, FACE, NECK, BODY, DEFAULT_LOOK, cleanLook, lookFor, randomLook, STYLES, BREED_CHOICES } from "./dog-look.js";
 import { dogSvg, renderDog, setPose, flashPose, breedFor, breedLabel, breedOfName, BREED_LABELS, poseOfPick, POSES, BREEDS, STYLE_LABELS, EXPRESSIONS, expressionOf, anchorsFor, versionTier, cleanVersion, tierOf, newParts } from "./dog-rig.js";
 
@@ -42,9 +43,28 @@ export function poseOfHound(dog) {
   return "idle";
 }
 
+/** The Learner (category / family "learner", id "learner") has its own mascot, web/img/learner-hound.svg: a hound head in a graduation cap.
+ * Every other hound is drawn by the rig, unchanged. */
+export function isLearner(dog) {
+  const d = dog || {};
+  const word = (v) => String(v == null ? "" : v).trim().toLowerCase();
+  return word(d.category) === "learner" || word(d.family) === "learner" || word(d.id) === "learner" || word(d.root_id) === "learner";
+}
+
+/** The Learner's art as the same kind of node dogFace hands back for any hound: an <svg class="dk-badge"> that setPose / flashPose can touch. */
+export function learnerFace({ size = 32, pose = "idle", label = "", decorative = true } = {}) {
+  let href = "img/learner-hound.svg";
+  try { href = new URL("../img/learner-hound.svg", import.meta.url).href; } catch (err) { /* a page one level up from js/ finds it at img/ */ }
+  const attrs = { class: "dk-badge dk-badge--learner", viewBox: "0 0 128 128", width: size, height: size, focusable: "false",
+    "data-pose": pose, "data-mood": pose, "data-hound": "learner" };
+  if (decorative === false) { attrs.role = "img"; attrs["aria-label"] = label || "The Learner"; } else attrs["aria-hidden"] = "true";
+  return svgNode("svg", attrs, [svgNode("image", { href, x: 0, y: 0, width: 128, height: 128, preserveAspectRatio: "xMidYMid slice" })]);
+}
+
 /** A dog's face for a list row or card: its saved look, else the default look its id picks, and the breed its vibe picks. */
 export function dogFace(dog, { size = 32, pose = "idle", label = "", decorative = true } = {}) {
   const d = dog || {};
+  if (isLearner(d)) return learnerFace({ size, pose, label, decorative });
   const vibe = d.persona && d.persona.vibe ? d.persona.vibe : d.vibe;
   // a hound's version is real data (version_no on a kennel row, a leaderboard row and the kit): v2 and later wear their tier. The breed is
   // the lineage's, not the version's: a new version has a new id, and a trained hound must stay the breed it was (root_id; a v1's is its id).
