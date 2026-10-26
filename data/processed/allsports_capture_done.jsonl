@@ -6658,3 +6658,5 @@
 {"call_kind": "pregame", "credits": 2, "events": 16, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-26T18:02:56.314299Z", "regions": ["us"], "rows": 151, "sport_key": "soccer_sweden_allsvenskan", "stored": 14}
 {"commence_utc": "2026-10-27T18:00:00Z", "event_id": "ec01b586713fc1baec5f2ac947458710", "kind": "phase", "observed_utc": "2026-10-26T18:02:56.314299Z", "phase": "t24h", "rows": 14, "sport_key": "soccer_sweden_superettan"}
 {"call_kind": "pregame", "credits": 2, "events": 6, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-26T18:02:56.314299Z", "regions": ["us"], "rows": 60, "sport_key": "soccer_sweden_superettan", "stored": 28}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-26T18:45:00Z", "observed_utc": "2026-10-26T18:09:26.882103Z", "sport_key": "soccer_england_efl_cup"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-27T00:09:26.882103Z", "observed_utc": "2026-10-26T18:09:26.882103Z", "sport_key": "soccer_uefa_nations_league"}
