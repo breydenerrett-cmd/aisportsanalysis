@@ -23,7 +23,7 @@ except ImportError:  # pragma: no cover
 from src.appstate import users as users_store
 from src.hounds import stats, user_engine, user_store, user_view
 from src.hounds import user_engine_v2, user_spec
-from src.hounds.interact import ask_eval, common, drill, fire, manual
+from src.hounds.interact import ask_eval, common, drill, fire, manual, store
 from src.hounds.user_facts import FactBook
 from tests._hounds_user_fixtures import DATE, EVENT, spec_dict, standard_rows, utc
 
@@ -280,6 +280,39 @@ class Feedback(ApiCase):
         out = self.vote(user=self.owner, target_kind="manual", target_id=ticket["bet_id"])
         self.assertEqual(out["counts"]["by_kind"]["manual"]["good"], 1)
         self.assertEqual(self.err(self.vote, target_kind="manual", target_id="m-nope").status_code, 404)
+
+    def test_a_bad_call_carries_its_chips_and_a_good_call_may_not(self):
+        out = self.vote(verdict="bad", chips=["bad_price", "too_risky"], note="overpaid")
+        self.assertEqual(out["saved"]["chips"], ["bad_price", "too_risky"])
+        self.assertEqual(out["counts"]["chips"], {"bad_price": 1, "too_risky": 1})
+        exc = self.err(self.vote, verdict="good", chips=["bad_price"])
+        self.assertEqual((exc.status_code, self.code(exc)), (422, "chips_invalid"))
+        self.assertEqual(self.code(self.err(self.vote, verdict="bad", chips=["made_up"])), "chips_invalid")
+
+    def test_votes_are_appended_so_a_change_of_mind_is_a_second_row(self):
+        self.vote(verdict="good")
+        self.vote(verdict="bad", chips=["wrong_pick"])
+        with store.connect() as conn:
+            self.assertEqual(conn.execute("SELECT COUNT(*) FROM hound_feedback").fetchone()[0], 2)
+        mine = self.api.feedback_read(self.id, Response(), authorization=self.bearer(self.other_token), _rl=None)
+        self.assertEqual(mine["my_votes"], {"dog:": "bad"})
+
+    def test_a_member_reads_fixed_for_an_issue_their_votes_backed_and_a_stranger_does_not(self):
+        from datetime import datetime, timedelta, timezone
+        from src.hounds.interact import feedback_digest as fd
+        self.vote(verdict="bad", chips=["bad_price"])
+        self.vote(user=self.owner, verdict="bad", chips=["bad_price"], target_kind="dog")
+        real = datetime.now(timezone.utc)             # the vote rows are stamped by the real clock; so is the notice window
+        day = (real + timedelta(hours=fd.pacific_offset_hours(real))).date().isoformat()
+        digest = fd.build(day, db=self.db)
+        fd.file_issues(digest, path=Path(self._tmp.name) / "B.md", db=self.db)
+        fid = digest["issues"][0]["feedback_id"]
+        store.resolve_issue(fid, "Prices now use the average line.", db=self.db)
+        mine = self.api.feedback_read(self.id, Response(), authorization=self.bearer(self.other_token), _rl=None)
+        self.assertEqual([f["note"] for f in mine["fixed"]], ["Prices now use the average line."])
+        self.assertRegex(mine["fixed"][0]["resolved_at"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+        public = self.api.feedback_read(self.id, Response(), authorization=None, _rl=None)
+        self.assertNotIn("fixed", public)
 
 
 class Suggestions(ApiCase):

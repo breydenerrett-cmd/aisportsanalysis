@@ -72,7 +72,7 @@ from typing import Callable, Mapping, Optional, Sequence
 
 from src.hounds import coach_card, stats, user_rules, user_spec, user_store
 from src.hounds.breeding import cross
-from src.hounds.interact import common, rites
+from src.hounds.interact import common, rites, store
 from src.hounds.interact.rites import RiteError
 
 MIN_NEW_SETTLED = 5          # settled bets a version needs before it can train again (and for a non-light first training)
@@ -1069,12 +1069,29 @@ def review(dog: Optional[common.Dog], user_id: int, coach=None, *, origin=None, 
         "version_no": hound["version_no"], "name": dog.name, "framing": framing, "message": message,
         "basis": proposal_basis(dog.id, spec),
         "changes": [dict(c) for c in changes], "picks": [c["cid"] for c in changes], "nothing": not changes,
-        "today": today, "mapper": None if mapper is None else {k: mapper[k] for k in ("source", "label", "status")},
+        "today": today, "owner_feedback": owner_feedback(dog, user_id, db=db),
+        "mapper": None if mapper is None else {k: mapper[k] for k in ("source", "label", "status")},
         "coach": coach_view(read) if read is not None and origin is None else None,
         "tweak": {"used": used, "left": max(0, retune.TWEAK_ROUNDS - used), "max": retune.TWEAK_ROUNDS},
         "limit_note": "Applying counts as a training and makes a new version. Saying no changes nothing and does not count.",
         "honesty": retune.HONESTY, "paper_only": True,
     }
+
+
+def owner_feedback(dog: common.Dog, user_id: int, *, db=None) -> Optional[dict]:
+    """The owner's own Good / Bad calls on this hound's picks and answers, as a LABELLED INPUT to the review ("3 Bad calls: 2 bad
+    price"). It is shown beside the proposal and weighed by the owner; it is not an input to the coach's cache key, the menu or
+    the mapper, so it never changes what is proposed and nothing here applies without their Apply. None when they have not voted
+    (or the table cannot be read: a feedback problem must not stop a training review)."""
+    try:
+        got = store.owner_evidence(dog.root_id, user_id, db=db)
+    except Exception:  # noqa: BLE001
+        return None
+    if not (got["good"] or got["bad"]):
+        return None
+    return {"label": "Your own Good call / Bad call votes on this hound", "good": got["good"], "bad": got["bad"],
+            "chips": got["chips"], "text": got["text"], "notes": got["notes"],
+            "note": "Shown for you to weigh. It changes nothing by itself; only Apply does."}
 
 
 def veto(dog: Optional[common.Dog], user_id: int) -> dict:

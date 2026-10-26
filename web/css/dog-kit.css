@@ -95,6 +95,9 @@
 .dk-vote__btn[data-verdict="bad"][aria-pressed="true"] { border-color: var(--hd-bad); color: var(--hd-bad); background: rgba(255, 107, 122, .08); }
 .dk-note { display: flex; gap: 6px; flex: 1 1 260px; }
 .dk-note[hidden] { display: none; }
+.dk-note { flex-wrap: wrap; }
+.dk-note .dk-chips { flex: 1 1 100%; margin: 0; }
+.dk-chipbtn[aria-pressed="true"] { border-color: var(--hd-accent); color: #fff; }
 .dk-note input {
   flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 6px 8px; background: #0B0C0E; color: #fff;
   border: 1px solid rgba(255, 255, 255, .28); border-radius: 4px; font-size: 14px;

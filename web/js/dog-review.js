@@ -82,6 +82,11 @@ export function reviewProposal({ body, sheet, first, propose, veto, coachBlock =
         const block = coachBlock(card.coach);
         if (block) root.appendChild(block);
       }
+      if (card.owner_feedback && card.owner_feedback.text) {
+        root.appendChild(h("div", { class: "rt-note", "data-hook": "review-owner-feedback" }, [
+          h("strong", { text: `${card.owner_feedback.label || "Your votes"}: ` }), card.owner_feedback.text,
+          h("span", { class: "hd-fine", text: ` ${card.owner_feedback.note || ""}` })]));
+      }
       root.appendChild(h("h3", { class: "hd-h3", text: changes.length ? "What it would change" : "Nothing to change" }));
       const list = h("ul", { class: "rt-changes", "data-hook": "review-changes" });
       const items = changes.map((c, i) => reviewChange(c, i, refresh));

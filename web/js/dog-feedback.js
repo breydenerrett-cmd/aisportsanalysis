@@ -3,8 +3,12 @@
  * and "Train it".
  *
  *   voteRow      two buttons (aria-pressed) plus an optional note, POST /hounds/{id}/feedback. Signed-in only: a
- *                signed-out visitor is asked to sign in, once, in words. A second vote on the same thing replaces
- *                the first. FEEDBACK NEVER CHANGES A DOG: the copy says so, because it is the rule.
+ *                signed-out visitor is asked to sign in, once, in words. A "Bad call" posts at once and then opens the
+ *                what-was-wrong chips (single or multi select) and the note; "Send details" posts the Bad call AGAIN with
+ *                them. Votes are append-only on the server, so a second post is a new row and the latest one stands.
+ *                FEEDBACK NEVER CHANGES A HOUND: the copy says so, because it is the rule.
+ *   fixedNotice  "Fixed: <note>" lines for the signed-in member whose vote backed an issue the owners resolved
+ *                (GET /hounds/{id}/feedback `fixed`); the time is a [[w:ISO]] token in the viewer's own zone.
  *   mountFans    the "What fans think" panel: counts only (a stranger sees no notes), a short list of recent tickets
  *                to rate, and the training block.
  *   training     a house model: its Coach panel's tip box (graded tips, only the referee changes a model). A builder
@@ -14,12 +18,33 @@
  */
 
 import { h, clearNode, fmtPrice, isNum } from "./hounds-core.js";
+import { localizeTimes } from "./local-time.js";
 import {
   get, post, errorText, signedIn, signInPrompt, builderHref, changeText, FIELD_WORDS, ticketKey, statusLine, nextId, SIGNIN_HREF,
 } from "./dog-common.js";
 
 export const NEVER_CHANGES = "Feedback is counted and the owner reads it. It never changes a hound by itself.";
 const SMALL = 10;
+
+/** The what-was-wrong choices of a Bad call: [id, label]. The ids are store.CHIPS on the server (a test keeps them equal). */
+export const CHIPS = [
+  ["wrong_pick", "Wrong pick"],
+  ["bad_price", "Bad price"],
+  ["ignored_news", "Ignored injury/news"],
+  ["wrong_market", "Wrong sport/market"],
+  ["too_risky", "Too risky"],
+  ["confusing", "Confusing answer"],
+  ["other", "Other"],
+];
+
+/** "Fixed: <note>" with the day it was fixed in the viewer's zone; null when there is nothing to say. */
+export function fixedNotice(items) {
+  const rows = Array.isArray(items) ? items.filter((x) => x && x.note) : [];
+  if (!rows.length) return null;
+  return h("ul", { class: "dk-misses", "data-hook": "fixed-notices", role: "status" }, rows.map((x) => h("li", { class: "dk-miss", "data-fixed": x.feedback_id || "" }, [
+    h("strong", { text: "Fixed: " }), x.note,
+    x.resolved_at ? h("span", { class: "hd-fine", text: localizeTimes(` [[w:${x.resolved_at}]]`) }) : null])));
+}
 
 /**
  * "Good call / Bad call" for one thing. `kind` is ticket | manual | answer | dog, `targetId` what it is about.
@@ -39,7 +64,8 @@ export function voteRow({ id, kind, targetId, my, counts, label = "", onVoted })
       b.textContent = (verdict === "good" ? "Good call" : "Bad call") + (tally && tally[verdict] ? ` (${tally[verdict]})` : "");
     }
   };
-  const send = async (verdict, note) => {
+  const picked = new Set();
+  const send = async (verdict, note, withChips = false) => {
     if (!signedIn()) {
       clearNode(status);
       status.appendChild(h("span", {}, ["Sign in to rate. ", h("a", { href: SIGNIN_HREF, text: "Sign in" })]));
@@ -49,13 +75,15 @@ export function voteRow({ id, kind, targetId, my, counts, label = "", onVoted })
     try {
       const body = { target_kind: kind, target_id: targetId || "", verdict };
       if (note) body.note = note;
+      if (withChips && verdict === "bad" && picked.size) body.chips = CHIPS.map((c) => c[0]).filter((id2) => picked.has(id2));
       const out = await post(`/hounds/${encodeURIComponent(id)}/feedback`, body);
       const cell = (out.counts && out.counts.by_target && out.counts.by_target[`${kind}:${targetId || ""}`]) || null;
       if (counts && cell) tally = { good: cell.good, bad: cell.bad };
       chosen = verdict;
       paint();
-      status.textContent = note ? "Saved with your note." : "Saved.";
+      status.textContent = (note || (body.chips && body.chips.length)) ? "Saved with your details." : "Saved.";
       noteBox.removeAttribute("hidden");
+      if (chipBox) { if (verdict === "bad") chipBox.removeAttribute("hidden"); else chipBox.setAttribute("hidden", ""); }
       if (onVoted) onVoted(out);
     } catch (err) {
       status.textContent = errorText(err);
@@ -68,11 +96,23 @@ export function voteRow({ id, kind, targetId, my, counts, label = "", onVoted })
     buttons[verdict] = b;
     wrap.appendChild(b);
   }
+  // what was wrong: only a Bad call asks, and only after the Bad call itself is saved (so a person who stops there still voted)
+  const chipBox = h("div", { class: "dk-chips", "data-hook": "vote-chips", role: "group", "aria-label": "What was wrong", hidden: "" },
+    [h("p", { class: "hd-fine", text: "What was wrong? Pick any that fit." })]);
+  for (const [chipId, chipLabel] of CHIPS) {
+    const chip = h("button", { type: "button", class: "dk-chipbtn", "data-hook": "vote-chip", "data-chip": chipId, "aria-pressed": "false", text: chipLabel });
+    chip.addEventListener("click", () => {
+      if (picked.has(chipId)) picked.delete(chipId); else picked.add(chipId);
+      chip.setAttribute("aria-pressed", picked.has(chipId) ? "true" : "false");
+    });
+    chipBox.appendChild(chip);
+  }
+  noteBox.appendChild(chipBox);
   const noteId = nextId("dk-note");
   const input = h("input", { type: "text", maxlength: "200", id: noteId, "data-hook": "vote-note", autocomplete: "off",
     placeholder: "Add a note (optional)", "aria-label": "Add a note to your rating" });
-  const save = h("button", { type: "button", class: "dk-vote__btn", "data-hook": "vote-note-save", text: "Save note" });
-  save.addEventListener("click", () => { if (chosen) send(chosen, input.value.trim()); });
+  const save = h("button", { type: "button", class: "dk-vote__btn", "data-hook": "vote-note-save", text: "Send details" });
+  save.addEventListener("click", () => { if (chosen) send(chosen, input.value.trim(), true); });
   noteBox.appendChild(input);
   noteBox.appendChild(save);
   wrap.appendChild(noteBox);
@@ -192,6 +232,8 @@ export async function mountFans(section, { id, name, kit, hound }) {
   body.appendChild(h("p", { "data-hook": "fans-counts", text: countsLine(counts) }));
   if (counts.suggestions && kit.is_owner) body.appendChild(h("p", { class: "hd-fine", text: `${counts.suggestions} ${counts.suggestions === 1 ? "suggestion" : "suggestions"} waiting below.` }));
   body.appendChild(h("p", { class: "hd-fine", text: NEVER_CHANGES }));
+  const fixed = fixedNotice(fb.fixed);
+  if (fixed) body.appendChild(h("div", { class: "dk-block", "data-hook": "fans-fixed" }, [h("h3", { class: "hd-h3", text: "Fixed for you" }), fixed]));
   body.appendChild(h("div", { class: "dk-block" }, [h("h3", { class: "hd-h3", text: `Rate ${name || "this model"}` }),
     voteRow({ id, kind: "dog", targetId: "", my: mine["dog:"], counts: (counts.by_kind || {}).dog || { good: 0, bad: 0 }, label: "the dog overall" })]));
   const tickets = await recentTickets(id);

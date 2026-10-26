@@ -30,7 +30,8 @@ and the Training camp's own data.
     POST /hounds/{id}/manual/batch    the owner records many at once: {"picks": [{"event_id", "market"}, ...]} (at most 40),
                                       each through the same refusals as the single pick; answers added / skipped with reasons
     GET  /hounds/{id}/feedback        Good call / Bad call counts (and, for a signed-in caller, their own votes)
-    POST /hounds/{id}/feedback        signed in: {"target_kind", "target_id", "verdict": good|bad, "note"?}
+    POST /hounds/{id}/feedback        signed in: {"target_kind", "target_id", "verdict": good|bad, "note"?, "chips"?: [...]}; a Bad call
+                                      may carry the "what was wrong" chips (store.CHIPS). Votes are APPENDED, never edited
     POST /hounds/{id}/suggest         signed in, not the owner, builder dogs: a suggested change for the owner
     GET  /hounds/{id}/look            a builder dog's look (public)
     PUT  /hounds/{id}/look            the owner: {"look": {...}} validated against the locker-room whitelist
@@ -635,6 +636,7 @@ class FeedbackRequest(BaseModel):
     target_id: Optional[str] = None
     verdict: str
     note: Optional[str] = None
+    chips: Optional[List[str]] = None
 
 
 def _feedback_error(exc: store.FeedbackError) -> HTTPException:
@@ -670,6 +672,7 @@ def feedback_read(hound_id: str, response: Response, authorization: Optional[str
     out = {"dog_id": dog.id, "counts": store.counts(dog.root_id)}
     if viewer is not None:
         out["my_votes"] = store.my_votes(dog.root_id, viewer)
+        out["fixed"] = store.fixed_notices(dog.root_id, viewer)      # "Fixed: <note>" for issues this person's votes backed
         if dog.kind == common.KIND_USER and dog.owner_user_id == viewer:
             out["notes"] = store.notes_for_owner(dog.root_id)
             out["suggestions"] = store.suggestions_for_owner(dog.root_id)
@@ -687,7 +690,7 @@ def feedback_write(hound_id: str, body: FeedbackRequest, response: Response,
         note = store.clean_note(body.note)
         _check_target(dog, body.target_kind, target)
         saved = store.record_vote(hound_id=dog.id, root_id=dog.root_id, kind=body.target_kind, target_id=target,
-                                  verdict=body.verdict, note=note, user_id=current_user.id)
+                                  verdict=body.verdict, note=note, chips=body.chips, user_id=current_user.id)
     except store.FeedbackError as exc:
         raise _feedback_error(exc)
     return envelope({"saved": saved, "counts": store.counts(dog.root_id),
