@@ -6912,3 +6912,9 @@
 {"commence_utc": "2026-10-27T05:30:00Z", "event_id": "a6d8040219c79e9c924af24a07ce7f44", "kind": "phase", "observed_utc": "2026-10-26T23:42:59.459624Z", "phase": "t6h", "rows": 1, "sport_key": "cricket_odi"}
 {"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T23:42:59.459624Z", "regions": ["us"], "rows": 3, "sport_key": "cricket_odi", "stored": 3}
 {"call_kind": "inplay", "credits": 1, "events": 19, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T23:42:59.459624Z", "regions": ["us"], "rows": 114, "sport_key": "soccer_argentina_primera_division", "stored": 21}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-10-27T05:51:40.697747Z", "observed_utc": "2026-10-26T23:51:40.697747Z", "sport_key": "soccer_korea_kleague1"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-10-27T05:51:40.697747Z", "observed_utc": "2026-10-26T23:51:40.697747Z", "sport_key": "soccer_mexico_ligamx"}
+{"commence_utc": "2026-10-27T00:15:00Z", "event_id": "aaab7adc9af9f5e2964bb29120f82c1d", "kind": "phase", "observed_utc": "2026-10-26T23:51:40.697747Z", "phase": "t30m", "rows": 13, "sport_key": "soccer_argentina_primera_division"}
+{"call_kind": "pregame", "credits": 2, "events": 19, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-26T23:51:40.697747Z", "regions": ["us"], "rows": 183, "sport_key": "soccer_argentina_primera_division", "stored": 32}
+{"call_kind": "inplay", "credits": 1, "events": 22, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T23:51:40.697747Z", "regions": ["us"], "rows": 134, "sport_key": "soccer_brazil_campeonato", "stored": 11}
+{"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-26T23:51:40.697747Z", "regions": ["us"], "rows": 45, "sport_key": "soccer_brazil_serie_b", "stored": 14}
