@@ -100,22 +100,22 @@ class StaticFacts(unittest.TestCase):
         self.assertEqual(order, sorted(order))
         for hook in ("english-input", "example-chips", "rule-cards", "preview-count", "my-dogs", "build-submit", "diff"):
             self.assertIn(f'data-hook="{hook}"', HTML, hook)
-        self.assertIn(">Say it<", HTML)
-        self.assertIn(">Check it<", HTML)
+        self.assertIn(">Say it in words<", HTML)
+        self.assertIn(">Build the rule<", HTML)
         self.assertIn(">Name it<", HTML)
-        self.assertIn("Would have bet today", HTML)
+        self.assertIn("Live preview", HTML)
+        self.assertIn("Last 14 days", HTML)
 
-    def test_the_advanced_rule_cards_are_collapsed_until_edit_rules_is_opened(self):
-        # the sentences stay visible; the cards, "add a rule" and the whole-dog settings sit in a closed <details>
-        match = re.search(r'<details[^>]*data-hook="rules-advanced"[^>]*>(.*?)</details>', HTML, re.S)
-        self.assertIsNotNone(match)
-        self.assertNotRegex(match.group(0).split(">", 1)[0], r"open")
-        self.assertIn("<summary>Edit rules</summary>", match.group(0))
+    def test_the_steps_are_open_on_the_page_not_folded_away(self):
+        # 2026-10-26: the rule cards ARE the step builder now, so they are a plain block under the sentences, not a closed <details>
+        at = HTML.index('data-hook="rules-advanced"')
+        tag = HTML[HTML.rindex("<", 0, at):HTML.index(">", at)]
+        self.assertTrue(tag.startswith("<div"), tag)
+        self.assertNotIn("<details", HTML[at:HTML.index('data-hook="step-identity"')])
         for hook in ("rule-cards", "add-rule", "globals-grid"):
-            self.assertIn(f'data-hook="{hook}"', match.group(1), hook)
-        sentences = HTML.index('data-hook="rule-sentences"')
-        self.assertLess(sentences, match.start())
-        self.assertNotIn('data-hook="rule-sentences"', match.group(0))
+            self.assertGreater(HTML.index(f'data-hook="{hook}"'), at, hook)
+        self.assertLess(HTML.index('data-hook="rule-sentences"'), at)
+        self.assertIn("5. Limits", HTML)
 
     def test_the_script_names_no_sport_market_or_condition_outside_its_examples(self):
         code = re.sub(r"export const EXAMPLES = \[.*?\];", "", JS, flags=re.S)

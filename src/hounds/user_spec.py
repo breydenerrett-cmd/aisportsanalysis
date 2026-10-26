@@ -898,6 +898,25 @@ def upgrade_v1(spec: Mapping) -> dict:
             "rules": rules}
 
 
+#: The plain-English blocks the rules editor offers as one-tap shortcuts (web/js/hounds-build.js `quickBlocks`). Each names a condition
+#: the engine already evaluates (a `menu_conditions()` id) and the parameter values the shortcut starts it at; the page decides nothing
+#: itself, and whether a block is offered for the rule's sports and markets is the condition's own `sports`/`kinds`.
+QUICK_BLOCKS = (
+    {"id": "last_n_wins", "label": "Form: wins in the last 10", "set": {"n": 10}},
+    {"id": "rest_days", "label": "Rest days", "set": {}},
+    {"id": "steam", "label": "Line moving toward the pick", "set": {"direction": "toward"}},
+    {"id": "venue_record", "label": "Home-ground win rate", "set": {"ground": "home"}},
+    {"id": "player_form", "label": "Prop average vs the line", "set": {}},
+)
+
+
+def quick_blocks() -> list:
+    """QUICK_BLOCKS that name a condition the engine has (a block for a condition that was removed would be a dead chip)."""
+    from src.hounds import user_rules as R
+    have = {c["id"] for c in R.menu_conditions()}
+    return [dict(b, set=dict(b["set"])) for b in QUICK_BLOCKS if b["id"] in have]
+
+
 def builder_menu() -> dict:
     """GET /hounds/builder/menu: everything a client may put in a version-2 spec, with bounds. The
     English parser, the AI translator's output check and the web builder are all generated from, and
@@ -932,6 +951,7 @@ def builder_menu() -> dict:
         "badges": [{"value": b[0], "label": b[1]} for b in R.BADGES],
         "teams": R.team_menu(),
         "conditions": R.menu_conditions(),
+        "quick_blocks": quick_blocks(),
         "prop_board_note": ("Prop boards are captured twice a game, so a prop is priced from the newest "
                             "capture at or before your lock, up to "
                             f"{MAX_PROP_BOARD_AGE_MINUTES // 60} hours old."),

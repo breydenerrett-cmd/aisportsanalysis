@@ -53,7 +53,7 @@
   background: var(--hd-card-2); border: 1px solid var(--hd-line); border-radius: 4px;
 }
 .bd-sportsearch:focus-visible { outline: 2px solid var(--hd-accent); outline-offset: 1px; }
-.bd-sportchips { max-height: 232px; overflow-y: auto; margin: 2px 0; padding-right: 2px; }
+.bd-sportchips { max-height: 296px; overflow-y: auto; margin: 2px 0; padding-right: 2px; }
 /* css/lh.css repaints every chip flat and hides which ones are picked; a picked chip (a sport, a market) is green again, a disabled one is dim */
 .hounds-page .bd-chip[aria-pressed="true"] { background: rgba(47, 208, 122, .16); color: #fff; font-weight: 600; box-shadow: inset 0 0 0 1px var(--hd-accent); }
 .hounds-page .bd-chip[disabled] { opacity: .4; cursor: not-allowed; }
@@ -132,7 +132,7 @@
 .bd-cond { padding: 8px 10px; border: 1px solid var(--hd-line); border-radius: 4px; background: var(--hd-card); display: grid; gap: 6px; }
 .bd-cond__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .bd-cond__name { color: #fff; font-size: 14px; }
-.bd-cond__params { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.bd-cond__params { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
 
 .bd-globals { margin-top: 6px; }
 .bd-globals__grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-top: 6px; }
@@ -296,3 +296,96 @@
 @media (max-width: 699px) {
   .hounds-page .bd-wrap .bd-step > h2 { font-size: 26px; }
 }
+
+/* ===== the step builder (2026-10-26): sports with the season, sliders, the price range with its floor, the live preview dock ===== */
+
+/* the numbered step heads inside a rule card */
+.bd-stephead { display: grid; grid-template-columns: 28px minmax(0, 1fr); column-gap: 10px; align-items: center; margin: 14px 0 2px; padding-top: 12px; border-top: 1px solid var(--hd-line); }
+.bd-card > .bd-stephead:first-of-type { margin-top: 0; padding-top: 0; border-top: 0; }
+.bd-stephead__no { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: rgba(47, 208, 122, .16); color: #fff; font-size: 14px; font-weight: 700; }
+.bd-stephead__title { margin: 0; font-size: 17px; font-weight: 700; }
+.bd-stephead__note { grid-column: 2; margin: 2px 0 0; }
+.bd-shortcut { margin: 0 0 8px; }
+
+/* sport chips: a count line on each, a dimmed one carries its reason */
+.bd-sportchips .bd-chip { max-width: 100%; white-space: normal; line-height: 1.3; }
+.bd-chip--dim, .hounds-page .bd-chip.bd-chip--dim { opacity: .62; border-style: dashed; }
+.bd-chip--dim[aria-pressed="true"] { opacity: .9; }
+.bd-chip__why { display: block; font-size: 12px; font-weight: 400; color: var(--hd-mute, #9AA3B2); }
+.bd-pickseason { margin: 4px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.bd-pickseason .btn { min-height: 40px; }
+.bd-quick { margin: 4px 0 8px; }
+.bd-quick .bd-chip { font-size: 13px; }
+
+/* a slider with its typed box beside it */
+.bd-slider { display: grid; grid-template-columns: minmax(0, 1fr) 80px; gap: 12px; align-items: center; }
+.bd-slider .bd-range { width: 100%; margin: 0; }
+.bd-range { -webkit-appearance: none; appearance: none; height: 28px; background: transparent; accent-color: var(--hd-accent, #2FD07A); touch-action: pan-y; }
+.bd-range::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .22); }
+.bd-range::-moz-range-track { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .22); }
+.bd-range::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; margin-top: -9px; border-radius: 50%; background: var(--hd-accent, #2FD07A); border: 2px solid #0B0C0E; }
+.bd-range::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--hd-accent, #2FD07A); border: 2px solid #0B0C0E; }
+.bd-range:focus-visible { outline: 2px solid var(--hd-accent, #2FD07A); outline-offset: 2px; }
+
+/* the price range: the floor is drawn to the left of the track, so no thumb can reach it */
+.bd-pricerange { margin: 4px 0 10px; }
+.bd-pricerange__read { margin: 0 0 4px; font-weight: 650; color: #fff; }
+.bd-pricerange__bar { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: center; }
+.bd-pricerange__floor {
+  position: relative; display: grid; place-items: center; min-height: 40px; padding: 2px 4px; border-radius: 4px; text-align: center; color: #FFD7DB;
+  background: repeating-linear-gradient(135deg, rgba(255, 107, 122, .28) 0 6px, rgba(255, 107, 122, .1) 6px 12px); border-right: 3px solid var(--hd-bad, #FF6B7A);
+}
+.bd-pricerange__floor-no { font-size: 15px; font-weight: 800; line-height: 1; }
+.bd-pricerange__floor-why { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.bd-pricerange__track { position: relative; height: 40px; }
+.bd-pricerange__track::before { content: ""; position: absolute; left: 0; right: 0; top: 17px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .22); }
+.bd-pricerange__fill { position: absolute; top: 17px; height: 6px; border-radius: 3px; background: var(--hd-accent, #2FD07A); left: var(--lo, 0%); right: calc(100% - var(--hi, 100%)); }
+.bd-range--pair { position: absolute; left: 0; top: 6px; width: 100%; height: 28px; pointer-events: none; }
+.bd-range--pair::-webkit-slider-runnable-track { background: transparent; }
+.bd-range--pair::-moz-range-track { background: transparent; }
+.bd-range--pair::-webkit-slider-thumb { pointer-events: auto; margin-top: 2px; }
+.bd-range--pair::-moz-range-thumb { pointer-events: auto; }
+.bd-pricerange__ends { display: flex; justify-content: space-between; margin: 0 0 0 74px; }
+
+/* the live preview dock: sticky beside the steps on a wide screen, folded under its heading on a phone */
+.bd-dock { min-width: 0; }
+.bd-dock > summary {
+  list-style: none; cursor: pointer; min-height: 44px; display: flex; align-items: center; padding: 0 14px; font-weight: 700; color: #fff;
+  background: var(--hd-card-2, #1A2029); border: 1px solid var(--hd-line); border-radius: 6px;
+}
+.bd-dock > summary::-webkit-details-marker { display: none; }
+.bd-dock > summary::after { content: "Show"; margin-left: auto; font-size: 13px; font-weight: 500; color: var(--hd-mute, #9AA3B2); }
+.bd-dock[open] > summary::after { content: "Hide"; }
+.bd-dock .bd-preview { max-height: 62vh; overflow-y: auto; margin-top: 6px; overscroll-behavior: contain; }
+.bd-rail { display: contents; }
+.bd-rail > .bd-dock { order: -1; }
+@media (min-width: 1000px) {
+  .bd-rail { display: grid; gap: 14px; align-content: start; position: sticky; top: 72px; min-width: 0; }
+  .bd-rail > .bd-dock { order: 0; }
+  .bd-rail > .bd-side { position: static; }
+  .bd-dock--page > summary { cursor: default; }
+  .bd-dock--page > summary::after { content: ""; }
+  .bd-dock--page .bd-preview { max-height: calc(100vh - 330px); }
+}
+.hounds-page .bd-dock .hd-panel { position: relative; padding: var(--lh-s5, 20px); border-radius: 22px; box-shadow: inset 0 0 0 1px var(--lh-line, rgba(255, 255, 255, .09)), var(--lh-e1, none); }
+.bd-preview__sub { margin: 14px 0 4px; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--hd-mute, #9AA3B2); }
+.bd-prule { margin: 0 0 6px; padding: 8px 12px; border-left: 3px solid var(--hd-accent, #2FD07A); background: rgba(255, 255, 255, .04); border-radius: 4px; }
+.bd-prule[hidden] { display: none; }
+.bd-prule__lead { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--hd-mute, #9AA3B2); }
+.bd-prule__text { margin: 2px 0 0; font-size: 15px; line-height: 1.45; color: var(--hd-text-2, #D6DBE4); overflow-wrap: anywhere; }
+.bd-hind { min-width: 0; }
+.bd-hind__line { margin: 6px 0; font-size: 16px; line-height: 1.4; color: #fff; overflow-wrap: anywhere; }
+.bd-hind__old { margin: 6px 0; font-size: 14px; color: var(--hd-mute, #9AA3B2); text-decoration: line-through; text-decoration-color: rgba(255, 255, 255, .3); overflow-wrap: anywhere; }
+.bd-hind .btn { min-height: 44px; }
+.bd-versionnote { margin: 6px 0 0; }
+/* a group and its condition blocks never grow past the card (a grid's implicit column is as wide as its widest select otherwise) */
+.bd-group { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.bd-cond, .bd-cond__params, .bd-cond__params .bd-field { min-width: 0; }
+.bd-cond__params select { max-width: 100%; }
+.hounds-page .bd-sportchips .bd-chip { flex: 0 1 auto; max-width: 100%; min-width: 0; white-space: normal; overflow-wrap: anywhere; text-align: left; }
+.bd-dock .bd-side__dog { display: none; }
+/* inside the kennel studio the dock is the first block of the builder and sticks to the top of the drawer while the steps scroll under it */
+.bd-embedded > .bd-dock { position: sticky; top: 0; z-index: 30; margin: 0 0 16px; background: var(--hd-bg, #0E1116); }
+/* base.css hides sideways overflow on html AND body, which turns body into a scroll container and stops position: sticky from working
+   (the preview dock never stuck). `clip` hides the same overflow without making a scroll container. */
+@supports (overflow: clip) { html, body { overflow-x: clip; } }

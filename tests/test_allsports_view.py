@@ -503,7 +503,7 @@ class TheRoutes(unittest.TestCase):
         self.assertIn("app.include_router(sports_router, dependencies=_authed)", src)
         self.assertTrue(hasattr(app_mod, "sports_router") and hasattr(app_mod, "sports_public_router"))
         self.assertEqual({r.path for r in app_mod.sports_router.routes}, {"/sports/now"})
-        self.assertEqual({r.path for r in app_mod.sports_public_router.routes}, {"/sports/catalog"})
+        self.assertEqual({r.path for r in app_mod.sports_public_router.routes}, {"/sports/catalog", "/sports/season"})
 
 
 class NoFastapiSafe(unittest.TestCase):

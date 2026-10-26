@@ -753,9 +753,12 @@ class TheBuilderHasOneHookSet(unittest.TestCase):
         for hook in self.hooks():
             self.assertTrue(f'hook("{hook}"' in self.SKELETON or f'"data-hook": "{hook}"' in self.SKELETON, hook)
 
-    def test_the_skeleton_collapses_the_advanced_cards_too(self):
-        self.assertIn('hook("rules-advanced"', self.SKELETON)
-        self.assertNotRegex(self.SKELETON, r'rules-advanced"[^)]*open')
+    def test_the_skeleton_shows_the_steps_open_like_the_page_does(self):
+        # 2026-10-26: the rule cards are the step builder, so neither home folds them into a <details>; the live preview dock is the one folded block
+        self.assertIn('hook("rules-advanced", { class: "bd-steps" }', self.SKELETON)
+        self.assertNotRegex(self.SKELETON, r'h\("details", hook\("rules-advanced"')
+        self.assertIn('data-dock', self.SKELETON)
+        self.assertIn('data-dock', self.STATIC)
 
 
 # ---------------------------------------------------------------------------------------------------
