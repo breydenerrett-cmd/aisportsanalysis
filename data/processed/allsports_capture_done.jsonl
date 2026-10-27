@@ -7274,3 +7274,7 @@
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T13:16:56.935272Z", "regions": ["au"], "rows": 15, "sport_key": "cricket_test_match", "stored": 13}
 {"events": 20, "kind": "peek", "next_check_utc": "2026-10-27T19:28:44.204616Z", "observed_utc": "2026-10-27T13:28:44.204616Z", "sport_key": "soccer_brazil_campeonato"}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T13:28:44.204616Z", "regions": ["us"], "rows": 1, "sport_key": "cricket_odi", "stored": 1}
+{"commence_utc": "2026-10-27T14:05:00Z", "event_id": "2121f3ad0a65fd648051aae488ff71ce", "kind": "phase", "observed_utc": "2026-10-27T13:41:06.266993Z", "phase": "t30m", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
+{"call_kind": "pregame", "credits": 1, "events": 11, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T13:41:06.266993Z", "regions": ["us"], "rows": 83, "sport_key": "tennis_atp_vienna_open", "stored": 83}
+{"commence_utc": "2026-10-27T19:30:00Z", "event_id": "6c176fc4889c1484ba801c94e59b91db", "kind": "phase", "observed_utc": "2026-10-27T13:41:06.266993Z", "phase": "t6h", "rows": 29, "sport_key": "basketball_euroleague"}
+{"call_kind": "pregame", "credits": 3, "events": 16, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-27T13:41:06.266993Z", "regions": ["us"], "rows": 256, "sport_key": "basketball_euroleague", "stored": 232}
