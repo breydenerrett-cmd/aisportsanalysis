@@ -6997,3 +6997,4 @@
 {"commence_utc": "2026-10-28T02:00:00Z", "event_id": "5f16cb74336431221c132f05c0e31d04", "kind": "phase", "observed_utc": "2026-10-27T02:14:34.548423Z", "phase": "t24h", "rows": 32, "sport_key": "icehockey_nhl"}
 {"commence_utc": "2026-10-28T02:00:00Z", "event_id": "66690f3994b21af39301701a52df1d66", "kind": "phase", "observed_utc": "2026-10-27T02:14:34.548423Z", "phase": "t24h", "rows": 32, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 13, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-27T02:14:34.548423Z", "regions": ["us"], "rows": 384, "sport_key": "icehockey_nhl", "stored": 384}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T02:25:30.148283Z", "regions": ["us"], "rows": 7, "sport_key": "basketball_wnba", "stored": 1}
