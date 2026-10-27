@@ -178,7 +178,7 @@ class TheNewPagesCarryTheHardLines(unittest.TestCase):
         self.assertEqual(html.count('class="lh-nav"'), 1)
         self.assertIn('<script type="module" src="js/nav.js"></script>', html)
         self.assertIn('<script type="module" src="js/fx.js"></script>', html)
-        self.assertIn('data-nav="leaderboard" aria-current="page"', html)      # # owner ruling 2026-10-20 kennel-first: the Graveyard hangs off the Leaderboard
+        self.assertIn('data-nav="hounds" aria-current="page"', html)      # # owner ruling 2026-10-20 kennel-first: the Graveyard hangs off the Leaderboard
 
     def test_every_new_animation_is_inside_the_no_preference_block(self):
         css = re.sub(r"/\*.*?\*/", "", (WEB / "css" / "dog-kit.css").read_text(encoding="utf-8"), flags=re.S)

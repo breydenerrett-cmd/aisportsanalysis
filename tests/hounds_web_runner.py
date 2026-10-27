@@ -43,6 +43,8 @@ PAGES = {
     "tabs": ("hound.html", "tabs.js"),
     # the track record page (tests/test_track_record_web.py): one hound's whole paper record, fed by GET /hounds/{id}/record
     "record": ("record.html", "track-record.js"),
+    # Tonight, the signed-in home (tests/test_tonight_web.py): open tickets, the recap, the games being checked, the top hounds
+    "tonight": ("tonight.html", "tonight.js"),
     # the live board, "What's on" (tests/test_live_board.py); its fixtures are tests/fixtures/sports_now.json
     "live": ("live.html", "live-board.js"),
     # the graveyard (tests/test_hounds_rites_web.py): every dog a member took out back

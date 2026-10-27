@@ -3,7 +3,7 @@
     python scripts/apply_kennel_nav_block.py [--check]
 
 web/js/nav.js rebuilds the `<header class="lh-nav">` block when it runs, so the markup below is what a visitor sees with
-scripts off and what tests/test_kennel_page.py pins. It is the SIGNED-OUT shape (owner ruling 2026-10-21: a Sign in text link and one big primary): Leaderboard, Live, Sign in and one primary
+scripts off and what tests/test_kennel_page.py pins. It is the SIGNED-OUT shape (owner ruling 2026-10-21: a Sign in text link and one big primary): Hounds (was Leaderboard until the guided-flow phase, 2026-10-26), Live, Sign in and one primary
 "Make your first hound" button (docs/design/KENNEL_FIRST_BRIEF.md). Idempotent: running it twice changes nothing. A page keeps its
 own `data-hook`, `data-bottom` and (renamed) `data-current`; the landing page keeps its `data-nav-extra` button and funnel hook;
 the quiz, the builder and the strategy interview carry no button (that is where it leads, or the page has its own one action). Re-run it after merging a branch that added or edited a
@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 WEB = Path(__file__).resolve().parent.parent / "web"
-OLD_KEYS = {"build": "create", "camp": "mykennel", "kennels": "leaderboard"}
+OLD_KEYS = {"build": "create", "camp": "mykennel", "kennels": "hounds", "leaderboard": "hounds"}
 NO_CTA_PAGES = {"quiz.html", "build-a-hound.html", "interview.html"}
 BLOCK = re.compile(r'<header class="lh-nav"([^>]*)>.*?</header>', re.S)
 
@@ -59,7 +59,7 @@ def block_for(name: str, old_opening: str, old_block: str) -> str:
         '      </span>\n'
         '    </a>\n'
         '    <nav class="lh-nav__links" aria-label="Sections" data-hook="nav-links">\n'
-        f'{link("hounds.html", "leaderboard", "Leaderboard")}\n'
+        f'{link("hounds.html", "hounds", "Hounds")}\n'
         f'{link("live.html", "live", "Live")}\n'
         '    </nav>\n'
         '    <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">\n'

@@ -1,0 +1,49 @@
+/*
+ * TONIGHT (web/tonight.html, web/js/tonight.js). Loads after studio.css and reuses its page head (.kn-head), empty card (.kn-empty) and
+ * legal line (.kn-legal). Calm and flat like the rest of the member pages: one accent, used only for the primary action.
+ * Phone first: every row stacks to one column at 520px and nothing may be wider than the screen.
+ */
+
+.tn-main { max-width: 860px; }
+.tn-section { margin: 0 0 var(--lh-s5, 24px); padding: var(--lh-s4, 16px) var(--lh-s5, 24px); border-radius: var(--lh-r-lg, 14px); background: var(--lh-soft, rgba(255, 255, 255, .05)); }
+.hounds-page .tn-main .tn-h { margin: 0 0 var(--lh-s2, 8px); font-family: var(--lh-font-display, inherit); font-size: var(--lh-fs-lg, 20px); font-weight: 700; }
+
+/* the one next step */
+.tn-next { margin: 0 0 var(--lh-s5, 24px); padding: var(--lh-s4, 16px) var(--lh-s5, 24px); border-radius: var(--lh-r-lg, 14px); background: var(--lh-soft, rgba(255, 255, 255, .05)); box-shadow: inset 3px 0 0 var(--lh-accent, #2FD07A); }
+.tn-next__text { margin: 0 0 var(--lh-s3, 12px); font-size: var(--lh-fs-md, 17px); color: var(--lh-ink, #EEF1F5); overflow-wrap: anywhere; }
+.tn-next__row, .tn-empty__row { display: flex; flex-wrap: wrap; gap: var(--lh-s2, 8px) var(--lh-s3, 12px); align-items: center; }
+
+/* ticket and game rows */
+.tn-list, .tn-recap { list-style: none; margin: 0; padding: 0; display: grid; }
+.tn-tix { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--lh-s2, 8px) var(--lh-s3, 12px); align-items: center; padding: var(--lh-s3, 12px) 0; }
+.tn-tix + .tn-tix, .tn-game + .tn-game, .tn-recap__row + .tn-recap__row { box-shadow: 0 -1px 0 var(--lh-line, rgba(255, 255, 255, .07)); }
+.tn-tix__dog { line-height: 0; border-radius: 10px; }
+.tn-tix__main, .tn-game__main, .tn-recap__main { display: grid; gap: 2px; min-width: 0; }
+.tn-tix__pick { font-size: var(--lh-fs-base, 15px); color: var(--lh-ink2, #C7CEDA); overflow-wrap: anywhere; }
+.tn-tix__pick strong { color: var(--lh-ink, #EEF1F5); font-weight: 600; }
+.tn-tix__game { font-size: var(--lh-fs-sm, 13px); color: var(--lh-mute, #8D96A6); overflow-wrap: anywhere; }
+.tn-tix__sub { overflow-wrap: anywhere; }
+.tn-tix__lock { font-size: var(--lh-fs-sm, 13px); font-weight: 600; color: var(--lh-ink2, #C7CEDA); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tn-tix[data-ahead="false"] .tn-tix__lock { color: var(--lh-mute, #8D96A6); font-weight: 500; }
+.tn-tix__actions, .tn-recap__acts { display: flex; flex-wrap: wrap; gap: var(--lh-s2, 8px); align-items: center; }
+.tn-tix__actions { grid-column: 2 / -1; }
+.tn-game { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--lh-s2, 8px) var(--lh-s3, 12px); align-items: center; padding: var(--lh-s3, 12px) 0; }
+.tn-game strong { font-weight: 600; overflow-wrap: anywhere; }
+
+/* the recap */
+.tn-recap__row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--lh-s2, 8px) var(--lh-s3, 12px); align-items: center; padding: var(--lh-s3, 12px) 0; }
+.tn-recap__line { font-size: var(--lh-fs-md, 17px); font-weight: 600; overflow-wrap: anywhere; }
+.tn-recap__acts { grid-column: 2; }
+
+.tn-empty__text { margin: 0 0 var(--lh-s3, 12px); color: var(--lh-ink2, #C7CEDA); overflow-wrap: anywhere; }
+.tn-more { margin: var(--lh-s2, 8px) 0 0; }
+.tn-textlink { color: var(--lh-accent, #2FD07A); font-size: var(--lh-fs-sm, 14px); font-weight: 600; text-decoration: none; }
+.tn-textlink:hover { text-decoration: underline; }
+
+@media (max-width: 520px) {
+  .tn-section, .tn-next { padding: var(--lh-s3, 12px) var(--lh-s4, 16px); }
+  .tn-tix { grid-template-columns: auto minmax(0, 1fr); }
+  .tn-tix__lock { grid-column: 2; }
+  .tn-game { grid-template-columns: minmax(0, 1fr); }
+  .tn-next__row .lh-btn--lg { width: 100%; }
+}

@@ -389,3 +389,8 @@
 /* base.css hides sideways overflow on html AND body, which turns body into a scroll container and stops position: sticky from working
    (the preview dock never stuck). `clip` hides the same overflow without making a scroll container. */
 @supports (overflow: clip) { html, body { overflow-x: clip; } }
+
+/* THE NEXT STEP after a save (hounds-build.js nextStepBlock; plan docs/HOUND_LOOP_PLAN.md phase 4): one primary, one quiet, one link. */
+.bd-next { margin: 12px 0 0; padding: 14px 16px; border-radius: 12px; background: var(--lh-soft, rgba(255, 255, 255, .06)); box-shadow: inset 3px 0 0 var(--lh-accent, #2FD07A); }
+.bd-next__text { margin: 0 0 10px; font-weight: 600; overflow-wrap: anywhere; }
+.bd-next__row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }

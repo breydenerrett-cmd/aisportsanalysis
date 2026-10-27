@@ -77,6 +77,7 @@ const state = {
   upgradeTapped: false,     // the studio showed the server's upgrade prompt for a paid tool
 };
 
+const STUDIO_TAB_KEYS = ["look", "rules", "fire", "backtest", "ask", "record", "lessons"];
 const STUDIO_TABS = ["look", "fire", "backtest", "ask", "record", "lessons"];   // the tabs that are cleared between dogs (rules is the builder's)
 
 const stop = (e) => { if (e && e.stopPropagation) e.stopPropagation(); };
@@ -452,7 +453,7 @@ function render() {
     // the page's name sits above it, the hounds are big below, and making another is a secondary button.
     setHead({ eyebrow: "My Kennel", title: data.kennel_name || "My Kennel", docTitle: "My Kennel", sub: active.length ? noun(active.length) : "" });
     // one quiet way to make another: the quiz is the front door to a hound
-    if (active.length) actions.appendChild(h("a", { class: "lh-btn lh-btn--soft", href: "quiz.html", "data-hook": "kennel-build", text: "Create a hound" }));
+    if (active.length) actions.appendChild(h("a", { class: "lh-btn lh-btn--soft", href: "quiz.html", "data-hook": "kennel-build", "aria-label": "Create a hound", text: "+ Create a hound" }));
     paintMore(data);
   } else {
     const best = data.best;
@@ -808,14 +809,28 @@ async function buildRecord(host, dog, kit) {
   try {
     const out = await apiGet(`/hounds/${id}/bets?page=1&page_size=5&segment=forward`);
     const items = (Array.isArray(out && out.items) ? out.items : []).filter((t) => !openIds.has(ticketId(t)));
-    if (items.length) tickets.appendChild(ticketList(items, { showModel: false, hook: "studio-ticket-list" }));
-    else tickets.appendChild(h("p", { class: "hd-muted", text: open > 0 ? "Nothing has settled yet." : "No tickets recorded yet." }));
+    if (items.length) {
+      // after a settled loss: the next step is to ask why, or to retune the rule (the Ask and Rules tabs of this same studio)
+      const latest = items.find((t) => ticketState(t) !== "pending" && ticketState(t) !== "ungraded");
+      if (latest && ticketState(latest) === "lost") tickets.appendChild(lossPrompt());
+      tickets.appendChild(ticketList(items, { showModel: false, hook: "studio-ticket-list" }));
+    } else tickets.appendChild(h("p", { class: "hd-muted", text: open > 0 ? "Nothing has settled yet." : "No tickets recorded yet." }));
   } catch (err) {
     tickets.appendChild(h("p", { class: "hd-muted", text: describeError(err, "this hound's tickets").text }));
   }
   const manual = h("section", { class: "dk-panel kn-section", hidden: "" }, [h("h3", { class: "hd-h3", text: "Manual picks" }), h("div", { "data-hook": "dog-manual" })]);
   host.appendChild(manual);
   await mountManual(manual, { id: dog.id, kit });
+}
+
+/** The prompt after a settled loss (plan docs/HOUND_LOOP_PLAN.md, phase 4): Ask why, or Retune. Both open this studio's own tabs. */
+function lossPrompt() {
+  const go = (tab) => () => { if (state.tabs) state.tabs.select(tab); };
+  return h("div", { class: "kn-lossnext", "data-hook": "studio-loss-next" }, [
+    h("p", { class: "kn-lossnext__text", text: "The last ticket lost. Find out why, or change the rule." }),
+    h("div", { class: "kn-lossnext__row" }, [
+      h("button", { type: "button", class: "lh-btn lh-btn--solid", "data-hook": "studio-ask-why", text: "Ask why", on: { click: go("ask") } }),
+      h("button", { type: "button", class: "lh-btn lh-btn--soft", "data-hook": "studio-retune", text: "Retune", on: { click: go("rules") } })])]);
 }
 
 // ONE builder per page. hounds-build.js binds its listeners once, to the first skeleton it boots on (module state).
@@ -1006,6 +1021,11 @@ function bindStudio() {
       paintStudioHead();
       writeUrl(detail.id, "rules");
     }
+  });
+  // a next-step button inside the builder ("Backtest 30 days", "Unleash") asks the studio for that tab (hounds-build.js nextStepBlock)
+  window.addEventListener("linehound:studio-tab", (evt) => {
+    const detail = (evt && evt.detail) || {};
+    if (detail.id && dogById(detail.id) && STUDIO_TAB_KEYS.includes(detail.tab)) openStudio(detail.id, detail.tab);
   });
   window.addEventListener(TOKEN_CHANGED_EVENT, () => { closeStudio(); load(); });
 }

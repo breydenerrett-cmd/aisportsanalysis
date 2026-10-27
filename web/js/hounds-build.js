@@ -72,6 +72,31 @@ function announce(type, dog, anchor) {
   } catch (err) { /* no window or no Event */ }
 }
 const embedded = () => !!(q("build-app") && q("build-app").hasAttribute("data-embedded"));
+
+/**
+ * THE NEXT STEP after a save (approved plan docs/HOUND_LOOP_PLAN.md, phase 4): a new hound goes Backtest 30 days, then Unleash; a new
+ * version goes Backtest it. Both are links to the kennel studio's own tabs (kennel.html?dog=<id>&tab=backtest|fire), which exist. Inside
+ * the studio the same tap switches tabs in place (the page hears "linehound:studio-tab"); with no studio listening it is a plain link.
+ */
+function nextStepBlock(dog, kind) {
+  const id = encodeURIComponent(dog.id);
+  const go = (tab) => (evt) => {
+    if (!embedded()) return;
+    if (evt && evt.preventDefault) evt.preventDefault();
+    try {
+      const e = new Event("linehound:studio-tab");
+      e.detail = { id: dog.id, tab };
+      window.dispatchEvent(e);
+    } catch (err) { /* no window or no Event: the link still works */ }
+  };
+  const link = (cls, tab, text, hook) => h("a", { class: cls, href: `kennel.html?dog=${id}&tab=${tab}`, "data-hook": hook, text, on: { click: go(tab) } });
+  return h("div", { class: "bd-next", "data-hook": "build-next-steps" }, [
+    h("p", { class: "bd-next__text", text: kind === "version" ? "Next: test the new version on the last 30 days." : "Next: test it on the last 30 days, then unleash it." }),
+    h("div", { class: "bd-next__row" }, [
+      link("lh-btn lh-btn--solid", "backtest", kind === "version" ? "Backtest the new version" : "Backtest 30 days", "next-backtest"),
+      kind === "version" ? null : link("lh-btn lh-btn--soft", "fire", "Unleash", "next-unleash"),
+      h("a", { class: "bd-textlink", href: houndHref(dog.id), "data-hook": "new-dog-link", text: "See your hound" })])]);
+}
 const clone = (x) => JSON.parse(JSON.stringify(x));
 
 const S = {
@@ -1709,7 +1734,7 @@ async function submit() {
         const res = await apiPost(`/hounds/${encodeURIComponent(S.edit.id)}/version`, { spec: saveSpec(), reason: "edited in the builder" });
         const dog = res.hound || {};
         setMessage(`Saved as version ${dog.version_no}. The old version keeps its record and stops betting.`, "ok");
-        if (dog.id) q("build-message").appendChild(h("p", {}, [h("a", { href: houndHref(dog.id), "data-hook": "new-dog-link", text: "See your hound" })]));
+        if (dog.id) q("build-message").appendChild(nextStepBlock(dog, "version"));
         S.edit = null; S.diffReady = false;
         q("diff").hidden = true;
         reveal(q("build-message"));
@@ -1724,7 +1749,7 @@ async function submit() {
       // the dog is the one that was in the preview: save its look (best effort, cosmetic; without it the dog wears the default look for its id)
       if (dog.id && !S.copiedFrom) { try { await put(`/hounds/${encodeURIComponent(dog.id)}/look`, { look: previewLook(S.spec, S.menu.colors) }); } catch (err) { /* default look */ } }
       setMessage(`${dog.name || "Your hound"} is in the kennel. Your record starts now.`, "ok");
-      if (dog.id) q("build-message").appendChild(h("p", {}, [h("a", { href: houndHref(dog.id), "data-hook": "new-dog-link", text: "See your hound" })]));
+      if (dog.id) q("build-message").appendChild(nextStepBlock(dog, "created"));
       reveal(q("build-message"));
       await loadMine();
       announce("created", dog);

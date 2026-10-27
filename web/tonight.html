@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tonight — LINEHOUND</title>
+<meta name="description" content="Your hounds' open tickets tonight, the games they are checking and when they lock, the top hounds' bets you can copy, and how your hounds did last night. Paper bets only, not advice, 21+.">
+<meta property="og:title" content="Tonight — LINEHOUND">
+<meta property="og:description" content="What your hounds are betting tonight. Paper only, not advice.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0B0D10">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
+<!-- TONIGHT (web/js/tonight.js, pure half web/js/tonight-model.js): the signed-in HOME since the guided-flow phase (approved plan
+       docs/HOUND_LOOP_PLAN.md, phase 4). Top to bottom: ONE next-step prompt; "Your hounds tonight" (open tickets, soonest lock first,
+       times in the viewer's zone); "Last night" (the recap from settled tickets, with Ask why / Retune after a loss); "Games your hounds
+       are checking" (the sports they bet, from GET /sports/now, with when each locks); "Top hounds tonight" (the leaderboard's top hounds'
+       open tickets, each with Open hound and Copy it: there is no betting flow here, paper only). Every empty state names a next step.
+       A signed-out visitor is asked to sign in or to see the Hounds page.
+     Reads: GET /hounds/kennels/mine, GET /hounds/{id}/bets (open and graded), GET /sports/now, GET /sports/season, GET /hounds.
+     The compliance line is static, once, in the footer. -->
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/lhnav.css">
+<link rel="stylesheet" href="css/hounds.css">
+<link rel="stylesheet" href="css/dog-kit.css">
+<link rel="stylesheet" href="css/lh.css">
+<link rel="stylesheet" href="css/unitsize.css">
+<link rel="stylesheet" href="css/studio.css">
+<link rel="stylesheet" href="css/tonight.css">
+</head>
+<body class="hounds-page kn-page tn-page">
+<a class="hd-skip" href="#main-content">Skip to tonight</a>
+<header class="lh-nav" aria-label="primary" data-hook="tonight-nav" data-current="tonight">
+  <div class="lh-nav__bar">
+    <a class="lh-nav__brand ps-page__home" href="landing.html" aria-label="LINEHOUND home">
+      <span class="wordmark" data-hook="brand-mark">
+        <span class="wordmark__mark"><span></span></span>
+        <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
+      </span>
+    </a>
+    <nav class="lh-nav__links" aria-label="Sections" data-hook="nav-links">
+      <a href="hounds.html" data-nav="hounds">Hounds</a>
+      <a href="live.html" data-nav="live">Live</a>
+    </nav>
+    <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">
+      <a class="lh-nav__signin" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
+      <a class="lh-btn lh-btn--solid lh-btn--lg" href="quiz.html" data-hook="nav-cta">Make your first hound</a>
+    </div>
+  </div>
+</header>
+
+<main class="hd-wrap hd-wrap--wide kn-main tn-main" id="main-content" aria-label="Tonight" data-hook="tonight-app">
+
+<header class="kn-head">
+  <div>
+    <p class="kn-eyebrow" data-hook="tonight-eyebrow"></p>
+    <h1 data-hook="tonight-title">Tonight</h1>
+    <p class="hd-lede kn-sub" data-hook="tonight-sub">Your hounds' tickets, the games they are checking, and how they did last night.</p>
+  </div>
+</header>
+
+<div data-hook="tonight-gate" hidden></div>
+
+<div data-hook="tonight-body" hidden>
+  <section class="tn-next" data-hook="tonight-next" aria-label="Next step" hidden></section>
+
+  <section class="tn-section" aria-labelledby="tn-mine-h" data-hook="tonight-mine-section">
+    <h2 id="tn-mine-h" class="tn-h">Your hounds tonight</h2>
+    <div data-hook="tonight-mine"><p class="hd-muted">Loading your tickets...</p></div>
+  </section>
+
+  <section class="tn-section" aria-labelledby="tn-recap-h" data-hook="tonight-recap-section">
+    <h2 id="tn-recap-h" class="tn-h">Last night</h2>
+    <div data-hook="tonight-recap"><p class="hd-muted">Loading results...</p></div>
+  </section>
+
+  <section class="tn-section" aria-labelledby="tn-check-h" data-hook="tonight-checking-section">
+    <h2 id="tn-check-h" class="tn-h">Games your hounds are checking</h2>
+    <div data-hook="tonight-checking"><p class="hd-muted">Loading tonight's games...</p></div>
+  </section>
+
+  <section class="tn-section" aria-labelledby="tn-top-h" data-hook="tonight-top-section">
+    <h2 id="tn-top-h" class="tn-h">Top hounds tonight</h2>
+    <div data-hook="tonight-top"><p class="hd-muted">Loading the top hounds...</p></div>
+  </section>
+</div>
+
+<p class="hd-fine kn-money-line" data-hook="paper-only-notice" role="note">Paper money only. Not betting advice.</p>
+</main>
+
+<footer class="hd-foot" data-hook="tonight-footer" aria-label="responsible gambling">
+  <p class="kn-legal">21+ &middot; Paper bets only, not advice &middot; Bet at your own risk &middot; Gamble responsibly. <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
+  <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="hounds.html">Hounds</a> &middot; <a href="graveyard.html">Graveyard</a></p>
+</footer>
+
+<script type="module" src="js/tonight.js"></script>
+<script type="module" src="js/fx.js"></script>
+<script type="module" src="js/nav.js"></script>
+</body>
+</html>

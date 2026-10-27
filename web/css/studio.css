@@ -704,3 +704,8 @@
   .kn-rule { padding: var(--lh-s4); }
   .kn-rule__list li { font-size: 20px; }
 }
+
+/* the prompt after a settled loss in the studio's Record tab (kennel.js lossPrompt): Ask why, or Retune */
+.kn-lossnext { margin: 0 0 var(--lh-s3, 12px); padding: var(--lh-s3, 12px) var(--lh-s4, 16px); border-radius: var(--lh-r-lg, 14px); background: var(--lh-soft, rgba(255, 255, 255, .05)); }
+.kn-lossnext__text { margin: 0 0 var(--lh-s2, 8px); font-weight: 600; }
+.kn-lossnext__row { display: flex; flex-wrap: wrap; gap: var(--lh-s2, 8px); }

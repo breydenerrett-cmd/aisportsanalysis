@@ -29,8 +29,9 @@ PAGES = ("kennels.html", "live.html", "hounds.html", "hound.html", "build-a-houn
          "postseason.html", "sample.html", "index.html", "graveyard.html", "quiz.html", "room.html", "interview.html", "record.html")
 # owner ruling 2026-10-20 kennel-first: the static (signed-out) nav is Leaderboard, Live, Sign in and one primary "Make your first hound" button;
 # a member's five places (My Kennel, Create, Live, Leaderboard, Account) are built by nav.js
-LINKS = [("hounds.html", "Leaderboard"), ("live.html", "Live")]
-MEMBER_LINKS = [("kennel.html", "My Kennel"), ("quiz.html", "Create"), ("live.html", "Live"), ("hounds.html", "Leaderboard")]
+# guided flow (docs/HOUND_LOOP_PLAN.md phase 4, 2026-10-26): Leaderboard is "Hounds", Create is a + button, Tonight is the member's first place
+LINKS = [("hounds.html", "Hounds"), ("live.html", "Live")]
+MEMBER_LINKS = [("tonight.html", "Tonight"), ("hounds.html", "Hounds"), ("kennel.html", "My Kennel"), ("live.html", "Live")]
 
 
 def q(name, sel, mode="text", **kw):
@@ -110,7 +111,7 @@ class EveryPageHasTheOneNavigation(unittest.TestCase):
         self.assertIn('data-hook="kennels-index"', html)
         self.assertIn('<script type="module" src="js/kennels-index.js"></script>', html)
         self.assertNotIn("hounds-page.js", html)                     # no leaderboard on it
-        self.assertIn('data-nav="leaderboard" aria-current="page"', html)      # # owner ruling 2026-10-20 kennel-first: Kennels is the Leaderboard's second view
+        self.assertIn('data-nav="hounds" aria-current="page"', html)      # Kennels is the Hounds page's second view
         self.assertIn('href="kennel.html" data-hook="kennels-mine"', html)
 
     def test_the_landing_page_is_the_quiz_button_and_the_kennel_pages_are_one_footer_link_away(self):
@@ -168,7 +169,7 @@ class TheNavigationRuns(unittest.TestCase):
         self.assertEqual(f["links"], [t for _, t in LINKS])
         self.assertEqual(f["hrefs"], [h for h, _ in LINKS])
         self.assertEqual((f["signin"], f["cta"], f["cta_href"], f["account"], f["bars"], f["area"]), (1, 1, "quiz.html", 0, 1, "false"))
-        self.assertEqual(f["tabs"], ["Leaderboard", "Live", "Sign in", "Make your first hound"])
+        self.assertEqual(f["tabs"], ["Hounds", "Live", "Sign in", "Make your first hound"])
         self.assertEqual(f["tabhrefs"][-2:], ["index.html#/signin", "quiz.html"])
         self.assertEqual(f["primaries"], ["Make your first hound"])                                 # exactly one filled button in the bar
         self.assertNotIn("lh-btn", f["signin_class"])                                               # Sign in is a text link, not a button
@@ -179,19 +180,19 @@ class TheNavigationRuns(unittest.TestCase):
         # My Kennel is the one big filled button top-right beside the Account avatar; Create, Live and Leaderboard are quiet text links on the left.
         f = self.run_nav(**SIGNED)["final"]
         self.assertEqual((f["signin"], f["cta"], f["account"], f["area"]), (0, 0, 1, "true"))
-        self.assertEqual(f["links"], ["Create", "Live", "Leaderboard"])
-        self.assertEqual(f["hrefs"], ["quiz.html", "live.html", "hounds.html"])
+        self.assertEqual(f["links"], ["Tonight", "Hounds", "Live"])
+        self.assertEqual(f["hrefs"], ["tonight.html", "hounds.html", "live.html"])
         self.assertEqual(f["primaries"], ["My Kennel"])                                           # the only filled button in the bar
         self.assertEqual((f["kennel_btn"], f["kennel_btn_href"]), (["My Kennel"], "kennel.html"))
         self.assertIn("lh-btn--solid", f["kennel_btn_class"])
         self.assertIn("lh-btn--lg", f["kennel_btn_class"])
         self.assertEqual(f["account_href"], "index.html#/account")
         # the phone tab bar is the same five with My Kennel the filled centre tab
-        self.assertEqual(f["tabs"], ["Create", "Live", "My Kennel", "Leaderboard", "Account"])
-        self.assertEqual(f["tab_order"][2], "mykennel")
+        self.assertEqual(f["tabs"], ["Tonight", "Hounds", "My Kennel", "Live", "Account"])
+        self.assertEqual(f["tab_order"], ["tonight", "hounds", "mykennel", "live", "account"])
         self.assertEqual(f["tab_primary"], ["My Kennel"])
         self.assertIn("lh-tab--primary", f["tab_primary_class"])
-        self.assertEqual(f["tabhrefs"], ["quiz.html", "live.html", "kennel.html", "hounds.html", "index.html#/account"])
+        self.assertEqual(f["tabhrefs"], ["tonight.html", "hounds.html", "kennel.html", "live.html", "index.html#/account"])
 
     def test_my_kennel_is_marked_current_on_the_kennel_page(self):
         f = self.run_nav(page_html="kennel.html", pathname="/web/kennel.html", **SIGNED)["final"]
@@ -206,15 +207,16 @@ class TheNavigationRuns(unittest.TestCase):
     def test_the_wordmark_goes_home_to_my_kennel_for_a_member_and_to_the_landing_page_for_a_visitor(self):
         qs = [q("home", ".lh-nav__brand", "attr", attr="href")]
         self.assertEqual(self.run_nav(queries=qs)["final"]["home"], "landing.html")
-        self.assertEqual(self.run_nav(queries=qs, **SIGNED)["final"]["home"], "kennel.html")
+        self.assertEqual(self.run_nav(queries=qs, **SIGNED)["final"]["home"], "tonight.html")
 
     def test_the_current_place_follows_the_page_and_the_kennel_page_follows_its_query(self):
         # a member's bar names all four links; the visitor's has only Leaderboard and Live
-        cases = [("hounds.html", "/web/hounds.html", "", ["Leaderboard"]), ("kennels.html", "/web/kennels.html", "", ["Leaderboard"]),
-                 ("hound.html", "/web/hound.html", "?id=closer", ["Leaderboard"]), ("graveyard.html", "/web/graveyard.html", "", ["Leaderboard"]),
-                 ("build-a-hound.html", "/web/build-a-hound.html", "", ["Create"]), ("quiz.html", "/web/quiz.html", "", ["Create"]),
+        cases = [("hounds.html", "/web/hounds.html", "", ["Hounds"]), ("kennels.html", "/web/kennels.html", "", ["Hounds"]),
+                 ("hound.html", "/web/hound.html", "?id=closer", ["Hounds"]), ("graveyard.html", "/web/graveyard.html", "", ["Hounds"]),
+                 ("record.html", "/web/record.html", "?id=closer", ["Hounds"]), ("tonight.html", "/web/tonight.html", "", ["Tonight"]),
+                 ("build-a-hound.html", "/web/build-a-hound.html", "", ["My Kennel"]), ("quiz.html", "/web/quiz.html", "", ["My Kennel"]),   # Create is a + button now
                  ("learning.html", "/web/learning.html", "", ["My Kennel"]),          # the Training camp is part of My Kennel
-                 ("live.html", "/web/live.html", "", ["Live"]), ("kennel.html", "/web/kennel.html", "?u=handler-1", ["Leaderboard"]),
+                 ("live.html", "/web/live.html", "", ["Live"]), ("kennel.html", "/web/kennel.html", "?u=handler-1", ["Hounds"]),
                  ("kennel.html", "/web/kennel.html", "", ["My Kennel"])]
         for page, path, search, want in cases:
             with self.subTest(path=path, search=search):
@@ -222,8 +224,9 @@ class TheNavigationRuns(unittest.TestCase):
                 self.assertEqual(got, want)
 
     def test_the_old_data_current_keys_still_name_the_right_place(self):
-        out = run_js('import { normalizePlace } from "./nav.js";\nconsole.log(JSON.stringify(["build", "camp", "kennels", "mykennel", "live"].map(normalizePlace)));')
-        self.assertEqual(out, ["create", "mykennel", "leaderboard", "mykennel", "live"])
+        # "leaderboard" and "kennels" are Hounds now; "create" and "build" light My Kennel (Create is a + button, not a place)
+        out = run_js('import { normalizePlace, highlight } from "./nav.js";' + chr(10) + 'console.log(JSON.stringify(["build", "camp", "kennels", "leaderboard", "mykennel", "live", "tonight"].map((k) => highlight(normalizePlace(k)))));')
+        self.assertEqual(out, ["mykennel", "mykennel", "hounds", "hounds", "mykennel", "live", "tonight"])
 
     def test_the_member_app_gets_no_bottom_bar(self):
         f = run_page("nav", page_html="index.html", queries=[q("tabs", "[data-hook='site-tabbar']", "count"),
@@ -236,9 +239,9 @@ class TheNavigationRuns(unittest.TestCase):
         member = run_page("nav", page_html="landing.html", **SIGNED, queries=[q("cta", ".lh-nav [data-hook='cta-primary']", "count")])["final"]
         self.assertEqual((visitor["cta"], visitor["default"], member["cta"]), (1, 0, 0))
 
-    def test_a_member_who_opens_the_landing_page_is_sent_to_my_kennel(self):
+    def test_a_member_who_opens_the_landing_page_is_sent_to_tonight(self):
         out = run_page("nav", page_html="landing.html", pathname="/web/landing.html", **SIGNED, queries=[q("bars", ".lh-nav", "count")])
-        self.assertEqual(out["navigations"], ["kennel.html"])
+        self.assertEqual(out["navigations"], ["tonight.html"])
         stay = run_page("nav", page_html="landing.html", pathname="/web/landing.html", search="?stay=1", **SIGNED, queries=[q("bars", ".lh-nav", "count")])
         self.assertEqual(stay["navigations"], [])
         visitor = run_page("nav", page_html="landing.html", pathname="/web/landing.html", queries=[q("bars", ".lh-nav", "count")])
@@ -251,7 +254,7 @@ class TheNavigationRuns(unittest.TestCase):
             'console.log(JSON.stringify([go(w(true, "/web/index.html")), go(w(true, "/web/index.html", "#/")), go(w(true, "/web/index.html", "#/today")),\n'
             '  go(w(true, "/web/index.html", "#/record-card")), go(w(false, "/web/index.html")), go(w(true, "/web/landing.html")),\n'
             '  go(w(true, "/web/landing.html", "", "?stay=1")), go(w(true, "/web/hounds.html"))]));')
-        self.assertEqual(out, ["kennel.html", "kennel.html", None, None, None, "kennel.html", None, None])
+        self.assertEqual(out, ["tonight.html", "tonight.html", None, None, None, "tonight.html", None, None])
 
 
 # ---------------------------------------------------------------------------------------------------

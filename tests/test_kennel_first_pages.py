@@ -60,7 +60,7 @@ class EveryPageSaysItsCompliancePartsOnce(unittest.TestCase):
             with self.subTest(page=name):
                 main = re.search(r"<main.*?</main>", html(name), flags=re.S).group(0)
                 self.assertEqual(len(re.findall(r'class="btn btn--primary', main)), 1, name)
-                self.assertIn("Create your own hound", main)
+                self.assertIn("+ Create a hound" if name == "hounds.html" else "Create your own hound", main)    # phase 4: a + button on Hounds
         self.assertIn('href="quiz.html" data-hook="create-cta">Create your own hound', html("hound.html"))
 
     def test_no_dog_in_the_words_a_person_reads(self):

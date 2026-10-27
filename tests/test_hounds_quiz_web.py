@@ -804,7 +804,7 @@ class TheEntryPoints(unittest.TestCase):
         from tests import test_kennel_page as K
         out = run_page("kennel", routes={"/hounds/kennels/mine": K.mine([K.dog()])}, **SIGNED,
                        queries=[q("href", hook("kennel-build"), "attr", attr="href"), q("label", hook("kennel-build"))])
-        self.assertEqual(out["final"], {"href": "quiz.html", "label": "Create a hound"})
+        self.assertEqual(out["final"], {"href": "quiz.html", "label": "+ Create a hound"})      # phase 4: Create moved from the tab bar to a + button
 
     def test_the_landing_pages_one_button_opens_the_quiz_at_its_first_question(self):
         html = (WEB / "landing.html").read_text(encoding="utf-8")
@@ -819,12 +819,14 @@ class TheEntryPoints(unittest.TestCase):
             html = (WEB / name).read_text(encoding="utf-8")
             self.assertRegex(html, r'<a class="lh-btn lh-btn--solid lh-btn--lg" href="quiz.html" data-hook="(nav-cta|cta-primary)"', name)
         out = run_page("nav", page_html="hounds.html", **SIGNED, queries=[q("hrefs", ".lh-nav__links a", "attrs", attr="href"), q("tabs", "[data-hook='site-tabbar'] .lh-tab", "attrs", attr="href")])
-        self.assertIn("quiz.html", out["final"]["hrefs"])
-        self.assertIn("quiz.html", out["final"]["tabs"])
+        # phase 4 (docs/HOUND_LOOP_PLAN.md): Create left the member's bar; it is a + button in My Kennel and on Hounds, and both open the quiz
+        self.assertNotIn("quiz.html", out["final"]["hrefs"])
+        self.assertNotIn("quiz.html", out["final"]["tabs"])
+        self.assertIn('href="quiz.html" data-hook="build-cta"', (WEB / "hounds.html").read_text(encoding="utf-8"))
         visitor = run_page("nav", page_html="hounds.html", queries=[q("cta", "[data-hook='nav-cta']", "attr", attr="href"), q("tab", "[data-hook='tab-cta']", "attr", attr="href")])
         self.assertEqual(visitor["final"], {"cta": "quiz.html", "tab": "quiz.html"})
-        on_quiz = run_page("nav", page_html="quiz.html", pathname="/web/quiz.html", **SIGNED, queries=[q("current", ".lh-nav__links a[aria-current='page']", "texts")])
-        self.assertEqual(on_quiz["final"]["current"], ["Create"])
+        on_quiz = run_page("nav", page_html="quiz.html", pathname="/web/quiz.html", **SIGNED, queries=[q("current", ".lh-nav [aria-current='page']", "texts")])
+        self.assertEqual(on_quiz["final"]["current"], ["My Kennel"])     # the quiz and the builder light My Kennel
 
     def test_the_phone_tab_bar_drops_the_primary_button_on_the_quiz_itself(self):
         # rebuild QA 2026-10-20: the desktop bar hid the button on the quiz, the phone tab bar still drew a second green

@@ -817,6 +817,18 @@ export function settleOwnerView(kit) {
   const cta = q("hound-cta");
   const main = q("create-cta");
   if (main) { if (owner) main.setAttribute("hidden", ""); else main.removeAttribute("hidden"); }
+  // after viewing a hound that is not yours the next step is Copy it (the builder's ?from= copy: GET /hounds/{id}/spec); only a member's hound
+  // has a spec the server will hand out (GET /hounds/{id}/spec reads the members' hounds only), so the button is for those.
+  const copy = q("copy-cta");
+  const hound = state.hound;
+  const copyable = !owner && !!hound && hound.status !== "retired" && hound.kind === "user";
+  if (copy) {
+    if (copyable) {
+      copy.setAttribute("href", `build-a-hound.html?from=${encodeURIComponent(state.id)}`);
+      copy.removeAttribute("hidden");
+      if (main) main.setAttribute("class", "btn btn--ghost hh-cta__main");     // one primary: Copy leads, Create steps back
+    } else copy.setAttribute("hidden", "");
+  }
   if (cta) cta.setAttribute("data-owner", owner ? "1" : "0");
   const page = q("hound-app");
   if (page) page.setAttribute("data-viewer", owner ? "owner" : "visitor");

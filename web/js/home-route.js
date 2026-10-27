@@ -1,8 +1,9 @@
 /**
- * WHERE A SIGNED-IN MEMBER LANDS (owner ruling 2026-10-20, kennel-first: docs/design/KENNEL_FIRST_BRIEF.md).
+ * WHERE A SIGNED-IN MEMBER LANDS (owner ruling 2026-10-20, kennel-first: docs/design/KENNEL_FIRST_BRIEF.md; home moved from My Kennel
+ * to Tonight by the approved hound-loop plan, 2026-10-26).
  *
- * The kennel is the product, so a member who opens a front door (the app shell with no route, or the landing page) goes
- * straight to My Kennel. The old picks card is still there for anyone who asks for it: an explicit route
+ * A member who opens a front door (the app shell with no route, or the landing page) goes straight to Tonight; My Kennel is one tap
+ * away in the tab bar. The old picks card is still there for anyone who asks for it: an explicit route
  * (`index.html#/today`, the footer's links, a shared record link) is never redirected.
  *
  * Pure: it takes what it needs and returns a path or null, so the app shell (main.js) and the shared navigation
@@ -10,6 +11,8 @@
  */
 
 export const MY_KENNEL_HREF = "kennel.html";
+/** The signed-in home since the guided-flow phase (docs/HOUND_LOOP_PLAN.md, phase 4): tonight's bets, the games being checked, last night's recap. */
+export const TONIGHT_HREF = "tonight.html";
 
 /** The last path segment, "" for a bare directory address. */
 function pageOf(pathname) {
@@ -28,9 +31,9 @@ export function memberHomeTarget(where) {
   const params = new URLSearchParams(String(w.search || ""));
   if (params.get("stay") === "1") return null;
   // the app shell with no route of its own ("", "#", "#/"): the old default opened on the picks card
-  if (page === "index.html" && (hash === "" || hash === "#" || hash === "#/")) return MY_KENNEL_HREF;
+  if (page === "index.html" && (hash === "" || hash === "#" || hash === "#/")) return TONIGHT_HREF;
   // the landing page is the signed-out front door
-  if (page === "landing.html") return MY_KENNEL_HREF;
+  if (page === "landing.html") return TONIGHT_HREF;
   return null;
 }
 

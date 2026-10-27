@@ -2,14 +2,16 @@
  * THE ONE NAVIGATION (web/js/nav.js + web/css/lhnav.css), the same component on every page.
  *
  * KENNEL-FIRST (owner ruling 2026-10-20, docs/design/KENNEL_FIRST_BRIEF.md): five places, never more.
+ * GUIDED FLOW (approved plan docs/HOUND_LOOP_PLAN.md, phase 4, 2026-10-26): Tonight, Hounds, My Kennel, Live, Account. Create is no longer
+ * a place: it is a + button in My Kennel and on Hounds (the quiz and the builder count as My Kennel here).
  *
- *   signed in    Create  Live  Leaderboard as quiet text links on the left; on the right "My Kennel" as THE one big filled button, then the
- *                Account avatar. The phone tab bar is the same five with My Kennel the filled centre tab.
- *   signed out   Leaderboard  Live on the left; on the right a "Sign in" text link and THE one big filled button, "Make your first hound"
+ *   signed in    Tonight  Hounds  Live as quiet text links on the left; on the right "My Kennel" as THE one big filled button, then the
+ *                Account avatar. The phone tab bar is the same five (Tonight, Hounds, My Kennel, Live, Account) with My Kennel the filled centre tab.
+ *   signed out   Hounds  Live on the left; on the right a "Sign in" text link and THE one big filled button, "Make your first hound"
  *
  * OWNER RULING 2026-10-21 (kennel front): "My Kennel doesn't stand out. It's the same size as Live / Leaderboard / Create."
  *
- * Where the old places went: Kennels (everyone's kennels) is the Leaderboard's second view; the Graveyard is linked from the
+ * Where the old places went: Leaderboard is now Hounds (the old key still works: ALIASES); Kennels (everyone's kennels) is the Hounds page's second view; the Graveyard is linked from the
  * Leaderboard and from each kennel; the Training camp is part of My Kennel (learning.html keeps working and counts as My
  * Kennel here); the daily picks card and research pages are reached from the house kennel and the footer.
  *
@@ -19,47 +21,55 @@
  *
  * THE PAGE OWNS ONLY A HOST: `<header class="lh-nav" data-hook="site-nav">` with the signed-out links already in it, so the
  * links are on the page with scripts off. `mountNav` rebuilds the host's children, so running it twice is the same as
- * running it once. `data-current="mykennel|create|live|leaderboard|account"` on the host names the page (the old keys
- * build, camp and kennels still work: see ALIASES); without it the place is read from the address. `data-bottom="off"`
+ * running it once. `data-current="tonight|hounds|mykennel|live|account"` on the host names the page (the old keys
+ * leaderboard, create, build, camp and kennels still work: see ALIASES); without it the place is read from the address. `data-bottom="off"`
  * leaves the phone tab bar out (the member app has its own). `data-cta="off"` leaves the "Make your first hound" button out
  * (the quiz and the builder are where it leads). A `[data-nav-extra]` node in the static host replaces the default
  * button for a visitor (the landing page keeps its own, with its own funnel hook); the SAME node goes back in on a re-mount.
  *
- * A signed-in member who opens the landing page is sent to My Kennel (home-route.js), unless the address says ?stay=1.
+ * A signed-in member who opens the landing page is sent to Tonight (home-route.js), unless the address says ?stay=1.
  *
  * Written against attributes only (no classList, no dataset, no matchMedia): it must run in a small fake DOM too.
  */
 
 import { getToken, TOKEN_CHANGED_EVENT } from "./api.js";
 import { h, clearNode } from "./hounds-core.js";
-import { redirectMemberHome, MY_KENNEL_HREF } from "./home-route.js";
+import { redirectMemberHome, MY_KENNEL_HREF, TONIGHT_HREF } from "./home-route.js";
 import { startAnnouncements } from "./announcements.js";
 
 export const SIGNIN_HREF = "index.html#/signin";
 export const PASSWORD_HREF = "index.html#/signin?password=1";
 export const ACCOUNT_HREF = "index.html#/account";
 export const CREATE_HREF = "quiz.html";
+export const HOUNDS_HREF = "hounds.html";
 export const CTA_LABEL = "Make your first hound";
 
 /** The member's five places, in order. `key` is what `data-current` names; the tab bar uses the same words. */
 export const PLACES = [
+  { key: "tonight", label: "Tonight", href: TONIGHT_HREF },
+  { key: "hounds", label: "Hounds", href: HOUNDS_HREF },
   { key: "mykennel", label: "My Kennel", href: MY_KENNEL_HREF },
-  { key: "create", label: "Create", href: CREATE_HREF },
   { key: "live", label: "Live", href: "live.html" },
-  { key: "leaderboard", label: "Leaderboard", href: "hounds.html" },
   { key: "account", label: "Account", href: ACCOUNT_HREF },
 ];
+const BY_KEY = Object.fromEntries(PLACES.map((p) => [p.key, p]));
 
 /** The member's quiet links, left of the bar (My Kennel is the button on the right, Account the avatar). */
-export const QUIET_PLACES = [PLACES[1], PLACES[2], PLACES[3]];
+export const QUIET_PLACES = [BY_KEY.tonight, BY_KEY.hounds, BY_KEY.live];
 
 /** A visitor's places: the two public ones (Sign in and the button sit on the right). */
-export const PUBLIC_PLACES = [PLACES[3], PLACES[2]];
+export const PUBLIC_PLACES = [BY_KEY.hounds, BY_KEY.live];
 
-/** The keys the old six-place bar used, and where they live now. */
-export const ALIASES = { build: "create", camp: "mykennel", kennels: "leaderboard", signin: "account" };
+/** The keys the older bars used, and where they live now. "create" is not a place any more: it stays a key (the quiz and the builder name
+ * themselves with it, and a visitor's bar hides its button there) and lights My Kennel (see `highlight`). */
+export const ALIASES = { build: "create", camp: "mykennel", kennels: "hounds", leaderboard: "hounds", signin: "account" };
+
+/** The place that lights up for a page key: the quiz and the builder belong to My Kennel. */
+export const highlight = (key) => (key === "create" ? "mykennel" : key);
 
 const ICONS = {
+  tonight: "M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z",
+  hounds: "M4 19V9m6 10V5m6 14v-7m6 7H2",
   mykennel: "M3 11l9-7 9 7v9H3zM9 20v-6h6v6",
   create: "M12 5v14M5 12h14",
   live: "M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2",
@@ -101,10 +111,11 @@ export function placeFromAddress(loc = (typeof window !== "undefined" ? window.l
   const params = new URLSearchParams((loc && loc.search) || "");
   const hash = String((loc && loc.hash) || "");
   if (path === "live.html") return "live";
-  if (path === "kennel.html") return params.get("u") ? "leaderboard" : "mykennel";
+  if (path === "tonight.html") return "tonight";
+  if (path === "kennel.html") return params.get("u") ? "hounds" : "mykennel";
   if (path === "learning.html") return "mykennel";                       // the training camp is part of My Kennel
   if (path === "build-a-hound.html" || path === "quiz.html") return "create";
-  if (path === "hounds.html" || path === "hound.html" || path === "kennels.html" || path === "graveyard.html" || path === "") return "leaderboard";
+  if (path === "hounds.html" || path === "hound.html" || path === "record.html" || path === "kennels.html" || path === "graveyard.html" || path === "") return "hounds";
   if (path === "index.html") return /^#\/(signin|account|billing)/.test(hash) ? "account" : "";
   return "";
 }
@@ -126,7 +137,7 @@ function wordmark(home) {
 
 function placeLink(place, current, extra = {}) {
   return h("a", Object.assign({ href: place.href, "data-nav": place.key, text: place.label,
-    "aria-current": place.key === current ? "page" : undefined }, extra));
+    "aria-current": place.key === highlight(current) ? "page" : undefined }, extra));
 }
 
 /** The right-hand side. A visitor: Sign in, then the one primary button. A member: the Account place. */
@@ -138,8 +149,8 @@ function accountArea(current, host) {
       : [h("a", { class: "lh-btn lh-btn--solid lh-btn--lg", href: CREATE_HREF, "data-hook": "nav-cta", text: CTA_LABEL })]));
     return h("div", { class: "lh-nav__account", "data-hook": "nav-account-area", "data-signed-in": "false" }, parts);
   }
-  const account = PLACES[4];
-  const kennel = PLACES[0];
+  const account = BY_KEY.account;
+  const kennel = BY_KEY.mykennel;
   return h("div", { class: "lh-nav__account", "data-hook": "nav-account-area", "data-signed-in": "true" }, [
     placeLink(kennel, current, { class: "lh-btn lh-btn--solid lh-btn--lg", "data-hook": "nav-mykennel" }),
     placeLink(account, current, { class: "lh-avatar", "data-hook": "nav-account" }),
@@ -148,14 +159,14 @@ function accountArea(current, host) {
 
 /** The phone tab bar. A member: the same five places. A visitor: Leaderboard, Live, Sign in and the primary button. */
 function tabBar(current, hideCta = false) {
-  const tab = (p) => h("a", { class: "lh-tab", href: p.href, "data-nav": p.key, "aria-current": p.key === current ? "page" : undefined }, [
+  const lit = highlight(current);
+  const tab = (p) => h("a", { class: "lh-tab", href: p.href, "data-nav": p.key, "aria-current": p.key === lit ? "page" : undefined }, [
     icon(p.key), h("span", { class: "lh-tab__label", text: p.label })]);
   if (signedIn()) {
-    // My Kennel is the centre tab and the filled one; the other four are quiet
-    const order = [PLACES[1], PLACES[2], PLACES[0], PLACES[3], PLACES[4]];
+    // Tonight, Hounds, My Kennel, Live, Account: My Kennel is the centre tab and the filled one; the other four are quiet
     return h("nav", { class: "lh-tabbar", "aria-label": "Sections", "data-hook": "site-tabbar", "data-count": "5" },
-      order.map((p) => p.key === "mykennel"
-        ? h("a", { class: "lh-tab lh-tab--primary", href: p.href, "data-hook": "tab-mykennel", "data-nav": p.key, "aria-current": p.key === current ? "page" : undefined }, [
+      PLACES.map((p) => p.key === "mykennel"
+        ? h("a", { class: "lh-tab lh-tab--primary", href: p.href, "data-hook": "tab-mykennel", "data-nav": p.key, "aria-current": p.key === lit ? "page" : undefined }, [
           icon(p.key), h("span", { class: "lh-tab__label", text: p.label })])
         : tab(p)));
   }
@@ -188,7 +199,7 @@ export function mountNav(host = document.querySelector(".lh-nav")) {
   host.setAttribute("data-signed-in", signedIn() ? "true" : "false");
   const links = signedIn() ? QUIET_PLACES : PUBLIC_PLACES;
   host.appendChild(h("div", { class: "lh-nav__bar" }, [
-    wordmark(signedIn() ? MY_KENNEL_HREF : "landing.html"),
+    wordmark(signedIn() ? TONIGHT_HREF : "landing.html"),
     h("nav", { class: "lh-nav__links", "aria-label": "primary", "data-hook": "nav-links" }, links.map((p) => placeLink(p, current))),
     accountArea(current, host)]));
   // the phone tab bar lives on the body, once
