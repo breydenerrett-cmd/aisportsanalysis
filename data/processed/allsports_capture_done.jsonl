@@ -7393,3 +7393,4 @@
 {"call_kind": "inplay", "credits": 1, "events": 16, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T16:11:04.350546Z", "regions": ["us"], "rows": 97, "sport_key": "basketball_euroleague", "stored": 85}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T16:11:04.350546Z", "regions": ["us"], "rows": 5, "sport_key": "cricket_international_t20", "stored": 2}
 {"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T16:11:04.350546Z", "regions": ["us"], "rows": 7, "sport_key": "icehockey_ahl", "stored": 6}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-27T22:28:45.434136Z", "observed_utc": "2026-10-27T16:28:45.434136Z", "sport_key": "soccer_france_ligue_two"}
