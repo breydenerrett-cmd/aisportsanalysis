@@ -7238,3 +7238,5 @@
 {"commence_utc": "2026-10-27T18:00:00Z", "event_id": "ec01b586713fc1baec5f2ac947458710", "kind": "phase", "observed_utc": "2026-10-27T12:11:53.094660Z", "phase": "t6h", "rows": 14, "sport_key": "soccer_sweden_superettan"}
 {"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-27T12:11:53.094660Z", "regions": ["us"], "rows": 80, "sport_key": "soccer_sweden_superettan", "stored": 14}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T12:11:53.094660Z", "regions": ["us"], "rows": 1, "sport_key": "cricket_odi", "stored": 1}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-27T18:22:44.408571Z", "observed_utc": "2026-10-27T12:22:44.408571Z", "sport_key": "soccer_russia_premier_league"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-10-27T18:22:44.408571Z", "observed_utc": "2026-10-27T12:22:44.408571Z", "sport_key": "soccer_switzerland_superleague"}
