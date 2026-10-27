@@ -7196,3 +7196,13 @@
 {"commence_utc": "2026-10-27T17:00:00Z", "event_id": "8fbf46f1db5270fe3cfa7c639906565c", "kind": "phase", "observed_utc": "2026-10-27T11:06:47.614816Z", "phase": "t6h", "rows": 2, "sport_key": "soccer_germany_dfb_pokal"}
 {"commence_utc": "2026-10-27T17:00:00Z", "event_id": "ee1ff41f6c90f1e5f37b1b4e7426b935", "kind": "phase", "observed_utc": "2026-10-27T11:06:47.614816Z", "phase": "t6h", "rows": 2, "sport_key": "soccer_germany_dfb_pokal"}
 {"call_kind": "pregame", "credits": 2, "events": 16, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-27T11:06:47.614816Z", "regions": ["us"], "rows": 32, "sport_key": "soccer_germany_dfb_pokal", "stored": 32}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-10-27T17:18:06.551507Z", "observed_utc": "2026-10-27T11:18:06.551507Z", "sport_key": "icehockey_mestis"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-27T17:18:06.551507Z", "observed_utc": "2026-10-27T11:18:06.551507Z", "sport_key": "soccer_chile_campeonato"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-27T17:18:06.551507Z", "observed_utc": "2026-10-27T11:18:06.551507Z", "sport_key": "soccer_conmebol_copa_libertadores"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-10-27T17:18:06.551507Z", "observed_utc": "2026-10-27T11:18:06.551507Z", "sport_key": "soccer_efl_champ"}
+{"events": 5, "kind": "peek", "next_check_utc": "2026-10-27T17:18:06.551507Z", "observed_utc": "2026-10-27T11:18:06.551507Z", "sport_key": "soccer_league_of_ireland"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-10-27T17:18:06.551507Z", "observed_utc": "2026-10-27T11:18:06.551507Z", "sport_key": "soccer_spl"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-27T17:18:06.551507Z", "observed_utc": "2026-10-27T11:18:06.551507Z", "sport_key": "soccer_uefa_champs_league"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-27T17:18:06.551507Z", "observed_utc": "2026-10-27T11:18:06.551507Z", "sport_key": "soccer_uefa_europa_conference_league"}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T11:18:06.551507Z", "regions": ["us"], "rows": 6, "sport_key": "baseball_kbo", "stored": 6}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T11:18:06.551507Z", "regions": ["au"], "rows": 15, "sport_key": "cricket_test_match", "stored": 13}
