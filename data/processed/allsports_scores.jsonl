@@ -3776,3 +3776,4 @@
 {"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-27T08:31:10.112582+00:00", "sport_key": "cricket_international_t20"}
 {"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-10-27T08:31:10.112582+00:00", "sport_key": "soccer_finland_veikkausliiga"}
 {"errors": [], "events": 2, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 1, "observed_utc": "2026-10-27T09:21:04.879827Z", "source": "espn_tennis", "unmatched": 1, "unmatched_ids": ["fc557e2864fbe07964a9d288a81d5009"], "void": 0, "written": 0}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-27T09:32:31.433980+00:00", "sport_key": "cricket_test_match"}
