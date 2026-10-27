@@ -8217,3 +8217,5 @@
 {"game_date": "2026-10-27", "observed_utc": "2026-10-27T20:07:48.951734+00:00", "poll": true}
 {"commence_time": "2026-10-28T00:00:00Z", "crew": [{"id": 428442, "name": "James Hoye", "officialType": "Home Plate"}, {"id": 483564, "name": "Dan Bellino", "officialType": "First Base"}, {"id": 503586, "name": "Tripp Gibson", "officialType": "Second Base"}, {"id": 573597, "name": "Gabe Morales", "officialType": "Third Base"}, {"id": 427554, "name": "Jim Wolf", "officialType": "Left Field"}, {"id": 544728, "name": "Nic Lentz", "officialType": "Right Field"}], "game_date": "2026-10-27", "game_pk": 849803, "game_state": "Pre-Game", "home_plate_umpire": "James Hoye", "observed_utc": "2026-10-27T20:07:48.951734+00:00", "prev_poll_utc": "2026-10-27T19:46:12.873237+00:00", "revealed": true}
 {"game_date": "2026-10-28", "observed_utc": "2026-10-27T20:07:49.032734+00:00", "poll": true}
+{"game_date": "2026-10-27", "observed_utc": "2026-10-27T20:39:10.324615+00:00", "poll": true}
+{"game_date": "2026-10-28", "observed_utc": "2026-10-27T20:39:10.404771+00:00", "poll": true}
