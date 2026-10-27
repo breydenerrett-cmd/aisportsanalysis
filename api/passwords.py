@@ -128,10 +128,9 @@ def login(body: LoginRequest, request: Request) -> dict:
     lapsed, or an admin-invited beta user, who signs in with their access code),
     200 with the token otherwise.
 
-    A tester whose window has ended still gets a token, ending in the past (the
-    way a support re-issue does): it opens nothing, but the sign-in page then
-    shows the ended-access state and the upgrade door
-    (POST /billing/tester-checkout). `access_active` says which."""
+    A tester whose window has ended signs in as a FREE member (kind "free",
+    owner ruling 2026-10-27): they keep their kennel and get what a free account
+    gets, never the paid board. `access_active` is True for them."""
     email = body.email.strip().lower() if isinstance(body.email, str) else ""
     password = body.password if isinstance(body.password, str) else ""
     _count_attempt([(passwords.SCOPE_IP, ratelimit.client_ip(request)),

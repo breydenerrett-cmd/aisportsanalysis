@@ -346,12 +346,25 @@ class AccessEndTests(_Db):
         self.assertEqual(ends, datetime.fromisoformat(grant.expires_at))
         self.assertEqual(ends, self.NOW + testers.TESTER_ACCESS_TTL)
 
-    def test_an_ended_tester_window_is_returned_in_the_past(self):
+    def test_an_ended_tester_drops_to_a_free_member_with_a_live_token(self):
         user = self.user("old@example.com")
         testers.grant_tester(user_id=user.id, now=self.NOW - timedelta(days=30))
-        kind, ends = access.access_token_end(users_store.get_user(user.id), now=self.NOW)
-        self.assertEqual(kind, "tester")
-        self.assertLess(ends, self.NOW)
+        fresh = users_store.get_user(user.id)
+        kind, ends = access.access_token_end(fresh, now=self.NOW)
+        self.assertEqual(kind, "free")
+        self.assertEqual(ends, self.NOW + access.FREE_TOKEN_TTL)
+        self.assertTrue(access.is_free_only(fresh, now=self.NOW))
+        self.assertEqual(access.access_level(fresh, now=self.NOW), access.LEVEL_MEMBER)
+
+    def test_an_open_tester_window_is_still_paid_and_a_beta_user_is_never_free(self):
+        user = self.user("open@example.com")
+        testers.grant_tester(user_id=user.id, now=self.NOW)
+        fresh = users_store.get_user(user.id)
+        self.assertEqual(access.access_token_end(fresh, now=self.NOW)[0], "tester")
+        self.assertFalse(access.is_free_only(fresh, now=self.NOW))
+        beta = users_store.create_user("b@example.com", status="active", plan="beta")
+        testers.grant_tester(user_id=beta.id, now=self.NOW - timedelta(days=30))
+        self.assertFalse(access.is_free_only(users_store.get_user(beta.id), now=self.NOW))
 
     def test_no_access_for_waitlisted_pending_suspended_invited_and_lapsed(self):
         for status in ("waitlisted", "pending_payment", "invited", "active"):
