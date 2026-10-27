@@ -7249,3 +7249,5 @@
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T12:38:06.558189Z", "regions": ["au"], "rows": 15, "sport_key": "cricket_test_match", "stored": 13}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T12:47:37.848034Z", "regions": ["us"], "rows": 1, "sport_key": "cricket_odi", "stored": 1}
 {"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T12:47:37.848034Z", "regions": ["us"], "rows": 85, "sport_key": "tennis_atp_vienna_open", "stored": 85}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-27T18:53:34.820184Z", "observed_utc": "2026-10-27T12:53:34.820184Z", "sport_key": "aussierules_aflw"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-27T18:53:34.820184Z", "observed_utc": "2026-10-27T12:53:34.820184Z", "sport_key": "soccer_uefa_europa_league"}
