@@ -7146,3 +7146,10 @@
 {"commence_utc": "2026-10-27T11:00:00Z", "event_id": "36ef4cd7da7144b2b8560ee591755aea", "kind": "phase", "observed_utc": "2026-10-27T09:09:42.752649Z", "phase": "t2h", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
 {"call_kind": "pregame", "credits": 1, "events": 12, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T09:09:42.752649Z", "regions": ["us"], "rows": 102, "sport_key": "tennis_atp_swiss_indoors", "stored": 102}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T09:09:42.752649Z", "regions": ["us"], "rows": 5, "sport_key": "cricket_international_t20", "stored": 5}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-27T15:20:59.231735Z", "observed_utc": "2026-10-27T09:20:59.231735Z", "sport_key": "soccer_belgium_first_div"}
+{"events": 14, "kind": "peek", "next_check_utc": "2026-10-27T15:20:59.231735Z", "observed_utc": "2026-10-27T09:20:59.231735Z", "sport_key": "soccer_greece_super_league"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-27T15:20:59.231735Z", "observed_utc": "2026-10-27T09:20:59.231735Z", "sport_key": "soccer_norway_eliteserien"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-27T15:20:59.231735Z", "observed_utc": "2026-10-27T09:20:59.231735Z", "sport_key": "soccer_portugal_primeira_liga"}
+{"commence_utc": "2026-10-27T15:10:00Z", "event_id": "e9aca20f62c49ea43ad8b9d91f00330b", "kind": "phase", "observed_utc": "2026-10-27T09:20:59.231735Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
+{"call_kind": "pregame", "credits": 1, "events": 11, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T09:20:59.231735Z", "regions": ["us"], "rows": 85, "sport_key": "tennis_atp_vienna_open", "stored": 85}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T09:20:59.231735Z", "regions": ["au"], "rows": 15, "sport_key": "cricket_test_match", "stored": 13}
