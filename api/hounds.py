@@ -17,6 +17,8 @@ Every payload carries ``paper_only: true`` and the not-advice line
                                      ``outcome=won|lost|push`` and ``sort=newest|biggest_win|biggest_loss|price``
                                      filter and order them; ``status=open|ungraded|graded`` splits them; a ticket 36+ hours past its
                                      start with no grade is "ungraded", never "open")
+    GET /hounds/{id}/record?season=  the hound's TRACK RECORD (web/record.html): header, curve, breakdowns, calendar, tickets, compare
+                                     (src/hounds/track_record.py; default all-time; open tickets apart; hindsight never counted)
     GET /hounds/{id}/desk            an AI desk hound's published games (empty before the first publish)
     GET /hounds/{id}/desk/{game}     how the desk argued that game: its transcript and disagreement table
     GET /hounds/{id}/gematria        the Gematria Hound's picks with the evidence for both sides (empty before the first pick);
@@ -56,7 +58,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Response
 
-from src.hounds import desk_view, digest as digest_mod, seasons, stats, user_view
+from src.hounds import desk_view, digest as digest_mod, seasons, stats, track_record, user_view
 from src.hounds.gematria import view as gematria_view
 from src.hounds.interact import outback
 from src.hounds.contract import (
@@ -242,6 +244,25 @@ def hound_bets(hound_id: str, response: Response, page: int = Query(1, ge=1),
     rows = view.bets if segment is None else [b for b in view.bets if b.segment == segment]
     rows = refine_bets(filter_by_status(rows, status), outcome, sort)
     return bets_payload(hound_id, paginate(rows, page, page_size), book.as_of, seasons.meta(sid))
+
+
+@router.get("/hounds/{hound_id}/record")
+def hound_record(hound_id: str, response: Response, season: Optional[str] = Query(None, max_length=16)):
+    """The track record of one hound, member's or house. Public, like the bets list: it holds nothing the hound page does not."""
+    sid = _season(season, default=seasons.ALL)
+    book, warming = _book(response)
+    if warming:
+        return warming_payload({"hound_id": hound_id, "season": seasons.meta(sid)})
+    data = book.hounds.get(hound_id)
+    if data is None:
+        data = user_view.hound_data(hound_id)             # a member hound created after the cached book was built
+        if data is None:
+            raise HTTPException(status_code=404, detail="no such hound")
+    view = data.view(sid)
+    meta = seasons.meta(sid)
+    mine = track_record.mine_line(view)
+    compare = track_record.compare_block([h.view(sid).summary for h in book.hounds.values()], hound_id, mine, meta)
+    return track_record.build(view, as_of=book.as_of, season=meta, compare=compare)
 
 
 # ---- the AI desk: how it argued ---------------------------------------------------------------------------

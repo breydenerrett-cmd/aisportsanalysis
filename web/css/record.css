@@ -1,0 +1,118 @@
+/*
+ * THE TRACK RECORD PAGE (web/record.html), loaded last and only there. Every selector starts with .rc- so nothing here reaches
+ * another page. It reads the --lh-* tokens and defines no colour of its own. Phone first: one column with 16px gutters, long text
+ * wraps, the compare table scrolls inside its own box, so the document never scrolls sideways at 390px; from 760px the numbers sit
+ * in a row and the breakdown cards and months sit side by side.
+ */
+
+.hounds-page .rc-wrap { max-width: 980px; padding-left: 16px; padding-right: 16px; overflow-x: clip; }
+.hounds-page .rc-wrap * { min-width: 0; }
+.rc-head { margin: var(--lh-s2) 0 var(--lh-s4); }
+.rc-eyebrow { margin: 0; font-size: var(--lh-fs-xs); letter-spacing: .08em; text-transform: uppercase; color: var(--lh-mute); }
+.hounds-page .rc-wrap h1 { font-size: clamp(30px, 6vw, 48px); line-height: 1; margin: var(--lh-s1) 0 var(--lh-s2); overflow-wrap: anywhere; }
+.rc-sub { margin: 0 0 var(--lh-s3); color: var(--lh-mute); font-size: var(--lh-fs-sm); }
+.rc-sec { margin: 0 0 var(--lh-s6); }
+.hounds-page .rc-wrap h2 { font-size: clamp(20px, 3.4vw, 26px); margin: 0 0 var(--lh-s2); }
+.hounds-page .rc-wrap h3 { font-size: var(--lh-fs-md); margin: 0 0 var(--lh-s2); }
+.rc-note, .rc-fine { margin: var(--lh-s2) 0; color: var(--lh-mute); font-size: var(--lh-fs-sm); overflow-wrap: anywhere; }
+.rc-fine { font-size: var(--lh-fs-xs); margin-bottom: var(--lh-s6); }
+.rc-sub3 { margin-top: var(--lh-s4); }
+
+/* ---- the header numbers --------------------------------------------------------------------------------------- */
+.rc-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lh-s2); margin: 0 0 var(--lh-s3); }
+.rc-stat { background: var(--lh-soft); border-radius: var(--lh-r-md); padding: var(--lh-s3) var(--lh-s4); }
+.rc-stat dt { font-size: var(--lh-fs-xs); color: var(--lh-mute); }
+.rc-stat dd { margin: 2px 0 0; font-family: var(--lh-font-display); font-size: clamp(24px, 6vw, 34px); font-weight: 700; line-height: 1.05;
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.rc-stat dd.rc-stat__sub { font-family: var(--lh-font-text); font-size: var(--lh-fs-xs); font-weight: 400; color: var(--lh-mute); margin-top: 4px; }
+.rc-last10 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: var(--lh-s2) 0; }
+.rc-last10__label { font-size: var(--lh-fs-xs); color: var(--lh-mute); margin-right: 4px; }
+.rc-pip { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; font-size: 12px; font-weight: 700; }
+.rc-pip--win { background: var(--lh-win-soft); color: var(--lh-win); }
+.rc-pip--loss { background: var(--lh-loss-soft); color: var(--lh-loss); }
+.rc-pip--push { background: var(--lh-soft-2); color: var(--lh-ink2); }
+
+/* ---- next steps ----------------------------------------------------------------------------------------------- */
+.rc-next { display: flex; flex-direction: column; gap: var(--lh-s2); margin: var(--lh-s4) 0 0; }
+.hounds-page .rc-next .rc-next__btn { display: flex; align-items: center; justify-content: center; min-height: 48px; text-align: center; text-decoration: none; width: 100%; }
+.rc-next__hint { margin: 0; }
+
+/* ---- the curve ------------------------------------------------------------------------------------------------ */
+.rc-curve { margin: 0; padding: var(--lh-s3) var(--lh-s4); border-radius: var(--lh-r-md); background: var(--lh-soft); }
+.rc-curve svg { display: block; width: 100%; height: auto; max-height: 190px; }
+.rc-curve figcaption { margin: var(--lh-s2) 0 0; }
+
+/* ---- breakdowns ----------------------------------------------------------------------------------------------- */
+.rc-cuts { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--lh-s3); }
+.rc-cutcard { background: var(--lh-soft); border-radius: var(--lh-r-md); padding: var(--lh-s4); }
+.rc-cutlist { list-style: none; margin: 0 0 var(--lh-s3); padding: 0; display: grid; gap: 6px; }
+.rc-cut { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 2px var(--lh-s3); align-items: baseline; font-size: var(--lh-fs-sm); }
+.rc-cut__label { grid-column: 1; overflow-wrap: anywhere; color: var(--lh-ink); }
+.rc-cut__rec { grid-column: 2; font-variant-numeric: tabular-nums; color: var(--lh-ink2); }
+.rc-cut__units { grid-column: 3; font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+.rc-cut__n { grid-column: 1 / 4; font-size: var(--lh-fs-xs); color: var(--lh-mute); }
+.rc-cut--up .rc-cut__units { color: var(--lh-win); }
+.rc-cut--down .rc-cut__units { color: var(--lh-loss); }
+.rc-cut--thin .rc-cut__units { color: var(--lh-ink2); }
+.rc-cut--thin .rc-cut__n { color: var(--lh-pending); }
+.rc-cut__bar { grid-column: 1 / 4; display: block; height: 4px; border-radius: 2px; background: var(--lh-soft-2); overflow: hidden; }
+.rc-cut__bar i { display: block; height: 100%; background: var(--lh-ink2); opacity: .55; }
+.rc-cutline { margin: 0; font-size: var(--lh-fs-sm); color: var(--lh-ink2); overflow-wrap: anywhere; }
+
+/* ---- calendar ------------------------------------------------------------------------------------------------- */
+.rc-legend { display: flex; flex-wrap: wrap; gap: var(--lh-s3); margin: 0 0 var(--lh-s3); font-size: var(--lh-fs-xs); }
+.rc-key::before { content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 6px; border-radius: 3px; vertical-align: -1px; background: var(--lh-soft-2); }
+.rc-key--win::before { background: var(--lh-win); }
+.rc-key--loss::before { background: var(--lh-loss); }
+.rc-months { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--lh-s4); }
+.rc-month h3 { margin-bottom: var(--lh-s2); }
+.rc-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.rc-dow { text-align: center; font-size: 11px; color: var(--lh-mute); }
+.rc-day { display: flex; align-items: center; justify-content: center; aspect-ratio: 1 / 1; border-radius: 6px; font-size: 12px; font-variant-numeric: tabular-nums;
+  background: var(--lh-soft); color: var(--lh-mute); }
+.rc-day--blank { background: none; }
+.rc-day--win { background: var(--lh-win); color: #04140B; font-weight: 700; }
+.rc-day--loss { background: var(--lh-loss); color: #2A0509; font-weight: 700; }
+.rc-day--flat { background: var(--lh-soft-2); color: var(--lh-ink); font-weight: 700; }
+
+/* ---- tickets -------------------------------------------------------------------------------------------------- */
+.rc-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--lh-s2); margin: 0 0 var(--lh-s2); }
+.rc-filter { display: flex; flex-direction: column; gap: 4px; font-size: var(--lh-fs-xs); color: var(--lh-mute); }
+.rc-filter select { width: 100%; min-height: 44px; border-radius: var(--lh-r-sm); border: 1px solid var(--lh-line); background: var(--lh-soft); color: var(--lh-ink); font-size: 14px; padding: 0 8px; }
+.rc-tickets { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--lh-s2); }
+.rc-ticket { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--lh-s3); align-items: start; background: var(--lh-soft); border-radius: var(--lh-r-md); padding: var(--lh-s3) var(--lh-s4); }
+.rc-ticket--open { grid-template-columns: auto minmax(0, 1fr); }
+.rc-ticket p { margin: 0; overflow-wrap: anywhere; }
+.rc-ticket__pick { font-weight: 600; }
+.rc-ticket__game, .rc-ticket__when { font-size: var(--lh-fs-xs); color: var(--lh-mute); }
+.rc-ticket__tag { font-size: var(--lh-fs-xs); color: var(--lh-pending); }
+.rc-ticket__why { margin-top: 6px !important; font-size: var(--lh-fs-sm); color: var(--lh-ink2); }
+.rc-ticket__units { font-variant-numeric: tabular-nums; font-weight: 700; }
+.rc-ticket--win .rc-ticket__units { color: var(--lh-win); }
+.rc-ticket--loss .rc-ticket__units { color: var(--lh-loss); }
+.rc-chip { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: var(--lh-r-pill); font-size: var(--lh-fs-xs); font-weight: 600;
+  background: var(--lh-soft-2); color: var(--lh-ink2); white-space: nowrap; }
+.rc-chip--win { background: var(--lh-win-soft); color: var(--lh-win); }
+.rc-chip--loss { background: var(--lh-loss-soft); color: var(--lh-loss); }
+.rc-chip--open { background: var(--lh-pending-soft); color: var(--lh-pending); white-space: normal; text-align: center; height: auto; min-height: 24px; padding: 2px 10px; }
+
+/* ---- compare -------------------------------------------------------------------------------------------------- */
+.rc-tablewrap { overflow-x: auto; }
+.rc-table { width: 100%; border-collapse: collapse; font-size: var(--lh-fs-sm); }
+.rc-table th, .rc-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--lh-line); font-variant-numeric: tabular-nums; vertical-align: top; }
+.rc-table thead th { font-size: var(--lh-fs-xs); color: var(--lh-mute); font-weight: 500; }
+.rc-table tbody th { font-weight: 600; }
+
+@media (min-width: 760px) {
+  .rc-stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .rc-next { flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .hounds-page .rc-next .rc-next__btn { width: auto; min-width: 190px; }
+  .rc-next__hint { flex-basis: 100%; }
+  .rc-cuts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rc-months { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .rc-cut { grid-template-columns: minmax(0, 1fr) auto auto auto; }
+  .rc-cut__n { grid-column: auto; white-space: nowrap; }
+  .rc-cut__bar { grid-column: 1 / 5; }
+  .rc-filters { max-width: 560px; }
+}
+@media (max-width: 380px) { .rc-filters { grid-template-columns: minmax(0, 1fr); } }

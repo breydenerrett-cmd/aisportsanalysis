@@ -781,6 +781,8 @@ async function buildRecord(host, dog, kit) {
   }
   host.appendChild(h("p", { class: "hd-fine kn-rec__note", text: `${state.data.season && state.data.season.label ? state.data.season.label : "This season"}, a paper account that started with ${startText()} (${unitSentence()}), bets settled at the average price.` }));
   const id = encodeURIComponent(dog.id);
+  // the whole record on its own page (web/record.html): breakdowns, calendar, filterable tickets, compare, next steps
+  host.appendChild(h("p", { class: "kn-rec__more" }, [h("a", { class: "lh-btn lh-btn--soft", href: `record.html?id=${id}`, "data-hook": "studio-full-record", text: "See full record" })]));
   // THE OPEN TICKETS FIRST. `record.bets` counts settled bets only, so a hound with one open ticket and nothing settled used to look like it
   // had done nothing; its open tickets come before everything settled, in their own list.
   const openHost = h("div", { "data-hook": "studio-open-tickets" });
