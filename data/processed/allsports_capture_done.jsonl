@@ -7062,3 +7062,7 @@
 {"events": 18, "kind": "peek", "next_check_utc": "2026-10-27T11:15:44.652759Z", "observed_utc": "2026-10-27T05:15:44.652759Z", "sport_key": "soccer_uefa_champs_league"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-10-27T11:15:44.652759Z", "observed_utc": "2026-10-27T05:15:44.652759Z", "sport_key": "soccer_uefa_europa_conference_league"}
 {"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T05:28:36.718684Z", "regions": ["us"], "rows": 52, "sport_key": "tennis_wta_pan_pacific_open", "stored": 52}
+{"commence_utc": "2026-10-27T06:00:00Z", "event_id": "add6b859ced3d1926790a159e194749f", "kind": "phase", "observed_utc": "2026-10-27T05:41:46.467778Z", "phase": "t30m", "rows": 8, "sport_key": "tennis_wta_pan_pacific_open"}
+{"call_kind": "pregame", "credits": 1, "events": 7, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T05:41:46.467778Z", "regions": ["us"], "rows": 52, "sport_key": "tennis_wta_pan_pacific_open", "stored": 52}
+{"commence_utc": "2026-10-27T07:30:00Z", "event_id": "96d658b6a8b01790845515be4d1410a2", "kind": "phase", "observed_utc": "2026-10-27T05:41:46.467778Z", "phase": "t2h", "rows": 1, "sport_key": "cricket_odi"}
+{"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T05:41:46.467778Z", "regions": ["us"], "rows": 3, "sport_key": "cricket_odi", "stored": 3}
