@@ -131,9 +131,9 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-10-27 (8:30 am PT run): World Series Game 3 (Brewers at Rays) and Monday night (Cowboys at Eagles) briefs both graded; every call in each was a pass.",
-    "Public sample now shows the graded World Series Game 3 brief.",
-    "World Series Game 4 (Brewers at Rays, 5:00 pm PT) brief is due in the 1:30 pm PT run.",
+    "2026-10-27 (1:30 pm PT run): World Series Game 4 (Brewers at Rays, 5:00 pm PT) brief published at 1:45 pm PT; every call is a pass, one marked could not be verified.",
+    "The writer took all three attempts (checker rejections: a banned word, an unsourced number, a summary number); the third was published with one struck pass.",
+    "Public sample stays on the graded World Series Game 3 brief until Game 4 is graded.",
     "Working-branch tests green; the scheduled daily loop on the default branch: newest run cancelled, the one before failed.",
     "Public MLB value picks remain paused. Sends 0, replies 0, testers 0."
   ],
