@@ -27,6 +27,7 @@ export const SPORTS_LIVE_TODAY = "Live now: tennis, cricket, soccer, NBA, NHL, c
  * of composing a claim about it -- this is display, not interpretation.
  */
 
+import { continueAsFree, FREE_HOME } from "./continue_free.js";
 import {
   loadCheckoutState, NOT_ON, gateLabel, loadTesterBilling, testerEndedLine, upgradeLabel,
   TESTER_NOT_OPEN, TESTER_REPLY,
@@ -407,6 +408,9 @@ const TESTER_ACCESS_EXPIRED = "tester_access_expired";
  * where the upgrade button lives. */
 function renderTesterExpired(container, err) {
   const detail = err.detail;
+  // Owner ruling 2026-10-27: an ended tester is a free member and keeps their
+  // kennel. Try the trade first; the ended state below is the refusal fallback.
+  continueAsFree().then((ok) => { if (ok) window.location.assign(FREE_HOME); });
   const section = el("section", {
     class: "gate chamfer", role: "alert", "data-hook": "tester-access-ended",
   });

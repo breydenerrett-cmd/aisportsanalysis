@@ -61,6 +61,7 @@ from pydantic import BaseModel
 
 from api.auth import _require_admin
 from api.meta import APP_VERSION
+from src.appstate import access
 from src.appstate import apphealth
 from src.appstate import billing
 from src.appstate import comps
@@ -396,9 +397,11 @@ def _reissue_plan(user: Optional[users_store.User]):
         ends exactly where the tester window ends (testers.expires_at): a
         re-issue replaces a lost credential, it does not grant the week again
         (that is POST /admin/testers/extend, which needs feedback to justify
-        it). An ENDED window yields a token already past its end, which opens
-        nothing but identifies the person to POST /billing/tester-checkout, the
-        door an expired tester converts through.
+        it). An ENDED window (owner ruling 2026-10-27) yields a FREE member's
+        token (access.FREE_TOKEN_TTL) like password sign-in does, so the person
+        keeps their kennel; only an ended admin-invited beta user still gets a
+        token already past its end, which opens nothing but identifies them to
+        POST /billing/tester-checkout.
     comp: a free member in force (comps.py). The token ends comps.COMP_TOKEN_TTL
         (10 years) from now, the same far-future end the grant gave; checked
         first, so a free member who also has an old subscription record gets the
@@ -422,7 +425,10 @@ def _reissue_plan(user: Optional[users_store.User]):
         ends = None
     if ends is None:
         return None
-    return "tester", (ends if ends.tzinfo else ends.replace(tzinfo=timezone.utc))
+    ends = ends if ends.tzinfo else ends.replace(tzinfo=timezone.utc)
+    if ends <= now and access._ended_tester(user, now):
+        return access.LEVEL_FREE_KIND, now + access.FREE_TOKEN_TTL
+    return "tester", ends
 
 
 def _write_reissue_audit(conn, user_id: int, properties: dict) -> None:

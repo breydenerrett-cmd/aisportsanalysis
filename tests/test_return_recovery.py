@@ -598,16 +598,17 @@ class ReissueRoute(_Journey):
         self.assertEqual(after["testers"][0]["expires_at"], before["testers"][0]["expires_at"])
         self.assertEqual(after["testers"][0]["extensions"], [])
 
-    def test_an_expired_testers_reissue_is_a_token_that_can_still_start_the_conversion(self):
+    def test_an_expired_testers_reissue_is_a_free_member_token_that_can_still_start_the_conversion(self):
+        """Owner ruling 2026-10-27: an ended tester is a FREE member. The re-issue
+        hands a working free token (member routes yes, paid board 403), and it still
+        identifies the account to the checkout door."""
         from src.appstate import tester_upgrade
         grant = self.grant("a@example.test")
         self.expire(grant["user_id"])
         status, fresh = self.reissue(user_id=grant["user_id"])
-        self.assertEqual(status, 200, fresh)
-        # it does not reopen the week...
+        self.assertEqual((status, fresh["kind"]), (200, "free"), fresh)
         status, body = self.call("GET", f"/games/{self.date}", token=fresh["token"])
-        self.assertEqual((status, body["detail"]["error"]), (401, "tester_access_expired"))
-        # ...but it identifies the account to the one door an ended tester has
+        self.assertEqual((status, body["detail"]["error"]), (403, "paid_access_required"))
         self.assertIsNotNone(tester_upgrade.tester_for_token(fresh["token"]))
         self.assertIsNone(tester_upgrade.tester_for_token(grant["token"]),
                           "the replaced token must be revoked")

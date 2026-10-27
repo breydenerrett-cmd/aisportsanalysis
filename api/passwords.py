@@ -162,6 +162,39 @@ def login(body: LoginRequest, request: Request) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# POST /auth/continue-free
+# ---------------------------------------------------------------------------
+
+@router.post("/auth/continue-free")
+def continue_free(request: Request, authorization: Optional[str] = Header(default=None)) -> dict:
+    """An ended tester who signed in with their access code (never set a password)
+    trades that ENDED code for a fresh free-member session (owner ruling
+    2026-10-27: they keep their kennel). The code is the proof of identity, as for
+    POST /billing/tester-checkout. Every refusal is the same 401
+    `continue_unavailable`, so this tells nobody which rule failed; the rules and
+    the 90 day bound are access.continue_as_free. The old code is revoked as the
+    new token is issued. Rate limited like sign-in (per hashed client address;
+    a refused or failed exchange counts, so guessing codes is throttled). The
+    event carries the user's hashed id and the kind only, never a token or email."""
+    _count_attempt([(passwords.SCOPE_IP, ratelimit.client_ip(request))])
+    _scheme, _, raw_token = (authorization or "").partition(" ")
+    try:
+        issued = access.continue_as_free(raw_token.strip())
+    except Exception as exc:  # noqa: BLE001 -- nothing was issued
+        print(f"auth: continue-free failed: {exc!r}", file=sys.stderr, flush=True)
+        raise _err(503, "login_unavailable", "Sign-in is unavailable right now. Try again shortly.")
+    if issued is None:
+        events.record_event_safe(events.LOGIN_ANONYMOUS_USER_ID, events.LOGIN_FAILED,
+                                 {"method": "continue_free", "reason": "refused"})
+        raise _err(401, "continue_unavailable", "That access code cannot be continued.")
+    new_token, ends_at, user_id = issued
+    events.record_event_safe(user_id, events.LOGIN_SUCCEEDED,
+                             {"method": "continue_free", "kind": access.LEVEL_FREE_KIND})
+    return {"token": new_token, "expires_at": ends_at.isoformat(), "kind": access.LEVEL_FREE_KIND,
+            "access_active": True}
+
+
+# ---------------------------------------------------------------------------
 # POST /auth/logout
 # ---------------------------------------------------------------------------
 

@@ -32,6 +32,7 @@
  */
 
 import { getToken, setToken, clearToken, apiGet, apiPost, ApiError } from "./api.js";
+import { continueAsFree, CONTINUE_FREE_LINE, FREE_HOME } from "./continue_free.js";
 import { attributionPayload } from "./attribution.js";
 import { el, clear } from "./dom.js";
 import { unitSettings } from "./unitchip.js";
@@ -471,6 +472,16 @@ export async function renderSignin(container, query = {}) {
     clear(ended);
     // Cleared while the question was in flight: nothing left to explain.
     if (!found || !getToken()) return false;
+    // Owner ruling 2026-10-27: an ended tester is a free member and keeps their
+    // kennel. Trade the ended code for a free session and go there; only a
+    // refusal falls through to the ended state (with the upgrade offer) below.
+    if (await continueAsFree()) {
+      if (mine !== generation) return false;
+      status.textContent = CONTINUE_FREE_LINE;
+      window.location.assign(FREE_HOME);
+      return true;
+    }
+    if (mine !== generation) return false;
     const { state, knownNotOpen } = await loadTesterBilling();
     if (mine !== generation) return false;
     ended.appendChild(el("p", { class: "signin__body", role: "status",
@@ -714,6 +725,7 @@ export async function renderSignin(container, query = {}) {
     // text, so an admin password pasted here looked like a sign-in and changed nothing).
     // The board cannot load for an ended tester token: say so here, once.
     if (await showExpiredTester()) {
+      if (!ended.childNodes.length) return;   // traded for a free session; the page is moving on
       status.textContent = "Access code saved.";
       return;
     }
