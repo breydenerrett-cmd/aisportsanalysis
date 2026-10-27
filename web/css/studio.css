@@ -658,6 +658,8 @@
 .kn-spark svg { display: block; width: 100%; height: auto; max-height: 64px; }
 .kn-spark figcaption { margin: var(--lh-s1) 0 0; }
 .kn-rec__note { margin: var(--lh-s3) 0 var(--lh-s5); color: var(--lh-mute); }
+.kn-rec__more { margin: 0 0 var(--lh-s4); }
+.kn-rec__more .lh-btn { min-height: 44px; }
 .hounds-page .kn-rec__h { margin: var(--lh-s5) 0 var(--lh-s2); font-family: var(--lh-font-display); font-size: var(--lh-fs-lg); font-weight: 700; text-transform: none; letter-spacing: var(--lh-track-display); color: var(--lh-ink); }
 /* "Grading 18 games..." is a quiet inline status here, not a dashed chip */
 .kn-studio .hd-graded { margin: 0 0 var(--lh-s3); gap: var(--lh-s2); font-size: var(--lh-fs-sm); color: var(--lh-mute); }

@@ -243,3 +243,6 @@
   .hounds-page .hh-wrap .hh-hero__text > .hh-mood { grid-column: 1 / -1; margin-top: var(--lh-s2); }
   .hounds-page .hh-wrap .hf-item { grid-template-columns: 64px minmax(0, 1fr); }
 }
+
+.hounds-page .hh-wrap .hh-fullrecord { margin: 0 0 var(--lh-s4); }
+.hounds-page .hh-wrap .hh-fullrecord .lh-btn { min-height: 44px; }

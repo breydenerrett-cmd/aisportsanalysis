@@ -41,6 +41,8 @@ PAGES = {
     "kennels_index": ("kennels.html", "kennels-index.js"),     # owner ruling 2026-10-20 kennel-first: Kennels is its own page, not a leaderboard tab
     "nav": ("hounds.html", "nav.js"),
     "tabs": ("hound.html", "tabs.js"),
+    # the track record page (tests/test_track_record_web.py): one hound's whole paper record, fed by GET /hounds/{id}/record
+    "record": ("record.html", "track-record.js"),
     # the live board, "What's on" (tests/test_live_board.py); its fixtures are tests/fixtures/sports_now.json
     "live": ("live.html", "live-board.js"),
     # the graveyard (tests/test_hounds_rites_web.py): every dog a member took out back

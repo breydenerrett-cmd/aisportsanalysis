@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Track record — LINEHOUND</title>
+<meta name="description" content="One hound's full paper track record: its settled bets, where it wins and loses, a results calendar and how it compares. Paper bets only, not advice, 21+.">
+<meta name="theme-color" content="#0E1116">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
+<!-- THE TRACK RECORD of ONE hound, chosen by ?id= (a member's hound or a house hound). Page script: web/js/track-record.js, fed by
+     GET /hounds/{id}/record (src/hounds/track_record.py). Header numbers, a bankroll curve, breakdowns with a plain sentence each,
+     a results calendar, filterable tickets with their "why", a compare against the house pack and the leaderboard, and three next
+     steps. OPEN tickets sit apart and are never counted; a backtest is hindsight and never appears here. docs/HOUND_LOOP_PLAN.md phase 3. -->
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/lhnav.css">
+<link rel="stylesheet" href="css/hounds.css">
+<link rel="stylesheet" href="css/lh.css">
+<link rel="stylesheet" href="css/unitsize.css">
+<link rel="stylesheet" href="css/record.css">
+</head>
+<body class="hounds-page">
+<a class="hd-skip" href="#main-content">Skip to the record</a>
+<header class="lh-nav" aria-label="primary" data-hook="record-nav" data-current="leaderboard">
+  <div class="lh-nav__bar">
+    <a class="lh-nav__brand ps-page__home" href="landing.html" aria-label="LINEHOUND home">
+      <span class="wordmark" data-hook="brand-mark">
+        <span class="wordmark__mark"><span></span></span>
+        <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
+      </span>
+    </a>
+    <nav class="lh-nav__links" aria-label="Sections" data-hook="nav-links">
+      <a href="hounds.html" data-nav="leaderboard" aria-current="page">Leaderboard</a>
+      <a href="live.html" data-nav="live">Live</a>
+    </nav>
+    <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">
+      <a class="lh-nav__signin" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
+      <a class="lh-btn lh-btn--solid lh-btn--lg" href="quiz.html" data-hook="nav-cta">Make your first hound</a>
+    </div>
+  </div>
+</header>
+
+<main class="hd-wrap hd-wrap--wide rc-wrap" id="main-content" aria-label="Track record" data-hook="record-app">
+
+<p class="hd-back"><a href="hounds.html" data-hook="record-back">&larr; Back to the hound</a></p>
+
+<header class="rc-head">
+  <p class="rc-eyebrow">Track record</p>
+  <h1 data-hook="record-title">Track record</h1>
+  <p class="rc-sub" data-hook="record-sub"></p>
+  <div class="hd-segs rc-seasons" role="group" aria-label="Period" data-hook="record-season" hidden></div>
+</header>
+
+<div class="hd-state" data-hook="record-state" role="status" aria-live="polite" hidden></div>
+
+<div data-hook="record-body" hidden>
+
+<section class="rc-sec" aria-labelledby="rc-head-h" data-hook="record-header-section">
+  <h2 id="rc-head-h" class="hd-sr-only">The record</h2>
+  <dl class="rc-stats" data-hook="record-stats"></dl>
+  <p class="rc-note" data-hook="record-sample" hidden></p>
+  <p class="rc-last10" data-hook="record-last10" hidden></p>
+  <div class="rc-next" data-hook="record-next" role="group" aria-label="Next steps"></div>
+</section>
+
+<section class="rc-sec" aria-labelledby="rc-curve-h" data-hook="record-curve-section">
+  <h2 id="rc-curve-h">Paper bankroll</h2>
+  <div data-hook="record-curve"></div>
+</section>
+
+<section class="rc-sec" aria-labelledby="rc-open-h" data-hook="record-open-section" hidden>
+  <h2 id="rc-open-h">Open tickets</h2>
+  <p class="rc-note">Not settled yet, so none of these is in the record above.</p>
+  <div data-hook="record-open"></div>
+  <div data-hook="record-waiting"></div>
+</section>
+
+<section class="rc-sec" aria-labelledby="rc-cuts-h" data-hook="record-breakdowns-section">
+  <h2 id="rc-cuts-h">Where it wins and where it does not</h2>
+  <p class="rc-note" data-hook="record-cuts-note"></p>
+  <div class="rc-cuts" data-hook="record-breakdowns"></div>
+</section>
+
+<section class="rc-sec" aria-labelledby="rc-cal-h" data-hook="record-calendar-section">
+  <h2 id="rc-cal-h">Results calendar</h2>
+  <div data-hook="record-calendar"></div>
+</section>
+
+<section class="rc-sec" aria-labelledby="rc-tix-h" data-hook="record-tickets-section">
+  <h2 id="rc-tix-h">Settled tickets</h2>
+  <div class="rc-filters" data-hook="record-filters">
+    <label class="rc-filter"><span>Sport</span><select data-hook="filter-sport" aria-label="Filter by sport"><option value="">All sports</option></select></label>
+    <label class="rc-filter"><span>Result</span><select data-hook="filter-result" aria-label="Filter by result">
+      <option value="">All results</option><option value="win">Won</option><option value="loss">Lost</option><option value="push">Push</option></select></label>
+    <label class="rc-filter"><span>Market</span><select data-hook="filter-market" aria-label="Filter by market"><option value="">All markets</option></select></label>
+  </div>
+  <p class="rc-note" data-hook="record-ticket-count" aria-live="polite"></p>
+  <div data-hook="record-tickets"></div>
+</section>
+
+<section class="rc-sec" aria-labelledby="rc-cmp-h" data-hook="record-compare-section">
+  <h2 id="rc-cmp-h">Against the pack</h2>
+  <div data-hook="record-compare"></div>
+</section>
+
+<p class="rc-fine" data-hook="record-fine"></p>
+</div>
+
+</main>
+
+<footer class="hd-foot" data-hook="record-footer" aria-label="responsible gambling">
+  <p>21+ &middot; Paper bets only, not advice &middot; Bet at your own risk &middot; Gamble responsibly. <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
+  <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="hounds.html">Leaderboard</a> &middot; <a href="graveyard.html">Graveyard</a></p>
+</footer>
+
+<script type="module" src="js/track-record.js"></script>
+<script type="module" src="js/fx.js"></script>
+<script type="module" src="js/nav.js"></script>
+</body>
+</html>

@@ -878,6 +878,8 @@ export async function boot() {
     return;
   }
   state.hound = hound;
+  const fullRecord = q("hound-full-record");
+  if (fullRecord) fullRecord.setAttribute("href", `record.html?id=${encodeURIComponent(state.id)}`);       // the whole record, on its own page
   if (hound.season && typeof hound.season === "object") state.seasonMeta = hound.season;
   renderHeader(hound);
   redrawOnOpen();
