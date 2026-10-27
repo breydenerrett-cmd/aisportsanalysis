@@ -9839,3 +9839,4 @@ game_pk,date,start_time_utc,venue,game_type,away_team,home_team,away_team_id,hom
 849815,2026-10-19,2026-10-20T00:08:00Z,Tropicana Field,L,CLE,TB,114,139,Shawn Armstrong,Freddy Peralta,542888,642547,3,7,TB,1,10,4,N,1
 849805,2026-10-23,2026-10-24T00:00:00Z,American Family Field,W,TB,MIL,139,158,Nick Martinez,Jacob Misiorowski,607259,694819,2,3,MIL,1,5,1,N,1
 849802,2026-10-24,2026-10-25T00:00:00Z,American Family Field,W,TB,MIL,139,158,Drew Rasmussen,Logan Henderson,656876,701656,4,5,MIL,1,9,1,N,1
+849804,2026-10-26,2026-10-27T00:00:00Z,Tropicana Field,W,MIL,TB,158,139,Robert Gasser,Freddy Peralta,688107,642547,10,1,MIL,0,11,9,N,1
