@@ -7272,3 +7272,5 @@
 {"call_kind": "pregame", "credits": 3, "events": 16, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-27T13:16:56.935272Z", "regions": ["us"], "rows": 256, "sport_key": "basketball_euroleague", "stored": 232}
 {"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T13:16:56.935272Z", "regions": ["us"], "rows": 94, "sport_key": "tennis_atp_swiss_indoors", "stored": 94}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T13:16:56.935272Z", "regions": ["au"], "rows": 15, "sport_key": "cricket_test_match", "stored": 13}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-10-27T19:28:44.204616Z", "observed_utc": "2026-10-27T13:28:44.204616Z", "sport_key": "soccer_brazil_campeonato"}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T13:28:44.204616Z", "regions": ["us"], "rows": 1, "sport_key": "cricket_odi", "stored": 1}
