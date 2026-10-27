@@ -7092,3 +7092,11 @@
 {"events": 18, "kind": "peek", "next_check_utc": "2026-10-27T12:49:10.084212Z", "observed_utc": "2026-10-27T06:49:10.084212Z", "sport_key": "soccer_uefa_europa_league"}
 {"commence_utc": "2026-10-27T12:40:00Z", "event_id": "a42f82d7816ede536681c5c86da0e480", "kind": "phase", "observed_utc": "2026-10-27T06:49:10.084212Z", "phase": "t6h", "rows": 21, "sport_key": "soccer_saudi_arabia_pro_league"}
 {"call_kind": "pregame", "credits": 2, "events": 10, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-27T06:49:10.084212Z", "regions": ["eu"], "rows": 182, "sport_key": "soccer_saudi_arabia_pro_league", "stored": 21}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-10-27T13:12:40.416225Z", "observed_utc": "2026-10-27T07:12:40.416225Z", "sport_key": "soccer_australia_aleague"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-10-27T13:12:40.416225Z", "observed_utc": "2026-10-27T07:12:40.416225Z", "sport_key": "soccer_austria_bundesliga"}
+{"commence_utc": "2026-10-27T07:30:00Z", "event_id": "96d658b6a8b01790845515be4d1410a2", "kind": "phase", "observed_utc": "2026-10-27T07:12:40.416225Z", "phase": "t30m", "rows": 1, "sport_key": "cricket_odi"}
+{"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T07:12:40.416225Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 2}
+{"commence_utc": "2026-10-27T13:00:00Z", "event_id": "3c6239f48e3a272aa8f7bb0ae354f14a", "kind": "phase", "observed_utc": "2026-10-27T07:12:40.416225Z", "phase": "t6h", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
+{"call_kind": "pregame", "credits": 1, "events": 12, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T07:12:40.416225Z", "regions": ["us"], "rows": 101, "sport_key": "tennis_atp_swiss_indoors", "stored": 101}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T07:12:40.416225Z", "regions": ["us"], "rows": 6, "sport_key": "cricket_international_t20", "stored": 6}
+{"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T07:12:40.416225Z", "regions": ["us"], "rows": 43, "sport_key": "tennis_wta_pan_pacific_open", "stored": 43}
