@@ -148,3 +148,12 @@ a[href^="tel:"] { white-space: nowrap; }
   .lh-announce[data-step="1"] .lh-announce__flame { animation: lh-flicker 0.7s ease-in-out infinite alternate; }
 }
 @keyframes lh-flicker { from { transform: scale(1) rotate(-2deg); opacity: .85; } to { transform: scale(1.12) rotate(2deg); opacity: 1; } }
+
+/* "Your full access is ending" banner (web/js/access-ending.js): one primary button, a quiet dismiss for the day. */
+.lh-ending { margin: 0 auto; max-width: 960px; padding: 14px 16px; display: grid; gap: 6px; border: 1px solid rgba(255, 255, 255, .18); border-radius: 10px; background: rgba(255, 255, 255, .06); }
+.lh-ending[data-today="true"] { border-color: rgba(255, 170, 90, .7); }
+.lh-ending__title { margin: 0; font-weight: 700; }
+.lh-ending__line, .lh-ending__seats, .lh-ending__note { margin: 0; opacity: .85; }
+.lh-ending__fine { margin: 0; font-size: 12px; opacity: .6; }
+.lh-ending__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 6px; }
+.lh-ending__later { background: none; border: 0; color: inherit; opacity: .7; text-decoration: underline; cursor: pointer; font: inherit; }

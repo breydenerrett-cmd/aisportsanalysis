@@ -67,6 +67,8 @@ KIND_KEEP = "keep"
 KIND_NIGHTLY = "nightly"
 KIND_SUNDAY = "sunday"
 KIND_TEST = "test"
+KIND_ENDING_2D = "ending_2d"        # "your full access ends in 2 days" (src/appstate/access_ending.py)
+KIND_ENDING_TODAY = "ending_today"  # and on the last day
 
 LOG_NAME = "email_send_log.jsonl"
 ROW_RUN = "run"                       # a job-run summary row (not a message), for /admin/email/status

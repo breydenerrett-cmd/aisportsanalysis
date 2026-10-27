@@ -66,6 +66,11 @@ class FakeHttp:
         return 200, json.dumps({"id": f"em_{len(self.calls)}"}).encode("utf-8")
 
 
+def without_ending(report):
+    """A tick report minus the access-ending reminders (tests/test_access_ending.py owns that job)."""
+    return {k: v for k, v in report.items() if k != "ending"}
+
+
 class Base(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
@@ -571,23 +576,23 @@ class TheSchedule(Base):
 
     def test_the_windows_are_in_eastern_time_through_a_change_of_clocks(self):
         self.assertEqual(self.due("2026-10-21T12:59:00+00:00"), [])                # Wed 08:59 EDT
-        self.assertEqual(self.due("2026-10-21T13:00:00+00:00"), ["nightly"])       # 09:00 EDT
-        self.assertEqual(self.due("2026-10-21T14:59:00+00:00"), ["nightly"])
+        self.assertEqual(self.due("2026-10-21T13:00:00+00:00"), ["nightly", "ending"])       # 09:00 EDT (the access-ending reminders share the window)
+        self.assertEqual(self.due("2026-10-21T14:59:00+00:00"), ["nightly", "ending"])
         self.assertEqual(self.due("2026-10-21T15:00:00+00:00"), [])                # 11:00 EDT: window closed
-        self.assertEqual(self.due("2026-10-25T14:00:00+00:00"), ["nightly", "sunday"])      # Sun 10:00 EDT
+        self.assertEqual(self.due("2026-10-25T14:00:00+00:00"), ["nightly", "ending", "sunday"])      # Sun 10:00 EDT
         # Sunday 2026-11-01 is the day the clocks go back: 10:00 is EST, 15:00Z
-        self.assertEqual(self.due("2026-11-01T14:00:00+00:00"), ["nightly"])       # 09:00 EST
-        self.assertEqual(self.due("2026-11-01T15:00:00+00:00"), ["nightly", "sunday"])
-        self.assertEqual(self.due("2026-10-24T14:00:00+00:00"), ["nightly"])       # Saturday: no pack
+        self.assertEqual(self.due("2026-11-01T14:00:00+00:00"), ["nightly", "ending"])       # 09:00 EST
+        self.assertEqual(self.due("2026-11-01T15:00:00+00:00"), ["nightly", "ending", "sunday"])
+        self.assertEqual(self.due("2026-10-24T14:00:00+00:00"), ["nightly", "ending"])       # Saturday: no pack
 
     def test_a_tick_waits_for_settlement_then_runs_once_and_remembers(self):
         u = self.user()
         self.settled(self.dog(u), "WIN")
-        self.assertEqual(jobs.tick(self.ctx(settle_gate=lambda n: False)), {"nightly": "waiting for settlement"})
+        self.assertEqual(without_ending(jobs.tick(self.ctx(settle_gate=lambda n: False))), {"nightly": "waiting for settlement"})
         self.assertEqual(self.http.calls, [])
         first = jobs.tick(self.ctx())
         self.assertEqual(first["nightly"]["sent"], 1)
-        self.assertEqual(jobs.tick(self.ctx()), {"nightly": "done"})
+        self.assertEqual(without_ending(jobs.tick(self.ctx())), {"nightly": "done"})
         self.assertEqual(len(self.http.calls), 1)
 
     def test_a_run_with_a_failure_is_not_marked_done_so_the_next_tick_retries(self):
@@ -596,7 +601,7 @@ class TheSchedule(Base):
         self.http.answers = [(500, b"{}"), (500, b"{}")]
         self.assertEqual(jobs.tick(self.ctx())["nightly"]["failed"], 1)
         self.assertEqual(jobs.tick(self.ctx())["nightly"]["sent"], 1)
-        self.assertEqual(jobs.tick(self.ctx()), {"nightly": "done"})
+        self.assertEqual(without_ending(jobs.tick(self.ctx())), {"nightly": "done"})
 
     def test_the_sunday_pack_is_off_by_default_even_with_a_key(self):
         # Owner 2026-10-20: transactional only until there is a postal address. A Sunday tick with the key set
