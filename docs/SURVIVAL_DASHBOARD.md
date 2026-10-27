@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-10-26 20:45Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-27 15:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **5** |
+| Days until 2026-10-31 | **4** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,8 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-26 (1:30 pm PT run): World Series Game 3 brief (Brewers at Rays) published before first pitch; one model reading, passes on every market.
-- Monday night NFL brief (Cowboys at Eagles) published before kickoff; passes on moneyline, spread and total.
-- Both briefs grade Tuesday morning. Working-branch tests green; the scheduled daily loop on the default branch is still red.
+- 2026-10-27 (8:30 am PT run): World Series Game 3 (Brewers at Rays) and Monday night (Cowboys at Eagles) briefs both graded; every call in each was a pass.
+- Public sample now shows the graded World Series Game 3 brief.
+- World Series Game 4 (Brewers at Rays, 5:00 pm PT) brief is due in the 1:30 pm PT run.
+- Working-branch tests green; the scheduled daily loop on the default branch: newest run cancelled, the one before failed.
 - Public MLB value picks remain paused. Sends 0, replies 0, testers 0.
 
