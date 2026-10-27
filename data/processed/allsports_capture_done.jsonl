@@ -7046,3 +7046,4 @@
 {"call_kind": "pregame", "credits": 1, "events": 8, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T04:10:46.002221Z", "regions": ["us"], "rows": 58, "sport_key": "tennis_wta_pan_pacific_open", "stored": 58}
 {"events": 20, "kind": "peek", "next_check_utc": "2026-10-27T10:21:58.570979Z", "observed_utc": "2026-10-27T04:21:58.570979Z", "sport_key": "soccer_spain_la_liga"}
 {"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T04:21:58.570979Z", "regions": ["us"], "rows": 59, "sport_key": "basketball_nba", "stored": 44}
+{"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T04:49:44.302649Z", "regions": ["us"], "rows": 58, "sport_key": "tennis_wta_pan_pacific_open", "stored": 58}
