@@ -56,7 +56,7 @@ class TheSeasonRead(unittest.TestCase):
         return next(s for s in SEASON["sports"] if s["code"] == code)
 
     def test_a_chip_says_the_count_and_the_phase_in_the_owners_words(self):
-        self.assertEqual(self.sport("NBA")["chip"], "NBA · 58 games this week")
+        self.assertEqual(self.sport("NBA")["chip"], "NBA · 58 games coming up")
         self.assertEqual(self.sport("MLB")["chip"], "MLB · postseason · 3 games")
         self.assertEqual(season_view.chip_text("WNBA", 1, "postseason"), "WNBA · postseason · 1 game")
         self.assertEqual(season_view.chip_text("Tennis", 0, None), "Tennis · no games this week")
@@ -128,7 +128,7 @@ class SportsStep(unittest.TestCase):
     def test_chips_show_the_counts_and_the_phase(self):
         out = B.build(routes(), actions=[BLANK], queries=[CHIPS])
         chips = chips_of(out)
-        self.assertTrue(any(c.startswith("NBA · 58 games this week") for c in chips), chips)
+        self.assertTrue(any(c.startswith("NBA · 58 games coming up") for c in chips), chips)
         self.assertTrue(any(c.startswith("MLB · postseason · 3 games") for c in chips), chips)
 
     def test_out_of_season_and_zero_game_sports_are_dimmed_with_a_reason_and_still_selectable(self):
@@ -404,7 +404,7 @@ class SavingMakesTheNextVersion(unittest.TestCase):
             q("sliders", "[data-slider]", "count"), q("line", "[data-hook='hind-line']"), q("dock", "[data-dock]", "count")])
         f = out["final"]
         self.assertEqual(f["note"], self.EXPECT)
-        self.assertTrue(any(c.startswith("NBA · 58 games this week") for c in f["chips"]), f["chips"])
+        self.assertTrue(any(c.startswith("NBA · 58 games coming up") for c in f["chips"]), f["chips"])
         self.assertEqual(f["price"], 1)
         self.assertGreaterEqual(f["quick"], 4)
         self.assertGreaterEqual(f["sliders"], 3)

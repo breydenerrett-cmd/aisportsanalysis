@@ -159,11 +159,14 @@ def mlb_phase(now: datetime) -> Optional[str]:
 
 
 def chip_text(label: str, games: int, phase: Optional[str]) -> str:
-    """The words on the chip: "NBA · 58 games this week", "MLB · postseason · 3 games", "Tennis · no games this week"."""
+    """The words on the chip: "NBA · 25 games coming up", "MLB · postseason · 3 games", "Tennis · no games this week".
+
+    "Coming up", not "this week": the stored schedules reach only a few days ahead (ESPN's NBA rows stop ~4 days out), so
+    the count is what is listed, never a claim about the whole week."""
     if games <= 0:
         return f"{label} · no games this week"
     noun = "game" if games == 1 else "games"
-    return f"{label} · {phase} · {games} {noun}" if phase else f"{label} · {games} {noun} this week"
+    return f"{label} · {phase} · {games} {noun}" if phase else f"{label} · {games} {noun} coming up"
 
 
 def season_overview(now: Optional[datetime] = None, *, espn: Optional[Mapping] = None, board: Optional[Mapping] = None,
