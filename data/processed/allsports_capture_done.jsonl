@@ -7131,3 +7131,4 @@
 {"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T08:16:03.387675Z", "regions": ["us"], "rows": 36, "sport_key": "tennis_wta_pan_pacific_open", "stored": 36}
 {"commence_utc": "2026-10-27T14:30:00Z", "event_id": "0808b146b67fdb08a2bc82e84a902b1f", "kind": "phase", "observed_utc": "2026-10-27T08:31:05.830401Z", "phase": "t6h", "rows": 3, "sport_key": "cricket_international_t20"}
 {"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T08:31:05.830401Z", "regions": ["us"], "rows": 5, "sport_key": "cricket_international_t20", "stored": 5}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T08:44:03.659662Z", "regions": ["au"], "rows": 18, "sport_key": "cricket_test_match", "stored": 16}
