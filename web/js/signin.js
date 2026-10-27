@@ -682,7 +682,7 @@ export async function renderSignin(container, query = {}) {
       if (out.access_active === false) {
         // A tester whose window has ended: the token opens nothing, but it
         // identifies them to the upgrade door, so show the ended state.
-        loginStatus.textContent = "Signed in.";
+        loginStatus.textContent = "Your password is right, but your access has ended. Start a plan below to open your kennel.";
         await showExpiredTester();
       } else if (!(typeof query.next === "string" && query.next)) {
         // Kennel-first (owner ruling 2026-10-20): every member's home is My Kennel, free or paid. Only a sign-in that was
