@@ -7080,3 +7080,10 @@
 {"events": 6, "kind": "peek", "next_check_utc": "2026-10-27T12:20:46.996039Z", "observed_utc": "2026-10-27T06:20:46.996039Z", "sport_key": "soccer_switzerland_superleague"}
 {"commence_utc": "2026-10-27T12:10:00Z", "event_id": "7803d8ad15e62ae9b557be677f69e021", "kind": "phase", "observed_utc": "2026-10-27T06:20:46.996039Z", "phase": "t6h", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
 {"call_kind": "pregame", "credits": 1, "events": 12, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T06:20:46.996039Z", "regions": ["us"], "rows": 101, "sport_key": "tennis_atp_swiss_indoors", "stored": 101}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-27T12:30:36.370195Z", "observed_utc": "2026-10-27T06:30:36.370195Z", "sport_key": "soccer_uefa_nations_league"}
+{"commence_utc": "2026-10-27T07:00:00Z", "event_id": "34e0208f0dbb09bce1c9bd19ef569234", "kind": "phase", "observed_utc": "2026-10-27T06:30:36.370195Z", "phase": "t30m", "rows": 3, "sport_key": "cricket_international_t20"}
+{"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T06:30:36.370195Z", "regions": ["us"], "rows": 6, "sport_key": "cricket_international_t20", "stored": 6}
+{"commence_utc": "2026-10-27T08:30:00Z", "event_id": "4fbcb9927e282c2d4bdc699ca7fde3d9", "kind": "phase", "observed_utc": "2026-10-27T06:30:36.370195Z", "phase": "t2h", "rows": 8, "sport_key": "cricket_test_match"}
+{"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T06:30:36.370195Z", "regions": ["au"], "rows": 18, "sport_key": "cricket_test_match", "stored": 16}
+{"commence_utc": "2026-10-27T12:30:00Z", "event_id": "3a73a96665b992e825c1256066d9abf1", "kind": "phase", "observed_utc": "2026-10-27T06:30:36.370195Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
+{"call_kind": "pregame", "credits": 1, "events": 11, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T06:30:36.370195Z", "regions": ["us"], "rows": 84, "sport_key": "tennis_atp_vienna_open", "stored": 84}
