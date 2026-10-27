@@ -7088,3 +7088,7 @@
 {"commence_utc": "2026-10-27T12:30:00Z", "event_id": "3a73a96665b992e825c1256066d9abf1", "kind": "phase", "observed_utc": "2026-10-27T06:30:36.370195Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
 {"call_kind": "pregame", "credits": 1, "events": 11, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T06:30:36.370195Z", "regions": ["us"], "rows": 84, "sport_key": "tennis_atp_vienna_open", "stored": 84}
 {"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T06:39:54.698646Z", "regions": ["us"], "rows": 41, "sport_key": "tennis_wta_pan_pacific_open", "stored": 41}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-27T12:49:10.084212Z", "observed_utc": "2026-10-27T06:49:10.084212Z", "sport_key": "aussierules_aflw"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-27T12:49:10.084212Z", "observed_utc": "2026-10-27T06:49:10.084212Z", "sport_key": "soccer_uefa_europa_league"}
+{"commence_utc": "2026-10-27T12:40:00Z", "event_id": "a42f82d7816ede536681c5c86da0e480", "kind": "phase", "observed_utc": "2026-10-27T06:49:10.084212Z", "phase": "t6h", "rows": 21, "sport_key": "soccer_saudi_arabia_pro_league"}
+{"call_kind": "pregame", "credits": 2, "events": 10, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-27T06:49:10.084212Z", "regions": ["eu"], "rows": 182, "sport_key": "soccer_saudi_arabia_pro_league", "stored": 21}
