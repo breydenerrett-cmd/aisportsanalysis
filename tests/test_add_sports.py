@@ -144,6 +144,23 @@ class ThePlan(Base):
         self.assertFalse(set(room) & set(res["added"]))
         user_spec.validate_spec(res["raw"])
 
+    def test_a_hound_at_the_rule_cap_still_takes_a_sport_that_joins_a_rule_it_already_has(self):
+        spec = json.loads(json.dumps(SPEC))
+        spec["name"] = "Full Rex"
+        nba = json.loads(json.dumps(spec["rules"][0]))
+        nba["label"], nba["sports"] = "Hoops dogs", ["NBA"]
+        nba["when"]["items"] = [c for c in nba["when"]["items"] if c["id"] != "rest_days"]   # what MLB's rule becomes for NBA
+        spec["rules"].append(nba)
+        hound = user_store.create_hound(self.owner.id, spec, db=self.db)
+        self.assertEqual(len(hound["spec"]["rules"]), add_sports.R.MAX_RULES)
+        res = add_sports.apply(hound["id"], "all", dry_run=True, db=self.db)
+        self.assertEqual(len(res["raw"]["rules"]), add_sports.R.MAX_RULES)
+        self.assertIn("NHL", res["added"])
+        hoops = next(r for r in res["raw"]["rules"] if r["label"] == "Hoops dogs")
+        self.assertIn("NHL", hoops["sports"])                           # joined the rule that already fits it
+        self.assertNotIn("NBA", res["added"])                           # already on the hound
+        user_spec.validate_spec(res["raw"])
+
     def test_refusals(self):
         for text in ("", "mlb", "blah"):
             with self.assertRaises(add_sports.AddSportsError, msg=text):

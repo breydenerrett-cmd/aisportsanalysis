@@ -141,8 +141,15 @@ def parse_sports(text: str, have: Iterable[str]) -> tuple:
     return requested, skipped
 
 
-def plan(hound: Mapping, sports_text: str) -> dict:
-    """The new raw spec and the notes, with nothing written. Raises ``AddSportsError`` / ``SpecError``."""
+def _shape(rule: Mapping) -> str:
+    return json.dumps({k: v for k, v in rule.items() if k not in ("sports", "label")}, sort_keys=True)   # what it bets on
+
+
+def plan(hound: Mapping, sports_text: str, *, widen_only: bool = False) -> dict:
+    """The new raw spec and the notes, with nothing written. Raises ``AddSportsError`` / ``SpecError``.
+
+    A mirrored rule identical (sports aside) to ANY rule the hound already has just widens that rule. ``widen_only``
+    stops there: a sport joins only where it widens an existing rule, so a hound at the rule cap can still take it."""
     raw = _raw_spec(hound["spec"])
     have = set(hound["spec"].get("sports") or [])
     requested, skipped = parse_sports(sports_text, have)
@@ -162,11 +169,14 @@ def plan(hound: Mapping, sports_text: str) -> dict:
                 continue
             if dropped:
                 notes.setdefault(f"{label} without " + ", ".join(sorted(set(dropped))), []).append(sport)
-            key = json.dumps({k: v for k, v in new.items() if k != "sports"}, sort_keys=True)
-            same = json.dumps({k: v for k, v in rule.items() if k != "sports"}, sort_keys=True)
-            if key == same:                      # identical to the original: just widen it
-                if sport not in rules[i]["sports"]:
-                    rules[i]["sports"].append(sport)
+            key = _shape(new)
+            twin = next((j for j, r in enumerate(original) if _shape(r) == key), None)
+            if twin is not None:                 # identical to a rule the hound has: just widen that one
+                if sport not in rules[twin]["sports"]:
+                    rules[twin]["sports"].append(sport)
+            elif widen_only:
+                notes.setdefault(f"{label} not copied (no room for another rule)", []).append(sport)
+                continue
             else:
                 for g in groups:
                     if g[0] == key:
@@ -195,30 +205,36 @@ FIT_ORDER = ("NFL", "NBA", "NHL", "NCAAF", "NCAAB", "WNBA", "MLB")
 
 
 def plan_fit(hound: Mapping) -> dict:
-    """``all``, but only as many sports as fit under the rule cap: each sport in ``FIT_ORDER`` (then the rest) is kept
-    when the hound still fits with it, and every one left out is reported with the reason."""
+    """``all``, but only as many sports as fit under the rule cap. Sports are tried one at a time in ``FIT_ORDER`` (then
+    the rest), each on top of the ones already kept: first with its own rules, and when that would pass the cap, joining
+    only the rules that already fit it. Every sport left out is reported with the reason."""
     have = set(hound["spec"].get("sports") or [])
     _, skipped = parse_sports("all", have)
     order = [c for c in FIT_ORDER if c in gradable_sports()] + [c for c in gradable_sports() if c not in FIT_ORDER]
-    chosen, best = [], None
+    cur, last, added, notes = hound, None, [], []
     for code in order:
         if code in have:
             continue
-        try:
-            trial = plan(hound, ",".join(chosen + [code]))
-        except AddSportsError as exc:
-            if "rules (the most" in str(exc):
-                skipped.append((code, f"no room: a hound has at most {R.MAX_RULES} rules"))
+        trial, why = None, None
+        for widen_only in (False, True):
+            try:
+                trial = plan(cur, code, widen_only=widen_only)
+                break
+            except AddSportsError as exc:
+                if "rules (the most" not in str(exc):
+                    why = why or "no rule of this hound carries over"     # it carries nowhere: widening cannot help
+                    break
+                why = f"no room: a hound has at most {R.MAX_RULES} rules and none of its rules fits it"
+        if trial is None:
+            skipped.append((code, why))
             continue
-        if code in trial["added"]:
-            chosen.append(code)
-            best = trial
-        else:
-            skipped.extend(s for s in trial["skipped"] if s[0] == code)
-    if best is None:
-        return plan(hound, "all")                # raises with the reasons nothing fits
-    best["skipped"] = [s for s in skipped if s[0] not in chosen]
-    return best
+        cur, last = {"spec": trial["spec"]}, trial
+        added.append(code)
+        notes.extend(trial["notes"])
+    if last is None:
+        raise AddSportsError("nothing to add: " + "; ".join(f"{c} {w}" for c, w in skipped))
+    last["added"], last["notes"], last["skipped"] = added, notes, [x for x in skipped if x[0] not in added]
+    return last
 
 
 def _current(hound: Mapping, db) -> None:
