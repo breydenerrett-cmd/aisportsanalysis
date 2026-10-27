@@ -190,11 +190,55 @@ def plan(hound: Mapping, sports_text: str) -> dict:
             "sentence": user_spec.rule_text(spec)}
 
 
+#: the order ``all`` fills a hound in when every sport will not fit under ``R.MAX_RULES``: the big leagues first
+FIT_ORDER = ("NFL", "NBA", "NHL", "NCAAF", "NCAAB", "WNBA", "MLB")
+
+
+def plan_fit(hound: Mapping) -> dict:
+    """``all``, but only as many sports as fit under the rule cap: each sport in ``FIT_ORDER`` (then the rest) is kept
+    when the hound still fits with it, and every one left out is reported with the reason."""
+    have = set(hound["spec"].get("sports") or [])
+    _, skipped = parse_sports("all", have)
+    order = [c for c in FIT_ORDER if c in gradable_sports()] + [c for c in gradable_sports() if c not in FIT_ORDER]
+    chosen, best = [], None
+    for code in order:
+        if code in have:
+            continue
+        try:
+            trial = plan(hound, ",".join(chosen + [code]))
+        except AddSportsError as exc:
+            if "rules (the most" in str(exc):
+                skipped.append((code, f"no room: a hound has at most {R.MAX_RULES} rules"))
+            continue
+        if code in trial["added"]:
+            chosen.append(code)
+            best = trial
+        else:
+            skipped.extend(s for s in trial["skipped"] if s[0] == code)
+    if best is None:
+        return plan(hound, "all")                # raises with the reasons nothing fits
+    best["skipped"] = [s for s in skipped if s[0] not in chosen]
+    return best
+
+
+def _current(hound: Mapping, db) -> None:
+    """A retired version cannot be changed: say which version is the hound's current one, so the owner retries on it."""
+    if hound["status"] != user_store.STATUS_RETIRED:
+        return
+    newer = [h for h in user_store.lineage(hound["id"], db=db) if h["status"] != user_store.STATUS_RETIRED]
+    hint = f"; its current version is {newer[-1]['id']} (v{newer[-1]['version_no']})" if newer else ""
+    raise user_store.StoreError("retired", f"{hound['id']} is a retired version{hint}")
+
+
 def apply(hound_id: str, sports_text: str, *, dry_run: bool = False, db=None) -> dict:
     hound = user_store.get_hound(hound_id, db=db)
     if hound is None:
         raise AddSportsError(f"no hound {hound_id}")
-    out = plan(hound, sports_text)
+    _current(hound, db)
+    if str(sports_text or "").strip().lower() == "all":
+        out = plan_fit(hound)
+    else:
+        out = plan(hound, sports_text)
     out["old_id"], out["new_id"], out["dry_run"] = hound_id, None, dry_run
     if not dry_run:
         new = user_store.create_version(hound_id, out["raw"], actor=ACTOR,

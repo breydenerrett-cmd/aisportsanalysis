@@ -110,6 +110,7 @@ class TheCli(Base):
         code, text = self.run_cli(find_user=h["id"])
         self.assertEqual(code, 0)
         self.assertIn(f"user_id {self.sam.id} ", text)
+        self.assertIn(f"v1  {h['id']}  ", text)                        # the lineage, so a retired id points at the current one
         self.assertEqual(self.run_cli(find_user="u-nope")[0], 2)
 
     def test_the_command_is_wired_into_the_cli(self):

@@ -125,6 +125,25 @@ class ThePlan(Base):
             add_sports.apply(self.hound["id"], "nhl", db=self.db)
         self.assertEqual(self.rows(), before)
 
+    def test_a_retired_version_names_the_current_one_even_on_a_dry_run(self):
+        new_id = add_sports.apply(self.hound["id"], "nba", db=self.db)["new_id"]
+        with self.assertRaises(user_store.StoreError) as ctx:
+            add_sports.apply(self.hound["id"], "nhl", dry_run=True, db=self.db)
+        self.assertIn(f"its current version is {new_id} (v2)", str(ctx.exception))
+
+    def test_all_fills_the_rule_cap_big_leagues_first_and_says_who_had_no_room(self):
+        spec = json.loads(json.dumps(SPEC))
+        spec["rules"][0]["markets"] = ["moneyline", "spread"]   # each sport keeps a different set: one new rule per set
+        spec["name"] = "Wide Rex"
+        hound = user_store.create_hound(self.owner.id, spec, db=self.db)
+        res = add_sports.apply(hound["id"], "all", dry_run=True, db=self.db)
+        self.assertLessEqual(len(res["raw"]["rules"]), add_sports.R.MAX_RULES)
+        self.assertEqual(res["added"][0], "NFL")                        # NFL keeps form conditions, so it joins the MLB rules
+        room = [c for c, w in res["skipped"] if "no room" in w]
+        self.assertTrue(room, res["skipped"])
+        self.assertFalse(set(room) & set(res["added"]))
+        user_spec.validate_spec(res["raw"])
+
     def test_refusals(self):
         for text in ("", "mlb", "blah"):
             with self.assertRaises(add_sports.AddSportsError, msg=text):

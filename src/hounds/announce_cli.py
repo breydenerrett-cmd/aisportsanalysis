@@ -42,6 +42,8 @@ def main(args, *, out: Callable = print) -> int:
             out(f"ERROR: no hound {args.find_user}")
             return EXIT_ERROR
         out(f"user_id {hound['owner_user_id']}  (hound {hound['id']}, {hound['name']}, status {hound['status']})")
+        for v in user_store.lineage(hound["id"], db=db):            # an edit retires a version: show which one is current
+            out(f"  v{v['version_no']}  {v['id']}  {v['status']}  sports {','.join(v['spec'].get('sports') or [])}")
         return EXIT_OK
     if args.list_all:
         rows = announcements.list_all(user_id=args.user, db=db)
