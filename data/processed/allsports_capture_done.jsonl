@@ -7633,3 +7633,7 @@
 {"commence_utc": "2026-10-27T19:00:00Z", "event_id": "705dce2eaaf74f7b3cb3f919d2f1ea8d", "kind": "phase", "observed_utc": "2026-10-27T18:31:40.229968Z", "phase": "t30m", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
 {"commence_utc": "2026-10-28T14:50:00Z", "event_id": "fa400409de3b36b41d7f8316d636197e", "kind": "phase", "observed_utc": "2026-10-27T18:31:40.229968Z", "phase": "t24h", "rows": 3, "sport_key": "tennis_atp_vienna_open"}
 {"call_kind": "pregame", "credits": 1, "events": 10, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T18:31:40.229968Z", "regions": ["us"], "rows": 66, "sport_key": "tennis_atp_vienna_open", "stored": 62}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-28T00:41:36.156833Z", "observed_utc": "2026-10-27T18:41:36.156833Z", "sport_key": "soccer_uefa_nations_league"}
+{"call_kind": "inplay", "credits": 1, "events": 16, "events_live": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T18:41:36.156833Z", "regions": ["us"], "rows": 15, "sport_key": "soccer_germany_dfb_pokal", "stored": 15}
+{"call_kind": "inplay", "credits": 1, "events": 20, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T18:41:36.156833Z", "regions": ["us"], "rows": 179, "sport_key": "soccer_italy_serie_a", "stored": 76}
+{"call_kind": "inplay", "credits": 1, "events": 16, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T18:41:36.156833Z", "regions": ["us"], "rows": 85, "sport_key": "soccer_sweden_allsvenskan", "stored": 36}
