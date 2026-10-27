@@ -7100,3 +7100,6 @@
 {"call_kind": "pregame", "credits": 1, "events": 12, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T07:12:40.416225Z", "regions": ["us"], "rows": 101, "sport_key": "tennis_atp_swiss_indoors", "stored": 101}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T07:12:40.416225Z", "regions": ["us"], "rows": 6, "sport_key": "cricket_international_t20", "stored": 6}
 {"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T07:12:40.416225Z", "regions": ["us"], "rows": 43, "sport_key": "tennis_wta_pan_pacific_open", "stored": 43}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-10-27T13:25:42.341065Z", "observed_utc": "2026-10-27T07:25:42.341065Z", "sport_key": "soccer_brazil_campeonato"}
+{"commence_utc": "2026-10-27T13:20:00Z", "event_id": "7e3e5dde6da7e8cb88cd907563786e42", "kind": "phase", "observed_utc": "2026-10-27T07:25:42.341065Z", "phase": "t6h", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
+{"call_kind": "pregame", "credits": 1, "events": 12, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T07:25:42.341065Z", "regions": ["us"], "rows": 101, "sport_key": "tennis_atp_swiss_indoors", "stored": 101}
