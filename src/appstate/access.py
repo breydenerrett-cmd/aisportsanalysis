@@ -19,12 +19,15 @@ THE ANSWER
                token lifetime, billing.SUBSCRIBER_TOKEN_TTL.
   <a source>   a registered access source (below), e.g. a free "comp" member, or
                the built-in "free" source: a self-serve FREE account.
-  tester       a `testers` row and no subscription record: the tester window's
-               end (testers.expires_at). An ENDED window is returned as it is,
-               in the past: the token it produces opens nothing, but it
-               identifies the person to POST /billing/tester-checkout, the door
-               an expired tester converts through. Exactly what a support
-               re-issue does for an expired tester.
+  tester       a `testers` row and no subscription record, window still open: the
+               window's end (testers.expires_at).
+  free         (ruling 2026-10-27) the same person once the window has ENDED: a
+               FREE member with a FREE_TOKEN_TTL token, who keeps their kennel.
+               is_free_only reads them as a member, so the paid board still
+               refuses them; the token still identifies them to POST
+               /billing/tester-checkout (any token of a tester does). A support
+               re-issue (api/admin.py `_reissue_plan`) still hands an ended
+               tester a dead token; it has not been moved to this rule.
   None         a suspended account, a waitlisted or pending signup, a lapsed
                subscriber, an admin-invited beta user, anyone with no access.
                "None" means no session is started; the API says so in plain words.
@@ -103,6 +106,8 @@ FREE_PLAN = "free"
 LEVEL_MEMBER = "member"
 LEVEL_PAID = "paid"
 FREE_TOKEN_TTL = timedelta(days=30)
+# The `kind` of a session token for a free member (the built-in "free" source's name).
+LEVEL_FREE_KIND = "free"
 
 # name -> fn(user, now) -> Optional[datetime]. A dict keeps registration order and
 # makes registering the same name twice a replacement, not a duplicate.
@@ -151,7 +156,14 @@ def access_token_end(user: Optional[users_store.User], *,
         ends = None
     if ends is None:
         return None
-    return "tester", _aware(ends)
+    ends = _aware(ends)
+    if ends <= when:
+        # The window is over and nothing else entitles them (no paid access, no
+        # subscription record: both were refused above). Owner ruling 2026-10-27:
+        # they drop to a FREE member and keep their kennel, not a dead token.
+        # is_free_only agrees, so every gate reads this token as a member's.
+        return LEVEL_FREE_KIND, when + FREE_TOKEN_TTL
+    return "tester", ends
 
 
 def _free_access_end(user: users_store.User, now: datetime) -> Optional[datetime]:
@@ -175,13 +187,37 @@ def _tester_window_open(user_id: int, when: datetime) -> bool:
     return ends is not None and _aware(ends) > when
 
 
+def _ended_tester(user: users_store.User, when: datetime) -> bool:
+    """True for an invited tester whose window is OVER and whom nothing else
+    entitles: no paid access, no subscription record (a lapsed subscriber is a
+    different case, refused at sign-in), not an admin-invited beta user (plan
+    "beta"). Owner ruling 2026-10-27: such a person is a FREE member and keeps
+    their kennel. Their `plan` stays "none" (no ledger rewrite), so the level has
+    to be derived here, in the same place the "free" plan is."""
+    if user.plan == "beta":
+        return False
+    window = tester_upgrade.tester_window(user.id)
+    try:
+        ends = datetime.fromisoformat(window["expires_at"]) if window else None
+    except (TypeError, ValueError):
+        ends = None
+    if ends is None or _aware(ends) > when:
+        return False
+    if customers.has_paid_access(user.id, when):
+        return False
+    return customers.get_subscription_record(user.id) is None
+
+
 def is_free_only(user: Optional[users_store.User], *,
                  now: Optional[datetime] = None) -> bool:
-    """True for a self-serve free account that nothing entitles to the paid surface
-    right now. See the module docstring's TWO LEVELS section."""
-    if user is None or user.plan != FREE_PLAN:
+    """True for a free account that nothing entitles to the paid surface right now:
+    a self-serve plan-"free" account, or an invited tester whose window has ended.
+    See the module docstring's TWO LEVELS section."""
+    if user is None:
         return False
     when = _aware(now) if now is not None else datetime.now(timezone.utc)
+    if user.plan != FREE_PLAN:
+        return _ended_tester(user, when)
     if customers.has_paid_access(user.id, when):
         return False
     return not _tester_window_open(user.id, when)

@@ -213,15 +213,31 @@ class LoginAccessTests(_Base):
         self.assertEqual(resp["json"]["kind"], "comp")
         self.assertEqual(datetime.fromisoformat(resp["json"]["expires_at"]), comp_end)
 
-    def test_an_ended_tester_gets_a_token_that_opens_nothing_and_is_told_so(self):
+    def test_an_ended_tester_signs_in_as_a_free_member_not_locked_out(self):
+        """Owner ruling 2026-10-27: an ended tester keeps their kennel as a FREE
+        member. They get a working token, the member routes, and a 403 (never
+        paid features) on the paid board."""
         user = self.make_tester("old@example.com",
                            granted=datetime.now(timezone.utc) - timedelta(days=30))
         resp = self.login(user.email, GOOD)
         self.assertEqual(resp["status"], 200, resp["json"])
-        self.assertFalse(resp["json"]["access_active"])
-        self.assertEqual(resp["json"]["kind"], "tester")
-        self.assertIsNone(users_store.authenticate(resp["json"]["token"]))
-        self.assertEqual(self.get("/auth/password", token=resp["json"]["token"])["status"], 401)
+        self.assertTrue(resp["json"]["access_active"])
+        self.assertEqual(resp["json"]["kind"], "free")
+        token = resp["json"]["token"]
+        self.assertIsNotNone(users_store.authenticate(token))
+        self.assertEqual(self.get("/auth/password", token=token)["status"], 200)
+        self.assertEqual(access.access_level(users_store.get_user(user.id)), access.LEVEL_MEMBER)
+        paid_only = self.get("/digest", token=token)
+        self.assertEqual(paid_only["status"], 403, paid_only)
+        self.assertEqual(_detail(paid_only)["error"], "paid_access_required")
+
+    def test_an_ended_tester_who_started_a_subscription_is_not_made_free(self):
+        user = self.make_tester("old2@example.com",
+                           granted=datetime.now(timezone.utc) - timedelta(days=30))
+        customers.upsert_customer(user.id, "cus_t")
+        customers.upsert_subscription(user.id, "sub_t", "canceled", current_period_end=None)
+        resp = self.login(user.email, GOOD)
+        self.assertEqual(_detail(resp)["error"], "no_access")
 
     def test_waitlisted_suspended_lapsed_and_invited_get_a_plain_refusal_and_no_token(self):
         waitlisted = self.make_member("wait@example.com", status="waitlisted")

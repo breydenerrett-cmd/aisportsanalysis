@@ -342,3 +342,25 @@ def admin_test_message(*, to: str, unsubscribe_url: str, address: Optional[str] 
     text = "Test email\n\nThis is a test message from LINEHOUND. If you can read it, sending works and the domain is verified."
     return _finish("LINEHOUND test email", "Sending works.", body, text, unsubscribe_url=unsubscribe_url,
                    address=address, reason="This was sent from the LINEHOUND admin page.", to=to)
+
+
+# ---------------------------------------------------------------------------
+# (d) "your full access is ending" (src/appstate/access_ending.py), sent at 2 days and on the last day
+# ---------------------------------------------------------------------------
+
+def access_ending(*, to: str, days_left: int, ends_on: str, kennel_url: str, unsubscribe_url: str,
+                  price_line: str, address: Optional[str] = None) -> dict:
+    """The reminder. Same promise as the banner: the kennel stays, the paid board goes. ``price_line`` is the
+    price sentence the caller worked out from the live offer (founding while seats remain, else standard). The
+    button opens the member's kennel, where the banner's one upgrade button is: a checkout needs the signed-in
+    token, which an email link cannot carry."""
+    from src.appstate.access_ending import KEEP_LINE, LOSE_LINE
+    today = days_left <= 0
+    head = "Your full access ends today." if today else (
+        f"Your full access ends in {days_left} {'day' if days_left == 1 else 'days'} (on {_one_line(ends_on)}).")
+    pre = KEEP_LINE
+    body = (_headline(head) + _para(KEEP_LINE) + _para(LOSE_LINE) + _para(price_line)
+            + _button("Keep full access", kennel_url))
+    text = chr(10).join([head, "", KEEP_LINE, LOSE_LINE, "", price_line, "", f"Keep full access: {kennel_url}"])
+    return _finish(head.rstrip("."), pre, body, text, unsubscribe_url=unsubscribe_url, address=address,
+                   reason="You are getting this because your LINEHOUND access has an end date.", to=to)

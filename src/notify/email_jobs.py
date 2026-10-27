@@ -60,6 +60,7 @@ HOUSE_TOP_N = 3
 
 JOB_NIGHTLY = "nightly"
 JOB_SUNDAY = "sunday"
+JOB_ENDING = "ending"        # "your full access is ending" reminders, same morning window as the nightly
 
 # Addresses that can never receive mail. The example accounts (docs/EXAMPLE_ACCOUNTS.md) and test fixtures use
 # them; sending to one only bounces and costs the sending domain its reputation.
@@ -472,6 +473,63 @@ def run_sunday(ctx: Optional[Ctx] = None) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# (d) "your full access is ending"
+# ---------------------------------------------------------------------------
+
+def _ending_price_line(ctx: Ctx) -> str:
+    """The price sentence: the founding price while seats remain, else the standard price. Prices are the
+    server's (billing.founding_offer), never typed here; an unreadable offer says the standard price."""
+    try:
+        from src.appstate import billing
+        offer = billing.founding_offer(db=ctx.db) if ctx.db else billing.founding_offer()
+        f = offer.get("founding")
+        if f and f.get("available") and f.get("left", 0) > 0:
+            return (f"Founding price: ${f['price_cents'] / 100:.2f}/mo for life, {f['left']} of {f['cap']} "
+                    "seats left.")
+        return f"Membership is ${offer['standard']['price_cents'] / 100:.2f}/mo."
+    except Exception:  # noqa: BLE001 -- the reminder matters more than the price line
+        return ""
+
+
+def run_ending(ctx: Optional[Ctx] = None) -> dict:
+    """One reminder at 2 days and one on the last day to every member whose full access is ending
+    (src/appstate/access_ending.py decides who and when from the stored end date). At most once per
+    (user, kind, date) through the send log, like every other job; a paused address gets nothing."""
+    from src.appstate import access_ending as ending
+    from src.appstate import users as users_store
+    ctx = ctx or Ctx()
+    now = ctx.moment()
+    date = et_date(now)
+    counts = {"users": 0, "sent": 0, "unsubscribed": 0, "undeliverable": 0, "duplicate": 0,
+              "failed": 0, "disabled": 0, "no_bets": 0}
+    off = prefs.unsubscribed_ids(db=ctx.db)
+    price_line = None
+    for user in users_store.list_users(db=ctx.db):
+        end = ending.access_end(user, now=now)
+        if end is None:
+            continue
+        n = ending.days_until(end["ends_at"], now)
+        if n not in ending.EMAIL_DAYS:
+            continue
+        counts["users"] += 1
+        if user.id in off:
+            counts["unsubscribed"] += 1
+            continue
+        if not deliverable(user.email):
+            counts["undeliverable"] += 1
+            continue
+        if price_line is None:
+            price_line = _ending_price_line(ctx)
+        kind = mail.KIND_ENDING_TODAY if n == 0 else mail.KIND_ENDING_2D
+        message = render.access_ending(
+            to=user.email, days_left=n, ends_on=ending.day_label(end["ends_at"]),
+            kennel_url=prefs.kennel_url("ending", env=ctx.env), unsubscribe_url=ctx.unsubscribe(user.id),
+            price_line=price_line, address=ctx.postal())
+        _tally(counts, _send(ctx, message, user_id=user.id, kind=kind, date=date)["status"])
+    return _finish_run(ctx, JOB_ENDING, date, counts, now)
+
+
+# ---------------------------------------------------------------------------
 # admin test
 # ---------------------------------------------------------------------------
 
@@ -536,6 +594,7 @@ def due_jobs(now: datetime) -> list:
     jobs = []
     if NIGHTLY_HOUR <= local.hour < WINDOW_END_HOUR:
         jobs.append(JOB_NIGHTLY)
+        jobs.append(JOB_ENDING)
     if local.weekday() == SUNDAY_WEEKDAY and SUNDAY_HOUR <= local.hour < WINDOW_END_HOUR:
         jobs.append(JOB_SUNDAY)
     return jobs
@@ -557,7 +616,8 @@ def tick(ctx: Optional[Ctx] = None) -> dict:
         if job == JOB_SUNDAY and not sunday_enabled(ctx):
             out[job] = "off"
             continue
-        out[job] = run_nightly(ctx) if job == JOB_NIGHTLY else run_sunday(ctx)
+        out[job] = (run_nightly(ctx) if job == JOB_NIGHTLY
+                    else run_ending(ctx) if job == JOB_ENDING else run_sunday(ctx))
     return out
 
 
