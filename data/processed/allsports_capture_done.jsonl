@@ -7240,3 +7240,10 @@
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T12:11:53.094660Z", "regions": ["us"], "rows": 1, "sport_key": "cricket_odi", "stored": 1}
 {"events": 8, "kind": "peek", "next_check_utc": "2026-10-27T18:22:44.408571Z", "observed_utc": "2026-10-27T12:22:44.408571Z", "sport_key": "soccer_russia_premier_league"}
 {"events": 6, "kind": "peek", "next_check_utc": "2026-10-27T18:22:44.408571Z", "observed_utc": "2026-10-27T12:22:44.408571Z", "sport_key": "soccer_switzerland_superleague"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-27T18:38:06.558189Z", "observed_utc": "2026-10-27T12:38:06.558189Z", "sport_key": "soccer_uefa_nations_league"}
+{"commence_utc": "2026-10-27T13:00:00Z", "event_id": "3c6239f48e3a272aa8f7bb0ae354f14a", "kind": "phase", "observed_utc": "2026-10-27T12:38:06.558189Z", "phase": "t30m", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
+{"call_kind": "pregame", "credits": 1, "events": 12, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T12:38:06.558189Z", "regions": ["us"], "rows": 98, "sport_key": "tennis_atp_swiss_indoors", "stored": 98}
+{"commence_utc": "2026-10-27T14:30:00Z", "event_id": "0808b146b67fdb08a2bc82e84a902b1f", "kind": "phase", "observed_utc": "2026-10-27T12:38:06.558189Z", "phase": "t2h", "rows": 3, "sport_key": "cricket_international_t20"}
+{"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T12:38:06.558189Z", "regions": ["us"], "rows": 5, "sport_key": "cricket_international_t20", "stored": 3}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T12:38:06.558189Z", "regions": ["us"], "rows": 1, "sport_key": "baseball_kbo", "stored": 1}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-27T12:38:06.558189Z", "regions": ["au"], "rows": 15, "sport_key": "cricket_test_match", "stored": 13}
