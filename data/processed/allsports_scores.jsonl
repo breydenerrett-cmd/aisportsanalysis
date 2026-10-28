@@ -4205,3 +4205,4 @@
 {"away_score": 103.0, "away_team": "Sacramento Kings", "commence_time": "2026-10-28T00:15:00Z", "completed": true, "event_id": "7a640609d2c74cbbfd05008d0875455b", "home_score": 130.0, "home_team": "San Antonio Spurs", "kind": "score", "last_update": "2026-10-28T02:57:28Z", "observed_utc": "2026-10-28T02:57:38.157966+00:00", "outcome": "home", "scores": [{"name": "San Antonio Spurs", "score": "130"}, {"name": "Sacramento Kings", "score": "103"}], "sport_key": "basketball_nba"}
 {"credits": 2, "days_from": 3, "events": 36, "kind": "poll", "observed_utc": "2026-10-28T02:57:38.157966+00:00", "sport_key": "basketball_nba"}
 {"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-28T02:57:38.157966+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 29, "kind": "poll", "observed_utc": "2026-10-28T03:22:45.520640+00:00", "sport_key": "soccer_spain_copa_del_rey"}
