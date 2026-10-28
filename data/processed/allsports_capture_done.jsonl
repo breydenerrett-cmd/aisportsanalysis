@@ -8173,3 +8173,9 @@
 {"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T09:26:06.901220Z", "regions": ["us"], "rows": 47, "sport_key": "tennis_wta_pan_pacific_open", "stored": 44}
 {"commence_utc": "2026-10-29T09:30:00Z", "event_id": "16b55265442558267fb4b43d29e4950c", "kind": "phase", "observed_utc": "2026-10-28T09:37:18.442066Z", "phase": "t24h", "rows": 12, "sport_key": "baseball_kbo"}
 {"call_kind": "pregame", "credits": 3, "events": 1, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-28T09:37:18.442066Z", "regions": ["us"], "rows": 12, "sport_key": "baseball_kbo", "stored": 12}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-28T15:52:04.937005Z", "observed_utc": "2026-10-28T09:52:04.937005Z", "sport_key": "soccer_belgium_first_div"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-28T15:52:04.937005Z", "observed_utc": "2026-10-28T09:52:04.937005Z", "sport_key": "soccer_germany_bundesliga2"}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-10-28T15:52:04.937005Z", "observed_utc": "2026-10-28T09:52:04.937005Z", "sport_key": "soccer_germany_liga3"}
+{"events": 14, "kind": "peek", "next_check_utc": "2026-10-28T15:52:04.937005Z", "observed_utc": "2026-10-28T09:52:04.937005Z", "sport_key": "soccer_greece_super_league"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-28T15:52:04.937005Z", "observed_utc": "2026-10-28T09:52:04.937005Z", "sport_key": "soccer_norway_eliteserien"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-28T15:52:04.937005Z", "observed_utc": "2026-10-28T09:52:04.937005Z", "sport_key": "soccer_portugal_primeira_liga"}
