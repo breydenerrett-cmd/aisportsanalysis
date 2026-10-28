@@ -22519,3 +22519,13 @@
 {"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 85503, "credits_used_last": 2, "utc": "2026-10-28T15:16:12.350811Z"}
 {"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 85503, "credits_used_last": 0, "utc": "2026-10-28T15:16:12.350811Z"}
 {"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 85501, "credits_used_last": 2, "utc": "2026-10-28T15:16:12.350811Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 85501, "credits_used_last": 0, "utc": "2026-10-28T15:40:29.635741Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 85501, "credits_used_last": 0, "utc": "2026-10-28T15:40:32.522525Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 85501, "credits_used_last": 0, "utc": "2026-10-28T15:40:32.868373Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 85499, "credits_used_last": 2, "utc": "2026-10-28T15:41:16.170403Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 85498, "credits_used_last": 1, "utc": "2026-10-28T15:41:16.170403Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 85495, "credits_used_last": 3, "utc": "2026-10-28T15:41:16.170403Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 85493, "credits_used_last": 2, "utc": "2026-10-28T15:41:16.170403Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.inplay", "credits_remaining": 85492, "credits_used_last": 1, "utc": "2026-10-28T15:41:16.170403Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.inplay", "credits_remaining": 85491, "credits_used_last": 1, "utc": "2026-10-28T15:41:16.170403Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 85489, "credits_used_last": 2, "utc": "2026-10-28T15:41:21.076937Z"}
