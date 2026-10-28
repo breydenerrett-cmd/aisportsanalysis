@@ -44,7 +44,8 @@ BATCH_WINDOW_S = 60
 SETTLE_S = 10
 EXPIRE_S = 12 * 3600
 #: how long a short-lived kind may wait in the outbox (quiet hours, a held rate cap, a retry) before it is dropped unsent
-MAX_AGE_S = {alerts.KIND_STARTING: 20 * 60, alerts.KIND_LIVE: 30 * 60}
+#: A morning lineup held by quiet hours or a retry is dropped after 3 hours: "what we are watching today" at 2 PM is stale.
+MAX_AGE_S = {alerts.KIND_STARTING: 20 * 60, alerts.KIND_LIVE: 30 * 60, alerts.KIND_MORNING: 3 * 3600}
 #: share of the hourly cap kept free for placed / settled: a group of only starting / live events needs more room than this
 SHORT_LIVED_RESERVE = 0.25
 KEEP_DAYS = 14
@@ -200,6 +201,8 @@ def off_url(user_id: int, env=None) -> str:
 def _process(user, prefs, channel: str, *, http, env, now, paid_check, sleep, counts: dict) -> None:
     toggles = prefs.get("event_toggles") or alerts.DEFAULT_TOGGLES
     kinds = tuple(k for k in alerts.CHANNEL_KINDS.get(channel, alerts.KINDS) if toggles.get(k))
+    if prefs.get("morning_lineup", True):
+        kinds += (alerts.KIND_MORNING,)          # every channel carries the lineup; its own switch, not a bet toggle
     if not kinds:
         return
     cap = RATE_CAP_PER_HOUR.get(channel, 12)
@@ -259,6 +262,14 @@ def drain(*, now: Optional[datetime] = None, http=None, env: Optional[Mapping] =
     now = now or alerts.utcnow()
     http = http or mail.urllib_sender
     counts: dict = {}
+    try:
+        from src.notify import alert_morning
+        counts["morning_queued"] = alert_morning.run(now)       # makes the day's lineup events; the pass below sends them
+        if not counts["morning_queued"]:
+            del counts["morning_queued"]
+    except Exception as exc:  # noqa: BLE001 -- the morning note must never stop the bet alerts
+        logger.error("morning lineup pass failed: %s", type(exc).__name__)
+        counts["error"] = counts.get("error", 0) + 1
     try:
         cutoff = alerts.iso(now - timedelta(seconds=EXPIRE_S))
         with alerts.connect() as conn:

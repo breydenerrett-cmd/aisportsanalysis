@@ -59,6 +59,16 @@ KIND_STARTING = "starting"
 KIND_LIVE = "live"
 KIND_SETTLED = "settled"
 KINDS = (KIND_PLACED, KIND_STARTING, KIND_LIVE, KIND_SETTLED)
+#: The fifth thing a member can be told (owner, 2026-10-28): "what your hounds are watching today", once per local day.
+#: It is NOT one of the four bet toggles above (those mean "a bet happened"); it has its own switch, ``morning_lineup``,
+#: on for every member who has an alerts row. Every channel carries it, email included: a morning note is not time-critical.
+KIND_MORNING = "morning"
+#: the local hour the lineup goes out, and the last hour it still may (a server that was down all morning sends nothing at 4 PM).
+MORNING_HOUR = 9
+MORNING_LATEST_HOUR = 12
+#: when a member's saved zone is missing or unknown the morning clock is Pacific (owner: "default Pacific"). The stored
+#: column default stays Eastern because every other alert reads it.
+MORNING_FALLBACK_TZ = "America/Los_Angeles"
 
 #: The legacy single "which events" choice (the page used to offer exactly these). It is still accepted on a PUT and still
 #: reported, derived from the placed / settled toggles ("none" when both are off).
@@ -122,6 +132,7 @@ def _ensure_schema(conn) -> None:
         UNIQUE(user_id, kind, bet_id))""")
     conn.execute("CREATE INDEX IF NOT EXISTS alert_events_user ON alert_events(user_id, id)")
     _migrate_event_toggles(conn)
+    _migrate_morning(conn)
     conn.execute("""CREATE TABLE IF NOT EXISTS alert_live_state (
         bet_id TEXT PRIMARY KEY, user_id INTEGER NOT NULL, side TEXT, updated_utc TEXT NOT NULL)""")
     conn.execute("""CREATE TABLE IF NOT EXISTS alert_deliveries (
@@ -147,6 +158,16 @@ def _migrate_event_toggles(conn) -> None:
     if "event_toggles" not in columns:
         try:
             conn.execute("ALTER TABLE alert_prefs ADD COLUMN event_toggles TEXT")
+        except Exception:  # noqa: BLE001 -- another process added it first
+            pass
+
+
+def _migrate_morning(conn) -> None:
+    """``morning_lineup``: NULL (every member before 2026-10-28) means ON, so existing members get the morning note."""
+    columns = {r[1] for r in conn.execute("PRAGMA table_info(alert_prefs)").fetchall()}
+    if "morning_lineup" not in columns:
+        try:
+            conn.execute("ALTER TABLE alert_prefs ADD COLUMN morning_lineup INTEGER")
         except Exception:  # noqa: BLE001 -- another process added it first
             pass
 
@@ -183,6 +204,9 @@ def _migrate_feed_hash(conn) -> None:
                             "AND feed_token IS NOT NULL").fetchall():
         conn.execute("UPDATE alert_prefs SET feed_hash = ? WHERE user_id = ? AND feed_hash IS NULL",
                      (_hash_token(row[1]), row[0]))
+    # Only the hash is kept (owner, 2026-10-28: the link is shown ONCE, a reset makes a new one). A plaintext token left by an
+    # older build is dropped here; its link keeps working through the hash, it just can no longer be re-displayed.
+    conn.execute("UPDATE alert_prefs SET feed_token = NULL WHERE feed_token IS NOT NULL AND feed_hash IS NOT NULL")
 
 
 def short_waits(ms: int):
@@ -245,8 +269,14 @@ def _row_prefs(row) -> dict:
         toggles = toggles_from_events(row["events"])
     return {"user_id": row["user_id"], "channels": {n: bool(channels.get(n)) for n in CHANNEL_NAMES},
             "events": events_label(toggles), "event_toggles": toggles, "quiet_start": row["quiet_start"], "quiet_end": row["quiet_end"],
-            "tz": row["tz"], "feed_token": row["feed_token"], "phone": row["phone"],
+            "tz": row["tz"], "feed_set": bool(row["feed_hash"]), "phone": row["phone"],
+            "morning_lineup": _morning_on(row),
             "sms_consent_utc": row["sms_consent_utc"], "sms_stopped": bool(row["sms_stopped"])}
+
+
+def _morning_on(row) -> bool:
+    value = row["morning_lineup"] if "morning_lineup" in row.keys() else None
+    return True if value is None else bool(value)
 
 
 def get_prefs(user_id: int) -> Optional[dict]:
@@ -257,12 +287,11 @@ def get_prefs(user_id: int) -> Optional[dict]:
 
 
 def ensure_prefs(user_id: int, *, now: Optional[datetime] = None) -> dict:
-    """Create the all-off row (with its secret RSS token) the first time, then return it."""
+    """Create the all-off row the first time, then return it. It has NO feed link: ``rotate_feed_token`` makes one."""
     stamp = iso(now or utcnow())
     with _lock, connect() as conn:
-        fresh = secrets.token_urlsafe(24)
-        conn.execute("INSERT OR IGNORE INTO alert_prefs (user_id, feed_token, feed_hash, created_utc, updated_utc) "
-                     "VALUES (?, ?, ?, ?, ?)", (int(user_id), fresh, _hash_token(fresh), stamp, stamp))
+        conn.execute("INSERT OR IGNORE INTO alert_prefs (user_id, created_utc, updated_utc) VALUES (?, ?, ?)",
+                     (int(user_id), stamp, stamp))
         row = conn.execute("SELECT * FROM alert_prefs WHERE user_id = ?", (int(user_id),)).fetchone()
     return _row_prefs(row)
 
@@ -295,6 +324,9 @@ def zone(name: str):
         if name == DEFAULT_TZ:
             from src.data.eastern import EASTERN_FALLBACK
             return EASTERN_FALLBACK
+        if name == MORNING_FALLBACK_TZ:
+            from src.notify.pacific_fallback import PACIFIC_FALLBACK
+            return PACIFIC_FALLBACK
         return None
 
 
@@ -340,11 +372,16 @@ def update_prefs(user_id: int, patch: Mapping, *, now: Optional[datetime] = None
     tz = str(patch.get("tz") or current["tz"] or DEFAULT_TZ)
     if not _zone_ok(tz):
         raise AlertError("tz_invalid", "unknown time zone")
+    morning = current["morning_lineup"]
+    if "morning_lineup" in patch:
+        if not isinstance(patch["morning_lineup"], bool):
+            raise AlertError("morning_invalid", "the morning lineup is on or off")
+        morning = patch["morning_lineup"]
     with _lock, connect() as conn:
         conn.execute("UPDATE alert_prefs SET channels_json = ?, events = ?, event_toggles = ?, quiet_start = ?, "
-                     "quiet_end = ?, tz = ?, updated_utc = ? WHERE user_id = ?",
+                     "quiet_end = ?, tz = ?, morning_lineup = ?, updated_utc = ? WHERE user_id = ?",
                      (json.dumps(channels, sort_keys=True), events, json.dumps(toggles, sort_keys=True), start, end, tz,
-                      iso(now or utcnow()), int(user_id)))
+                      int(morning), iso(now or utcnow()), int(user_id)))
     return get_prefs(user_id) or current
 
 
@@ -522,11 +559,13 @@ def sms_stop(phone: str, *, now: Optional[datetime] = None) -> int:
 
 
 def rotate_feed_token(user_id: int, *, now: Optional[datetime] = None) -> str:
+    """Make (or replace) the member's private feed secret and return it. THE ONLY TIME IT EXISTS IN THE CLEAR: the store
+    keeps its SHA-256 only, so the caller must show it now. The previous secret stops working at once."""
     ensure_prefs(user_id, now=now)
     token = secrets.token_urlsafe(24)
     with _lock, connect() as conn:
-        conn.execute("UPDATE alert_prefs SET feed_token = ?, feed_hash = ?, updated_utc = ? WHERE user_id = ?",
-                     (token, _hash_token(token), iso(now or utcnow()), int(user_id)))
+        conn.execute("UPDATE alert_prefs SET feed_token = NULL, feed_hash = ?, updated_utc = ? WHERE user_id = ?",
+                     (_hash_token(token), iso(now or utcnow()), int(user_id)))
     return token
 
 
@@ -535,10 +574,10 @@ def user_for_feed_token(token: Any) -> Optional[int]:
     text = str(token or "")
     if len(text) < 20 or len(text) > 80:
         return None
+    probe = _hash_token(text)
     with connect() as conn:
-        row = conn.execute("SELECT user_id, feed_token FROM alert_prefs WHERE feed_hash = ?",
-                           (_hash_token(text),)).fetchone()
-    if row is None or not hmac.compare_digest(str(row["feed_token"] or "").encode(), text.encode()):
+        row = conn.execute("SELECT user_id, feed_hash FROM alert_prefs WHERE feed_hash = ?", (probe,)).fetchone()
+    if row is None or not hmac.compare_digest(str(row["feed_hash"] or "").encode(), probe.encode()):
         return None
     return int(row["user_id"])
 
@@ -863,6 +902,24 @@ def emit_live(row: Mapping, moment: str, snapshot: Mapping, *, now: Optional[dat
             (int(owner), KIND_LIVE, str(row["hound_id"]), live_key(bet, moment), json.dumps(dict(payload), sort_keys=True),
              iso(now or utcnow()), int(owner), KIND_LIVE, prefix, prefix + "􏿿", room))
         return cur.rowcount > 0
+
+
+def morning_key(day: str) -> str:
+    return f"morning:{day}"
+
+
+def emit_morning(user_id: int, day: str, lines: List[str], *, hound_id: str, hound_name: str,
+                 now: Optional[datetime] = None) -> bool:
+    """The member's "what your hounds are watching today" event. The key is the member's LOCAL date, so the UNIQUE row is
+    what makes it once per member per day, however many ticks or machines look. True when a new row was written."""
+    payload = {"hound_name": hound_name, "hound_id": hound_id, "day": day, "lines": [str(x) for x in lines]}
+    return _insert_event(int(user_id), KIND_MORNING, hound_id, morning_key(day), payload, now or utcnow())
+
+
+def morning_sent(user_id: int, day: str) -> bool:
+    with connect() as conn:
+        return conn.execute("SELECT 1 FROM alert_events WHERE user_id = ? AND kind = ? AND bet_id = ?",
+                            (int(user_id), KIND_MORNING, morning_key(day))).fetchone() is not None
 
 
 def events_for(user_id: int, *, limit: int = 50) -> List[dict]:

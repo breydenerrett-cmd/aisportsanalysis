@@ -60,10 +60,10 @@ The SID and token are on the Console home page (https://www.twilio.com/console) 
 
 ### Free alternative for you and Jacob only (no Twilio, no 10DLC)
 
-Zapier's **SMS by Zapier** texts a number you verify yourself. Each of you has a private RSS address of your own bet events: Account -> Alerts -> **Private feed of your bet alerts**. Then at https://zapier.com/app/zaps -> **Create**:
+Zapier's **SMS by Zapier** texts a number you verify yourself. Each of you has a private RSS address of your own bet events: Account -> Alerts -> **Private alert feed** (**Make my feed link**; shown once; paid members only). Full steps: `docs/owner/TEXT_ALERTS.md`. Then at https://zapier.com/app/zaps -> **Create**:
 1. Trigger: **RSS by Zapier** -> **New Item in Feed** -> paste your private feed address.
 2. Action: **SMS by Zapier** -> **Send SMS** -> **To** your verified number (Zapier asks you to verify it by code), **Message** = the item's **Description** field (it is already a one-line alert, paper and 21+ included).
-3. **Publish**. Zapier polls every 1 to 15 minutes depending on your plan, so this is slower than the push or email alert and each text spends a Zap task (the free plan has 100 tasks a month). Treat the feed address like a password: **Make a new private address** on the same screen revokes the old one.
+3. **Publish**. Zapier polls every 1 to 15 minutes depending on your plan, so this is slower than the push or email alert and each text spends a Zap task (the free plan has 100 tasks a month). Treat the feed address like a password: **Reset link** on the same screen revokes the old one.
 
 ## 3. What the alerts do (so you can explain them)
 

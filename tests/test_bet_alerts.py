@@ -565,29 +565,32 @@ class Api(Base):
         super().setUp()
         from api import alerts_routes
         self.api = alerts_routes
+        patch = mock.patch.object(alerts_routes, "_is_paid", lambda user: True)      # the feed is a paid-member feature
+        patch.start()
+        self.addCleanup(patch.stop)
 
     def test_the_feed_answers_only_to_the_members_secret_token(self):
         from fastapi import HTTPException, Response
         user, hound = self.member()
         other, _ = self.member(email="other.person@sample-mail.net", name="Rival")
         alerts.emit_placed(self.bet_row(hound), now=at(0))
-        token = alerts.get_prefs(user.id)["feed_token"]
+        token = alerts.rotate_feed_token(user.id)
         body = self.api.feed(token, _rl=None).body.decode()
         self.assertIn("<rss", body)
         self.assertIn("just bet: Boston Red Sox ML +110", body)
         self.assertIn("<guid isPermaLink=\"false\">alert-", body)
         self.assertNotIn(f"alert-{user.id}-", body)          # the item id is opaque: no member id, no global counter
-        for bad in ("", "short", "x" * 32, alerts.get_prefs(other.id)["feed_token"][:-1] + "A"):
+        for bad in ("", "short", "x" * 32, alerts.rotate_feed_token(other.id)[:-1] + "A"):
             with self.assertRaises(HTTPException) as ctx:
                 self.api.feed(bad, _rl=None)
             self.assertEqual(ctx.exception.status_code, 404)
-        other_body = self.api.feed(alerts.get_prefs(other.id)["feed_token"], _rl=None).body.decode()
+        other_body = self.api.feed(alerts.rotate_feed_token(other.id), _rl=None).body.decode()
         self.assertNotIn("Boston Red Sox", other_body)
 
     def test_rotating_the_token_revokes_the_old_address(self):
         from fastapi import HTTPException, Response
         user, _ = self.member()
-        old = alerts.get_prefs(user.id)["feed_token"]
+        old = alerts.rotate_feed_token(user.id)
         new = alerts.rotate_feed_token(user.id)
         self.assertNotEqual(old, new)
         with self.assertRaises(HTTPException):
@@ -882,14 +885,19 @@ class CheckerRound(Base):
         alerts.add_push_subscription(user.id, "https://fcm.googleapis.com/fcm/send/0", key, auth)   # a re-save is fine
 
     # -- the secret feed ---------------------------------------------------------------------------------------------
-    def test_the_feed_token_is_looked_up_by_hash_and_an_old_row_is_migrated(self):
+    def test_the_feed_token_is_stored_as_a_hash_only_and_an_old_row_is_migrated(self):
         user, _ = self.member()
-        token = alerts.get_prefs(user.id)["feed_token"]
+        token = alerts.rotate_feed_token(user.id)
         self.assertEqual(alerts.user_for_feed_token(token), user.id)
-        with alerts.connect() as conn:                       # the plain token is not what the lookup index holds
-            self.assertNotEqual(conn.execute("SELECT feed_hash FROM alert_prefs WHERE user_id = ?", (user.id,)).fetchone()[0], token)
-            conn.execute("UPDATE alert_prefs SET feed_hash = NULL")      # a row written before the column existed
-        self.assertEqual(alerts.user_for_feed_token(token), user.id)     # the next connect backfills it
+        with alerts.connect() as conn:                       # the clear token is nowhere in the row
+            row = conn.execute("SELECT * FROM alert_prefs WHERE user_id = ?", (user.id,)).fetchone()
+            self.assertNotIn(token, [str(v) for v in tuple(row)])
+            self.assertIsNone(row["feed_token"])
+            # a row an older build wrote: the clear token and no hash
+            conn.execute("UPDATE alert_prefs SET feed_hash = NULL, feed_token = ?", (token,))
+        self.assertEqual(alerts.user_for_feed_token(token), user.id)     # the next connect backfills the hash ...
+        with alerts.connect() as conn:                                   # ... and drops the clear copy
+            self.assertIsNone(conn.execute("SELECT feed_token FROM alert_prefs").fetchone()[0])
         self.assertIsNone(alerts.user_for_feed_token(token[:-1] + ("A" if token[-1] != "A" else "B")))
 
     @unittest.skipUnless(HAS_FASTAPI, "needs FastAPI")
@@ -897,7 +905,7 @@ class CheckerRound(Base):
         import logging
         from api import alerts_routes as api  # noqa: F401 -- importing it installs the filter
         user, _ = self.member()
-        token = alerts.get_prefs(user.id)["feed_token"]
+        token = alerts.rotate_feed_token(user.id)
         record = logging.LogRecord("uvicorn.access", logging.INFO, __file__, 1, '%s - "%s %s HTTP/%s" %d',
                                    ("1.2.3.4:5", "GET", f"/alerts/feed/{token}.xml", "1.1", 200), None)
         for f in logging.getLogger("uvicorn.access").filters:

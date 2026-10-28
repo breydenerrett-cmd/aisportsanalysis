@@ -22,8 +22,27 @@ const EVENT_ROWS = [
   ["settled", "Bet settled", "When a bet is graded."],
 ];
 
+/** The morning lineup has its own switch (not a bet alert): the server sends it once a day, at 9 AM in the member's zone. */
+const MORNING_NOTE = "A short note at 9 AM about the games your running hounds are watching today. Skipped on a day none of them has a game.";
+
 const SW_URL = "/web/alerts-sw.js";
 const SW_SCOPE = "/web/";
+
+/**
+ * The morning lineup and the quiet hours run on the member's own clock, and nothing else ever asked for it, so every member sat on
+ * the server's Eastern default. The first time this page opens in a browser it sends that browser's zone once (remembered in
+ * localStorage so a later choice is never overwritten). A refusal (an unknown zone) changes nothing.
+ */
+async function adoptBrowserZone(state) {
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!zone || zone === state.tz || localStorage.getItem("alerts-tz-adopted")) return state;
+    localStorage.setItem("alerts-tz-adopted", "1");
+    return await apiFetch("/me/alerts", { method: "PUT", body: JSON.stringify({ tz: zone }) });
+  } catch (err) {
+    return state;
+  }
+}
 
 function say(node, text, bad = false) {
   node.textContent = text;
@@ -215,6 +234,14 @@ export function alertsPanel() {
     box.appendChild(el("p", { class: "signin__body", text: "Send me an alert when:" }));
     const toggles = state.event_toggles || {};
     const carried = state.event_channels || {};
+    const morning = el("div", { class: "alerts__row", "data-hook": "alerts-morning" });
+    const mInput = el("input", { type: "checkbox", id: "alerts-morning", "data-hook": "alerts-morning-toggle" });
+    mInput.checked = state.morning_lineup !== false;
+    mInput.addEventListener("change", () => save({ morning_lineup: mInput.checked }));
+    morning.appendChild(el("label", { for: "alerts-morning", text: "Morning lineup" }));
+    morning.appendChild(mInput);
+    morning.appendChild(el("span", { class: "alerts__note", text: MORNING_NOTE }));
+    box.appendChild(morning);
     for (const [kind, label, note] of EVENT_ROWS) {
       const row = el("div", { class: "alerts__row", "data-hook": `alerts-event-${kind}` });
       const input = el("input", { type: "checkbox", id: `alerts-event-${kind}`, "data-hook": `alerts-event-${kind}-toggle` });
@@ -227,6 +254,46 @@ export function alertsPanel() {
       box.appendChild(row);
     }
     return box;
+  }
+
+  /**
+   * The private feed (for Zapier "RSS" -> "SMS by Zapier" until texts are live). The server keeps only a hash of the link,
+   * so a link can be shown exactly once: right after it is made. After that the page can only make a new one (which stops
+   * the old). Free accounts see why it is not there.
+   */
+  let freshFeedUrl = "";
+  function feedBlock() {
+    const feedState = state.feed || {};
+    const wrap = el("div", { class: "alerts__row", "data-hook": "alerts-feed" });
+    wrap.appendChild(el("label", { text: "Private alert feed (for Zapier or a feed reader). It lists the morning lineup and each bet your hounds decide. Anyone with the link can read it." }));
+    if (!feedState.allowed) {
+      wrap.appendChild(el("span", { class: "alerts__note", "data-hook": "alerts-feed-paid", text: "The private text feed is part of the member plan. Email and browser notifications are free." }));
+      return wrap;
+    }
+    if (freshFeedUrl) {
+      const box = el("input", { type: "text", readonly: "readonly", value: freshFeedUrl, "data-hook": "alerts-feed-url", "aria-label": "Your private alert feed link" });
+      const copy = el("button", { type: "button", class: "btn btn--primary", "data-hook": "alerts-feed-copy", text: "Copy feed link" });
+      copy.addEventListener("click", async () => {
+        try { await navigator.clipboard.writeText(freshFeedUrl); say(status, "Feed link copied."); } catch (err) { box.select(); say(status, "Select the link and copy it.", true); }
+      });
+      wrap.appendChild(box);
+      wrap.appendChild(copy);
+      wrap.appendChild(el("span", { class: "alerts__note", text: "This is the only time the link is shown. Copy it now." }));
+    } else if (feedState.set) {
+      wrap.appendChild(el("span", { class: "alerts__note", "data-hook": "alerts-feed-set", text: "Your feed link is set. It is not shown again." }));
+    }
+    const rotate = el("button", { type: "button", class: "btn btn--ghost", "data-hook": "alerts-feed-reset", text: feedState.set ? "Reset link" : "Make my feed link" });
+    rotate.addEventListener("click", async () => {
+      try {
+        const answer = await apiPost("/me/alerts/feed/rotate", {});
+        freshFeedUrl = String(answer.feed_url_once || "");
+        state = answer;
+        say(status, feedState.set ? "New link made. The old one stopped working." : "Feed link made. Copy it now.");
+      } catch (err) { say(status, errorText(err), true); }
+      render();
+    });
+    wrap.appendChild(rotate);
+    return wrap;
   }
 
   function hourSelect(value, onChange, label) {
@@ -257,20 +324,14 @@ export function alertsPanel() {
     }
     body.appendChild(el("div", { class: "alerts__row", "data-hook": "alerts-quiet" },
       [el("label", { text: "Quiet hours (nothing sent between)" }), qs, el("span", { text: "and" }), qe]));
-    const feed = el("input", { type: "text", readonly: "readonly", value: state.feed_url, "data-hook": "alerts-feed-url", "aria-label": "Your private alert feed" });
-    const rotate = el("button", { type: "button", class: "btn btn--ghost", text: "Make a new private address" });
-    rotate.addEventListener("click", async () => {
-      try { state = await apiPost("/me/alerts/feed/rotate", {}); say(status, "New address made. The old one stopped working."); } catch (err) { say(status, errorText(err), true); }
-      render();
-    });
-    body.appendChild(el("div", { class: "alerts__row", "data-hook": "alerts-feed" }, [
-      el("label", { text: "Private feed of your bet alerts (for Zapier or a feed reader). Anyone with this address can read it." }), feed, rotate]));
+    body.appendChild(feedBlock());
     body.appendChild(el("p", { class: "signin__body", text: "21+ · Paper bets only, not advice · 1-800-GAMBLER" }));
   }
 
   (async () => {
     try {
       state = await apiFetch("/me/alerts", { method: "GET" });
+      state = await adoptBrowserZone(state);
     } catch (err) {
       say(status, errorText(err), true);
     }

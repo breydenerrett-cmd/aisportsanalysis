@@ -2,7 +2,7 @@
 
     GET  /me/alerts                     signed in. Status of every channel, the member's switches, quiet hours, feed URL.
     PUT  /me/alerts                     signed in. {channels:{email,push,sms,native}, event_toggles:{placed,starting,live,
-                                        settled}, events (legacy), quiet_start, quiet_end, tz}.
+                                        settled}, events (legacy), morning_lineup, quiet_start, quiet_end, tz}.
     POST /me/alerts/test                signed in. {channel}: one sample alert, now.
     POST /me/alerts/push                signed in. {endpoint, keys:{p256dh, auth}}: save this browser's push subscription.
     POST /me/alerts/push/remove         signed in. {endpoint}.
@@ -11,9 +11,12 @@
     POST /me/alerts/sms/verify          signed in, PAID members only. {code}: the number is stored only when the code
                                         texted to it is typed back (a member cannot make LINEHOUND text a stranger).
     POST /me/alerts/sms/remove          signed in. Forget the number.
-    POST /me/alerts/feed/rotate         signed in. A new secret RSS address (the old one stops working).
+    POST /me/alerts/feed/rotate         signed in, PAID members only. A new private feed address (the old one stops working).
+                                        The answer carries it as ``feed_url_once``: the store keeps only a hash, so this is
+                                        the one time it can be shown.
     POST /me/alerts/device              signed in. {platform, token, app_version}: the native apps register here (stub channel).
-    GET  /alerts/feed/{token}.xml       PUBLIC by secret token. The member's bet events as RSS (for Zapier "SMS by Zapier").
+    GET  /alerts/feed/{token}.xml       PUBLIC by secret token, PAID members only. The member's alert events (the morning
+                                        lineup and each bet) as RSS, worded like the text (Zapier "RSS" -> "SMS by Zapier").
     GET|POST /alerts/off?t=             PUBLIC signed link from every alert email: turns EMAIL alerts off in one click.
     POST /alerts/sms/inbound            PUBLIC, Twilio-signed. STOP (and friends) switches the number off for good.
 
@@ -63,6 +66,10 @@ _sms_code_limiter = ratelimit.FixedWindowLimiter(limit=10, window_s=3600.0)
 _rl_sms_code = ratelimit.limiter_dependency(_sms_code_limiter, user_dependency=get_current_user)
 _public_limiter = ratelimit.FixedWindowLimiter(limit=60, window_s=60.0)
 _rl_public = ratelimit.limiter_dependency(_public_limiter)
+#: The feed has its own, tighter limit per client address: Zapier polls every 1 to 15 minutes, a guesser polls as fast as it
+#: can. Bad secrets are counted with good ones, so guessing is slow whichever way it goes.
+_feed_limiter = ratelimit.FixedWindowLimiter(limit=30, window_s=60.0)
+_rl_feed = ratelimit.limiter_dependency(_feed_limiter)
 
 STOP_WORDS = ("STOP", "STOPALL", "UNSUBSCRIBE", "CANCEL", "END", "QUIT")
 START_WORDS = ("START", "YES", "UNSTOP")
@@ -90,6 +97,7 @@ class _HideFeedToken(logging.Filter):
 logging.getLogger("uvicorn.access").addFilter(_HideFeedToken())
 
 SMS_PAID_MESSAGE = "Text alerts are part of the member plan. Email and browser notifications are free."
+FEED_PAID_MESSAGE = "The private text feed is part of the member plan. Email and browser notifications are free."
 FEED_ITEMS = 50
 
 
@@ -107,6 +115,7 @@ def _is_paid(user) -> bool:
 
 
 def _feed_url(token: str) -> str:
+    """The address for a secret that was just made. Never called with a stored value: only a hash is stored."""
     return f"{prefs_mod.base_url()}/alerts/feed/{token}.xml"
 
 
@@ -138,7 +147,8 @@ def _payload(user) -> dict:
         channels.append(entry)
     return {"channels": channels, "events": prefs["events"], "event_toggles": prefs["event_toggles"],
             "event_channels": {k: list(v) for k, v in _kind_channels().items()}, "quiet_start": prefs["quiet_start"],
-            "quiet_end": prefs["quiet_end"], "tz": prefs["tz"], "feed_url": _feed_url(prefs["feed_token"]),
+            "quiet_end": prefs["quiet_end"], "tz": prefs["tz"], "morning_lineup": prefs["morning_lineup"],
+            "morning_hour": alerts.MORNING_HOUR, "feed": {"allowed": paid, "set": prefs["feed_set"]},
             "sizing": unit_size.get(user.id).as_dict(), "paper_only": True,
             "ios_note": "On iPhone, add LINEHOUND to your Home Screen first (Share, then Add to Home Screen), "
                         "then turn notifications on from the app icon."}
@@ -162,6 +172,7 @@ class AlertsRequest(BaseModel):
     quiet_start: Optional[Any] = None
     quiet_end: Optional[Any] = None
     tz: Optional[Any] = None
+    morning_lineup: Optional[Any] = None
 
 
 @router.put("/me/alerts")
@@ -174,7 +185,7 @@ def put_alerts(body: AlertsRequest, response: Response, current_user: users_stor
         if body.channels.get("sms") and not _is_paid(current_user):
             raise HTTPException(status_code=402, detail={"error": "upgrade_required", "feature": "sms_alerts",
                                                          "message": SMS_PAID_MESSAGE})
-    for key in ("events", "event_toggles", "quiet_start", "quiet_end", "tz"):
+    for key in ("events", "event_toggles", "morning_lineup", "quiet_start", "quiet_end", "tz"):
         if key in body.model_fields_set:
             patch[key] = getattr(body, key)
     try:
@@ -284,8 +295,13 @@ def sms_remove(response: Response, current_user: users_store.User = Depends(get_
 def rotate_feed(response: Response, current_user: users_store.User = Depends(get_current_user),
                 _rl: None = Depends(_rl_write)) -> dict:
     response.headers["Cache-Control"] = "no-store"
-    alerts.rotate_feed_token(current_user.id)
-    return envelope(_payload(current_user))
+    if not _is_paid(current_user):
+        raise HTTPException(status_code=402, detail={"error": "upgrade_required", "feature": "alert_feed",
+                                                     "message": FEED_PAID_MESSAGE})
+    token = alerts.rotate_feed_token(current_user.id)
+    out = _payload(current_user)
+    out["feed_url_once"] = _feed_url(token)
+    return envelope(out)
 
 
 class DeviceRequest(BaseModel):
@@ -311,13 +327,16 @@ def register_device(body: DeviceRequest, response: Response, current_user: users
 # ---------------------------------------------------------------------------
 
 @router.get("/alerts/feed/{token}.xml")
-def feed(token: str, _rl: None = Depends(_rl_public)) -> Response:
-    """The member's bet events as RSS. The token in the path IS the credential (192 random bits); an unknown token is
-    a plain 404 that says nothing about which tokens exist."""
+def feed(token: str, _rl: None = Depends(_rl_feed)) -> Response:
+    """The member's alert events as RSS. The secret in the path IS the credential (192 random bits, stored as a hash). An
+    unknown, replaced or oversized secret, and the secret of a member who is not on the paid plan, all get the same plain
+    404, which says nothing about which secrets exist. Each item's text is what the SMS channel would send."""
     user_id = alerts.user_for_feed_token(token)
-    if user_id is None:
+    user = users_store.get_user(user_id) if user_id is not None else None
+    if user is None or getattr(user, "status", "") == "suspended" or not _is_paid(user):
         raise HTTPException(status_code=404, detail="not found")
     prefs = alerts.get_prefs(user_id)
+    tz = prefs["tz"] if prefs else alerts.DEFAULT_TZ
     sizing = unit_size.get(user_id)
     items = []
     for event in alerts.events_for(user_id, limit=FEED_ITEMS):
@@ -325,10 +344,9 @@ def feed(token: str, _rl: None = Depends(_rl_public)) -> Response:
         p = event["payload"]
         items.append({"title": render.subject([event]), "link": render.hound_link(p["hound_id"]),
                       "guid": "alert-" + hashlib.sha256(f"{user_id}:{event['id']}".encode()).hexdigest()[:20], "pub": pub,
-                      "description": render.event_line(event, sizing, prefs["tz"] if prefs else alerts.DEFAULT_TZ)
-                      + ". Paper bet. 21+. 1-800-GAMBLER."})
-    xml = rss.render(title="LINEHOUND bet alerts", link=prefs_mod.base_url() + "/web/",
-                     description="Bets your hounds placed, are about to play, are playing and settled. Paper only.", items=items,
+                      "description": render.feed_text(event, sizing, tz)})
+    xml = rss.render(title="LINEHOUND alerts", link=prefs_mod.base_url() + "/web/",
+                     description="What your hounds are watching today and the bets they decide. Paper only, 21+.", items=items,
                      self_url=_feed_url(token))
     return Response(content=xml, media_type=rss.CONTENT_TYPE,
                     headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex"})

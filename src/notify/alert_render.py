@@ -158,9 +158,18 @@ def result_word(result: str) -> str:
     return {"win": "won", "loss": "lost", "push": "pushed"}.get(result, str(result))
 
 
+def morning_line(p: Mapping) -> str:
+    """The morning lineup as one run of text: each hound's sentence ("Chalk Chihuahua: watching 4 NHL games (moneyline).
+    Decides by 4:10 PM PT.") in the order alert_morning.py built them. It reports what the hounds are looking at; it never
+    says a game is worth a bet."""
+    return " ".join(er._one_line(x) for x in (p.get("lines") or []))
+
+
 def event_line(event: Mapping, sizing, tz: str = "America/New_York") -> str:
     """One plain line for one event, used by every channel."""
     p = event["payload"]
+    if event["kind"] == "morning":
+        return morning_line(p)
     pick = pick_text(p)
     if event["kind"] == "starting":
         return f"{p['hound_name']}'s {pick} {start_phrase(p)} · stake {dollars(p.get('stake_units'), sizing)}"
@@ -180,6 +189,9 @@ def subject(events: Sequence[Mapping]) -> str:
     first = events[0]
     p = first["payload"]
     if len(events) == 1:
+        if first["kind"] == "morning":
+            n = len(p.get("lines") or [])
+            return "What your hound is watching today" if n == 1 else "What your hounds are watching today"
         if first["kind"] == "placed":
             return er._one_line(f"{p['hound_name']} just bet: {pick_text(p)}")
         if first["kind"] == "starting":
@@ -190,6 +202,8 @@ def subject(events: Sequence[Mapping]) -> str:
     names = sorted({e["payload"]["hound_name"] for e in events})
     who = names[0] if len(names) == 1 else f"{len(names)} hounds"
     kinds = {e["kind"] for e in events}
+    if "morning" in kinds:
+        return "Your hounds today and new bet updates"
     if kinds == {"starting"}:
         return er._one_line(f"{who}: {len(events)} bets start soon")
     if kinds == {"live"}:
@@ -290,6 +304,14 @@ def sms_text(events: Sequence[Mapping], sizing, tz: str, env=None) -> str:
     if len(legacy) <= SMS_ONE_SEGMENT:
         return legacy
     return _fit_one_segment(all_lines[:3], len(events), link) or legacy
+
+
+def feed_text(event: Mapping, sizing, tz: str, env=None) -> str:
+    """What the private RSS item says: exactly the text the SMS channel would send for this event, minus the trailing
+    "Reply STOP" line. That line is a promise only a carrier-registered number can keep; the feed is read by Zapier's
+    "SMS by Zapier" on the member's own phone, where STOP does nothing."""
+    text = sms_text([event], sizing, tz, env)
+    return text[: -len(SMS_STOP)].rstrip() if text.endswith(SMS_STOP) else text
 
 
 def sample_message(*, to: str, off_url: str, settings_url: str, address: Optional[str] = None) -> dict:

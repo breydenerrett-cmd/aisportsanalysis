@@ -658,6 +658,9 @@ class AccountAlertsRoute(LiveAlertBase):
         super().setUp()
         from api import alerts_routes
         self.api = alerts_routes
+        patch = mock.patch.object(alerts_routes, "_is_paid", lambda user: True)      # the feed is a paid-member feature
+        patch.start()
+        self.addCleanup(patch.stop)
 
     def put(self, user, **body):
         from fastapi import Response
@@ -695,7 +698,7 @@ class AccountAlertsRoute(LiveAlertBase):
         user, hound = self.member()
         alerts.emit_starting({**self.ticket(hound), "kind": "hound_user_bet", "commence_time": ls.iso(START)},
                              minutes_out=14, now=at(0))
-        body = self.api.feed(alerts.get_prefs(user.id)["feed_token"], _rl=None).body.decode()
+        body = self.api.feed(alerts.rotate_feed_token(user.id), _rl=None).body.decode()
         self.assertIn("tips off in 14 min", body)
 
 
