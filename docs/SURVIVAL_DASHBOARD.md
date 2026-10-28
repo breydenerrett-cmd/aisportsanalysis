@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-27 15:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-27 20:45Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-27 (8:30 am PT run): World Series Game 3 (Brewers at Rays) and Monday night (Cowboys at Eagles) briefs both graded; every call in each was a pass.
-- Public sample now shows the graded World Series Game 3 brief.
-- World Series Game 4 (Brewers at Rays, 5:00 pm PT) brief is due in the 1:30 pm PT run.
+- 2026-10-27 (1:30 pm PT run): World Series Game 4 (Brewers at Rays, 5:00 pm PT) brief published at 1:45 pm PT; every call is a pass, one marked could not be verified.
+- The writer took all three attempts (checker rejections: a banned word, an unsourced number, a summary number); the third was published with one struck pass.
+- Public sample stays on the graded World Series Game 3 brief until Game 4 is graded.
 - Working-branch tests green; the scheduled daily loop on the default branch: newest run cancelled, the one before failed.
 - Public MLB value picks remain paused. Sends 0, replies 0, testers 0.
 

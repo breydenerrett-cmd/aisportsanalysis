@@ -1,0 +1,33 @@
+{
+  "game_id": "MIL-TB-2026-10-27-1",
+  "date": "2026-10-27",
+  "away": "MIL",
+  "home": "TB",
+  "first_pitch_utc": "2026-10-28T00:00:00Z",
+  "built_at": "2026-10-27T20:42:08Z",
+  "packet_hash": "c3d74be0058e492006195ad3bf8f68a4059dbaae141f8f19d5a7c6d33b8809ba",
+  "prompt_version": "analyst_prompt_v5",
+  "prompt_hash": "acf8a530117b6bda68c72d69b1fe643951cb5e399054cff45920c5b3a3b8e08c",
+  "token_estimate": 14718,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "run_line",
+    "total",
+    "prop_01",
+    "prop_02",
+    "prop_03",
+    "prop_04",
+    "prop_05",
+    "prop_06",
+    "prop_07",
+    "prop_08",
+    "prop_09",
+    "prop_10"
+  ],
+  "missing_items": 5,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "data_client",
+  "data_version": "dv1-6fccc8dadbed6c7230655737"
+}

@@ -1,0 +1,197 @@
+{
+  "summary": "I pass on everything here. The game side is close: the books make Milwaukee a small favorite, with a de-vigged chance of 0.5305, and the data gives me real arguments on both sides without a clear winner. Milwaukee has the far better season record and the better last ten, but Tampa Bay's starter Griffin Jax has the better ERA and has allowed no earned runs over his last three starts, while Dustin May's recent ERA is 8.5909 with short outings. That split is exactly what a near coin-flip price should already reflect, so I see no reason to call the market wrong. The run line and total sit near their fair numbers too, and the total has the book split almost evenly between over and under. The player props are the weakest part: the newest quotes are old, most props have only a few books or just two, and nothing in the data gives a hitter-specific read beyond the price itself. Missing inputs that matter are matchup history, team totals and standings. Without them I would rather say the market is probably right than force a bet.",
+  "summary_derived": [],
+  "calls": [
+    {
+      "slot_id": "moneyline", "market": "moneyline", "selection": "MIL", "verdict": "PASS",
+      "price": -116, "book": "betus", "fair_estimate": null, "confidence": "low",
+      "reasons": [
+        {"claim": "Milwaukee is the stronger team on season record, but Tampa Bay has the better starter numbers and the books already price a small Milwaukee edge.",
+         "evidence": [
+           {"path": "markets.moneyline.options[0].fair_probability", "value": 0.5305},
+           {"path": "sections.teams.values.away_win_pct", "value": 0.6471},
+           {"path": "sections.teams.values.home_win_pct", "value": 0.5988},
+           {"path": "sections.starters.values.home_sp_era", "value": 3.5252},
+           {"path": "sections.starters.values.away_sp_era", "value": 4.6957}
+         ], "derived": []}
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A late scratch of either starter or a lineup change that removes a top hitter would change how I read this game.",
+      "case_against": null
+    },
+    {
+      "slot_id": "run_line", "market": "run_line", "selection": "TB +1.5", "verdict": "PASS",
+      "price": -160, "book": "betus", "fair_estimate": null, "confidence": "low",
+      "reasons": [
+        {"claim": "The run line price already leans toward the underdog covering, and the data gives nothing beyond the price to say that is wrong.",
+         "evidence": [
+           {"path": "markets.run_line.options[0].fair_probability", "value": 0.6019},
+           {"path": "markets.run_line.options[0].best.price", "value": -160}
+         ], "derived": []}
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed late change to either starter would change this call.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total", "market": "total", "selection": "Over 7", "verdict": "PASS",
+      "price": -115, "book": "mybookieag", "fair_estimate": null, "confidence": "low",
+      "reasons": [
+        {"claim": "The total is priced almost evenly on both sides, and the roof is fixed so weather is not a factor to move it.",
+         "evidence": [
+           {"path": "markets.total.options[0].fair_probability", "value": 0.5159},
+           {"path": "markets.total.options[1].fair_probability", "value": 0.4841},
+           {"path": "sections.park.values.roof", "value": "fixed"}
+         ], "derived": []}
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A move in the posted line or a starter scratch would change this call.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_01", "market": "prop", "selection": "Under 1.5", "verdict": "PASS",
+      "price": -137, "book": "williamhill_us", "fair_estimate": null, "confidence": "low",
+      "reasons": [
+        {"claim": "LineHound's own model leans under only slightly past the market, on quotes from only two books that are well out of date, so there is no real gap to act on.",
+         "evidence": [
+           {"path": "markets.prop_01.context.repo_model_probability", "value": 0.566},
+           {"path": "markets.prop_01.context.repo_market_probability", "value": 0.5461},
+           {"path": "markets.prop_01.options[0].books", "value": 2}
+         ], "derived": []}
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Fresh quotes from more books showing a clearly different price would change this call.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_02", "market": "prop", "selection": "Under 1.5", "verdict": "PASS",
+      "price": -135, "book": "bovada", "fair_estimate": null, "confidence": "low",
+      "reasons": [
+        {"claim": "Nothing in the data speaks to this hitter beyond the price, and the quotes are stale.",
+         "evidence": [
+           {"path": "markets.prop_02.options[0].fair_probability", "value": 0.5393},
+           {"path": "missing[1].reason", "value": "the newest player-prop quote is 992 minutes old"}
+         ], "derived": []}
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A lineup change or fresh quotes showing a different price would change this call.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_03", "market": "prop", "selection": "Under 1.5", "verdict": "PASS",
+      "price": -135, "book": "bovada", "fair_estimate": null, "confidence": "low",
+      "reasons": [
+        {"claim": "Nothing in the data speaks to this hitter beyond the price, and the quotes are stale.",
+         "evidence": [
+           {"path": "markets.prop_03.options[0].fair_probability", "value": 0.5434},
+           {"path": "missing[1].reason", "value": "the newest player-prop quote is 992 minutes old"}
+         ], "derived": []}
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A lineup change or fresh quotes showing a different price would change this call.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_04", "market": "prop", "selection": "Under 1.5", "verdict": "PASS",
+      "price": -140, "book": "betmgm", "fair_estimate": null, "confidence": "low",
+      "reasons": [
+        {"claim": "The books disagree on this price and the quotes are stale, so the best number is not one I can trust.",
+         "evidence": [
+           {"path": "markets.prop_04.options[0].best.price", "value": -140},
+           {"path": "markets.prop_04.options[0].quotes[2].price", "value": -174},
+           {"path": "missing[1].reason", "value": "the newest player-prop quote is 992 minutes old"}
+         ], "derived": []}
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Fresh quotes from several books agreeing on a price would change this call.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_05", "market": "prop", "selection": "Under 1.5", "verdict": "PASS",
+      "price": -160, "book": "betmgm", "fair_estimate": null, "confidence": "low",
+      "reasons": [
+        {"claim": "The price is steep for a lean the data cannot back up, and the quotes are stale.",
+         "evidence": [
+           {"path": "markets.prop_05.options[0].best.price", "value": -160},
+           {"path": "missing[1].reason", "value": "the newest player-prop quote is 992 minutes old"}
+         ], "derived": []}
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A lineup change or fresh quotes showing a different price would change this call.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_06", "market": "prop", "selection": "Over 1.5", "verdict": "PASS",
+      "price": -130, "book": "bovada", "fair_estimate": null, "confidence": "low",
+      "reasons": [
+        {"claim": "This hitter has a weak record against the opposing starter's main pitch in the data, but the price is already near even and the quotes are stale.",
+         "evidence": [
+           {"path": "markets.prop_06.options[0].fair_probability", "value": 0.5427},
+           {"path": "sections.matchup_depth.values.away.pitch_mix.batters[0].woba", "value": 0.2276},
+           {"path": "missing[1].reason", "value": "the newest player-prop quote is 992 minutes old"}
+         ], "derived": []}
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Fresh quotes with the over priced at plus money would change this call.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_07", "market": "prop", "selection": "Under 1.5", "verdict": "PASS",
+      "price": -145, "book": "williamhill_us", "fair_estimate": null, "confidence": "low",
+      "reasons": [
+        {"claim": "The hitter's numbers against the opposing starter's main pitch are weak, but the market already prices the under heavily and the quotes are stale.",
+         "evidence": [
+           {"path": "markets.prop_07.options[0].fair_probability", "value": 0.5536},
+           {"path": "sections.matchup_depth.values.away.pitch_mix.batters[1].woba", "value": 0.1586},
+           {"path": "missing[1].reason", "value": "the newest player-prop quote is 992 minutes old"}
+         ], "derived": []}
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A lineup change or fresh quotes showing a different price would change this call.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_08", "market": "prop", "selection": "Under 1.5", "verdict": "PASS",
+      "price": -170, "book": "williamhill_us", "fair_estimate": null, "confidence": "low",
+      "reasons": [
+        {"claim": "The price is steep and the quotes are stale, so there is little room for the under to pay.",
+         "evidence": [
+           {"path": "markets.prop_08.options[0].best.price", "value": -170},
+           {"path": "missing[1].reason", "value": "the newest player-prop quote is 992 minutes old"}
+         ], "derived": []}
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Fresh quotes showing a materially shorter price on the under would change this call.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_09", "market": "prop", "selection": "Under 1.5", "verdict": "PASS",
+      "price": -110, "book": "betmgm", "fair_estimate": null, "confidence": "low",
+      "reasons": [
+        {"claim": "The books are split on this hitter and the quotes are stale, so the market has no clear view and neither do we.",
+         "evidence": [
+           {"path": "markets.prop_09.options[0].fair_probability", "value": 0.5156},
+           {"path": "markets.prop_09.options[0].quotes[0].price", "value": -110},
+           {"path": "markets.prop_09.options[0].quotes[2].price", "value": -131}
+         ], "derived": []}
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Fresh quotes from the same books converging on one price would change this call.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_10", "market": "prop", "selection": "Under 0.5", "verdict": "PASS",
+      "price": -350, "book": "fanatics", "fair_estimate": null, "confidence": "low",
+      "reasons": [
+        {"claim": "The under is priced at -350 or worse, which is a price I will not take, and the quotes are stale.",
+         "evidence": [
+           {"path": "markets.prop_10.options[0].best.price", "value": -350},
+           {"path": "markets.prop_10.options[0].quotes[0].price", "value": -402}
+         ], "derived": []}
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Nothing short of a price shorter than -200 would put the under in play.",
+      "case_against": null
+    }
+  ]
+}

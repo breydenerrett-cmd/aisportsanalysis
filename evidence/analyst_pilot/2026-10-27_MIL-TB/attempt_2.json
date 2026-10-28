@@ -1,0 +1,557 @@
+{
+  "summary": "I pass on everything here. The moneyline is close to a coin flip, with MIL a slight favourite on the books' de-vigged number of 0.5305, and the starters do not separate the sides: Dustin May has the worse ERA but the better FIP, while Griffin Jax has the better ERA but the worse FIP. Without standings or batter-versus-pitcher history, there is no clear reason to disagree with that price.\n\nThe run line and the total look about right too. The total of 7 is priced near even on both sides, and the game is indoors under a fixed roof, so weather is not a factor. On the player props, the quotes are stale, with the newest one 992 minutes old, and most props have only a few books quoting them. Nothing in what we have shows those prices are wrong, so I stay out. The inputs that would matter most are fresh prop quotes, the missing standings and any late lineup or starter change.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "MIL",
+      "verdict": "PASS",
+      "price": -116,
+      "book": "betus",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books split this one almost down the middle, with MIL a slight favourite on the de-vigged number, and nothing in what we have gives a clear reason to disagree with that.",
+          "evidence": [
+            {
+              "path": "markets.moneyline.options[0].fair_probability",
+              "value": 0.5305
+            },
+            {
+              "path": "markets.moneyline.options[1].fair_probability",
+              "value": 0.4695
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The starters point in different directions: May has the worse ERA but the better FIP, while Jax has the better ERA but the worse FIP, so the pitching matchup does not separate the sides.",
+          "evidence": [
+            {
+              "path": "sections.starters.values.away_sp_era",
+              "value": 4.6957
+            },
+            {
+              "path": "sections.starters.values.away_sp_fip",
+              "value": 3.6133
+            },
+            {
+              "path": "sections.starters.values.home_sp_era",
+              "value": 3.5252
+            },
+            {
+              "path": "sections.starters.values.home_sp_fip",
+              "value": 3.9165
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Standings are missing, and matchup history is missing, so the inputs that might break the tie are not here.",
+          "evidence": [
+            {
+              "path": "missing[3].reason",
+              "value": "no standings snapshot stored for 2026-10-27"
+            },
+            {
+              "path": "missing[0].reason",
+              "value": "batter-vs-pitcher history not fetched"
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A late scratch of either listed starter, or a materially different posted lineup, would make me revisit this side.",
+      "case_against": null
+    },
+    {
+      "slot_id": "run_line",
+      "market": "run_line",
+      "selection": "TB +1.5",
+      "verdict": "PASS",
+      "price": -160,
+      "book": "betus",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books price TB +1.5 as a fairly heavy favourite to cover, and with no run-margin data beyond season run differential in what we have, there is no basis to argue with that.",
+          "evidence": [
+            {
+              "path": "markets.run_line.options[0].fair_probability",
+              "value": 0.6019
+            },
+            {
+              "path": "markets.run_line.options[0].best.price",
+              "value": -160
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "A game this evenly priced on the moneyline tends to be decided by a one-run margin often, which is already what the +1.5 price reflects.",
+          "evidence": [
+            {
+              "path": "markets.moneyline.options[0].fair_probability",
+              "value": 0.5305
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "News that either starter is out, or a bullpen availability change that shifts the likely margin, would change this.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 7",
+      "verdict": "PASS",
+      "price": -115,
+      "book": "mybookieag",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total is close to a coin flip on the de-vigged numbers, so the market is probably right about the scoring level.",
+          "evidence": [
+            {
+              "path": "markets.total.options[0].fair_probability",
+              "value": 0.5159
+            },
+            {
+              "path": "markets.total.options[1].fair_probability",
+              "value": 0.4841
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The game is indoors under a fixed roof, so weather does not move the scoring, and we have no park or bullpen signal that clearly pushes it one way.",
+          "evidence": [
+            {
+              "path": "sections.park.values.roof",
+              "value": "fixed"
+            },
+            {
+              "path": "sections.park.values.name",
+              "value": "Tropicana Field"
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A change in either starter, or a sharp move in the total at the books, would be a reason to look again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_01",
+      "market": "prop",
+      "selection": "Under 1.5",
+      "verdict": "PASS",
+      "price": -137,
+      "book": "williamhill_us",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Jackson Chourio total bases is priced by only a few books and the quotes are stale, so the price may not reflect today's lineup news; the books' de-vigged number for Under 1.5 is all we have to go on.",
+          "evidence": [
+            {
+              "path": "markets.prop_01.options[0].fair_probability",
+              "value": 0.5461
+            },
+            {
+              "path": "missing[1].reason",
+              "value": "the newest player-prop quote is 992 minutes old"
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We have no batter-versus-pitcher history, and the prop sample is thin, so there is nothing here that shows the price is wrong.",
+          "evidence": [
+            {
+              "path": "missing[0].reason",
+              "value": "batter-vs-pitcher history not fetched"
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "LineHound's own model leans the same way as the books but only by a small margin, which is not enough to act on with stale quotes.",
+          "evidence": [
+            {
+              "path": "markets.prop_01.context.repo_model_probability",
+              "value": 0.566
+            },
+            {
+              "path": "markets.prop_01.context.repo_market_probability",
+              "value": 0.5461
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Fresh quotes from more books, or a confirmed change in this player's lineup spot, would let me price this properly.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_02",
+      "market": "prop",
+      "selection": "Under 1.5",
+      "verdict": "PASS",
+      "price": -135,
+      "book": "bovada",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Brice Turang hits plus runs plus RBIs is priced by only a few books and the quotes are stale, so the price may not reflect today's lineup news; the books' de-vigged number for Under 1.5 is all we have to go on.",
+          "evidence": [
+            {
+              "path": "markets.prop_02.options[0].fair_probability",
+              "value": 0.5393
+            },
+            {
+              "path": "missing[1].reason",
+              "value": "the newest player-prop quote is 992 minutes old"
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We have no batter-versus-pitcher history, and the prop sample is thin, so there is nothing here that shows the price is wrong.",
+          "evidence": [
+            {
+              "path": "missing[0].reason",
+              "value": "batter-vs-pitcher history not fetched"
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Fresh quotes from more books, or a confirmed change in this player's lineup spot, would let me price this properly.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_03",
+      "market": "prop",
+      "selection": "Under 1.5",
+      "verdict": "PASS",
+      "price": -135,
+      "book": "bovada",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Christian Yelich hits plus runs plus RBIs is priced by only a few books and the quotes are stale, so the price may not reflect today's lineup news; the books' de-vigged number for Under 1.5 is all we have to go on.",
+          "evidence": [
+            {
+              "path": "markets.prop_03.options[0].fair_probability",
+              "value": 0.5434
+            },
+            {
+              "path": "missing[1].reason",
+              "value": "the newest player-prop quote is 992 minutes old"
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We have no batter-versus-pitcher history, and the prop sample is thin, so there is nothing here that shows the price is wrong.",
+          "evidence": [
+            {
+              "path": "missing[0].reason",
+              "value": "batter-vs-pitcher history not fetched"
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Fresh quotes from more books, or a confirmed change in this player's lineup spot, would let me price this properly.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_04",
+      "market": "prop",
+      "selection": "Under 1.5",
+      "verdict": "PASS",
+      "price": -140,
+      "book": "betmgm",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Cooper Pratt hits plus runs plus RBIs is priced by only a few books and the quotes are stale, so the price may not reflect today's lineup news; the books' de-vigged number for Under 1.5 is all we have to go on.",
+          "evidence": [
+            {
+              "path": "markets.prop_04.options[0].fair_probability",
+              "value": 0.5761
+            },
+            {
+              "path": "missing[1].reason",
+              "value": "the newest player-prop quote is 992 minutes old"
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We have no batter-versus-pitcher history, and the prop sample is thin, so there is nothing here that shows the price is wrong.",
+          "evidence": [
+            {
+              "path": "missing[0].reason",
+              "value": "batter-vs-pitcher history not fetched"
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Fresh quotes from more books, or a confirmed change in this player's lineup spot, would let me price this properly.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_05",
+      "market": "prop",
+      "selection": "Under 1.5",
+      "verdict": "PASS",
+      "price": -160,
+      "book": "betmgm",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Garrett Mitchell hits plus runs plus RBIs is priced by only a few books and the quotes are stale, so the price may not reflect today's lineup news; the books' de-vigged number for Under 1.5 is all we have to go on.",
+          "evidence": [
+            {
+              "path": "markets.prop_05.options[0].fair_probability",
+              "value": 0.581
+            },
+            {
+              "path": "missing[1].reason",
+              "value": "the newest player-prop quote is 992 minutes old"
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We have no batter-versus-pitcher history, and the prop sample is thin, so there is nothing here that shows the price is wrong.",
+          "evidence": [
+            {
+              "path": "missing[0].reason",
+              "value": "batter-vs-pitcher history not fetched"
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Fresh quotes from more books, or a confirmed change in this player's lineup spot, would let me price this properly.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_06",
+      "market": "prop",
+      "selection": "Over 1.5",
+      "verdict": "PASS",
+      "price": -130,
+      "book": "bovada",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Jackson Chourio hits plus runs plus RBIs is priced by only a few books and the quotes are stale, so the price may not reflect today's lineup news; the books' de-vigged number for Over 1.5 is all we have to go on.",
+          "evidence": [
+            {
+              "path": "markets.prop_06.options[0].fair_probability",
+              "value": 0.5427
+            },
+            {
+              "path": "missing[1].reason",
+              "value": "the newest player-prop quote is 992 minutes old"
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We have no batter-versus-pitcher history, and the prop sample is thin, so there is nothing here that shows the price is wrong.",
+          "evidence": [
+            {
+              "path": "missing[0].reason",
+              "value": "batter-vs-pitcher history not fetched"
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Fresh quotes from more books, or a confirmed change in this player's lineup spot, would let me price this properly.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_07",
+      "market": "prop",
+      "selection": "Under 1.5",
+      "verdict": "PASS",
+      "price": -145,
+      "book": "williamhill_us",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Jake Bauers hits plus runs plus RBIs is priced by only a few books and the quotes are stale, so the price may not reflect today's lineup news; the books' de-vigged number for Under 1.5 is all we have to go on.",
+          "evidence": [
+            {
+              "path": "markets.prop_07.options[0].fair_probability",
+              "value": 0.5536
+            },
+            {
+              "path": "missing[1].reason",
+              "value": "the newest player-prop quote is 992 minutes old"
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We have no batter-versus-pitcher history, and the prop sample is thin, so there is nothing here that shows the price is wrong.",
+          "evidence": [
+            {
+              "path": "missing[0].reason",
+              "value": "batter-vs-pitcher history not fetched"
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Fresh quotes from more books, or a confirmed change in this player's lineup spot, would let me price this properly.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_08",
+      "market": "prop",
+      "selection": "Under 1.5",
+      "verdict": "PASS",
+      "price": -170,
+      "book": "williamhill_us",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Sal Frelick hits plus runs plus RBIs is priced by only a few books and the quotes are stale, so the price may not reflect today's lineup news; the books' de-vigged number for Under 1.5 is all we have to go on.",
+          "evidence": [
+            {
+              "path": "markets.prop_08.options[0].fair_probability",
+              "value": 0.5907
+            },
+            {
+              "path": "missing[1].reason",
+              "value": "the newest player-prop quote is 992 minutes old"
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We have no batter-versus-pitcher history, and the prop sample is thin, so there is nothing here that shows the price is wrong.",
+          "evidence": [
+            {
+              "path": "missing[0].reason",
+              "value": "batter-vs-pitcher history not fetched"
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Fresh quotes from more books, or a confirmed change in this player's lineup spot, would let me price this properly.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_09",
+      "market": "prop",
+      "selection": "Under 1.5",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "betmgm",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "William Contreras hits plus runs plus RBIs is priced by only a few books and the quotes are stale, so the price may not reflect today's lineup news; the books' de-vigged number for Under 1.5 is all we have to go on.",
+          "evidence": [
+            {
+              "path": "markets.prop_09.options[0].fair_probability",
+              "value": 0.5156
+            },
+            {
+              "path": "missing[1].reason",
+              "value": "the newest player-prop quote is 992 minutes old"
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We have no batter-versus-pitcher history, and the prop sample is thin, so there is nothing here that shows the price is wrong.",
+          "evidence": [
+            {
+              "path": "missing[0].reason",
+              "value": "batter-vs-pitcher history not fetched"
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Fresh quotes from more books, or a confirmed change in this player's lineup spot, would let me price this properly.",
+      "case_against": null
+    },
+    {
+      "slot_id": "prop_10",
+      "market": "prop",
+      "selection": "Under 0.5",
+      "verdict": "PASS",
+      "price": null,
+      "book": null,
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Cooper Pratt RBIs is priced by only a few books and the quotes are stale, so the price may not reflect today's lineup news; the books' de-vigged number for Under 0.5 is all we have to go on.",
+          "evidence": [
+            {
+              "path": "markets.prop_10.options[0].fair_probability",
+              "value": 0.7344
+            },
+            {
+              "path": "missing[1].reason",
+              "value": "the newest player-prop quote is 992 minutes old"
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We have no batter-versus-pitcher history, and the prop sample is thin, so there is nothing here that shows the price is wrong.",
+          "evidence": [
+            {
+              "path": "missing[0].reason",
+              "value": "batter-vs-pitcher history not fetched"
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Fresh quotes from more books, or a confirmed change in this player's lineup spot, would let me price this properly.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
