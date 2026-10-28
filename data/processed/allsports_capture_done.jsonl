@@ -8437,3 +8437,5 @@
 {"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T16:01:11.774786Z", "regions": ["au"], "rows": 18, "sport_key": "cricket_test_match", "stored": 15}
 {"commence_utc": "2026-10-29T16:00:00Z", "event_id": "65d56b4b19134aef30a377b4647724e2", "kind": "phase", "observed_utc": "2026-10-28T16:01:11.774786Z", "phase": "t24h", "rows": 14, "sport_key": "soccer_finland_veikkausliiga"}
 {"call_kind": "pregame", "credits": 2, "events": 6, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-28T16:01:11.774786Z", "regions": ["us"], "rows": 46, "sport_key": "soccer_finland_veikkausliiga", "stored": 40}
+{"commence_utc": "2026-10-28T18:10:00Z", "event_id": "6f5b58b184eac6128deada4527006869", "kind": "phase", "observed_utc": "2026-10-28T16:11:49.414220Z", "phase": "t2h", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
+{"call_kind": "pregame", "credits": 1, "events": 7, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T16:11:49.414220Z", "regions": ["us"], "rows": 56, "sport_key": "tennis_atp_swiss_indoors", "stored": 56}
