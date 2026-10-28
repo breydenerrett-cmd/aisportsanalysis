@@ -64,7 +64,7 @@ class HoundCase(unittest.TestCase):
         # These tests are about the CLAUDE hound. The Gematria Hound shares the pass and, under rules v2 (2026-10-22: names alone are enough
         # for a sport with no stored results), now bets on the all-sports fixtures too; its own tests are tests/test_gematria_hound.py and
         # tests/test_gematria_v2.py. Its kill switch keeps it out of a pass about someone else.
-        env = mock.patch.dict(os.environ, {"GEMATRIA_HOUND": "off", "LEARNER_HOUND": "off"})
+        env = mock.patch.dict(os.environ, {"GEMATRIA_HOUND": "off", "LEARNER_HOUND": "off", "PACK_CONSENSUS_HOUND": "off"})
         env.start()
         self.addCleanup(env.stop)
 

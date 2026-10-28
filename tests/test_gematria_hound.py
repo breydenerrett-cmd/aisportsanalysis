@@ -847,7 +847,7 @@ class RunnerAndKillSwitchTests(Case):
 
     def run_pass(self, **kw):
         # These tests are about the Gematria Hound; the Learner shares the pass (tests/test_learner_hound.py) and is kept out of it.
-        with mock.patch.dict("os.environ", {"LEARNER_HOUND": "off"}):
+        with mock.patch.dict("os.environ", {"LEARNER_HOUND": "off", "PACK_CONSENSUS_HOUND": "off"}):
             return self._run_pass(**kw)
 
     def _run_pass(self, **kw):
