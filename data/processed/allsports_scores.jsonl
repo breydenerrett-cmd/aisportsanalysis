@@ -4263,3 +4263,4 @@
 {"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-28T07:13:40.631298+00:00", "sport_key": "cricket_test_match"}
 {"away_score": 136.0, "away_team": "Portland Trail Blazers", "commence_time": "2026-10-28T03:13:00Z", "completed": true, "event_id": "82afe4e028b0fbbd9f6cf92697bec6fc", "home_score": 129.0, "home_team": "Los Angeles Lakers", "kind": "score", "last_update": "2026-10-28T07:13:35Z", "observed_utc": "2026-10-28T07:13:40.631298+00:00", "outcome": "away", "scores": [{"name": "Los Angeles Lakers", "score": "129"}, {"name": "Portland Trail Blazers", "score": "136"}], "sport_key": "basketball_nba"}
 {"credits": 2, "days_from": 3, "events": 38, "kind": "poll", "observed_utc": "2026-10-28T07:13:40.631298+00:00", "sport_key": "basketball_nba"}
+{"credits": 2, "days_from": 3, "events": 36, "kind": "poll", "observed_utc": "2026-10-28T07:38:11.515363+00:00", "sport_key": "soccer_spain_copa_del_rey"}
