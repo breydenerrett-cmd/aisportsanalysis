@@ -226,6 +226,19 @@ class UsageStore:
             m = month or self.month()
             return round(sum(r for (mm, p, r) in self._open_batches.values() if mm == m and p == provider), 8)
 
+    def reserved_total(self, provider: str) -> float:
+        """Dollars held back for open batches of one provider whatever month they were submitted in (a one-time budget has no
+        month to roll over in, so ``reserved``'s this-month view would forget a batch that outlives the 1st)."""
+        with self._lock:
+            self._sync()
+            return round(sum(r for (_mm, p, r) in self._open_batches.values() if p == provider), 8)
+
+    def total_spend(self, provider: str) -> float:
+        """Dollars spent under one provider across every month so far (``month_spend`` summed over months)."""
+        with self._lock:
+            self._sync()
+            return round(sum(v for (_mm, p), v in self._spend.items() if p == provider), 8)
+
     def open_batches(self) -> List[str]:
         with self._lock:
             self._sync()
