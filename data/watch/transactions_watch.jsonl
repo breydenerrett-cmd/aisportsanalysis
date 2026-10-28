@@ -6192,3 +6192,5 @@
 {"fetched_utc": "2026-10-28T21:45:11.255055+00:00", "game_date": "2026-10-28", "poll": true}
 {"fetched_utc": "2026-10-28T22:02:17.479542+00:00", "game_date": "2026-10-28", "poll": true}
 {"fetched_utc": "2026-10-28T22:02:19.662266+00:00", "game_date": "2026-10-28", "poll": true}
+{"fetched_utc": "2026-10-28T22:12:31.732544+00:00", "game_date": "2026-10-28", "poll": true}
+{"category": "signed", "date": "2026-10-28", "first_seen_utc": "2026-10-28T22:12:31.732544+00:00", "player": "Alberto Santos", "player_id": 843387, "team": "LAD", "transaction_id": 947196}
