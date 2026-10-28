@@ -4149,3 +4149,6 @@
 {"credits": 2, "days_from": 3, "events": 15, "kind": "poll", "observed_utc": "2026-10-28T00:07:33.880439+00:00", "sport_key": "soccer_england_league2"}
 {"credits": 2, "days_from": 3, "events": 7, "kind": "poll", "observed_utc": "2026-10-28T00:07:33.880439+00:00", "sport_key": "soccer_finland_veikkausliiga"}
 {"errors": [], "events": 1, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-10-28T00:07:37.441416Z", "source": "espn_tennis", "unmatched": 1, "unmatched_ids": ["fc557e2864fbe07964a9d288a81d5009"], "void": 0, "written": 0}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-28T00:29:50.722346+00:00", "sport_key": "cricket_test_match"}
+{"away_score": 2.0, "away_team": "Werder Bremen", "commence_time": "2026-10-27T19:50:49Z", "completed": true, "event_id": "05cf3f0a5884e7adcb7261c1a87cb0ec", "home_score": 3.0, "home_team": "Borussia Dortmund", "kind": "score", "last_update": "2026-10-28T00:29:32Z", "observed_utc": "2026-10-28T00:29:50.722346+00:00", "outcome": "home", "scores": [{"name": "Borussia Dortmund", "score": "3"}, {"name": "Werder Bremen", "score": "2"}], "sport_key": "soccer_germany_dfb_pokal"}
+{"credits": 2, "days_from": 3, "events": 16, "kind": "poll", "observed_utc": "2026-10-28T00:29:50.722346+00:00", "sport_key": "soccer_germany_dfb_pokal"}
