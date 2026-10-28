@@ -865,9 +865,14 @@ def pass_safely(**kwargs) -> dict:
 
 def start_loop(*, interval_s: Optional[float] = None, ready: Optional[Callable[[], bool]] = None,
                stop_event: Optional[threading.Event] = None, env: Optional[Mapping] = None,
-               do_pass: Callable[[], object] = pass_safely) -> Optional[threading.Thread]:
+               do_pass: Callable[[], object] = pass_safely,
+               after_pass: Optional[Callable[[], object]] = None) -> Optional[threading.Thread]:
     """Start the ONE daemon thread, or return None (starting nothing) when ``LIVE_SETTLE=off`` or under pytest. Waits
-    for ``ready()`` (the first cache warm-up pass), then runs a pass every ``interval_s``."""
+    for ``ready()`` (the first cache warm-up pass), then runs a pass every ``interval_s``.
+
+    ``after_pass`` (optional) runs once after each pass, in this same thread and after the pass has released its lock, so
+    nothing it does can hold up a grade: the hindsight reviews (``src/ai/postmortems.py``) ride here. An exception from it is
+    logged and swallowed; the loop outlives it."""
     if not enabled(env) or (env is None and os.environ.get("PYTEST_CURRENT_TEST")):
         return None
     interval = interval_s if interval_s is not None else interval_seconds(env)
@@ -882,6 +887,11 @@ def start_loop(*, interval_s: Optional[float] = None, ready: Optional[Callable[[
             waited += 5.0
         while not event.is_set():
             do_pass()
+            if after_pass is not None:
+                try:
+                    after_pass()
+                except Exception:  # noqa: BLE001 -- a side job must never stop the grading loop
+                    logger.exception("live settle: the after-pass hook failed")
             if event.wait(interval):
                 return
 

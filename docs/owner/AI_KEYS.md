@@ -81,3 +81,28 @@ API in `src/ai/router.py` and register it in `ADAPTER_KINDS`, add a provider ent
 env key) to `config/ai_providers.json` and put its id in `order`, then add a hound entry that names it in
 `providers`. Free keys would be a separate short doc then. The Council Hound turns on by setting its `enabled`
 flag in `config/ai_hounds.json` once at least three model hounds exist.
+
+## 8. Hindsight reviews of settled bets (2026-10-28)
+Code: `src/ai/postmortems.py` (the queue, the batches, the budget), `src/ai/postmortem_*.py`, `src/hounds/bet_export.py` (the
+spreadsheet), `api/hounds_postmortems.py` (the two routes). After a bet settles, a Haiku 5.5 review with web search looks up the
+recap, the pre-game injuries and news, and other analysts; a loss (or a win of 2 units or more) also gets a deeper Sonnet 5.5 pass.
+It rides the live-settle loop and uses the same `ANTHROPIC_API_KEY`. No key: the queue waits and the spreadsheet still downloads.
+Reviews go through the Message Batches API (half the token price, results within the hour) and are labelled "Hindsight review"
+everywhere: written after the result, never pre-game reasoning.
+
+**Its own wall, apart from the $5 above:** `POSTMORTEM_MONTHLY_USD` (default **$20**). Spend is the API's own usage at real prices
+plus $0.01 per web search, on the same usage meter (provider `anthropic_postmortem`). Before a batch goes out its worst case is
+added to the month's spend and what open batches have reserved; a request that does not fit is not sent. Order: member hounds,
+then house hounds, then The Learner (1 bet in 5). Rough cost: about $0.035 for a fast review, about $0.16 for a deep one, so about
+$0.11 a bet on average and about 190 bets a month at $20.
+
+| Name | Default | Purpose |
+|---|---|---|
+| `POSTMORTEM_MONTHLY_USD` | `20` | hard monthly cap for reviews; `0` stops them |
+| `POSTMORTEMS` | on | `off` stops the tick (the queue and the spreadsheet stay) |
+| `POSTMORTEM_SINCE` | first scan minus a day | `YYYY-MM-DD`: queue bets graded on or after this day |
+| `POSTMORTEM_QUEUE_PATH`, `POSTMORTEM_LEDGER_PATH` | beside the app database | the queue and the review ledger (the Fly volume) |
+
+The spreadsheet is `GET /hounds/{id}/export` ("Download bets (spreadsheet)" on the Record page): public for house hounds, the
+owner's only for member hounds. It is a CSV (opens in Excel and Google Sheets); an Excel file is offered only once `openpyxl` is
+added to `api/requirements.txt`.

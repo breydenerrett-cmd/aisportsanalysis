@@ -24,6 +24,7 @@ import re
 from datetime import datetime, timezone
 from typing import Optional, Sequence
 
+from src.ai.postmortem_store import bet_key
 from src.hounds import stats
 from src.hounds.contract import (
     KIND_HOUSE, TICKET_GRADED, TICKET_OPEN, TICKET_UNGRADED, BetRow, envelope, ticket_status, to_json)
@@ -198,8 +199,10 @@ def _calendar(settled_rows: list, units_each: list) -> list:
     return days
 
 
-def _ticket(r: BetRow, units: Optional[float], status: str) -> dict:
-    return {"date": r.date, "game": r.game, "selection": r.selection, "market": r.market, "sport": r.sport, "price": r.price,
+def _ticket(r: BetRow, units: Optional[float], status: str, hound_id: str = "") -> dict:
+    """One ticket for the page. ``bet_key`` is the bet's identity (``postmortem_store.bet_key``): the page uses it to attach the
+    hindsight review (``GET /hounds/{id}/postmortems``) and the spreadsheet's Bet ID column is the same value."""
+    return {"bet_key": bet_key(hound_id or r.hound_id, r), "date": r.date, "game": r.game, "selection": r.selection, "market": r.market, "sport": r.sport, "price": r.price,
             "price_average": r.price_average, "line": r.line, "result": r.result, "units": units, "reason": r.reason or "",
             "start_utc": r.start_utc, "recorded_utc": r.recorded_utc, "clv_pts": r.clv_pts, "beyond_cap": bool(r.beyond_cap),
             "status": status, "book": r.book}
@@ -234,11 +237,11 @@ def build(data: "stats.HoundData", *, as_of: Optional[str] = None, season: Optio
     header = _header(summary, settled, basis, units_each)
 
     newest = list(reversed(list(zip(settled, units_each))))
-    tickets = [_ticket(r, u, TICKET_GRADED) for r, u in newest[:TICKET_CAP]]
+    tickets = [_ticket(r, u, TICKET_GRADED, summary.id) for r, u in newest[:TICKET_CAP]]
     open_rows, waiting_rows = [], []
     for r in sorted((b for b in forward if b.result is None), key=lambda b: (b.start_utc or b.date or "")):
         status = ticket_status(r.result, r.start_utc, r.date, now)
-        (open_rows if status == TICKET_OPEN else waiting_rows).append(_ticket(r, None, status))
+        (open_rows if status == TICKET_OPEN else waiting_rows).append(_ticket(r, None, status, summary.id))
     return envelope({
         "hound": {"id": summary.id, "name": summary.name, "kind": summary.kind, "sports": summary.sports,
                   "status": summary.status, "tagline": summary.tagline, "rule_text": summary.rule_text,

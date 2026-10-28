@@ -95,7 +95,7 @@ class TheWiring(unittest.TestCase):
 
     def test_the_app_starts_the_loop_at_boot_through_the_same_warmup_gate_as_the_others(self):
         source = (REPO / "api" / "app.py").read_text(encoding="utf-8")
-        self.assertIn("live_settle.start_loop(ready=_warm_up_done)", source)
+        self.assertIn("live_settle.start_loop(ready=_warm_up_done", source)       # (the hindsight-review tick rides it: tests/test_postmortems.py)
 
     def test_an_old_stale_live_row_reads_as_unknown_not_as_a_score(self):
         with tempfile.TemporaryDirectory() as tmp:

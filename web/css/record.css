@@ -96,6 +96,22 @@
 .rc-chip--loss { background: var(--lh-loss-soft); color: var(--lh-loss); }
 .rc-chip--open { background: var(--lh-pending-soft); color: var(--lh-pending); white-space: normal; text-align: center; height: auto; min-height: 24px; padding: 2px 10px; }
 
+/* ---- the spreadsheet link and the hindsight review under a ticket ------------------------------------------------------ */
+.rc-export { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--lh-s2) var(--lh-s3); margin: var(--lh-s3) 0 0; font-size: var(--lh-fs-sm); }
+.rc-export[hidden] { display: none; }
+.rc-export__link { font-weight: 600; color: var(--lh-ink); text-decoration: underline; min-height: 24px; }
+.rc-export__note, .rc-export__hint { color: var(--lh-mute); font-size: var(--lh-fs-xs); overflow-wrap: anywhere; }
+.rc-export__hint { flex-basis: 100%; }
+.rc-review { margin-top: var(--lh-s2); border-top: 1px solid var(--lh-line); padding-top: var(--lh-s2); }
+.rc-review__sum { cursor: pointer; font-size: var(--lh-fs-sm); font-weight: 600; color: var(--lh-ink2); min-height: 32px; display: flex; align-items: center; }
+.rc-review__body { display: grid; gap: var(--lh-s2); margin-top: var(--lh-s2); font-size: var(--lh-fs-sm); color: var(--lh-ink2); }
+.rc-review__body p { margin: 0; overflow-wrap: anywhere; }
+.rc-review__note, .rc-review__warn { font-size: var(--lh-fs-xs); color: var(--lh-mute); }
+.rc-review__warn { color: var(--lh-pending); }
+.rc-review__list ul { margin: 4px 0 0; padding-left: 18px; }
+.rc-review__list li { margin: 2px 0; overflow-wrap: anywhere; }
+.rc-review a { color: var(--lh-ink); text-decoration: underline; overflow-wrap: anywhere; }
+
 /* ---- compare -------------------------------------------------------------------------------------------------- */
 .rc-tablewrap { overflow-x: auto; }
 .rc-table { width: 100%; border-collapse: collapse; font-size: var(--lh-fs-sm); }

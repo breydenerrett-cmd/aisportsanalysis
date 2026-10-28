@@ -49,6 +49,7 @@ from api.hounds_share import router as hounds_share_router
 from api.hounds_tips import router as hounds_tips_router
 from api.hounds_kennels import router as hounds_kennels_router
 from api.hounds_live import router as hounds_live_router
+from api.hounds_postmortems import router as hounds_postmortems_router
 from api.feeds import router as feeds_router
 from api.support import router as support_router
 from api.betcheck import free_router as free_betcheck_router, router as betcheck_router
@@ -124,6 +125,9 @@ app.include_router(hounds_apprentice_router)   # the Apprentice hound's lessons:
 # where a ticket's game stands right now, and the "Grading" indicator (api/hounds_live.py): /hounds/live is a literal path
 # under /hounds/{id}, so it is mounted before api.hounds too (tests/test_live_settle_api.py pins the order).
 app.include_router(hounds_live_router)
+# the bets spreadsheet and the hindsight reviews (api/hounds_postmortems.py): /hounds/{id}/export has the shape of the literal
+# /hounds/tips/export, so it is mounted AFTER api.hounds_tips (tests/test_postmortems_api.py pins the order).
+app.include_router(hounds_postmortems_router)
 # the Zapier feeds and the coach brief (api/feeds.py). /hounds/coach-brief is a literal path under
 # /hounds/{id}, so this is mounted after the two routers above and BEFORE api.hounds (tests pin the order).
 app.include_router(feeds_router)
@@ -395,7 +399,12 @@ def _start_live_settle() -> None:
         status = warmup.status()
         return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
 
-    live_settle.start_loop(ready=_warm_up_done)
+    from src.ai import postmortems
+
+    # Hindsight reviews of settled bets (src/ai/postmortems.py) ride this loop: after each pass one tick queues the newly settled
+    # bets and reads or submits a half-price batch. It never raises, waits for no key (the queue just waits) and stops at its own
+    # monthly cap (POSTMORTEM_MONTHLY_USD, default $20). POSTMORTEMS=off stops it.
+    live_settle.start_loop(ready=_warm_up_done, after_pass=postmortems.tick_safely)
 
 
 # -- live scores for the Live board (src/sports/live_feed.py) -----------------------------------------------------
