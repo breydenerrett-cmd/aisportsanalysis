@@ -30,6 +30,9 @@ and the Training camp's own data.
     GET  /hounds/{id}/train/job/{job} the owner: poll a fine-tune or rebuild job; "done" carries the plan card (before/after rehearsal)
     POST /hounds/{id}/train/plan/apply the owner, {"plan_id", "choice"?, "basis"?, "confirm": true}: APPLY a saved plan as the next
                                       version (src/hounds/interact/training_plans.py)
+    GET  /hounds/{id}/versions        the owner, read only: the Versions list (v1..vN, status, why, forward record)
+    POST /hounds/{id}/revert          the owner, {"version_no", "current_id"?, "confirm": true}: GO BACK to an earlier version, as
+                                      the next version with its rules (src/hounds/interact/revert.py); also the "Undo" on a card
     GET  /hounds/{id}/headstone       a buried dog's headstone (public)
     GET  /hounds/{id}/ask             the dog's greeting and the questions worth asking it
     POST /hounds/{id}/ask             {"question": "..."}: an answer BUILT FROM THE DOG'S DATA (no model is called)
@@ -83,7 +86,7 @@ from src.appstate import ratelimit
 from src.appstate import users as users_store
 from src.hounds import unit_size, user_spec
 from src.hounds.contract import envelope
-from src.hounds.interact import ask, ask_eval, camp, coach, common, drill, fire, fire_event, gematria_analysis, look, manual, outback, rebuild_budget, retune, right_now, rites, store, training, training_plans, unleash
+from src.hounds.interact import ask, ask_eval, camp, coach, common, drill, fire, fire_event, gematria_analysis, look, manual, outback, rebuild_budget, retune, revert, right_now, rites, store, training, training_plans, unleash
 
 from api import auth as auth_mod
 from api import entitlements
@@ -552,6 +555,42 @@ def training_plan_apply(hound_id: str, body: PlanApplyRequest, response: Respons
         raise _err(422, "bad_plan", "that is not a proposal this hound made")
     try:
         out = training_plans.apply_plan(common.resolve(hound_id), current_user.id, body.plan_id, choice=body.choice, basis=body.basis)
+    except rites.RiteError as exc:
+        raise _rite_error(exc)
+    return envelope(out)
+
+
+class RevertRequest(BaseModel):
+    version_no: int
+    current_id: Optional[str] = None
+    confirm: bool = False
+
+
+@router.get("/hounds/{hound_id}/versions")
+def hound_versions(hound_id: str, response: Response, current_user: users_store.User = Depends(get_current_user),
+                   _rl: None = Depends(_rl_read)) -> dict:
+    """The owner's Versions list (v1..vN: status, when, why, forward record, and whether it can be gone back to). Read only. It opens for
+    ANY version of the owner's hound, so the page of an old version can show the list too."""
+    response.headers["Cache-Control"] = _NO_STORE
+    try:
+        out = revert.versions(common.resolve(hound_id), current_user.id)
+    except rites.RiteError as exc:
+        raise _rite_error(exc)
+    return envelope(out)
+
+
+@router.post("/hounds/{hound_id}/revert")
+def hound_revert(hound_id: str, body: RevertRequest, response: Response, current_user: users_store.User = Depends(get_current_user),
+                 _rl: None = Depends(_rl_rites)) -> dict:
+    """GO BACK to an earlier version: makes the next version with that version's rules (never reopens an old one). Needs
+    ``{"confirm": true}``. Also what the "Undo" on a training card sends."""
+    response.headers["Cache-Control"] = _NO_STORE
+    if not body.confirm:
+        raise _err(400, "confirm_required", "Say it again to go back to that version: send confirm true.")
+    if len(body.current_id or "") > PICK_ID_MAX:
+        raise _err(422, "bad_version", "that is not a version this hound has")
+    try:
+        out = revert.go_back(common.resolve(hound_id), current_user.id, body.version_no, current_id=body.current_id)
     except rites.RiteError as exc:
         raise _rite_error(exc)
     return envelope(out)

@@ -18,6 +18,11 @@ Everything else on the hound (bets a day, stake, lock minutes, rank, the price b
 the finished spec goes through ``validate_spec``, the builder's own normalizer, before anything is written.
 
 Sports that cannot be added are reported with the reason: a family off the dog menu (no result source to grade it).
+
+A GEMATRIA HOUND (owner request 2026-10-28) has no rule list to mirror: its one fixed rule is derived from its sports and its own knobs
+(``user_gematria``), and the engine reads names, dates and stored results for any family on the menu (a sport with no stored results is
+read on the names and the date alone, and says so). So adding sports to one is simply widening its ``sports``; every other setting (its
+price band, lead, ciphers, bets a day, stake) is kept exactly. ``plan_gematria`` is that path.
 """
 
 from __future__ import annotations
@@ -111,8 +116,6 @@ def _mirror(rule: Mapping, sport: str) -> tuple:
 def _raw_spec(spec: Mapping) -> dict:
     if not user_spec.is_v2(spec):
         spec = user_spec.upgrade_v1(spec)
-    if user_spec.is_gematria(spec):
-        raise AddSportsError("a Gematria hound has a fixed rule set; it cannot be given sports")
     if not spec.get("rules"):
         raise AddSportsError("this hound has no rules to mirror (an Apprentice with no applied proposal)")
     raw = {k: copy.deepcopy(spec[k]) for k in user_spec.V2_TOP_KEYS
@@ -145,11 +148,28 @@ def _shape(rule: Mapping) -> str:
     return json.dumps({k: v for k, v in rule.items() if k not in ("sports", "label")}, sort_keys=True)   # what it bets on
 
 
+def plan_gematria(hound: Mapping, sports_text: str) -> dict:
+    """``plan`` for a member Gematria hound: its sports widened, everything else (stamp, knobs, bets a day, stake) kept as it is."""
+    spec = hound["spec"]
+    have = list(spec.get("sports") or [])
+    requested, skipped = parse_sports(sports_text, set(have))
+    if not requested:
+        raise AddSportsError("nothing to add: " + "; ".join(f"{c} {w}" for c, w in skipped))
+    raw = {k: copy.deepcopy(v) for k, v in spec.items() if k not in ("rules", "markets", "side_rule")}
+    raw["sports"] = [c for c in user_spec.SPORTS if c in set(have) | set(requested)]
+    new = user_spec.validate_spec(raw)
+    notes = ["a Gematria hound has one fixed rule, so each added sport is played under the same settings; a sport with no stored results "
+             "is read on the names and the date alone"]
+    return {"raw": raw, "spec": new, "added": requested, "skipped": skipped, "notes": notes, "sentence": user_spec.rule_text(new)}
+
+
 def plan(hound: Mapping, sports_text: str, *, widen_only: bool = False) -> dict:
     """The new raw spec and the notes, with nothing written. Raises ``AddSportsError`` / ``SpecError``.
 
     A mirrored rule identical (sports aside) to ANY rule the hound already has just widens that rule. ``widen_only``
     stops there: a sport joins only where it widens an existing rule, so a hound at the rule cap can still take it."""
+    if user_spec.is_gematria(hound["spec"]):
+        return plan_gematria(hound, sports_text)
     raw = _raw_spec(hound["spec"])
     have = set(hound["spec"].get("sports") or [])
     requested, skipped = parse_sports(sports_text, have)
@@ -251,7 +271,7 @@ def apply(hound_id: str, sports_text: str, *, dry_run: bool = False, db=None) ->
     if hound is None:
         raise AddSportsError(f"no hound {hound_id}")
     _current(hound, db)
-    if str(sports_text or "").strip().lower() == "all":
+    if str(sports_text or "").strip().lower() == "all" and not user_spec.is_gematria(hound["spec"]):
         out = plan_fit(hound)
     else:
         out = plan(hound, sports_text)

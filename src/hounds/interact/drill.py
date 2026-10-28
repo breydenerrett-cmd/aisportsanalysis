@@ -205,15 +205,31 @@ def _local_nfl_results():
 def run_user(hound: dict, days: int, *, now: Optional[datetime] = None, rows_by_date: Optional[dict] = None,
              mlb_results=None, nfl_results=None, game_pk_index=None) -> dict:
     """Replay a user rule. ``hound`` is ``{id, spec, ...}``; the injection points are the tests'."""
+    return run_user_many([hound], days, now=now, rows_by_date=rows_by_date, mlb_results=mlb_results, nfl_results=nfl_results,
+                         game_pk_index=game_pk_index)[hound["id"]]
+
+
+def run_user_many(hounds: list, days: int, *, now: Optional[datetime] = None, rows_by_date: Optional[dict] = None,
+                  mlb_results=None, nfl_results=None, game_pk_index=None) -> dict:
+    """Replay several user rules in ONE pass over the same boards: ``{hound id: summary}``. The boards are read once, every rule is
+    evaluated on each day's games together (a Gematria hound's signals are computed once per game and shared by the variants that
+    read the same ciphers, see ``user_gematria.Weigher``), and one settle grades them all. The training screen's Fine-tune and Full rebuild
+    rehearse a handful of candidates beside the current rule this way: a month of Gematria games is minutes, not minutes per candidate.
+    Every hound is its own row in the throwaway ledger (its own bets, its own daily limit), so the results are what each would get alone."""
     from src.hounds import user_settle
     now = now or common.now_utc()
     first, last = _span(days, now)
-    spec = hound["spec"]
     dates = dates_between(first, last)
     if game_pk_index is None:
         game_pk_index = user_engine._load_game_pk_index()
-    drill_hound = {"id": hound["id"], "spec": spec, "spec_hash": user_spec.spec_hash(spec),
-                   "created_at": "2000-01-01T00:00:00Z"}
+    drill_hounds = []
+    for hound in hounds:
+        spec = hound["spec"]
+        row = {"id": hound["id"], "spec": spec, "spec_hash": user_spec.spec_hash(spec), "created_at": "2000-01-01T00:00:00Z"}
+        if hound.get("rehearsal") is True:
+            row["rehearsal"] = True               # the one thing that lets a Gematria hound be replayed (user_gematria.hound_candidates)
+        drill_hounds.append(row)
+    sports = sorted({s for h in hounds for s in h["spec"]["sports"]})
     with tempfile.TemporaryDirectory() as tmp:
         path = os.path.join(tmp, "drill.jsonl")
         for start in range(0, len(dates), CHUNK_DAYS):
@@ -222,19 +238,24 @@ def run_user(hound: dict, days: int, *, now: Optional[datetime] = None, rows_by_
                 window_rows = rows_by_date
             else:
                 with fire._heavy():              # one slice of the store in memory at a time
-                    window_rows = _window_rows(_shift(chunk[0], -1), _shift(chunk[-1], 1), spec["sports"])
+                    window_rows = _window_rows(_shift(chunk[0], -1), _shift(chunk[-1], 1), sports)
             for date in chunk:
                 near = []
                 for offset in (-1, 0, 1):
                     near.extend(window_rows.get(_shift(date, offset), ()))
-                user_engine.run(date, [drill_hound], near, ledger=path, now=now, mode="replay",
+                user_engine.run(date, drill_hounds, near, ledger=path, now=now, mode="replay",
                                 game_pk_index=game_pk_index)
             window_rows = None
         user_settle.settle(ledger=path, now=now, lookback_days=days + 3, mlb_results=mlb_results,
                            nfl_results=nfl_results or _local_nfl_results(), close_fn=lambda _bet: None,
                            game_pk_index=game_pk_index)
         rows = HashChainLedger(path).read()
-    return summarize_user(rows)
+    out = {}
+    for h in drill_hounds:
+        # a graded row is joined to its bet by bet_id (it need not name the hound), so keep the hound's bets and the grades of those bets
+        mine = {r["bet_id"] for r in rows if r.get("kind") == user_engine.KIND_BET and r.get("hound_id") == h["id"]}
+        out[h["id"]] = summarize_user([r for r in rows if r.get("bet_id") in mine])
+    return out
 
 
 def summarize_user(rows: Iterable[dict]) -> dict:
@@ -393,10 +414,14 @@ def _wrap(base: dict, *, dog: dict, rule: str, days: int, now: datetime, season:
 
 
 def drill(*, days: int = 14, dog: Optional[common.Dog] = None, spec: Optional[dict] = None,
-          now: Optional[datetime] = None, season: Optional[str] = None, **inject) -> dict:
+          now: Optional[datetime] = None, season: Optional[str] = None, rehearsal: bool = False, **inject) -> dict:
     """Run a drill for a dog or a typed-in spec. Results are remembered for half an hour (same dog or spec, same
     days, same Eastern day) so the same button twice costs one pass. ``season`` (a season id) replaces ``days``
-    with that season's completed days so far (``season_window``)."""
+    with that season's completed days so far (``season_window``).
+
+    ``rehearsal`` is the training screen's own call (``training_plans.default_replay``, owner request 2026-10-28): it lets a SPEC (never
+    a dog, never the Backtest route) that is a member Gematria hound be replayed, so a Gematria hound can be fine-tuned and rebuilt by the
+    same rehearsal as any other. The public Backtest still refuses Gematria (``GEMATRIA_FORWARD_ONLY_MESSAGE``)."""
     now = now or common.now_utc()
     season_info = None
     if season:
@@ -426,9 +451,11 @@ def drill(*, days: int = 14, dog: Optional[common.Dog] = None, spec: Optional[di
             raise DrillError("not_drillable", f"{dog.name} cannot be drilled: only house dogs and builder dogs run a rule on demand", 422)
     else:
         norm = spec_from_request(spec)
-        if user_spec.is_gematria(norm):
+        if user_spec.is_gematria(norm) and not rehearsal:
             raise DrillError("gematria_forward_only", GEMATRIA_FORWARD_ONLY_MESSAGE, 422)
         hound = {"id": "drill-" + user_spec.spec_hash(norm)[:10], "spec": norm}
+        if rehearsal and user_spec.is_gematria(norm):
+            hound["rehearsal"] = True
         ident = {"id": None, "name": "Your rule", "kind": "spec"}
         rule = user_spec.rule_text(norm)
         key = ("spec", user_spec.spec_hash(norm))
@@ -456,6 +483,30 @@ def drill(*, days: int = 14, dog: Optional[common.Dog] = None, spec: Optional[di
                 _cache.pop(next(iter(_cache)))
             _cache[cache_key] = (time.monotonic(), out)
     return out
+
+
+def drill_many(*, specs: list, days: int, now: Optional[datetime] = None, **inject) -> list:
+    """The training screen's batch rehearsal (owner request 2026-10-28): the same drill as ``drill`` for each spec in ``specs``, in ONE pass
+    over the boards and under ONE take of the process-wide slot. Returns one summary per spec, in order (the bare drill summary: record,
+    units, picks; the caller labels it). Specs are validated like a typed-in rule, and a member Gematria spec is replayed (a rehearsal,
+    never the public Backtest). Nothing is cached and nothing is counted."""
+    now = now or common.now_utc()
+    window(days, now)
+    hounds = []
+    for i, raw in enumerate(specs):
+        norm = spec_from_request(raw)
+        hound = {"id": f"drill-{i}-" + user_spec.spec_hash(norm)[:8], "spec": norm}
+        if user_spec.is_gematria(norm):
+            hound["rehearsal"] = True
+        hounds.append(hound)
+    if not _drill_slot.acquire(blocking=False):
+        raise DrillError("drill_busy", "another drill is running; try again in a moment", 429, retry_after=BUSY_RETRY_AFTER_S)
+    try:
+        got = run_user_many(hounds, days, now=now, **inject)
+    finally:
+        _drill_slot.release()
+        gc.collect()
+    return [got[h["id"]] for h in hounds]
 
 
 def peek(dog: common.Dog, days: int, now: Optional[datetime] = None) -> Optional[dict]:

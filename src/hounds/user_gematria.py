@@ -3,10 +3,12 @@ Gematria Hound (``src/hounds/gematria``), on the member's own sports, bets a day
 
 WHAT THE MEMBER CHOOSES AND WHAT THEY DO NOT
 --------------------------------------------
-The member chooses the name, tagline, colour, badge, sports, most bets a day and stake, like any hound. Everything that
-decides a pick is NOT theirs to change: the margin, the thresholds, the ciphers, the weights and the price band come from
-``config/gematria/active.json``'s rules file, read at pick time by the same ``GematriaRuntime`` the house hound runs. There is
-no second copy of the logic here, so the two can never drift: this module only (1) rebuilds the house runner's inputs for a
+The member chooses the name, tagline, colour, badge, sports, most bets a day and stake, like any hound. What decides a pick is
+the house's: the margin, the thresholds, the ciphers, the weights and the price band come from ``config/gematria/active.json``'s
+rules file, read at pick time by the same ``GematriaRuntime`` the house hound runs. The ONE thing a member may lay over it is a
+small set of knobs that only NARROW those rules (``TUNING_KEYS``: price band, how clear the lead must be, which ciphers are read;
+owner request 2026-10-28, so a Gematria hound can be fine-tuned and rebuilt like any other: ``interact/gematria_training.py``).
+There is no second copy of the logic here, so the two can never drift: this module only (1) rebuilds the house runner's inputs for a
 member's game (a point-in-time ``Context`` and the lock board, through ``pack.base``'s own functions), (2) asks the runtime to
 weigh the game, and (3) turns a "bet" verdict into the candidate the user engine writes.
 
@@ -39,6 +41,8 @@ worse is vetoed by the decision itself and again by the user engine.
 
 from __future__ import annotations
 
+import copy
+import dataclasses
 import json
 import re
 from collections import Counter
@@ -151,14 +155,143 @@ def rules_for(stamp: Optional[Mapping]):
 
 
 # ---------------------------------------------------------------------------
+# the member's own knobs (owner request 2026-10-28: "the Gematria hound cannot be coached")
+# ---------------------------------------------------------------------------
+#
+# WHY KNOBS AT ALL. Until 2026-10-28 a member Gematria hound had NO rule of its own: the engine, the ciphers, the margin and the price
+# band were all the house's, so there was nothing for Fine-tune or Full rebuild to change, and the one thing members saw (it kept
+# backing heavy favourites, "chalk city") could not be fixed. The decision never CHOOSES a side by price, the price only vetoes
+# (``gematria.decision``), so a price band that starts at -199 lets every favourite the numbers happen to like straight through.
+#
+# THE KNOBS (``spec["gematria"]["tuning"]``, every key optional, absent = the house rules exactly):
+#   price_min, price_max   the price band the backed side's average price must sit in. It can only NARROW the active rules' band
+#                          (-199 to +400 today), never widen it, and never reach -200.
+#   min_margin, min_z      how clearly one side must lead (the floor, and in units of the game's own noise). Only raised
+#                          above the house value; the house value is also the least it can be.
+#   ciphers                which of the four ciphers are read (at least two). A subset of the active rules' ciphers.
+# Sports, most bets a day and stake are the spec's own fields, as for any hound. The MARKET (moneyline) and the SIDE (the engine
+# picks the side with the larger total) are not knobs: a hound that chose its side or market would be a different style.
+#
+# WHERE IT LIVES. Inside the existing ``gematria`` stamp, so it is part of the spec hash (a tuned hound is a different rule, with its
+# own record) and an untuned hound's hash is byte-for-byte what it was. Applied at pick time over the ACTIVE rules (``tuned_rules``);
+# the rules FILE is never edited, and a bet row carries the tuning it was made under.
+
+TUNING_KEY = "tuning"
+TUNING_KEYS = ("ciphers", "min_margin", "min_z", "price_max", "price_min")
+MIN_CIPHERS = 2
+MARGIN_RANGE = (0.5, 10.0)
+Z_RANGE = (0.0, 4.0)
+
+
+def tuning_of(spec: Optional[Mapping]) -> Optional[dict]:
+    """The member's tuning on a Gematria spec, or None (none given, or not a Gematria spec)."""
+    stamp = spec.get("gematria") if isinstance(spec, Mapping) else None
+    tuning = stamp.get(TUNING_KEY) if isinstance(stamp, Mapping) else None
+    return dict(tuning) if isinstance(tuning, Mapping) and tuning else None
+
+
+def tuning_key(tuning: Optional[Mapping]) -> tuple:
+    """A hashable form of a tuning (the weigher memoises on it)."""
+    if not tuning:
+        return ()
+    return tuple(sorted((k, tuple(v) if isinstance(v, (list, tuple)) else v) for k, v in tuning.items()))
+
+
+def tuned_rules(rules, tuning: Optional[Mapping]):
+    """``rules`` with the member's knobs laid over them. NARROWING ONLY, whatever the tuning says: the band is clamped inside the
+    rules' own band, the margin and z never go under the rules' values, and the ciphers are the rules' own that the member kept (the
+    rules' full set when none of them match). The rules object itself is frozen and is never changed; a copy is returned."""
+    if not tuning:
+        return rules
+    d = rules.decision
+    lo, hi = d.price_band
+    if tuning.get("price_min") is not None:
+        lo = max(lo, int(tuning["price_min"]))
+    if tuning.get("price_max") is not None:
+        hi = min(hi, int(tuning["price_max"]))
+    fields = {"price_band": (lo, hi)}
+    if tuning.get("min_margin") is not None:
+        fields["min_margin"] = max(d.min_margin, float(tuning["min_margin"]))
+    if tuning.get("min_z") is not None:
+        fields["min_z"] = max(d.min_z, float(tuning["min_z"]))
+    out = {"decision": dataclasses.replace(d, **fields)}
+    kept = tuple(c for c in rules.ciphers if c in (tuning.get("ciphers") or ()))
+    if kept and kept != tuple(rules.ciphers):
+        out["ciphers"] = kept
+        out["cipher_weights"] = {c: rules.cipher_weights[c] for c in kept}
+    return dataclasses.replace(rules, **out)
+
+
+def _number(value: Any, lo: float, hi: float) -> Optional[float]:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value != value:
+        return None
+    return round(float(value), 2) if lo <= float(value) <= hi else None
+
+
+def normalize_tuning(raw: Any, rules, errors: dict) -> Optional[dict]:
+    """The canonical tuning (only the keys given, typed, ciphers in cipher order), or None when there is none. Reasons go in
+    ``errors['gematria']``. ``rules`` are the stamped rules: a band no price can sit in, or a cipher those rules do not read, is refused."""
+    from src.hounds import user_spec
+    from src.hounds.pack import base
+    from src.research import gematria as cipher_book
+
+    if raw in (None, {}):
+        return None
+    if not isinstance(raw, Mapping):
+        errors["gematria"] = "tuning must be an object"
+        return None
+    unknown = sorted(str(k)[:30] for k in raw if k not in TUNING_KEYS)
+    if unknown:
+        errors["gematria"] = f"tuning has no knob called {', '.join(unknown)}; the knobs are {', '.join(TUNING_KEYS)}"
+        return None
+    out: dict = {}
+    for key in ("price_min", "price_max"):
+        if key not in raw:
+            continue
+        v = raw[key]
+        if not user_spec._is_price(v) or not (base.PRICE_MIN <= v <= base.PRICE_MAX):      # noqa: SLF001 -- the menu's own price check
+            errors["gematria"] = f"{key} must be an American price from {base.PRICE_MIN} to {base.PRICE_MAX} (never -200 or worse)"
+            return None
+        out[key] = int(v)
+    if "min_margin" in raw:
+        v = _number(raw["min_margin"], *MARGIN_RANGE)
+        if v is None:
+            errors["gematria"] = f"min_margin must be a number from {MARGIN_RANGE[0]:g} to {MARGIN_RANGE[1]:g}"
+            return None
+        out["min_margin"] = v
+    if "min_z" in raw:
+        v = _number(raw["min_z"], *Z_RANGE)
+        if v is None:
+            errors["gematria"] = f"min_z must be a number from {Z_RANGE[0]:g} to {Z_RANGE[1]:g}"
+            return None
+        out["min_z"] = v
+    if "ciphers" in raw:
+        given = raw["ciphers"]
+        ok = isinstance(given, (list, tuple)) and all(isinstance(c, str) for c in given)
+        wanted = {c for c in given} if ok else set()
+        if not ok or not wanted <= set(cipher_book.CIPHERS) or not wanted <= set(rules.ciphers) or len(wanted) < MIN_CIPHERS:
+            errors["gematria"] = (f"ciphers must name at least {MIN_CIPHERS} of {', '.join(rules.ciphers)}")
+            return None
+        out["ciphers"] = [c for c in cipher_book.CIPHERS if c in wanted]
+    if not out:
+        return None
+    lo, hi = tuned_rules(rules, out).decision.price_band
+    if lo > hi:
+        errors["gematria"] = "that price band leaves no price a bet could be at"
+        return None
+    return {k: out[k] for k in sorted(out)}
+
+
+# ---------------------------------------------------------------------------
 # validation (called by user_spec._validate_v2)
 # ---------------------------------------------------------------------------
 
-def canonical_rule(sports: list, rules) -> dict:
-    """The one rule a Gematria spec carries. Derived from the stamped rules, never typed."""
+def canonical_rule(sports: list, rules, tuning: Optional[Mapping] = None) -> dict:
+    """The one rule a Gematria spec carries. Derived from the stamped rules (and the member's own price band, see ``tuned_rules``),
+    never typed."""
     from src.hounds.pack import base
 
-    lo, hi = rules.decision.price_band
+    lo, hi = tuned_rules(rules, tuning).decision.price_band
     return {"label": CANONICAL_LABEL, "sports": list(sports), "markets": [MARKET], "side": "either",
             "price_min": int(max(base.PRICE_MIN, lo)), "price_max": int(min(base.PRICE_MAX, hi)),
             "line_min": None, "line_max": None, "min_books": int(base.MIN_BOOKS), "when": None}
@@ -174,13 +307,15 @@ def normalize(raw: Mapping, errors: dict) -> Optional[dict]:
 
     stamp_raw = raw.get("gematria")
     stamp = None
+    tuning_raw = None
     if stamp_raw is None:
         stamp = active_stamp()
-    elif (isinstance(stamp_raw, Mapping) and set(stamp_raw) == {"rules_version", "rules_hash"}
+    elif (isinstance(stamp_raw, Mapping) and {"rules_version", "rules_hash"} <= set(stamp_raw) <= {"rules_version", "rules_hash", TUNING_KEY}
           and isinstance(stamp_raw["rules_version"], str) and _STAMP_VERSION_RE.match(stamp_raw["rules_version"])
           and isinstance(stamp_raw["rules_hash"], str) and _STAMP_HASH_RE.match(stamp_raw["rules_hash"])
           and (stamp_raw["rules_version"], stamp_raw["rules_hash"]) in known_rules()):
         stamp = {"rules_version": stamp_raw["rules_version"], "rules_hash": stamp_raw["rules_hash"]}
+        tuning_raw = stamp_raw.get(TUNING_KEY)
     else:
         errors["gematria"] = "must name a Gematria rules version this program holds"
     rules_raw = raw.get("rules")
@@ -210,12 +345,17 @@ def normalize(raw: Mapping, errors: dict) -> Optional[dict]:
     if errors.get("gematria") or errors.get("rules") or sports is None or stamp is None:
         return None
     rules = rules_for(stamp)
+    tuning = normalize_tuning(tuning_raw, rules, errors)
+    if errors.get("gematria"):
+        return None
+    if tuning:
+        stamp[TUNING_KEY] = tuning
     lock = int(rules.decision.lock_minutes)
     given_lock = raw.get("lock_minutes")
     if given_lock is not None and given_lock != lock:
         errors["lock_minutes"] = f"the Gematria style weighs each game {lock} minutes before the start"
         return None
-    rule = canonical_rule(sports, rules)
+    rule = canonical_rule(sports, rules, tuning)
     return {"sports": sports, "stamp": stamp, "rules": [rule], "rule": rule, "lock_minutes": lock}
 
 
@@ -231,7 +371,9 @@ def rule_sentence(spec: Mapping) -> str:
     """The Gematria style's rule in plain English, from the stamped rules and the spec's sports. Pure."""
     from src.hounds import user_spec
 
-    rules = rules_for(spec.get("gematria"))
+    house = rules_for(spec.get("gematria"))
+    tuning = tuning_of(spec)
+    rules = tuned_rules(house, tuning)
     d = rules.decision
     lo, hi = spec["rules"][0]["price_min"], spec["rules"][0]["price_max"]
     sports = user_spec.sports_phrase(spec["rules"][0]["sports"])
@@ -249,8 +391,49 @@ def rule_sentence(spec: Mapping) -> str:
         f"{CANONICAL_LABEL}: {sports} moneylines. For each team it works out what the numbers would say if that team won "
         "(the cipher values of names, cities and mascots, the number of the date, how far the game is from a founding "
         "date, and counts from our stored results such as records, streaks and days since a win); each time two of those "
-        f"numbers match is one piece of evidence. {lead} It runs the house Gematria Hound's "
-        f"rules ({rules.version}) and makes no claim that numbers predict games.")
+        f"numbers match is one piece of evidence. {lead} {tuning_sentence(house, tuning)}"
+        "makes no claim that numbers predict games.")
+
+
+def tuning_sentence(house, tuning: Optional[Mapping]) -> str:
+    """The closing clause of the published rule: the house rules it runs, and, when the member tuned it, exactly which settings are
+    its own. Ends with a space so the caller can continue the sentence."""
+    if not tuning:
+        return f"It runs the house Gematria Hound's rules ({house.version}) and "
+    own = []
+    d = house.decision
+    if "min_margin" in tuning or "min_z" in tuning:
+        own.append("how clearly one side must lead")
+    if "price_min" in tuning or "price_max" in tuning:
+        own.append("the price band")
+    if "ciphers" in tuning:
+        own.append("the ciphers it reads (" + ", ".join(tuning["ciphers"]) + ")")
+    return (f"It runs the house Gematria Hound's rules ({house.version}) with its own settings for " + _and_list(own) + ", "
+            f"which only narrow what the house rules allow (the house rules lead by {d.min_margin:g}), and ")
+
+
+def _and_list(items: list) -> str:
+    return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
+
+
+def knob_lines(spec: Mapping) -> dict:
+    """The knobs of a Gematria spec as the plain words a card and a diff show: ``{"Sports": ..., "Price band": ..., ...}``. Pure."""
+    house = rules_for(spec.get("gematria"))
+    rules = tuned_rules(house, tuning_of(spec))
+    d = rules.decision
+    rule = spec["rules"][0]
+    lo, hi = rule["price_min"], rule["price_max"]
+    from src.hounds import user_spec
+    return {"Sports": user_spec.sports_phrase(rule["sports"]),
+            "Price band": f"{_price(lo)} to {_price(hi)} (never -200 or worse)",
+            "Lead needed": f"at least {d.min_margin:g}" + (f" and {d.min_z:g} times the game's noise" if d.margin_mode == "noise_scaled" and d.min_z else ""),
+            "Ciphers read": ", ".join(rules.ciphers)}
+
+
+def knob_diff(old: Mapping, new: Mapping) -> list:
+    """``[{what, before, after}]`` for the knobs that differ between two Gematria specs (``english.render.diff_specs`` uses it)."""
+    a, b = knob_lines(old), knob_lines(new)
+    return [{"what": k, "before": a[k], "after": b[k]} for k in a if a[k] != b[k]]
 
 
 def fixed_text(fixed: Mapping) -> str:
@@ -311,12 +494,29 @@ class Weigher:
         self._stores = None
         self._loaded: set = set()
         self._memo: dict = {}
+        self._tuned: dict = {}
+        self._prepared: dict = {}
 
     @property
     def runtime(self):
         if self._runtime is None:
             self._runtime = make_runtime()
         return self._runtime
+
+    def runtime_for(self, tuning: Optional[Mapping] = None):
+        """The runtime to weigh with: the house's, or, for a member who tuned their hound, a shallow copy whose rules carry the member's
+        knobs (``tuned_rules``: narrowing only). The copy shares the facts, the history source and the (absent) ledger, so it costs
+        nothing, and the house runtime itself is never touched."""
+        if not tuning:
+            return self.runtime
+        key = tuning_key(tuning)
+        got = self._tuned.get(key)
+        if got is None:
+            got = copy.copy(self.runtime)
+            got.rules = tuned_rules(self.runtime.rules, tuning)
+            got.tuning = dict(tuning)                  # ``_candidate`` stamps it on the bet row
+            self._tuned[key] = got
+        return got
 
     def stores(self):
         from src.hounds.pack import base
@@ -358,12 +558,14 @@ class Weigher:
         self._ensure_results(game.sport.lower())
         return base.build_context(self.stores(), event_id)
 
-    def weigh(self, event_id: str, *, as_of: Optional[datetime] = None):
+    def weigh(self, event_id: str, *, as_of: Optional[datetime] = None, tuning: Optional[Mapping] = None):
         """``(ctx, board, Weighed)`` for a game, or None when it has no usable board or start. ``as_of`` is only the
-        preview's: a game not yet at its lock is read on the board as it stands (the lock board does not exist yet)."""
+        preview's: a game not yet at its lock is read on the board as it stands (the lock board does not exist yet). ``tuning`` is the
+        member's knobs (``tuning_of(spec)``): one pass weighs different members' hounds, each under its own."""
         from src.hounds.pack import base
 
-        key = (event_id, as_of)
+        runtime = self.runtime_for(tuning)
+        key = (event_id, as_of, tuning_key(tuning))
         if as_of is None and key in self._memo:          # a preview's moving clock is never memoised (it would only grow)
             return self._memo[key]
         ctx = self.context(event_id)
@@ -376,7 +578,17 @@ class Weigher:
                                          sport=ctx.sport)
             ahead = as_of is not None and as_of < ctx.lock
             # an ahead read is cut at its own instant for the history too (``GematriaRuntime.inputs``), not only for the board
-            out = (ctx, board, self.runtime.weigh(ctx, board, known_at=as_of) if ahead else self.runtime.weigh(ctx, board))
+            prepared = None
+            if as_of is None and hasattr(runtime, "prepare"):
+                # the expensive half is shared by every tuning that reads the same ciphers (a rehearsal weighs one game under many variants)
+                pkey = (event_id, tuple(runtime.rules.ciphers))
+                prepared = self._prepared.get(pkey)
+                if prepared is None:
+                    prepared = self._prepared[pkey] = runtime.prepare(ctx)
+            if prepared is not None:
+                out = (ctx, board, runtime.weigh(ctx, board, prepared=prepared))
+            else:
+                out = (ctx, board, runtime.weigh(ctx, board, known_at=as_of) if ahead else runtime.weigh(ctx, board))
         if as_of is None:
             self._memo[key] = out
         return out
@@ -401,6 +613,9 @@ def _candidate(game, ctx, board, weighed, runtime) -> Optional[dict]:
               f"books; the best single price was {E._fmt_price(best)} at {info['book']}. Rules {rules.version}.")
     extra = {"gematria": weighed.block, "rules_version": rules.version, "rules_hash": rules.rules_hash,
              "confidence": v.confidence, "forward_only": True, "style": STYLE, "reason": reason}
+    tuning = getattr(runtime, "tuning", None)
+    if tuning:
+        extra["tuning"] = dict(tuning)             # the member's own settings the bet was made under: the record can tell tuned from house
     return {"side": v.side, "line": None, "price": price, "best_price": best, "best_book": info["book"],
             "n_books": n_books, "board_observed_utc": E._iso(observed),
             "board_age_minutes": round((ctx.lock - observed).total_seconds() / 60.0, 1), "selection": selection,
@@ -425,9 +640,17 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, date: str, *
     if not enabled(env):
         skipped[OFF_CODE] += 1
         return []
-    if mode != "live":
-        skipped[FORWARD_ONLY_CODE] += 1                  # the house hound is forward only; so is a member's
+    # The house hound is forward only; so is a member's, with ONE exception: the training screen's REHEARSAL (owner request 2026-10-28),
+    # which the drill marks on the hound row it hands the engine (``rehearsal``). A rehearsal is hindsight, written to a throwaway
+    # ledger and never counted; every game is weighed once, at its own lock, on the board and the results stored by then, exactly as a
+    # live pass would have, so it is as point-in-time as the engine itself. The public Backtest still refuses a Gematria hound.
+    rehearsal = mode == "replay" and hound.get("rehearsal") is True
+    if mode != "live" and not rehearsal:
+        skipped[FORWARD_ONLY_CODE] += 1
         return []
+    tuning = tuning_of(spec)
+    runtime = weigher.runtime_for(tuning) if tuning else weigher.runtime
+    tuned = {"tuning": tuning} if tuning else {}          # an untuned pass calls the weigher exactly as it always has
     created = E._utc(hound.get("created_at"))
     out = []
     for event_id, game in sorted(games.items()):
@@ -435,6 +658,18 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, date: str, *
             continue
         bet_id = E.bet_id_for(hound["id"], event_id, MARKET)
         if bet_id in seen_ids:
+            continue
+        if rehearsal:
+            got = weigher.weigh(event_id, **tuned)
+            if got is None:
+                skipped[PASS_PREFIX + "no_context"] += 1
+                continue
+            ctx, board, weighed = got
+            cand = _candidate(game, ctx, board, weighed, runtime) if weighed.verdict.is_bet else None
+            if cand is None:
+                skipped[PASS_PREFIX + (weighed.verdict.code if not weighed.verdict.is_bet else "no_board")] += 1
+                continue
+            out.append(((ctx.lock, event_id, 0), ctx.lock, event_id, MARKET, game, ctx.start, cand, bet_id))
             continue
         now = clock()
         lock_pre = game.commence - timedelta(minutes=spec["lock_minutes"])
@@ -450,7 +685,7 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, date: str, *
         considered.setdefault(hound["id"], set()).add(event_id)
         # ahead: a game not at its lock yet, or one whose lock passed before this hound existed, is read on the board standing now
         as_of = now if (ahead and (now < lock_pre or (created is not None and created > lock_pre))) else None
-        got = weigher.weigh(event_id, as_of=as_of)
+        got = weigher.weigh(event_id, as_of=as_of, **tuned)
         if got is None:
             skipped[PASS_PREFIX + "no_context"] += 1
             continue
@@ -464,13 +699,13 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, date: str, *
         if not weighed.verdict.is_bet:
             skipped[PASS_PREFIX + weighed.verdict.code] += 1
             continue
-        cand = _candidate(game, ctx, board, weighed, weigher.runtime)
+        cand = _candidate(game, ctx, board, weighed, runtime)
         if cand is None:
             skipped[PASS_PREFIX + "no_board"] += 1
             continue
         if as_of is not None:
             cand["row_extra"]["placed_ahead"] = True        # weighed before its lock (or after a lock the hound missed): said on the row
-        ranked = weigher.runtime.rules.static_fallback and ahead
+        ranked = runtime.rules.static_fallback and ahead
         key = (-weighed.verdict.z, ctx.lock, event_id, 0) if ranked else (ctx.lock, event_id, 0)
         # Which ORDER chose this bet under the daily limit, on the row (red team 2026-10-22). The order is code, not the rules file, so
         # the rules_hash alone cannot say it: on 2026-10-20 and 10-22 an Unleash's top 5 by z shared only 2 and 3 games with the 5 the
@@ -488,6 +723,9 @@ def preview(spec: Mapping, games: Mapping, date: str, now: datetime, *, weigher:
     from src.hounds import user_engine as E
 
     weigher = weigher or Weigher(games)
+    tuning = tuning_of(spec)
+    runtime = weigher.runtime_for(tuning) if tuning else weigher.runtime
+    tuned = {"tuning": tuning} if tuning else {}
     skipped: Counter = Counter()
     considered: set = set()
     picks = []
@@ -498,18 +736,18 @@ def preview(spec: Mapping, games: Mapping, date: str, now: datetime, *, weigher:
             skipped[OFF_CODE] += 1
             continue
         considered.add(event_id)
-        got = weigher.weigh(event_id, as_of=now)
+        got = weigher.weigh(event_id, as_of=now, **tuned)
         if got is None:
             skipped[PASS_PREFIX + "no_context"] += 1
             continue
         ctx, board, weighed = got
         if weighed.verdict.is_bet:
-            cand = _candidate(game, ctx, board, weighed, weigher.runtime)
+            cand = _candidate(game, ctx, board, weighed, runtime)
             if cand is not None:
                 picks.append((ctx.lock, event_id, game, ctx, cand, weighed.verdict.z))
                 continue
         skipped[PASS_PREFIX + weighed.verdict.code] += 1
-    if weigher.runtime.rules.static_fallback:
+    if runtime.rules.static_fallback:
         picks.sort(key=lambda p: (-p[5], p[0], p[1]))
     else:
         picks.sort(key=lambda p: (p[0], p[1]))

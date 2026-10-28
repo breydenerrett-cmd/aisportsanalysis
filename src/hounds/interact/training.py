@@ -72,7 +72,7 @@ from typing import Callable, Mapping, Optional, Sequence
 
 from src.hounds import coach_card, stats, user_rules, user_spec, user_store
 from src.hounds.breeding import cross
-from src.hounds.interact import common, rites, store
+from src.hounds.interact import common, revert, rites, store
 from src.hounds.interact.rites import RiteError
 
 MIN_NEW_SETTLED = 5          # settled bets a version needs before it can train again (and for a non-light first training)
@@ -1245,5 +1245,6 @@ def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, n
                 "trained_times": trained_times, "page_href": f"hound.html?id={new['id']}",
                 "record": {"wins": 0, "losses": 0, "pushes": 0, "bets": 0}},
         "next_training": f"It can train again after {MIN_NEW_SETTLED} new settled bets on version {new['version_no']}.",
+        "undo": revert.undo_offer(dog.id, hound["version_no"], new["version_no"]),       # "Undo" on the card: back to the version just retired
         "honesty": retune.HONESTY, "paper_only": True,
     }

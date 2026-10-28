@@ -198,6 +198,9 @@ def build(dog: common.Dog, *, now: Optional[datetime] = None, games: Optional[Ma
         games = fire.cached_games(sports, now)
     runtime = runtime or user_gematria.make_runtime()
     weigher = user_gematria.Weigher(games, runtime=runtime)
+    tuning = user_gematria.tuning_of(dog.spec)           # a member's own knobs (narrowing the house rules) apply to its analysis too
+    runtime = weigher.runtime_for(tuning) if tuning else runtime
+    tuned = {"tuning": tuning} if tuning else {}
     lock_minutes = _lock_minutes(dog, runtime)
     today = user_engine.slate_date_of(now)
     todays = sorted(((eid, g) for eid, g in games.items()
@@ -208,7 +211,7 @@ def build(dog: common.Dog, *, now: Optional[datetime] = None, games: Optional[Ma
     with fire._heavy():                  # the same process-wide gate Unleash weighs under (result stores are read for MLB / NFL)
         for event_id, game in todays[:MAX_WEIGHED]:
             lock = game.commence - timedelta(minutes=lock_minutes)
-            got = weigher.weigh(event_id, as_of=now if now < lock else None)
+            got = weigher.weigh(event_id, as_of=now if now < lock else None, **tuned)
             if got is None:
                 continue
             ctx, _board, w = got

@@ -19,6 +19,12 @@ Apply (``apply_plan``) goes through the existing ``user_store.create_version``: 
 and the next version starts with an empty record. The page never sends a rule set: it sends a plan id, so a tick can only name
 something the server itself produced and checked.
 
+A MEMBER GEMATRIA HOUND (owner request 2026-10-28) is trained within its OWN knobs (``gematria_training``): Fine-tune offers a change to its price
+band (first "stay off heavy favourites" when its bets lean on favourites), how clear its lead must be, the ciphers it reads or its sports;
+Full rebuild is the same pipeline with its own prompts and checks. It rehearses over ``REPLAY_DAYS_GEMATRIA`` days and rehearses the
+current rule and every candidate in ONE pass (``drill.drill_many``). It can only come back as a Gematria hound: ``apply_plan`` refuses a
+plan whose rule set is any other kind.
+
 THE REHEARSAL IS HINDSIGHT, NEVER COUNTED. It is ``drill.drill`` over the last ``REPLAY_DAYS`` completed days of captured boards,
 written to a throwaway ledger. The hound's record, the leaderboard and the learning loop never see it, and every card says so.
 
@@ -43,17 +49,25 @@ from pathlib import Path
 from typing import Callable, Mapping, Optional, Sequence
 
 from src.hounds import user_rules, user_spec, user_store
-from src.hounds.interact import common, rebuild_ai, rebuild_budget as budget, rites, training
+from src.hounds.interact import common, gematria_training, rebuild_ai, rebuild_budget as budget, revert, rites, training
 from src.hounds.interact.rites import RiteError
 
 logger = logging.getLogger("linehound.hounds.training_plans")
 
 REPLAY_DAYS = 30                 # the longest window the drill allows (drill.DAYS_CHOICES)
+REPLAY_DAYS_GEMATRIA = 14        # a Gematria hound weighs every game of every sport it plays (about 8 s a day for a handful of variants), so
+                                 # its rehearsal looks back two weeks: a few minutes, not ten, and still ~5 bets a day at its daily limit
+
+
+def days_for(spec: Mapping) -> int:
+    """How many completed days the rehearsal looks back for this rule set (``REPLAY_DAYS``; a Gematria hound's is shorter)."""
+    return REPLAY_DAYS_GEMATRIA if user_spec.is_gematria(spec) else REPLAY_DAYS
 MIN_REPLAY_BETS = 20
 MIN_UNITS_GAIN = 1.0
 MIN_PER_BET_GAIN = 0.02
 KEEP_FRACTION = 0.5
 MINOR_MAX_REPLAYS = 4            # single changes replayed per fine-tune (plus one combination of the best two)
+GEMATRIA_MAX_REPLAYS = 6         # a Gematria hound's candidates share ONE pass over the boards (drill.drill_many), so more fit
 MINOR_BUDGET_S = 60.0
 REBUILD_MAX_REPLAYS = 8          # survivors replayed per rebuild (the analyst's result is replayed on top of these)
 REBUILD_REPLAY_BUDGET_S = 100.0
@@ -96,19 +110,38 @@ def beats(base: Optional[Mapping], cand: Optional[Mapping]) -> bool:
 
 
 def default_replay(spec: Mapping, days: int, now: datetime) -> dict:
-    """The Backtest drill for a rule set. Raises ``RiteError`` when the drill refuses (busy, forward-only style)."""
+    """The Backtest drill for a rule set. Raises ``RiteError`` when the drill refuses (busy, forward-only style). ``rehearsal=True`` is what
+    lets a member Gematria spec be replayed here (and only here: the Backtest tab still refuses it)."""
     from src.hounds.interact import drill
     try:
-        return drill.drill(spec=dict(spec), days=days, now=now)
+        return drill.drill(spec=dict(spec), days=days, now=now, rehearsal=True)
     except drill.DrillError as exc:
         raise RiteError("replay_" + exc.code, str(exc), exc.status) from None
 
 
+def default_replay_many(specs: Sequence[Mapping], days: int, now: datetime) -> list:
+    """The same drill for several rule sets in one pass (``drill.drill_many``), one summary per spec, in order."""
+    from src.hounds.interact import drill
+    try:
+        return drill.drill_many(specs=[dict(sp) for sp in specs], days=days, now=now)
+    except drill.DrillError as exc:
+        raise RiteError("replay_" + exc.code, str(exc), exc.status) from None
+
+
+def _replay_batch(replay_fn: Callable, replay_many_fn: Optional[Callable], specs: Sequence[Mapping], now: datetime) -> list:
+    """The rehearsal numbers for each spec, in order: ONE pass when a batch replay is available (production), else one at a time (a test's
+    single-spec fake). The first spec is the rule the hound has now."""
+    if replay_many_fn is not None:
+        return [numbers_of(summary) for summary in replay_many_fn(list(specs), days_for(specs[0]), now)]
+    return [numbers_of(replay_fn(sp, days_for(sp), now)) for sp in specs]
+
+
 def _replay_numbers(replay_fn: Callable, spec: Mapping, now: datetime) -> Optional[dict]:
-    return numbers_of(replay_fn(spec, REPLAY_DAYS, now))
+    return numbers_of(replay_fn(spec, days_for(spec), now))
 
 
 def rehearsal_block(base: Optional[Mapping], after: Optional[Mapping], *, days: int = REPLAY_DAYS) -> dict:
+    """The labelled before/after of a rehearsal (``days`` is the window it covered)."""
     n = (after or {}).get("graded", 0)
     small = n < 30
     return {"label": REHEARSAL_LABEL, "note": REHEARSAL_NOTE, "counted": False, "days": days, "before": base, "after": after,
@@ -299,21 +332,31 @@ def _minor_candidates(spec: Mapping, analysis: Mapping) -> list:
     return (evidence + rest)[:MINOR_MAX_REPLAYS]
 
 
-def fine_tune(dog, user_id: int, *, now: Optional[datetime] = None, rows=None, ledger_path=None, db=None, replay_fn: Optional[Callable] = None,
-              env: Optional[Mapping] = None, client=None, client_factory=None, ledger: Optional[budget.RebuildLedger] = None,
-              router_spend=None, store: Optional[PlanStore] = None, progress: Callable[[str], None] = lambda _t: None) -> dict:
-    """A small change that beats the current rule on the rehearsal, or a plain "none did" (never a suggestion that is not better)."""
-    dog, moment, rows, bets, hound, gate = _gate(dog, user_id, now, rows, ledger_path, db)
-    spec = hound["spec"]
+def _minor_trials(spec: Mapping, analysis: Mapping, bets: Sequence, moment: datetime, replay: Callable, replay_many: Optional[Callable],
+                  progress: Callable[[str], None]) -> tuple:
+    """``(base numbers, how many changes were rehearsed, winners, within budget)`` for a Fine-tune: each winner beat the current rule by the
+    gate, and ``within budget`` says there is still time to rehearse the combination of the best two.
+
+    An ordinary hound's changes are rehearsed one at a time within ``MINOR_BUDGET_S`` (each is a pass over the boards). A Gematria hound's
+    (its own menu, ``gematria_training.menu``) all share ONE pass with the current rule: its signals are computed once per game."""
+    started = time.monotonic()
+    winners: list = []
     if user_spec.is_gematria(spec):
-        raise RiteError("gematria_forward_only", "A Gematria hound is forward-only, so a rehearsal cannot test a change to it.", 422)
-    replay = replay_fn or default_replay
-    analysis = training.analyse(bets, spec, training.rule_index_of(rows, dog.id))
+        trials = []
+        for entry in gematria_training.menu(spec, analysis, bets)[:GEMATRIA_MAX_REPLAYS]:
+            applied = training._apply_entry(copy.deepcopy(dict(spec)), entry, "minor")      # noqa: SLF001
+            if applied is not None:
+                trials.append((entry, applied))
+        progress(f"Rehearsing the settings it has now and {len(trials)} small change{'s' if len(trials) != 1 else ''}")
+        got = _replay_batch(replay, replay_many, [spec] + [applied[0] for _entry, applied in trials], moment)
+        base = got[0]
+        for (entry, (new_spec, change)), numbers in zip(trials, got[1:]):
+            if beats(base, numbers):
+                winners.append({"spec": new_spec, "after": numbers, "changes": [change], "entry": entry})
+        return base, len(trials), winners, True
     progress("Rehearsing the rules it has now")
     base = _replay_numbers(replay, spec, moment)
-    ledger = ledger or budget.RebuildLedger()
-    started = time.monotonic()
-    tried, winners = 0, []
+    tried = 0
     for entry in _minor_candidates(spec, analysis):
         if time.monotonic() - started > MINOR_BUDGET_S:
             break
@@ -326,7 +369,29 @@ def fine_tune(dog, user_id: int, *, now: Optional[datetime] = None, rows=None, l
         got = _replay_numbers(replay, new_spec, moment)
         if beats(base, got):
             winners.append({"spec": new_spec, "after": got, "changes": [change], "entry": entry})
-    if len(winners) >= 2 and time.monotonic() - started <= MINOR_BUDGET_S:
+    return base, tried, winners, time.monotonic() - started <= MINOR_BUDGET_S
+
+
+def fine_tune(dog, user_id: int, *, now: Optional[datetime] = None, rows=None, ledger_path=None, db=None, replay_fn: Optional[Callable] = None,
+              replay_many_fn: Optional[Callable] = None,
+              env: Optional[Mapping] = None, client=None, client_factory=None, ledger: Optional[budget.RebuildLedger] = None,
+              router_spend=None, store: Optional[PlanStore] = None, progress: Callable[[str], None] = lambda _t: None) -> dict:
+    """A small change that beats the current rule on the rehearsal, or a plain "none did" (never a suggestion that is not better).
+
+    A member Gematria hound is fine-tuned within its OWN knobs (``gematria_training.menu``): the price band (with "stay off heavy
+    favourites" first when its record leans on favourites), how clear the lead must be, the ciphers it reads, its sports. It stays a
+    Gematria hound: ``apply_plan`` refuses anything else."""
+    dog, moment, rows, bets, hound, gate = _gate(dog, user_id, now, rows, ledger_path, db)
+    spec = hound["spec"]
+    gem = user_spec.is_gematria(spec)
+    days = days_for(spec)
+    replay = replay_fn or default_replay
+    replay_many = replay_many_fn or (default_replay_many if replay_fn is None else None)
+    analysis = training.analyse(bets, spec, training.rule_index_of(rows, dog.id))
+    chalk = gematria_training.chalk_report(bets) if gem else None
+    ledger = ledger or budget.RebuildLedger()
+    base, tried, winners, in_budget = _minor_trials(spec, analysis, bets, moment, replay, replay_many, progress)
+    if len(winners) >= 2 and in_budget:
         top = sorted(winners, key=lambda w: -(w["after"]["units"]))[:2]
         first = training._apply_entry(copy.deepcopy(dict(spec)), top[0]["entry"], "minor")  # noqa: SLF001
         second = training._apply_entry(first[0], top[1]["entry"], "minor") if first else None  # noqa: SLF001
@@ -336,14 +401,18 @@ def fine_tune(dog, user_id: int, *, now: Optional[datetime] = None, rows=None, l
                 winners.append({"spec": second[0], "after": both, "changes": [first[1], second[1]], "entry": None})
     card = {"kind": KIND_MINOR, "name": dog.name, "version_no": hound["version_no"], "tried": tried, "found": False,
             "basis": _basis(hound), "paper_only": True,
-            "rehearsal": rehearsal_block(base, None), "rebuild_offer": True}
+            "rehearsal": rehearsal_block(base, None, days=days), "rebuild_offer": True}
+    if chalk is not None:
+        card["chalk"] = chalk
     if not winners:
         card["message"] = (f"None of the {tried} small change{'s' if tried != 1 else ''} it tried did better than the rules {dog.name} has now "
-                           f"in a rehearsal on the last {REPLAY_DAYS} days, so there is nothing worth fine-tuning. "
+                           f"in a rehearsal on the last {days} days, so there is nothing worth fine-tuning. "
                            "Fine-tune only offers a change that does better. A full rebuild changes much more, if you want to try it.")
+        if chalk is not None and chalk["chalk"]:
+            card["message"] = chalk["text"] + " " + card["message"]
         return card
     best = max(winners, key=lambda w: (w["after"]["units"], w["after"]["per_bet"]))
-    facts = {"kind": KIND_MINOR, "days": REPLAY_DAYS, "before": base, "after": best["after"], "small_sample": best["after"]["graded"] < 30,
+    facts = {"kind": KIND_MINOR, "days": days, "before": base, "after": best["after"], "small_sample": best["after"]["graded"] < 30,
              "changes": _change_lines(spec, best["spec"])}
     ceiling = _ceiling(ledger, env, router_spend)
     explainer = _explain_caller(env, min(ceiling, 0.05), client, client_factory)
@@ -358,7 +427,7 @@ def fine_tune(dog, user_id: int, *, now: Optional[datetime] = None, rows=None, l
     plan_id = (store or _plans).save(plan)
     card.update(found=True, plan_id=plan_id, explanation=explanation, changes=public_changes,
                 rule_before=_rule_after(spec), rule_after=_rule_after(best["spec"]), diff=_diff(spec, best["spec"]),
-                rehearsal=rehearsal_block(base, best["after"]), beats_current=True, honesty=HONESTY, rebuild_offer=False)
+                rehearsal=rehearsal_block(base, best["after"], days=days), beats_current=True, honesty=HONESTY, rebuild_offer=False)
     return card
 
 
@@ -371,9 +440,9 @@ def _diff(old: Mapping, new: Mapping) -> list:
 # FULL REBUILD
 # ---------------------------------------------------------------------------
 
-def _stage_cost_worst(context: str, count: int) -> tuple:
+def _stage_cost_worst(context: str, count: int, system: Optional[str] = None) -> tuple:
     """``(worst-case dollars for the whole rebuild, estimated dollars for a typical one)`` from the real prompt size."""
-    system = rebuild_ai.system_text(rebuild_ai.SYSTEM_PROMPT)
+    system = system if system is not None else rebuild_ai.system_text(rebuild_ai.SYSTEM_PROMPT)
     in_angle = budget.token_estimate(system) + budget.token_estimate(context) + 300
     angle_model = rebuild_ai.MODEL
     worst_angles = count * (1 + rebuild_ai.ANGLE_RETRIES) * budget.worst_case_cost(angle_model, in_angle, rebuild_ai.MAX_TOKENS_ANGLE)
@@ -393,31 +462,45 @@ def rank(base: Optional[Mapping], candidates: Sequence[Mapping]) -> list:
 
 
 def full_rebuild(dog, user_id: int, *, paid: bool = False, now: Optional[datetime] = None, rows=None, ledger_path=None, db=None,
-                 replay_fn: Optional[Callable] = None, env: Optional[Mapping] = None, client=None, client_factory=None,
+                 replay_fn: Optional[Callable] = None, replay_many_fn: Optional[Callable] = None,
+                 env: Optional[Mapping] = None, client=None, client_factory=None,
                  ledger: Optional[budget.RebuildLedger] = None, router_spend=None, store: Optional[PlanStore] = None,
                  angle_count: Optional[int] = None, progress: Callable[[str], None] = lambda _t: None) -> dict:
-    """The whole rebuild. Raises ``RiteError`` for a refusal (the limits, the key, an open ticket); otherwise returns the card."""
+    """The whole rebuild. Raises ``RiteError`` for a refusal (the limits, the key, an open ticket); otherwise returns the card.
+
+    A member Gematria hound is rebuilt within its own settings (``gematria_training``: price band, lead, ciphers, sports, volume): the same
+    pipeline with its own prompts and its own checks, and it can only come back as a Gematria hound."""
     dog, moment, rows, bets, hound, gate = _gate(dog, user_id, now, rows, ledger_path, db)
     spec = hound["spec"]
-    if user_spec.is_gematria(spec) or user_spec.is_apprentice(spec):
+    if user_spec.is_apprentice(spec):
         raise RiteError("rebuild_not_for_style", "That kind of hound has no rule set to rebuild: it follows its own fixed method.", 422)
+    gem = user_spec.is_gematria(spec)
+    days = days_for(spec)
+    profile = gematria_training.profile() if gem else None
     ledger = ledger or budget.RebuildLedger()
     replay = replay_fn or default_replay
-    count = len(rebuild_ai.angles(angle_count))
+    replay_many = replay_many_fn or (default_replay_many if replay_fn is None else None)
+    count = len(profile.angles_fn(angle_count) if gem else rebuild_ai.angles(angle_count))
     # the cheap refusals first: no key, today's limit, the month's spend, all BEFORE the rehearsal or any model
     try:
         budget.check(user_id, paid=paid, worst_cost=0.0, ledger=ledger, env=env, router_spend=router_spend)
     except budget.BudgetError as exc:
         raise RiteError(exc.code, str(exc), exc.status, **exc.extra) from None
     progress("Rehearsing the rules it has now")
-    base_summary = replay(spec, REPLAY_DAYS, moment)
+    base_summary = replay(spec, days, moment)
     base = numbers_of(base_summary)
     current = rebuild_ai.v2_of(spec)
     analysis = training.analyse(bets, spec, training.rule_index_of(rows, dog.id))
-    context = rebuild_ai.build_context(name=dog.name, version_no=hound["version_no"], spec_v2=current, plain_rule=user_spec.rule_text(spec),
-                                       bets=_bet_rows(bets, spec, training.rule_index_of(rows, dog.id)), analysis=analysis,
-                                       baseline=base_summary)
-    worst, _in_angle = _stage_cost_worst(context, count)
+    chalk = gematria_training.chalk_report(bets) if gem else None
+    if gem:
+        context = gematria_training.build_context(name=dog.name, version_no=hound["version_no"], spec=spec, plain_rule=user_spec.rule_text(spec),
+                                                  bets=_bet_rows(bets, spec, training.rule_index_of(rows, dog.id)), analysis=analysis,
+                                                  baseline=base_summary, chalk=chalk)
+    else:
+        context = rebuild_ai.build_context(name=dog.name, version_no=hound["version_no"], spec_v2=current, plain_rule=user_spec.rule_text(spec),
+                                           bets=_bet_rows(bets, spec, training.rule_index_of(rows, dog.id)), analysis=analysis,
+                                           baseline=base_summary)
+    worst, _in_angle = _stage_cost_worst(context, count, profile.system() if gem else None)
     try:
         used = budget.check(user_id, paid=paid, worst_cost=worst, ledger=ledger, env=env, router_spend=router_spend)
     except budget.BudgetError as exc:
@@ -427,7 +510,7 @@ def full_rebuild(dog, user_id: int, *, paid: bool = False, now: Optional[datetim
     status = "ok"
     try:
         progress(f"{count} angles are rebuilding it at the same time")
-        results = rebuild_ai.run_angles(caller, context, current, count)
+        results = rebuild_ai.run_angles(caller, context, current, count, profile)
         survivors, seen = [], {user_spec.spec_hash(current)}
         for r in results:
             if r["spec"] is None:
@@ -439,17 +522,25 @@ def full_rebuild(dog, user_id: int, *, paid: bool = False, now: Optional[datetim
             survivors.append(dict(r, id=f"c{len(survivors) + 1}", hash=h))
         started = time.monotonic()
         replayed = []
-        for c in survivors[:REBUILD_MAX_REPLAYS]:
-            if time.monotonic() - started > REBUILD_REPLAY_BUDGET_S:
-                break
-            progress(f"Rehearsing candidate {c['id']} of {len(survivors)}")
-            c["replay"] = _replay_numbers(replay, c["spec"], moment)
-            c["rule_text"] = _rule_after(c["spec"])
-            replayed.append(c)
+        if gem and survivors:
+            batch = survivors[:REBUILD_MAX_REPLAYS]
+            progress(f"Rehearsing {len(batch)} candidate{'s' if len(batch) != 1 else ''} together")
+            for c, numbers in zip(batch, _replay_batch(replay, replay_many, [c["spec"] for c in batch], moment)):
+                c["replay"] = numbers
+                c["rule_text"] = _rule_after(c["spec"])
+                replayed.append(c)
+        else:
+            for c in survivors[:REBUILD_MAX_REPLAYS]:
+                if time.monotonic() - started > REBUILD_REPLAY_BUDGET_S:
+                    break
+                progress(f"Rehearsing candidate {c['id']} of {len(survivors)}")
+                c["replay"] = _replay_numbers(replay, c["spec"], moment)
+                c["rule_text"] = _rule_after(c["spec"])
+                replayed.append(c)
         analyst_result = None
         if replayed:
             progress("The analyst is comparing them")
-            analyst_result = rebuild_ai.run_analyst(caller, context, replayed, current)
+            analyst_result = rebuild_ai.run_analyst(caller, context, replayed, current, profile)
             if analyst_result is not None:
                 h = user_spec.spec_hash(analyst_result["spec"])
                 existing = next((c for c in replayed if c["hash"] == h), None)
@@ -467,14 +558,14 @@ def full_rebuild(dog, user_id: int, *, paid: bool = False, now: Optional[datetim
             status = "no_candidate"
             return {"kind": KIND_REBUILD, "found": False, "name": dog.name, "version_no": hound["version_no"], "paper_only": True,
                     "basis": _basis(hound), "usage": {"used_today": used["used_today"] + 1, "limit_per_day": used["limit_per_day"],
-                                                      "left_today": max(0, used["left_today"] - 1)},
+                                                      "left_today": max(0, used["left_today"] - 1)}, **({"chalk": chalk} if gem else {}),
                     "message": ("The rebuild did not produce a rule set that passed the checks and could be rehearsed this time. "
                                 "Fine-tune is still open. This counted as one of today's rebuilds."),
-                    "rehearsal": rehearsal_block(base, None)}
+                    "rehearsal": rehearsal_block(base, None, days=days)}
         best = ranked[0]
         best_tied = next((c for c in ranked if c.get("analyst_pick") and c["replay"]["units"] >= best["replay"]["units"] - 0.5), best)
         best = best_tied
-        facts = {"kind": KIND_REBUILD, "days": REPLAY_DAYS, "before": base, "after": best["replay"],
+        facts = {"kind": KIND_REBUILD, "days": days, "before": base, "after": best["replay"],
                  "small_sample": best["replay"]["graded"] < 30, "changes": _change_lines(spec, best["spec"])}
         progress("Writing it up in plain words")
         explanation = rebuild_ai.explain(caller, facts)
@@ -492,8 +583,9 @@ def full_rebuild(dog, user_id: int, *, paid: bool = False, now: Optional[datetim
     if analyst_result is not None and analyst_result.get("candidate") is best:
         analyst_view = {k: analyst_result[k] for k in ("reasons", "cut", "added", "weak_spots")}
     return {"kind": KIND_REBUILD, "found": True, "plan_id": plan_id, "choice": best["id"], "name": dog.name, "version_no": hound["version_no"],
+            **({"chalk": chalk} if gem else {}),
             "basis": _basis(hound), "explanation": explanation, "rule_before": _rule_after(spec), "rule_after": _rule_after(best["spec"]),
-            "diff": _diff(spec, best["spec"]), "rehearsal": rehearsal_block(base, best["replay"]), "beats_current": beats_now,
+            "diff": _diff(spec, best["spec"]), "rehearsal": rehearsal_block(base, best["replay"], days=days), "beats_current": beats_now,
             "analyst": analyst_view,
             "runners_up": [{"choice": c["id"], "label": c["label"], "rule_after": _rule_after(c["spec"]), "summary": c["summary"],
                             "after": c["replay"]} for c in ups],
@@ -525,16 +617,27 @@ def apply_plan(dog, user_id: int, plan_id: str, *, choice: Optional[str] = None,
     if picked is None:
         raise RiteError("unknown_choice", "That is not one of the options on this proposal.", 422)
     spec = hound["spec"]
+    gem = user_spec.is_gematria(spec)
     if plan["kind"] == KIND_REBUILD:
-        new_spec, why = rebuild_ai.vet_spec(picked["spec"], spec)
-        if new_spec is None or rebuild_ai.too_similar(rebuild_ai.spec_distance(spec, new_spec)):
+        if gem:
+            new_spec, why = gematria_training.vet(picked["spec"], spec)
+            too_close = new_spec is None or gematria_training.too_similar(gematria_training.distance(spec, new_spec))
+        else:
+            new_spec, why = rebuild_ai.vet_spec(picked["spec"], spec)
+            too_close = new_spec is None or rebuild_ai.too_similar(rebuild_ai.spec_distance(spec, new_spec))
+        if too_close:
             raise RiteError("spec_invalid", "The rebuilt rules did not pass the checks, so nothing was changed.", 422)
         origin, mode, reason, label = user_store.ORIGIN_REBUILD, MODE_REBUILD, "full rebuild", "Full rebuild"
     else:
-        new_spec = training._validated(picked["spec"])                                       # noqa: SLF001
+        if gem:
+            new_spec = gematria_training.vet(picked["spec"], spec)[0]
+        else:
+            new_spec = training._validated(picked["spec"])                                   # noqa: SLF001
         if new_spec is None or user_spec.spec_hash(new_spec) == user_spec.spec_hash(spec):
             raise RiteError("spec_invalid", "That change did not pass the checks, so nothing was changed.", 422)
         origin, mode, reason, label = user_store.ORIGIN_FINE_TUNE, MODE_MINOR, "fine-tune", "Fine-tune"
+    if user_spec.is_gematria(new_spec) != gem:       # a training never changes what KIND of hound this is, whatever a saved plan says
+        raise RiteError("spec_invalid", "A training cannot change what kind of hound this is, so nothing was changed.", 422)
     analysis = training.analyse(bets, spec, training.rule_index_of(rows, dog.id))
     frozen = dict(analysis["overall"])
     diff = _diff(spec, new_spec)
@@ -543,7 +646,7 @@ def apply_plan(dog, user_id: int, plan_id: str, *, choice: Optional[str] = None,
              "payload": {"name": hound["name"], "from_hound_id": dog.id, "from_version": hound["version_no"], "to_version": hound["version_no"] + 1,
                          "mode": mode, "settled": analysis["settled"], "origin": origin, "owner_chosen": True,
                          "record": {k: frozen[k] for k in ("wins", "losses", "pushes")}, "changes": changes,
-                         "rehearsal": {"days": REPLAY_DAYS, "after": picked.get("after")},
+                         "rehearsal": {"days": days_for(spec), "after": picked.get("after")},
                          "coach": {"source": "none", "status": "not_asked", "model": None, "cost_usd": 0.0, "reasons": [], "picks": [],
                                    "picks_applied": [], "cuts_examined": None}}}
     try:
@@ -569,4 +672,5 @@ def apply_plan(dog, user_id: int, plan_id: str, *, choice: Optional[str] = None,
                 "trained_times": user_store.trained_count(new["root_id"], db=db), "page_href": f"hound.html?id={new['id']}",
                 "record": {"wins": 0, "losses": 0, "pushes": 0, "bets": 0}},
         "next_training": f"It can train again after {training.MIN_NEW_SETTLED} settled bets on version {new['version_no']}.",
+        "undo": revert.undo_offer(dog.id, hound["version_no"], new["version_no"]),       # "Undo" on the card: back to the version just retired
         "honesty": HONESTY, "paper_only": True}

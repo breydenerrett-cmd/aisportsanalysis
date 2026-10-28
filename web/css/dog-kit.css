@@ -210,6 +210,15 @@
 .rt-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
 .rt-actions .btn { flex: 1 1 140px; white-space: normal; text-align: center; }
 /* the training screen's two choices (Fine-tune, Full rebuild) and the plan card with its rehearsal (dog-plans.js) */
+/* the Versions list and "Go back to this version" (web/js/dog-versions.js) */
+.vs-list { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 10px; }
+.vs-row { display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid var(--line, rgba(127,127,127,.35)); border-radius: 10px; }
+.vs-row[data-status="current"] { border-color: var(--accent, currentColor); }
+.vs-row__head { margin: 0; }
+.vs-row__record { margin: 0; font-weight: 600; }
+.vs-rules summary { cursor: pointer; }
+.vs-go, .vs-undo { margin-top: 6px; }
+.vs-fold > summary { cursor: pointer; }
 .rt-options { display: grid; gap: 12px; grid-template-columns: 1fr; margin: 12px 0; }
 @media (min-width: 560px) { .rt-options { grid-template-columns: 1fr 1fr; } }
 .rt-option { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--line, rgba(127,127,127,.35)); border-radius: 10px; }

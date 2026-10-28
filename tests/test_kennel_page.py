@@ -515,8 +515,9 @@ class TheStudio(unittest.TestCase):
                 q("rules_panel", "[data-tabpanel='rules']", "hidden")])])
         cap = out["captures"]["open"]
         self.assertEqual((cap["hidden"], cap["title"]), (False, "Underdog Gus"))
-        # "Lessons" is in the markup but hidden unless the open hound is an Apprentice (web/js/kennel.js syncLessonsTab)
-        self.assertEqual(cap["tabs"], ["Look", "Rules", "Unleash", "Backtest", "Ask", "Record", "Lessons"])
+        # "Lessons" and "Versions" are in the markup but hidden unless the open hound is an Apprentice / has gone through more than one version
+        # (web/js/kennel.js syncLessonsTab, syncVersionsTab)
+        self.assertEqual(cap["tabs"], ["Look", "Rules", "Unleash", "Backtest", "Ask", "Record", "Versions", "Lessons"])
         self.assertEqual(cap["selected"], ["Look"])
         self.assertEqual((cap["preview"], cap["head_avatar"]), (1, 1))
         self.assertEqual(cap["open_link"], "hound.html?id=u-1")

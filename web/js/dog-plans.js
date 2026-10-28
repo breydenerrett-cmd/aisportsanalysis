@@ -61,6 +61,7 @@ export function showPlan({ body, card }) {
     if (!card.found) {
       root.appendChild(h("p", { class: "rt-note", role: "status", "data-hook": "plan-none", text: card.message || "Nothing to offer this time." }));
       if (card.rehearsal) root.appendChild(rehearsalBlock(card.rehearsal));
+      if (card.chalk && card.chalk.text) root.appendChild(h("p", { class: "hd-fine", "data-hook": "plan-chalk", text: card.chalk.text }));
       const actions = [button("Close", "plan-close", "quiet", () => resolve({ action: "close" }))];
       if (card.kind === "minor" && card.rebuild_offer) actions.push(button("Full rebuild", "plan-to-rebuild", "primary", () => resolve({ action: "rebuild" })));
       root.appendChild(h("div", { class: "rt-actions", "data-hook": "rites-actions" }, actions));
@@ -75,6 +76,8 @@ export function showPlan({ body, card }) {
       root.appendChild(list("plan-changed", ex.changed));
     }
     root.appendChild(rehearsalBlock(card.rehearsal));
+    // a Gematria hound's own lean (how often it backed favourites): a fact about its bets, said in numbers by the server
+    if (card.chalk && card.chalk.text) root.appendChild(h("p", { class: "hd-fine", "data-hook": "plan-chalk", text: card.chalk.text }));
     if (card.kind === "rebuild" && card.beats_current === false) {
       root.appendChild(h("p", { class: "rt-note", "data-hook": "plan-not-better",
         text: "In the rehearsal this rebuild did not do better than the rules it has now. It is a different approach, so the choice is yours." }));

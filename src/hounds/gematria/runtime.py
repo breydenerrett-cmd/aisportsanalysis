@@ -119,7 +119,10 @@ class GematriaRuntime:
 
     # -- weighing ---------------------------------------------------------------------------------
 
-    def weigh(self, ctx: base.Context, board: Mapping, *, known_at: Optional[datetime] = None) -> Weighed:
+    def prepare(self, ctx: base.Context, *, known_at: Optional[datetime] = None) -> tuple:
+        """``(inputs, teams_known, signals)`` for a game: the expensive half of ``weigh``. It depends on the rules only through the ciphers
+        (and the static switches), never on the margin, the z or the price band, so a caller weighing the same game under several rule
+        variants (a member's tuning, a rehearsal of candidates) prepares it ONCE per cipher set and passes it back to ``weigh``."""
         g = self.inputs(ctx, known_at=known_at)
         if self.rules.name_only_teams:
             known = bool(g.home.team.name_texts() and g.away.team.name_texts())
@@ -128,6 +131,10 @@ class GematriaRuntime:
             known = bool(g.home.team.known and g.away.team.known)
             computable = g.history_available and known
         sig = sig_mod.generate(g, self.rules) if computable else None
+        return g, known, sig
+
+    def weigh(self, ctx: base.Context, board: Mapping, *, known_at: Optional[datetime] = None, prepared: Optional[tuple] = None) -> Weighed:
+        g, known, sig = prepared if prepared is not None else self.prepare(ctx, known_at=known_at)
         verdict = decision_mod.decide(sig, board, self.rules, history_available=g.history_available, teams_known=known)
         block = None
         if sig is not None:
