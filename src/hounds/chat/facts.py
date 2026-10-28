@@ -45,7 +45,7 @@ STABLE_SYSTEM = """You are the voice of one betting hound in a paper-betting app
 
 WHO YOU ARE. Speak as the hound, in the first person ("I", "my rule"), in the voice you are given. Warm, quick, plain words. Keep it short: one to four short sentences unless the member asks for more. No headings. No lists unless the member asks for one.
 
-WHAT YOU MAY STATE. Only what is in the data you were given: your rule (in plain English and as JSON), your forward record, your recent bets with the reason and the result of each, the rehearsal numbers (labelled), your versions. Quote numbers exactly as given. Never round into a different figure, never compute a new statistic, never guess the reason for a bet that has none. If you are asked about anything the data does not hold (tonight's board, a game that is not listed, injuries, weather, a team's future, a number you were not handed), say "I don't have that" and say what you do have instead. A rehearsal is a replay over captured boards: hindsight, and it NEVER counts toward the record; say so whenever you mention it.
+WHAT YOU MAY STATE. Only what is in the data you were given: your rule (in plain English and as JSON), your forward record, your recent bets with the reason and the result of each, the rehearsal numbers (labelled), your versions, and the hindsight reviews of your past bets and your Deep review when a block of them is given. A hindsight review is written AFTER the result, from the web: say so whenever you mention one, and never present it as what you knew before the game. Quote numbers exactly as given. Never round into a different figure, never compute a new statistic, never guess the reason for a bet that has none. If you are asked about anything the data does not hold (tonight's board, a game that is not listed, injuries, weather, a team's future, a number you were not handed), say "I don't have that" and say what you do have instead. A rehearsal is a replay over captured boards: hindsight, and it NEVER counts toward the record; say so whenever you mention it.
 
 HONESTY. A small record is noise, not a finding: when there are fewer than about 30 settled bets, say that. Never promise winnings, never call a pick safe, certain or a sure thing, never talk about profit, edge or value. Everything is paper money, graded in public, not betting advice. Never mention Bet Check.
 
@@ -119,6 +119,16 @@ def voice_of(dog: common.Dog, summary: Optional[Mapping]) -> str:
     return VOICES.get(key, VOICES["generic"])
 
 
+def hindsight_text(dog: common.Dog, lineage: Sequence[Mapping]) -> str:
+    """The hound's hindsight reviews across every version (lessons, tallies, the newest Deep review), trimmed to about a thousand
+    tokens, or "" when it has none. Reads only; a ledger that cannot be read leaves the chat as it was."""
+    try:
+        from src.ai import hindsight_feed
+        return hindsight_feed.text_for(dog.id, root_id=getattr(dog, "root_id", None) or None, member_ids=[h["id"] for h in lineage])
+    except Exception:  # noqa: BLE001 -- the reviews are an extra; the chat never fails on them
+        return ""
+
+
 def collect(dog: common.Dog, hound: Mapping, *, now: Optional[datetime] = None, db=None) -> dict:
     """The facts, as plain data (a dict of what ``render`` prints). Reads only: the stored summary and tickets and the lineage."""
     now = now or common.now_utc()
@@ -141,7 +151,7 @@ def collect(dog: common.Dog, hound: Mapping, *, now: Optional[datetime] = None, 
             "status": hound.get("status") or dog.status, "version_no": hound.get("version_no") or 1,
             "created_at": hound.get("created_at"), "today": common.eastern_date(now), "summary": summary,
             "tickets": tickets, "spec_v2": v2, "style": spec.get("style") or "rules",
-            "rule_english": user_spec.rule_text(spec), "lineage": lineage}
+            "rule_english": user_spec.rule_text(spec), "lineage": lineage, "hindsight": hindsight_text(dog, lineage)}
 
 
 def _spec_json(spec_v2: Mapping) -> str:
@@ -203,8 +213,10 @@ def render(facts: Mapping) -> str:
              f"YOUR RECENT FORWARD BETS (newest first, {len(tickets)} shown; columns: date | game | selection | price | result | units at the price it took | reason):"]
     parts += [("  " + bet_line(t)) for t in tickets] or ["  (no bets yet)"]
     parts += ["", "REHEARSAL (a replay of your rule over captured boards: hindsight, NEVER counted, not evidence of anything to come):",
-              *_replay_lines(summary), "",
-              "NOT PROVIDED TO YOU: tonight's boards and prices, injuries, weather, any game or statistic not listed above, and anything about the member or other hounds."]
+              *_replay_lines(summary), ""]
+    if facts.get("hindsight"):
+        parts += [str(facts["hindsight"]), ""]
+    parts += ["NOT PROVIDED TO YOU: tonight's boards and prices, injuries, weather, any game or statistic not listed above, and anything about the member or other hounds."]
     return "\n".join(parts)
 
 

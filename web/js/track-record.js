@@ -14,7 +14,8 @@
  *   OPEN        tickets still waiting for a result, APART from the record and never counted in it.
  *   TICKETS     the latest settled tickets, filterable by sport, result and market, each with its "why" when one was stored.
  *   COMPARE     against the house pack and the leaderboard average over the same period.
- *   SPREADSHEET  "Download bets (spreadsheet)" and, under a settled ticket, its hindsight review (web/js/record-postmortems.js).
+ *   SPREADSHEET  "Download bets (spreadsheet)", "All versions" beside it, and, under a settled ticket, its hindsight review; then the
+ *               lineage's "Deep review (hindsight)" under the tickets (web/js/record-postmortems.js).
  *
  * Times come from local-time.js (the viewer's zone). A hindsight backtest never appears here: the server only sends forward bets.
  */
@@ -27,7 +28,7 @@ import { get } from "./dog-common.js";
 import { renderSparkline } from "./hounds-chart.js";
 import { priced, getSizing } from "./unitsize.js";
 import { formatStamp } from "./local-time.js";
-import { loadReviews, renderExport, renderReview } from "./record-postmortems.js";
+import { loadHindsight, renderDeepReviews, renderExport, renderReview } from "./record-postmortems.js";
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 const WIN_COLOR = "#5BE39A";
@@ -37,7 +38,7 @@ const MON_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"
 export const CALENDAR_MONTHS = 3;
 export const MARKET_WORDS = { h2h: "Moneyline", moneyline: "Moneyline", spreads: "Spread", spread: "Spread", totals: "Total", total: "Total" };
 
-const state = { id: "", season: "", data: null, owner: false, reviews: null, filters: { sport: "", result: "", market: "" } };
+const state = { id: "", season: "", data: null, owner: false, reviews: null, deep: null, filters: { sport: "", result: "", market: "" } };
 
 // ---- pure helpers (the tests run these under node) ------------------------------------------------------------
 
@@ -421,7 +422,10 @@ async function ownerCheck() {
 
 /** The hindsight reviews of this hound's settled bets, when the viewer may see them: they open under their tickets. */
 async function reviewsCheck() {
-  const reviews = await loadReviews(state.id);
+  const { reviews, deep } = await loadHindsight(state.id);
+  const sec = q("record-deep-section");
+  const box = q("record-deep");
+  if (deep && sec && box) { state.deep = deep; renderDeepReviews(sec, box, deep); }
   if (!reviews) return;
   state.reviews = reviews;
   if (state.data) renderTickets(state.data);
