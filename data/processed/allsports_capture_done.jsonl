@@ -8289,3 +8289,7 @@
 {"call_kind": "pregame", "credits": 1, "events": 10, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T12:37:45.761243Z", "regions": ["us"], "rows": 77, "sport_key": "tennis_atp_swiss_indoors", "stored": 77}
 {"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T12:37:45.761243Z", "regions": ["us"], "rows": 60, "sport_key": "tennis_atp_vienna_open", "stored": 60}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T12:37:45.761243Z", "regions": ["au"], "rows": 13, "sport_key": "cricket_test_match", "stored": 11}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-28T18:52:27.012329Z", "observed_utc": "2026-10-28T12:52:27.012329Z", "sport_key": "soccer_russia_premier_league"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-10-28T18:52:27.012329Z", "observed_utc": "2026-10-28T12:52:27.012329Z", "sport_key": "soccer_switzerland_superleague"}
+{"commence_utc": "2026-10-28T14:50:00Z", "event_id": "fa400409de3b36b41d7f8316d636197e", "kind": "phase", "observed_utc": "2026-10-28T12:52:27.012329Z", "phase": "t2h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
+{"call_kind": "pregame", "credits": 1, "events": 8, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T12:52:27.012329Z", "regions": ["us"], "rows": 60, "sport_key": "tennis_atp_vienna_open", "stored": 60}
