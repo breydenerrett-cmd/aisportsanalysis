@@ -8066,3 +8066,8 @@
 {"events": 9, "kind": "peek", "next_check_utc": "2026-10-28T10:40:06.951097Z", "observed_utc": "2026-10-28T04:40:06.951097Z", "sport_key": "soccer_france_ligue_two"}
 {"commence_utc": "2026-10-28T10:30:00Z", "event_id": "c7bb1b603a06af2f2b03089d09736bb9", "kind": "phase", "observed_utc": "2026-10-28T04:40:06.951097Z", "phase": "t6h", "rows": 3, "sport_key": "basketball_nbl"}
 {"call_kind": "pregame", "credits": 3, "events": 3, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-28T04:40:06.951097Z", "regions": ["us"], "rows": 9, "sport_key": "basketball_nbl", "stored": 6}
+{"commence_utc": "2026-10-28T19:30:00Z", "event_id": "c844e6caea55a1bcf5374f5ac733f9de", "kind": "phase", "observed_utc": "2026-10-28T04:52:58.561005Z", "phase": "t24h", "rows": 7, "sport_key": "soccer_spain_copa_del_rey"}
+{"call_kind": "pregame", "credits": 2, "events": 22, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-28T04:52:58.561005Z", "regions": ["eu"], "rows": 269, "sport_key": "soccer_spain_copa_del_rey", "stored": 251}
+{"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T04:52:58.561005Z", "regions": ["us"], "rows": 58, "sport_key": "icehockey_nhl", "stored": 58}
+{"call_kind": "inplay", "credits": 1, "events": 19, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T04:52:58.561005Z", "regions": ["us"], "rows": 138, "sport_key": "basketball_nba", "stored": 124}
+{"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T04:52:58.561005Z", "regions": ["us"], "rows": 55, "sport_key": "tennis_wta_pan_pacific_open", "stored": 55}
