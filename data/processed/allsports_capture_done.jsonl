@@ -8114,3 +8114,8 @@
 {"commence_utc": "2026-10-29T07:00:00Z", "event_id": "ab4b92de827019ff6129c853680cb36b", "kind": "phase", "observed_utc": "2026-10-28T07:03:05.946983Z", "phase": "t24h", "rows": 4, "sport_key": "boxing_boxing"}
 {"call_kind": "pregame", "credits": 1, "events": 31, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T07:03:05.946983Z", "regions": ["us"], "rows": 78, "sport_key": "boxing_boxing", "stored": 12}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T07:13:36.014618Z", "regions": ["au"], "rows": 15, "sport_key": "cricket_test_match", "stored": 13}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-28T13:27:29.615278Z", "observed_utc": "2026-10-28T07:27:29.615278Z", "sport_key": "aussierules_aflw"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-10-28T13:27:29.615278Z", "observed_utc": "2026-10-28T07:27:29.615278Z", "sport_key": "soccer_brazil_serie_b"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-28T13:27:29.615278Z", "observed_utc": "2026-10-28T07:27:29.615278Z", "sport_key": "soccer_uefa_europa_league"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-28T13:27:29.615278Z", "observed_utc": "2026-10-28T07:27:29.615278Z", "sport_key": "soccer_uefa_nations_league"}
+{"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T07:27:29.615278Z", "regions": ["us"], "rows": 45, "sport_key": "tennis_wta_pan_pacific_open", "stored": 45}
