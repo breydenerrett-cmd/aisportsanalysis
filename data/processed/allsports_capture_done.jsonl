@@ -8367,3 +8367,10 @@
 {"commence_utc": "2026-10-29T14:30:00Z", "event_id": "64445235d9c58f413a990f6ff8d91c1c", "kind": "phase", "observed_utc": "2026-10-28T14:31:37.537558Z", "phase": "t24h", "rows": 3, "sport_key": "cricket_international_t20"}
 {"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T14:31:37.537558Z", "regions": ["us"], "rows": 6, "sport_key": "cricket_international_t20", "stored": 3}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T14:31:37.537558Z", "regions": ["au"], "rows": 13, "sport_key": "cricket_test_match", "stored": 11}
+{"events": 21, "kind": "peek", "next_check_utc": "2026-10-28T20:41:36.349144Z", "observed_utc": "2026-10-28T14:41:36.349144Z", "sport_key": "soccer_epl"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-28T20:41:36.349144Z", "observed_utc": "2026-10-28T14:41:36.349144Z", "sport_key": "soccer_germany_bundesliga"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-28T20:41:36.349144Z", "observed_utc": "2026-10-28T14:41:36.349144Z", "sport_key": "soccer_poland_ekstraklasa"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-28T20:41:36.349144Z", "observed_utc": "2026-10-28T14:41:36.349144Z", "sport_key": "soccer_sweden_superettan"}
+{"commence_utc": "2026-10-29T14:35:00Z", "event_id": "9ee8bf4907f3ee15082589a8fc4977e9", "kind": "phase", "observed_utc": "2026-10-28T14:41:36.349144Z", "phase": "t24h", "rows": 21, "sport_key": "soccer_saudi_arabia_pro_league"}
+{"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-28T14:41:36.349144Z", "regions": ["eu"], "rows": 196, "sport_key": "soccer_saudi_arabia_pro_league", "stored": 63}
+{"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T14:41:36.349144Z", "regions": ["us"], "rows": 65, "sport_key": "tennis_atp_swiss_indoors", "stored": 65}
