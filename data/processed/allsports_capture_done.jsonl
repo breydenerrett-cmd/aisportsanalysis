@@ -8228,3 +8228,6 @@
 {"commence_utc": "2026-10-28T17:00:00Z", "event_id": "23eaedab03c7702ba2706426845c430e", "kind": "phase", "observed_utc": "2026-10-28T11:03:45.375899Z", "phase": "t6h", "rows": 2, "sport_key": "soccer_germany_dfb_pokal"}
 {"call_kind": "pregame", "credits": 2, "events": 8, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-28T11:03:45.375899Z", "regions": ["us"], "rows": 16, "sport_key": "soccer_germany_dfb_pokal", "stored": 16}
 {"events": 20, "kind": "peek", "next_check_utc": "2026-10-28T17:13:30.004747Z", "observed_utc": "2026-10-28T11:13:30.004747Z", "sport_key": "soccer_spain_la_liga"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-28T17:23:06.904276Z", "observed_utc": "2026-10-28T11:23:06.904276Z", "sport_key": "soccer_china_superleague"}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T11:23:06.904276Z", "regions": ["us"], "rows": 2, "sport_key": "basketball_nbl", "stored": 1}
+{"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T11:23:06.904276Z", "regions": ["us"], "rows": 41, "sport_key": "tennis_wta_pan_pacific_open", "stored": 38}
