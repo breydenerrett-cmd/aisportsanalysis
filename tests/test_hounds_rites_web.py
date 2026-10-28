@@ -322,7 +322,7 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
             click(hook("training-go"), "card_review", wait=250), click(hook("review-apply"), "card", wait=400, capture=card)])
         ask, got = out["captures"]["ask"], out["captures"]["card"]
         self.assertEqual((ask["kind"], ask["title"]), ("training-confirm", "Send Underdog Gus to training?"))
-        self.assertEqual(ask["buttons"], ["Not now", "Send to training"])
+        self.assertEqual(ask["buttons"], ["Not now", "Coach's usual check-up"])
         # the diagnosis step is asked first; this fixture has no route for it, so the phase is skipped and the training goes on
         # every training is reviewed first: the diagnosis, the proposal (read only), and only then the apply with the ticked changes
         self.assertEqual([p["url"] for p in out["posts"]], ["/hounds/u-1/train/diagnose", "/hounds/u-1/train/propose", "/hounds/u-1/train"])

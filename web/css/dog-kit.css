@@ -209,6 +209,14 @@
 .rt-refused { margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--hd-bad); border-left-width: 4px; border-radius: 4px; background: rgba(255, 107, 122, .07); color: #fff; }
 .rt-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
 .rt-actions .btn { flex: 1 1 140px; white-space: normal; text-align: center; }
+/* the training screen's two choices (Fine-tune, Full rebuild) and the plan card with its rehearsal (dog-plans.js) */
+.rt-options { display: grid; gap: 12px; grid-template-columns: 1fr; margin: 12px 0; }
+@media (min-width: 560px) { .rt-options { grid-template-columns: 1fr 1fr; } }
+.rt-option { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--line, rgba(127,127,127,.35)); border-radius: 10px; }
+.rt-option .btn { margin-top: auto; }
+.rt-rehearsal { margin: 12px 0; }
+.rt-plan .plan-line { margin: 0 0 6px; }
+.rt-plan__others label { display: block; margin: 4px 0; }
 .rt-status { min-height: 1.2em; margin: 8px 0 0; }
 
 .rt-card { display: grid; gap: 10px; }

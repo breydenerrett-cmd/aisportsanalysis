@@ -64,7 +64,10 @@ EVENT_BURIED = "buried"
 EVENT_TRAINED = "trained"
 EVENT_KINDS = (EVENT_BURIED, EVENT_TRAINED)
 ORIGIN_RETUNE_CHAT = "owner_retune_chat"          # the only origin today; ``retune.ORIGIN_CHAT`` is this value
-ORIGIN_LABELS = {ORIGIN_RETUNE_CHAT: "owner retune (from chat)"}
+ORIGIN_FINE_TUNE = "owner_fine_tune"              # training screen, "Fine-tune": a small change that beat the current rule on a rehearsal
+ORIGIN_REBUILD = "owner_rebuild"                  # training screen, "Full rebuild": the rule set rebuilt from the record by Claude
+ORIGIN_LABELS = {ORIGIN_RETUNE_CHAT: "owner retune (from chat)", ORIGIN_FINE_TUNE: "fine-tuned in training",
+                 ORIGIN_REBUILD: "full rebuild in training"}
 BURIED_REASON = "buried by its owner"
 
 # What the kennel's "Remove from my kennel" button records. A removal is a RETIREMENT, never a delete: the

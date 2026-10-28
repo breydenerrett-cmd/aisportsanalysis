@@ -24,11 +24,12 @@
  */
 
 import { h, clearNode, isNum } from "./hounds-core.js";
-import { post, errorText, errorCode, nextId } from "./dog-common.js";
+import { get, post, errorText, errorCode, nextId } from "./dog-common.js";
 import { headstoneCard, recordText, trainedBadge, FROZEN_NOTE } from "./dog-headstone.js";
 import { runEvolution } from "./dog-evolve.js";
 import { runDiagnosis } from "./dog-diagnose.js";
 import { reviewProposal } from "./dog-review.js";
+import { showPlan, runJob } from "./dog-plans.js";
 
 const SLOW = 90000;
 
@@ -265,12 +266,57 @@ function trainingFlow(dog, { opener = null, onTrained = null, backHref = null, r
 
     const ask = () => {
       clearNode(sheet.body);
-      sheet.body.appendChild(h("p", { class: "rt-note", "data-hook": "training-warning", text: `${dog.name} studies its own settled bets and proposes changes to itself. You see them first and can say no, change them, or apply them. Nothing changes until you apply. Its current record is frozen when you do, and the new version starts fresh.` }));
-      sheet.body.appendChild(h("p", { class: "hd-muted", text: "It can be sent again once the new version has 5 new settled bets. It cannot go while it has an open ticket." }));
+      sheet.body.appendChild(h("p", { class: "rt-note", "data-hook": "training-warning", text: `Choose how ${dog.name} should be trained. You see the proposal first, with a rehearsal of past games, and nothing changes until you apply. Its current record is frozen when you do, and the next version starts with an empty record.` }));
+      const rebuildNote = h("p", { class: "hd-fine", "data-hook": "training-rebuild-note", text: "" });
+      const fine = button("Fine-tune", "training-fine-tune", "primary", () => plan("fine-tune"));
+      const rebuild = button("Full rebuild", "training-rebuild", "primary", () => plan("rebuild"));
+      sheet.body.appendChild(h("div", { class: "rt-options", "data-hook": "training-options" }, [
+        h("div", { class: "rt-option", "data-hook": "training-option-fine" }, [
+          h("p", { class: "hd-h3", text: "Fine-tune" }),
+          h("p", { class: "hd-muted", text: "One small change to its rules. It is offered only if it did better than today's rules in a rehearsal on past games." }), fine]),
+        h("div", { class: "rt-option", "data-hook": "training-option-rebuild" }, [
+          h("p", { class: "hd-h3", text: "Full rebuild" }),
+          h("p", { class: "hd-muted", text: "Claude re-thinks its rules from its whole record, with big changes: new structure, different markets and prices, losing parts cut. Limited per day." }),
+          rebuild, rebuildNote])]));
+      sheet.body.appendChild(h("p", { class: "hd-muted", text: "It can be trained again once the next version has 5 settled bets. It cannot go while it has an open ticket." }));
       sheet.body.appendChild(actionsRow([
         button("Not now", "training-cancel", "quiet", () => sheet.close()),
-        button("Send to training", "training-go", "primary", go)]));
+        button("Coach's usual check-up", "training-go", "quiet", go)]));
       focusIn(sheet.body, "training-cancel");
+      // whether the rebuild can run right now (a key on the server, today's allowance): said before the tap, not after it
+      get(`${base}/options`).then((o) => {
+        const r = o && o.rebuild;
+        if (r && r.available === false) {
+          rebuild.setAttribute("disabled", "");
+          rebuildNote.textContent = r.reason || "The full rebuild is unavailable right now.";
+        } else if (r) {
+          rebuildNote.textContent = `Full rebuilds left today: ${r.left_today} of ${r.limit_per_day}.`;
+        }
+      }).catch(() => {});
+    };
+
+    // FINE-TUNE and FULL REBUILD: a background job on the server (a rebuild takes a minute or two), then a plan card to Apply or not.
+    const plan = async (kind) => {
+      sheet.setBusy(true);
+      sheet.el.setAttribute("data-hook", "training-planning");
+      const titleEl = titleOf();
+      if (titleEl) titleEl.textContent = kind === "rebuild" ? `${dog.name} is being rebuilt` : `${dog.name} is being fine-tuned`;
+      clearNode(sheet.body);
+      const status = h("p", { class: "rt-status", role: "status", "aria-live": "polite", "data-hook": "training-plan-status", text: "Starting..." });
+      sheet.body.appendChild(status);
+      let card;
+      try {
+        card = await runJob({ start: () => post(`${base}/${kind}`, {}, SLOW), poll: (id) => get(`${base}/job/${encodeURIComponent(id)}`),
+          onStage: (t) => { status.textContent = `${t}...`; } });
+      } catch (e) { sheet.setBusy(false); showTrainingRefusal(e, null); return; }
+      sheet.setBusy(false);
+      sheet.el.setAttribute("data-hook", "training-plan-sheet");
+      if (titleEl) titleEl.textContent = card.kind === "rebuild" ? `${dog.name}'s rebuild` : `${dog.name}'s fine-tune`;
+      const decision = await showPlan({ body: sheet.body, card });
+      if (decision.action === "close") { sheet.close(); return; }
+      if (decision.action === "rebuild") { plan("rebuild"); return; }
+      await applyThenReveal(null, titleEl, () => post(`${base}/plan/apply`, Object.assign({ confirm: true, plan_id: decision.plan_id },
+        decision.choice ? { choice: decision.choice } : {}, decision.basis ? { basis: decision.basis } : {}), SLOW));
     };
 
     // refused (too few new bets, an open ticket) or failed: the title stops saying it is in training, and the server's sentence is shown
@@ -332,11 +378,18 @@ function trainingFlow(dog, { opener = null, onTrained = null, backHref = null, r
       if (decision.action === "veto") { showVeto(layer); return; }
       // APPLY: the only call that writes. The evolution is the show, not the work: the request is started here, runs beside it, and
       // nothing is drawn as an upgrade until the server has answered. A refusal ends the show at once (no charge, no new hound).
+      await applyThenReveal(layer, titleEl, () => post(base, Object.assign({ confirm: true, picks: decision.picks }, decision.basis ? { basis: decision.basis } : {}, origin ? { origin } : {}), SLOW));
+    };
+
+    // APPLY: the only call that writes. The evolution is the show, not the work: the request is started here, runs beside it, and
+    // nothing is drawn as an upgrade until the server has answered. A refusal ends the show at once (no charge, no new hound).
+    const applyThenReveal = async (layer, titleEl, makeRequest) => {
+      layer = layer || sheet.el.parentNode;
       sheet.setBusy(true);
       sheet.el.setAttribute("data-hook", retune ? "retune-running" : "training-running");
       if (titleEl) titleEl.textContent = `${dog.name} is in training`;
       if (layer && layer.setAttribute) layer.setAttribute("data-evolve", "1");
-      const request = post(base, Object.assign({ confirm: true, picks: decision.picks }, decision.basis ? { basis: decision.basis } : {}, origin ? { origin } : {}), SLOW)
+      const request = makeRequest()
         .then((r) => ({ ok: true, r }), (e) => ({ ok: false, e }));
       // "Back to My Kennel": on the kennel page it closes the sheet and the page redraws; elsewhere (the hound page) it goes to `backHref`
       const leave = (result) => () => {

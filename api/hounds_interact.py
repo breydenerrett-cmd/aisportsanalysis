@@ -22,6 +22,14 @@ and the Training camp's own data.
     POST /hounds/{id}/train/diagnose  the owner, read only: the multi-factor diagnosis of the dog's settled bets
     POST /hounds/{id}/train/assess    the owner, read only: the coach's (Claude Haiku's, else the rules engine's) read of it;
                                       cached, so the training that follows takes it instead of asking again (src/hounds/interact/coach.py)
+    GET  /hounds/{id}/train/options   the owner, read only: what the training screen offers (Fine-tune; Full rebuild, with whether it is
+                                      available right now and how many are left today)
+    POST /hounds/{id}/train/fine-tune the owner: start a FINE-TUNE job (a small change that must beat the current rule on a rehearsal)
+    POST /hounds/{id}/train/rebuild   the owner: start a FULL REBUILD job (Claude rebuilds the rules from the whole record; limited per
+                                      day and by a monthly spend guard)
+    GET  /hounds/{id}/train/job/{job} the owner: poll a fine-tune or rebuild job; "done" carries the plan card (before/after rehearsal)
+    POST /hounds/{id}/train/plan/apply the owner, {"plan_id", "choice"?, "basis"?, "confirm": true}: APPLY a saved plan as the next
+                                      version (src/hounds/interact/training_plans.py)
     GET  /hounds/{id}/headstone       a buried dog's headstone (public)
     GET  /hounds/{id}/ask             the dog's greeting and the questions worth asking it
     POST /hounds/{id}/ask             {"question": "..."}: an answer BUILT FROM THE DOG'S DATA (no model is called)
@@ -75,7 +83,7 @@ from src.appstate import ratelimit
 from src.appstate import users as users_store
 from src.hounds import unit_size, user_spec
 from src.hounds.contract import envelope
-from src.hounds.interact import ask, ask_eval, camp, coach, common, drill, fire, fire_event, gematria_analysis, look, manual, outback, retune, right_now, rites, store, training, unleash
+from src.hounds.interact import ask, ask_eval, camp, coach, common, drill, fire, fire_event, gematria_analysis, look, manual, outback, rebuild_budget, retune, right_now, rites, store, training, training_plans, unleash
 
 from api import auth as auth_mod
 from api import entitlements
@@ -440,6 +448,110 @@ def training_veto(hound_id: str, response: Response, current_user: users_store.U
     response.headers["Cache-Control"] = _NO_STORE
     try:
         out = training.veto(common.resolve(hound_id), current_user.id)
+    except rites.RiteError as exc:
+        raise _rite_error(exc)
+    return envelope(out)
+
+
+class PlanApplyRequest(BaseModel):
+    plan_id: str
+    choice: Optional[str] = None
+    basis: Optional[str] = None
+    confirm: bool = False
+
+
+def _is_paid(user) -> bool:
+    return not auth_mod.is_free_member(user)
+
+
+@router.get("/hounds/{hound_id}/train/options")
+def training_options(hound_id: str, response: Response, current_user: users_store.User = Depends(get_current_user),
+                     _rl: None = Depends(_rl_read)) -> dict:
+    """What the training screen offers, read only. The full rebuild says whether it is available right now (a key on the server,
+    today's allowance, the month's guard) so the page can say "unavailable right now" instead of failing after a tap."""
+    response.headers["Cache-Control"] = _NO_STORE
+    try:
+        dog = rites.guard(common.resolve(hound_id), current_user.id)
+        ledger = rebuild_budget.RebuildLedger()
+        paid = _is_paid(current_user)
+        limit, used = rebuild_budget.limit_for(paid), ledger.used_today(current_user.id)
+        reason = None
+        if rebuild_budget.api_key() is None:
+            reason = rebuild_budget.UNAVAILABLE_TEXT
+        elif used >= limit:
+            reason = f"You have used today's {limit} full rebuild{'s' if limit != 1 else ''}. It resets tomorrow (UTC)."
+        else:
+            try:
+                rebuild_budget.check(current_user.id, paid=paid, worst_cost=0.0, ledger=ledger)
+            except rebuild_budget.BudgetError as exc:
+                reason = str(exc)
+    except rites.RiteError as exc:
+        raise _rite_error(exc)
+    return envelope({"name": dog.name, "fine_tune": {"available": True}, "rebuild": {
+        "available": reason is None, "reason": reason, "used_today": used, "limit_per_day": limit, "left_today": max(0, limit - used)},
+        "paper_only": True})
+
+
+def _start_job(kind: str, hound_id: str, current_user, work) -> dict:
+    try:
+        dog = rites.guard(common.resolve(hound_id), current_user.id)
+        out = training_plans.jobs().start(current_user.id, dog.id, kind, work)
+    except rites.RiteError as exc:
+        raise _rite_error(exc)
+    return envelope(out)
+
+
+@router.post("/hounds/{hound_id}/train/fine-tune")
+def training_fine_tune(hound_id: str, response: Response, current_user: users_store.User = Depends(get_current_user),
+                       _rl: None = Depends(_rl_training_steps)) -> dict:
+    """Start a fine-tune: replays a few small changes and offers one only if it beats the current rule. Poll the job."""
+    response.headers["Cache-Control"] = _NO_STORE
+    dog = common.resolve(hound_id)
+    return _start_job(training_plans.KIND_MINOR, hound_id, current_user,
+                      lambda progress: training_plans.fine_tune(dog, current_user.id, progress=progress))
+
+
+@router.post("/hounds/{hound_id}/train/rebuild")
+def training_rebuild(hound_id: str, response: Response, current_user: users_store.User = Depends(get_current_user),
+                     _rl: None = Depends(_rl_training_steps)) -> dict:
+    """Start a full rebuild. The refusals that need no work (no key, today's limit, the month's guard) are answered here, at once;
+    the rest runs as a job the page polls."""
+    response.headers["Cache-Control"] = _NO_STORE
+    dog = common.resolve(hound_id)
+    try:
+        rites.guard(dog, current_user.id)
+        paid = _is_paid(current_user)
+        rebuild_budget.check(current_user.id, paid=paid, worst_cost=0.0, ledger=rebuild_budget.RebuildLedger())
+    except rites.RiteError as exc:
+        raise _rite_error(exc)
+    except rebuild_budget.BudgetError as exc:
+        raise _err(exc.status, exc.code, str(exc), **exc.extra)
+    return _start_job(training_plans.KIND_REBUILD, hound_id, current_user,
+                      lambda progress: training_plans.full_rebuild(dog, current_user.id, paid=paid, progress=progress))
+
+
+@router.get("/hounds/{hound_id}/train/job/{job_id}")
+def training_job(hound_id: str, job_id: str, response: Response, current_user: users_store.User = Depends(get_current_user),
+                 _rl: None = Depends(_rl_read)) -> dict:
+    response.headers["Cache-Control"] = _NO_STORE
+    view = training_plans.jobs().get(job_id, current_user.id)
+    if view is None:
+        raise _err(404, "job_not_found", "That step is not running any more. Start it again.")
+    return envelope(view)
+
+
+@router.post("/hounds/{hound_id}/train/plan/apply")
+def training_plan_apply(hound_id: str, body: PlanApplyRequest, response: Response,
+                        current_user: users_store.User = Depends(get_current_user), _rl: None = Depends(_rl_rites)) -> dict:
+    """APPLY a saved fine-tune or rebuild plan as the next version. The page sends only the plan id (and which option); the rule set
+    comes from the server's own saved plan and is checked again here."""
+    response.headers["Cache-Control"] = _NO_STORE
+    if not body.confirm:
+        raise _err(400, "confirm_required", "Say it again to apply the proposal: send confirm true.")
+    if len(body.plan_id) > PICK_ID_MAX or len(body.choice or "") > PICK_ID_MAX or len(body.basis or "") > PICK_ID_MAX:
+        raise _err(422, "bad_plan", "that is not a proposal this hound made")
+    try:
+        out = training_plans.apply_plan(common.resolve(hound_id), current_user.id, body.plan_id, choice=body.choice, basis=body.basis)
     except rites.RiteError as exc:
         raise _rite_error(exc)
     return envelope(out)
