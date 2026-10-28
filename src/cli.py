@@ -5015,6 +5015,9 @@ def build_parser() -> argparse.ArgumentParser:
     from src.hounds import announce_cli
     announce_cli.add_parser(sub)
 
+    from src.research.live_tennis import cli as live_tennis_cli
+    live_tennis_cli.add_parser(sub)
+
     eod_cmd = sub.add_parser(
         "eod", help="build and write the end-of-day self-review (S7)")
     eod_cmd.add_argument("--date", required=True, help="YYYY-MM-DD")
@@ -5053,6 +5056,12 @@ def cmd_announce(args) -> int:
     """`announce --user U --kind kennel_fire [--steps-file F] | --list | --find-user HOUND_ID` (src/hounds/announce_cli.py)."""
     from src.hounds import announce_cli
     return announce_cli.main(args)
+
+
+def cmd_research(args) -> int:
+    """`research live-tennis capture|grade|report`: the LIVE_TENNIS_V1 paper test (src/research/live_tennis/, docs/PREREG_LIVE_TENNIS.md)."""
+    from src.research.live_tennis import cli as live_tennis_cli
+    return live_tennis_cli.main(args)
 
 
 def cmd_datasvc(args) -> int:
@@ -5110,6 +5119,7 @@ COMMANDS = {
     "jarvis": cmd_jarvis,
     "hounds": cmd_hounds,
     "announce": cmd_announce,
+    "research": cmd_research,
     "nfl": cmd_nfl,
     "tennis": cmd_tennis,
     "allsports": cmd_allsports,
