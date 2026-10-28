@@ -8088,3 +8088,11 @@
 {"events": 18, "kind": "peek", "next_check_utc": "2026-10-28T11:45:07.796845Z", "observed_utc": "2026-10-28T05:45:07.796845Z", "sport_key": "soccer_uefa_europa_conference_league"}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T05:45:07.796845Z", "regions": ["au"], "rows": 15, "sport_key": "cricket_test_match", "stored": 13}
 {"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T05:58:00.682272Z", "regions": ["us"], "rows": 53, "sport_key": "tennis_wta_pan_pacific_open", "stored": 53}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-10-28T12:11:00.905638Z", "observed_utc": "2026-10-28T06:11:00.905638Z", "sport_key": "americanfootball_cfl"}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-10-28T12:11:00.905638Z", "observed_utc": "2026-10-28T06:11:00.905638Z", "sport_key": "cricket_international_t20"}
+{"events": 15, "kind": "peek", "next_check_utc": "2026-10-28T12:11:00.905638Z", "observed_utc": "2026-10-28T06:11:00.905638Z", "sport_key": "soccer_argentina_primera_division"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-28T12:11:00.905638Z", "observed_utc": "2026-10-28T06:11:00.905638Z", "sport_key": "soccer_germany_bundesliga_women"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-10-28T12:11:00.905638Z", "observed_utc": "2026-10-28T06:11:00.905638Z", "sport_key": "soccer_korea_kleague1"}
+{"commence_utc": "2026-10-28T08:00:00Z", "event_id": "a9fac6056a7fb978aceab5182f56271b", "kind": "phase", "observed_utc": "2026-10-28T06:11:00.905638Z", "phase": "t2h", "rows": 8, "sport_key": "tennis_wta_pan_pacific_open"}
+{"call_kind": "pregame", "credits": 1, "events": 7, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T06:11:00.905638Z", "regions": ["us"], "rows": 51, "sport_key": "tennis_wta_pan_pacific_open", "stored": 51}
+{"call_kind": "inplay", "credits": 1, "events": 19, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T06:11:00.905638Z", "regions": ["us"], "rows": 134, "sport_key": "basketball_nba", "stored": 120}
