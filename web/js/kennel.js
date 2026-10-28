@@ -53,6 +53,7 @@ import { mountLocker } from "./dog-locker.js";
 import { mountFire } from "./dog-fire.js";
 import { mountBacktest, money } from "./dog-backtest.js";
 import { bootAsk } from "./dog-ask.js";
+import { bootChat } from "./dog-chat.js";
 import { mountManual } from "./dog-manual.js";
 import { mountApprentice } from "./apprentice-studio.js";
 import { ticketList } from "./hounds-tickets.js";
@@ -695,6 +696,24 @@ function section(hook) {
   return h("section", { class: "dk-panel kn-section" }, [h("div", { "data-hook": hook })]);
 }
 
+/**
+ * A change the member applied from the chat made the hound's NEXT VERSION (a new id). Redraw the kennel, point the studio at that id and
+ * keep the Ask tab where it is, so the conversation carries on; the other tabs are rebuilt from the new version when they are opened.
+ */
+async function afterChatApply(out) {
+  const next = out && out.hound && out.hound.id;
+  await load({ quiet: true });
+  if (!next || !state.data || !dogById(next)) return;
+  state.open = next;
+  state.kit = null;
+  state.loaded = { ask: next };
+  for (const k of STUDIO_TABS) if (k !== "ask") clearNode(q(`studio-${k}`));
+  clearNode(q("studio-rules"));
+  syncLessonsTab();
+  paintStudioHead();
+  writeUrl(next, "ask");
+}
+
 async function buildTab(tab) {
   const dog = studioDog();
   const id = state.open;
@@ -737,7 +756,13 @@ async function buildTab(tab) {
   } else if (tab === "ask") {
     const sec = section("dog-ask");
     host.appendChild(sec);
-    await bootAsk(sec, { id: dog.id, name: dog.name, gematria: !!kit.gematria });
+    // the OWNER of a member hound TALKS to it (Claude Haiku, web/js/dog-chat.js: saved history, proposals with Apply / Cancel);
+    // anyone else, and a server without chat, keeps the computed Ask, so the tab is never empty
+    const chatting = !!(kit.is_owner && kit.kind === "user") && await bootChat(sec, { id: dog.id, name: dog.name, look: dog.look || lookFor(dog.root_id || dog.id),
+      version: dog.version_no, root_id: dog.root_id }, { onApplied: afterChatApply });
+    if (!chatting) await bootAsk(sec, { id: dog.id, name: dog.name, gematria: !!kit.gematria });
+  } else if (tab === "record") {
+    await buildRecord(host, dog, kit);
   } else if (tab === "record") {
     await buildRecord(host, dog, kit);
   } else if (tab === "lessons" && dog.style === "apprentice") {

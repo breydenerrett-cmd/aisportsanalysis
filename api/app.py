@@ -40,6 +40,7 @@ from api.hounds_create import router as hounds_create_router
 from api.hounds_quiz import router as hounds_quiz_router
 from api.hounds_interview import router as hounds_interview_router
 from api.hounds_interact import router as hounds_interact_router
+from api.hounds_chat import router as hounds_chat_router
 from api.announcements import router as announcements_router
 from api.me_access import router as me_access_router
 from api.hounds_apprentice import router as hounds_apprentice_router
@@ -119,6 +120,9 @@ app.include_router(hounds_tips_router)
 # fire now / ask / feedback / locker room / drill / camp (api/hounds_interact.py): /hounds/looks, /hounds/camp/mine
 # and POST /hounds/drill are literal paths next to /hounds/{id}, so this is mounted before api.hounds too.
 app.include_router(hounds_interact_router)
+# talk to your hound (api/hounds_chat.py): /hounds/{id}/chat and its proposals, the owner's own Haiku conversation. Its paths are literal
+# tails nothing else declares, so the order against api.hounds does not matter; it sits beside the computed Ask it complements.
+app.include_router(hounds_chat_router)
 app.include_router(me_access_router)            # is full access ending? GET /me/access (api/me_access.py)
 app.include_router(announcements_router)       # one-time member announcements: /me/announcements (api/announcements.py)
 app.include_router(hounds_apprentice_router)   # the Apprentice hound's lessons: /hounds/{id}/apprentice/...
