@@ -4313,3 +4313,4 @@
 {"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-28T13:33:14.180379+00:00", "sport_key": "cricket_test_match"}
 {"away_score": 99.0, "away_team": "Sydney Kings", "commence_time": "2026-10-28T10:36:00Z", "completed": true, "event_id": "c7bb1b603a06af2f2b03089d09736bb9", "home_score": 91.0, "home_team": "Perth Wildcats", "kind": "score", "last_update": "2026-10-28T13:32:58Z", "observed_utc": "2026-10-28T13:33:14.180379+00:00", "outcome": "away", "scores": [{"name": "Perth Wildcats", "score": "91"}, {"name": "Sydney Kings", "score": "99"}], "sport_key": "basketball_nbl"}
 {"credits": 2, "days_from": 3, "events": 3, "kind": "poll", "observed_utc": "2026-10-28T13:33:14.180379+00:00", "sport_key": "basketball_nbl"}
+{"credits": 2, "days_from": 3, "events": 14, "kind": "poll", "observed_utc": "2026-10-28T14:08:55.814490+00:00", "sport_key": "soccer_spain_copa_del_rey"}
