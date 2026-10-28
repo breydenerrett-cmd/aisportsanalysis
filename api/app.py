@@ -51,6 +51,7 @@ from api.hounds_tips import router as hounds_tips_router
 from api.hounds_kennels import router as hounds_kennels_router
 from api.hounds_live import router as hounds_live_router
 from api.hounds_postmortems import router as hounds_postmortems_router
+from api.research_read import router as research_read_router
 from api.feeds import router as feeds_router
 from api.support import router as support_router
 from api.betcheck import free_router as free_betcheck_router, router as betcheck_router
@@ -132,6 +133,9 @@ app.include_router(hounds_live_router)
 # the bets spreadsheet and the hindsight reviews (api/hounds_postmortems.py): /hounds/{id}/export has the shape of the literal
 # /hounds/tips/export, so it is mounted AFTER api.hounds_tips (tests/test_postmortems_api.py pins the order).
 app.include_router(hounds_postmortems_router)
+# the owner's read-only research feed (api/research_read.py): its own /research prefix, no ordering constraint; 404 unless
+# RESEARCH_READ_TOKEN is set and matched.
+app.include_router(research_read_router)
 # the Zapier feeds and the coach brief (api/feeds.py). /hounds/coach-brief is a literal path under
 # /hounds/{id}, so this is mounted after the two routers above and BEFORE api.hounds (tests pin the order).
 app.include_router(feeds_router)

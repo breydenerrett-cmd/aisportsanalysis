@@ -324,3 +324,6 @@ data/datasvc/footballdata/
 # non-commercial use; local cache, not tracked and not in the web image (data/datasvc/* is excluded there).
 # To track the small tables only, ignore data/datasvc/mlb/player_games_* instead.
 data/datasvc/mlb/
+
+# member bet history pulled by scripts/research_pull.py (holds member data)
+data/research/bets_pull/
