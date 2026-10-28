@@ -201,6 +201,52 @@
         "epitaph": "Never claimed to know. Kept good notes.",
         "verb": "drew from the board and took"
       }
+    },
+    {
+      "id": "pack_consensus",
+      "name": "Pack Consensus",
+      "tagline": "Only moves when two proven hounds agree. Until enough hounds have a closing-line record, it sits out and says so.",
+      "category": "mixed",
+      "style": "consensus of hounds with a closing-line record",
+      "kind": "house",
+      "enabled": true,
+      "family": "pack_consensus",
+      "providers": [],
+      "sports": [
+        "dog_menu"
+      ],
+      "markets": [
+        "moneyline",
+        "spread",
+        "total"
+      ],
+      "price_band": [
+        -199,
+        400
+      ],
+      "who_decided": "rule",
+      "forward_only": true,
+      "max_per_day": 3,
+      "stake_units": 1.0,
+      "rule_text": "It reads the other hounds' recorded tickets, never their rules. A hound is a voter only if it has at least 30 forward bets with a measured closing price, its average closing-line value is above zero and the lower end of its 95% range (by day) is above zero, using only bets from earlier days and results already graded; random, baseline, numerology and favourite or home-underdog hounds never vote, and neither does Pack Leader. Hounds built on the same signal or the same model count as one vote. It needs at least three such voters before it bets at all; until then it bets nothing and says: Not enough proven hounds yet to form a pack. Once formed, it takes a side only when at least two of those voters recorded that same side of the same game and market before it decided, with no voter on the other side, at the board-average price an hour before the start, never -200 or worse, one side per game, one unit, at most three a day. Forward only. Paper only. Voters are picked because their record looked good, which flatters them; the judge is this hound's own closing-line record over its first 150 bets, and a bad record is published like any other. Rules were registered on 2026-10-28 before it bet.",
+      "persona": {
+        "bio": "Sits at the back of the kennel with a clipboard and waits until two hounds with a record point at the same spot. Most days that never happens.",
+        "catchphrase": "Two proven noses, or I stay in the car.",
+        "vibe": "nerd",
+        "roasts": [
+          "Followed two hounds with a good record straight into a loss.",
+          "The pack agreed. The scoreboard did not.",
+          "A consensus of hounds that had only ever been lucky.",
+          "It waited a week for agreement and then got it wrong."
+        ],
+        "brags": [
+          "Two proven hounds, one side, and it cashed. The record says how often.",
+          "Agreement that held up against the close. One line in the record, nothing more.",
+          "The pack and the market agreed this time."
+        ],
+        "epitaph": "Waited for agreement. The close did not.",
+        "verb": "followed the proven hounds on"
+      }
     }
   ]
 }

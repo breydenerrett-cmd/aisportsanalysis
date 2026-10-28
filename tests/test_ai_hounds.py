@@ -94,8 +94,8 @@ class RegistryAndConfigTests(unittest.TestCase):
 
     def test_shipped_config_runs_one_claude_hound_and_parks_the_council(self):
         # the Gematria Hound and the Learner share this config (ledger, sports gate, runner) but ask no model: tests/test_gematria_hound.py, tests/test_learner_hound.py
-        self.assertEqual([e["id"] for e in ai_defs.entries()], ["ai_claude", "gematria", "learner"])
-        self.assertEqual(ai_defs.ids(), frozenset({"ai_claude", "ai_council", "gematria", "learner"}))
+        self.assertEqual([e["id"] for e in ai_defs.entries()], ["ai_claude", "gematria", "learner", "pack_consensus"])
+        self.assertEqual(ai_defs.ids(), frozenset({"ai_claude", "ai_council", "gematria", "learner", "pack_consensus"}))
         entry = ai_defs.entry_for("ai_claude")
         self.assertEqual((entry["name"], entry["category"], entry["who_decided"], entry["providers"]),
                          ("Claude Hound", "ai", "model", ["anthropic"]))
@@ -105,7 +105,7 @@ class RegistryAndConfigTests(unittest.TestCase):
         defs = house.definitions(ROOT / "config" / "house_hounds.json", ROOT / "config" / "house_pack.json",
                                  ROOT / "config" / "desk_hounds.json", ROOT / "config" / "ai_hounds.json")
         ai = [d for d in defs if d["source"] == "ai_cfg"]
-        self.assertEqual([d["id"] for d in ai], ["ai_claude", "gematria", "learner"])
+        self.assertEqual([d["id"] for d in ai], ["ai_claude", "gematria", "learner", "pack_consensus"])
         self.assertEqual((ai[0]["category"], ai[0]["not_started_when_empty"]), ("ai", True))
         self.assertEqual(ai[1]["category"], "numerology")
         from src.hounds.contract import CATEGORIES

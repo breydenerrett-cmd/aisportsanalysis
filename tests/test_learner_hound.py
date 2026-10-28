@@ -298,7 +298,7 @@ class RunnerWiringTests(unittest.TestCase):
         self.assertNotIn("provider", row)
 
     def test_the_kill_switch_keeps_it_out(self):
-        report = self.run_pass({"GEMATRIA_HOUND": "off", "LEARNER_HOUND": "off"})
+        report = self.run_pass({"GEMATRIA_HOUND": "off", "LEARNER_HOUND": "off", "PACK_CONSENSUS_HOUND": "off"})
         self.assertFalse(report.get("learner"))
         self.assertFalse(report.get("run"))
 

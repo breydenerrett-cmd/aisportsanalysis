@@ -113,7 +113,7 @@ def run_pass(*, now: Optional[datetime] = None, router=None, stores=None, ledger
     from src.hounds import pack_run, pack_settle, user_runner
     from src.hounds.gematria import runtime as gem_rt
     from src.hounds.learner import HOUND_ID as LEARNER_ID, state as learner_state
-    from src.hounds.pack import ai_hounds, base, gematria_hound, learner_hound
+    from src.hounds.pack import ai_hounds, base, gematria_hound, learner_hound, pack_consensus_hound
     from src.ledger.chain import HashChainLedger
 
     moment = now or _utcnow()
@@ -126,9 +126,11 @@ def run_pass(*, now: Optional[datetime] = None, router=None, stores=None, ledger
     gem_on = bool(gem_entry) and gem_entry.get("enabled") is not False and (gematria_on() if gem_enabled is None else gem_enabled)
     learner_entry = ai_defs.entry_for(LEARNER_ID, hounds_config)
     learner_on = bool(learner_entry) and learner_entry.get("enabled") is not False and learner_hound.enabled()
+    pack_entry = ai_defs.entry_for(pack_consensus_hound.HOUND_ID, hounds_config)
+    pack_on = bool(pack_entry) and pack_entry.get("enabled") is not False and pack_consensus_hound.enabled()
     if not ai_on:
         report["skipped"] = "no AI provider is enabled (no key, or switched off in config/ai_providers.json)"
-    if not ai_on and not gem_on and not learner_on and not Path(ledger_file).exists():
+    if not ai_on and not gem_on and not learner_on and not pack_on and not Path(ledger_file).exists():
         return report
     with freshness._gated_build():
         dates = user_runner.pass_dates(moment)
@@ -153,6 +155,9 @@ def run_pass(*, now: Optional[datetime] = None, router=None, stores=None, ledger
             # No model, no key, no cost: it draws from the lock board, logs its features, and reads only the focus the owner applied.
             hounds.append(learner_hound.LearnerHound(learner_entry, now_fn=lambda: moment,
                                                      events=learner_state.events_path(ledger_file)).bind(stores))
+        if pack_on:
+            # No model, no key, no cost: it reads other hounds' recorded tickets and a record test (docs/PREREG_PACK_HOUND.md).
+            hounds.append(pack_consensus_hound.PackConsensusHound(pack_entry, now_fn=lambda: moment, ai_ledger=ledger_file).bind(stores))
         if not hounds:
             report["skipped"] = "no AI hound is enabled in config/ai_hounds.json"
         else:
@@ -160,6 +165,8 @@ def run_pass(*, now: Optional[datetime] = None, router=None, stores=None, ledger
                 report["gematria"] = True
             if learner_on:
                 report["learner"] = True
+            if pack_on:
+                report["pack_consensus"] = next(h for h in hounds if h.id == pack_consensus_hound.HOUND_ID).status(dates[0])
             counts = pack_run.run(stores, dates, replay=False, now=moment, path=ledger_file, hounds=hounds,
                                   out=lambda *_a, **_k: None)
             report["run"] = counts
