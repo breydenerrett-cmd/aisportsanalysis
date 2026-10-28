@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-10-27 20:45Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-28 15:41Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **4** |
+| Days until 2026-10-31 | **3** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-27 (1:30 pm PT run): World Series Game 4 (Brewers at Rays, 5:00 pm PT) brief published at 1:45 pm PT; every call is a pass, one marked could not be verified.
-- The writer took all three attempts (checker rejections: a banned word, an unsourced number, a summary number); the third was published with one struck pass.
-- Public sample stays on the graded World Series Game 3 brief until Game 4 is graded.
-- Working-branch tests green; the scheduled daily loop on the default branch: newest run cancelled, the one before failed.
-- Public MLB value picks remain paused. Sends 0, replies 0, testers 0.
+- 2026-10-28 (8:30 am PT run): World Series Game 4 (Brewers at Rays) is graded; every call was a pass. Public sample moved to that graded brief.
+- Game 5 (Brewers at Rays, Wed 5:00 pm PT) is outside the 4-hour window now; its brief is for the 1:30 pm PT run. No NFL game today.
+- Working-branch tests running on the latest merge; the scheduled daily loop on the default branch: newest run failed (10:10Z dispatch).
+- Production /health ok; memory peak 841 of 850 MB. Public MLB value picks remain paused.
+- Sends 0, replies 0, testers 0, paid 0.
 
