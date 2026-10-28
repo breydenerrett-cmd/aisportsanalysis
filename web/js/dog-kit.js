@@ -25,6 +25,7 @@ import { mountFans } from "./dog-feedback.js";
 import { mountManual } from "./dog-manual.js";
 import { mountLocker } from "./dog-locker.js";
 import { mountRites } from "./dog-rites.js";
+import { mountVersions } from "./dog-versions.js";
 import { headstoneCard, trainedBadge } from "./dog-headstone.js";
 import { clearNode } from "./hounds-core.js";
 
@@ -72,7 +73,7 @@ export async function bootDogKit(hound, { onUnleashed = null } = {}) {
   const sections = {
     fire: q("dog-fire-section"), ask: q("dog-ask-section"), manual: q("dog-manual-section"),
     fans: q("dog-fans-section"), locker: q("dog-locker-section"), backtest: q("dog-backtest-section"),
-    rites: q("dog-rites-section"), headstone: q("dog-headstone-section"),
+    rites: q("dog-rites-section"), headstone: q("dog-headstone-section"), versions: q("dog-versions-section"),
   };
   if (!sections.fire) return null;
   let kit = null;
@@ -90,6 +91,12 @@ export async function bootDogKit(hound, { onUnleashed = null } = {}) {
   let manual = null;
   const jobs = [];
   if (kit.buried) jobs.push(mountHeadstone(sections.headstone, id));
+  // the owner's Versions list (v1..vN with "Go back to this version"): shown only when the hound has been through more than one version
+  if (kit.is_owner && hound.kind === "user" && sections.versions && !kit.buried) {
+    jobs.push(mountVersions(sections.versions.querySelector("[data-hook='dog-versions']"), { id, name: hound.name || kit.name,
+      onChanged: (result) => { try { window.location.href = (result.new && result.new.page_href) || `hound.html?id=${encodeURIComponent(id)}`; } catch (err) { /* a fake window */ } } })
+      .then((count) => { if (count > 1) sections.versions.removeAttribute("hidden"); }));
+  }
   if (hound.kind === "user" && sections.manual) {
     jobs.push(mountManual(sections.manual, { id, kit }).then((m) => {
       manual = m;

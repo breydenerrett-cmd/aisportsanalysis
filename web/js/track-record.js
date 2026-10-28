@@ -14,6 +14,7 @@
  *   OPEN        tickets still waiting for a result, APART from the record and never counted in it.
  *   TICKETS     the latest settled tickets, filterable by sport, result and market, each with its "why" when one was stored.
  *   COMPARE     against the house pack and the leaderboard average over the same period.
+ *   SPREADSHEET  "Download bets (spreadsheet)" and, under a settled ticket, its hindsight review (web/js/record-postmortems.js).
  *
  * Times come from local-time.js (the viewer's zone). A hindsight backtest never appears here: the server only sends forward bets.
  */
@@ -26,6 +27,7 @@ import { get } from "./dog-common.js";
 import { renderSparkline } from "./hounds-chart.js";
 import { priced, getSizing } from "./unitsize.js";
 import { formatStamp } from "./local-time.js";
+import { loadReviews, renderExport, renderReview } from "./record-postmortems.js";
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 const WIN_COLOR = "#5BE39A";
@@ -35,7 +37,7 @@ const MON_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"
 export const CALENDAR_MONTHS = 3;
 export const MARKET_WORDS = { h2h: "Moneyline", moneyline: "Moneyline", spreads: "Spread", spread: "Spread", totals: "Total", total: "Total" };
 
-const state = { id: "", season: "", data: null, owner: false, filters: { sport: "", result: "", market: "" } };
+const state = { id: "", season: "", data: null, owner: false, reviews: null, filters: { sport: "", result: "", market: "" } };
 
 // ---- pure helpers (the tests run these under node) ------------------------------------------------------------
 
@@ -261,14 +263,17 @@ function ticketItem(t, { open = false } = {}) {
   const when = open
     ? (t.start_utc ? `Starts ${formatStamp("w", t.start_utc)}` : `Slate day ${t.date}`)
     : (t.recorded_utc ? `Recorded ${formatStamp("d", t.recorded_utc)}` : `Slate day ${t.date}`);
-  return h("li", { class: `rc-ticket rc-ticket--${cls}`, "data-hook": open ? "open-ticket" : "ticket", "data-result": t.result || "open" }, [
+  const review = !open && t.bet_key && state.reviews ? state.reviews[t.bet_key] : null;
+  return h("li", { class: `rc-ticket rc-ticket--${cls}`, "data-hook": open ? "open-ticket" : "ticket", "data-result": t.result || "open",
+    "data-bet-key": t.bet_key || "" }, [
     h("span", { class: `rc-chip rc-chip--${cls}`, text: open ? (t.status === "UNGRADED" ? "Waiting on a grade" : "Open") : (RESULT_WORD[t.result] || "") }),
     h("div", { class: "rc-ticket__main" }, [
       h("p", { class: "rc-ticket__pick", text: `${t.selection || "Pick"}${isNum(price) ? ` ${fmtPrice(price)}` : ""}` }),
       h("p", { class: "rc-ticket__game", text: [t.game, marketWord(t.market)].filter(Boolean).join(" · ") }),
       h("p", { class: "rc-ticket__when", text: when }),
       t.beyond_cap ? h("p", { class: "rc-ticket__tag", text: "-200 or worse (old rule)" }) : null,
-      !open && t.reason ? h("p", { class: "rc-ticket__why", "data-hook": "ticket-why" }, [h("strong", { text: "Why: " }), t.reason]) : null]),
+      !open && t.reason ? h("p", { class: "rc-ticket__why", "data-hook": "ticket-why" }, [h("strong", { text: "Why: " }), t.reason]) : null,
+      review ? renderReview(review) : null]),
     open ? null : h("span", { class: "rc-ticket__units", text: unitsText(t.units) }),
   ]);
 }
@@ -357,11 +362,16 @@ function renderCompare(data) {
   box.appendChild(h("p", { class: "rc-note", "data-hook": "compare-line", text: parts.join(" ") }));
 }
 
+function showExport(data) {
+  renderExport(q("record-export"), data.hound, state.owner, (data.hound && data.hound.id) || state.id);
+}
+
 function render(data) {
   state.data = data;
   renderHead(data);
   renderHeader(data);
   renderNext(data);
+  showExport(data);
   renderCurve(data);
   renderOpen(data);
   renderBreakdowns(data);
@@ -397,6 +407,7 @@ async function load(season) {
     try { window.history.replaceState(null, "", `${window.location.pathname}?id=${encodeURIComponent(state.id)}&season=${encodeURIComponent(state.season)}`); } catch (err) { /* a file page or a fake window */ }
   }
   ownerCheck();
+  reviewsCheck();
 }
 
 /** Is the viewer this hound's owner? Only changes where "Backtest a tweak" goes; any failure leaves the copy route. */
@@ -404,8 +415,16 @@ async function ownerCheck() {
   try {
     const kit = await get(`/hounds/${encodeURIComponent(state.id)}/kit`);
     const owner = !!(kit && kit.is_owner);
-    if (owner !== state.owner) { state.owner = owner; if (state.data) renderNext(state.data); }
+    if (owner !== state.owner) { state.owner = owner; if (state.data) { renderNext(state.data); showExport(state.data); } }
   } catch (err) { /* signed out, or no kit route: the visitor's links stand */ }
+}
+
+/** The hindsight reviews of this hound's settled bets, when the viewer may see them: they open under their tickets. */
+async function reviewsCheck() {
+  const reviews = await loadReviews(state.id);
+  if (!reviews) return;
+  state.reviews = reviews;
+  if (state.data) renderTickets(state.data);
 }
 
 export async function boot() {

@@ -32,6 +32,7 @@
 import { h, clearNode, isNum, s as svg } from "./hounds-core.js";
 import { dogBadge, fetchLooks, lookFor, cleanLook, versionTier, newParts } from "./dog-avatar.js";
 import { trainedBadge } from "./dog-headstone.js";
+import { undoBlock } from "./dog-versions.js";
 
 /** The beats of the sequence, in milliseconds. The whole thing runs about 7 seconds before the card, and the card builds for 2 more. */
 export const TIMING = {
@@ -407,6 +408,7 @@ export function runEvolution({ body, dog, request, reduced = false, layer = null
         lines.length ? stats : h("p", { class: "ev-card__note", "data-hook": "evolve-no-lines", text: "The coach changed nothing the rule shows. The new version starts fresh." }),
         h("p", { class: "ev-card__fresh", "data-hook": "evolve-fresh", text: `Its new record starts now. v${oldV} keeps its record.` }),
         renderWhy ? why(renderWhy(r)) : null,
+        undoBlock(r),                                       // "Undo (go back to version N)": only when the server offered it (src/hounds/interact/revert.py)
         h("div", { class: "ev-actions", "data-hook": "rites-actions" }, [
           h("a", { class: "btn btn--primary", href: fresh.page_href || "#", "data-hook": "training-open-new", text: `See v${newV}` }),
           h("button", { type: "button", class: "btn btn--ghost", "data-hook": "training-done", on: { click: () => { if (onBack) onBack(); } }, text: "Back to My Kennel" })]),

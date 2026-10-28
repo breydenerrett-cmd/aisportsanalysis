@@ -40,6 +40,7 @@ from api.hounds_create import router as hounds_create_router
 from api.hounds_quiz import router as hounds_quiz_router
 from api.hounds_interview import router as hounds_interview_router
 from api.hounds_interact import router as hounds_interact_router
+from api.hounds_chat import router as hounds_chat_router
 from api.announcements import router as announcements_router
 from api.me_access import router as me_access_router
 from api.hounds_apprentice import router as hounds_apprentice_router
@@ -49,6 +50,8 @@ from api.hounds_share import router as hounds_share_router
 from api.hounds_tips import router as hounds_tips_router
 from api.hounds_kennels import router as hounds_kennels_router
 from api.hounds_live import router as hounds_live_router
+from api.hounds_postmortems import router as hounds_postmortems_router
+from api.research_read import router as research_read_router
 from api.feeds import router as feeds_router
 from api.support import router as support_router
 from api.betcheck import free_router as free_betcheck_router, router as betcheck_router
@@ -118,12 +121,21 @@ app.include_router(hounds_tips_router)
 # fire now / ask / feedback / locker room / drill / camp (api/hounds_interact.py): /hounds/looks, /hounds/camp/mine
 # and POST /hounds/drill are literal paths next to /hounds/{id}, so this is mounted before api.hounds too.
 app.include_router(hounds_interact_router)
+# talk to your hound (api/hounds_chat.py): /hounds/{id}/chat and its proposals, the owner's own Haiku conversation. Its paths are literal
+# tails nothing else declares, so the order against api.hounds does not matter; it sits beside the computed Ask it complements.
+app.include_router(hounds_chat_router)
 app.include_router(me_access_router)            # is full access ending? GET /me/access (api/me_access.py)
 app.include_router(announcements_router)       # one-time member announcements: /me/announcements (api/announcements.py)
 app.include_router(hounds_apprentice_router)   # the Apprentice hound's lessons: /hounds/{id}/apprentice/...
 # where a ticket's game stands right now, and the "Grading" indicator (api/hounds_live.py): /hounds/live is a literal path
 # under /hounds/{id}, so it is mounted before api.hounds too (tests/test_live_settle_api.py pins the order).
 app.include_router(hounds_live_router)
+# the bets spreadsheet and the hindsight reviews (api/hounds_postmortems.py): /hounds/{id}/export has the shape of the literal
+# /hounds/tips/export, so it is mounted AFTER api.hounds_tips (tests/test_postmortems_api.py pins the order).
+app.include_router(hounds_postmortems_router)
+# the owner's read-only research feed (api/research_read.py): its own /research prefix, no ordering constraint; 404 unless
+# RESEARCH_READ_TOKEN is set and matched.
+app.include_router(research_read_router)
 # the Zapier feeds and the coach brief (api/feeds.py). /hounds/coach-brief is a literal path under
 # /hounds/{id}, so this is mounted after the two routers above and BEFORE api.hounds (tests pin the order).
 app.include_router(feeds_router)
@@ -395,7 +407,12 @@ def _start_live_settle() -> None:
         status = warmup.status()
         return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
 
-    live_settle.start_loop(ready=_warm_up_done)
+    from src.ai import postmortems
+
+    # Hindsight reviews of settled bets (src/ai/postmortems.py) ride this loop: after each pass one tick queues the newly settled
+    # bets and reads or submits a half-price batch. It never raises, waits for no key (the queue just waits) and stops at its own
+    # monthly cap (POSTMORTEM_MONTHLY_USD, default $20). POSTMORTEMS=off stops it.
+    live_settle.start_loop(ready=_warm_up_done, after_pass=postmortems.tick_safely)
 
 
 # -- live scores for the Live board (src/sports/live_feed.py) -----------------------------------------------------

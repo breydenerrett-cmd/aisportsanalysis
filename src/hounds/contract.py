@@ -270,6 +270,9 @@ class BetRow:
     event_id: Optional[str] = None
     sport: Optional[str] = None
     graded_utc: Optional[str] = None
+    # The paper stake, in units, a MEMBER hound's spec chose for this bet (its ledger row's ``stake_units``); None means one unit
+    # (``bankroll.stake_of``). Added 2026-10-28, additive: the bets spreadsheet's Stake column (src/hounds/bet_export.py).
+    stake_units: Optional[float] = None
 
 
 @dataclass

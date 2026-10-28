@@ -115,7 +115,9 @@ def gematria_bucket(weigher, event_id: str, game, spec: Mapping, now: datetime) 
     if game.commence is None or now >= game.commence:
         return "started"
     lock = game.commence - timedelta(minutes=spec["lock_minutes"])
-    got = weigher.weigh(event_id, as_of=now if now < lock else None)
+    from src.hounds import user_gematria
+    tuning = user_gematria.tuning_of(spec)
+    got = weigher.weigh(event_id, as_of=now if now < lock else None, **({"tuning": tuning} if tuning else {}))
     if got is None:
         return "no_board"
     verdict = got[2].verdict

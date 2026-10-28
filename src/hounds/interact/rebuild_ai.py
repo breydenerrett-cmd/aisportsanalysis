@@ -34,6 +34,7 @@ import logging
 import re
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from typing import Any, Callable, Mapping, Optional, Sequence
 
 from src.hounds import user_rules, user_spec
@@ -258,10 +259,34 @@ def build_context(*, name: str, version_no: int, spec_v2: Mapping, plain_rule: s
     return "\n".join(parts)
 
 
-def angle_message(context: str, angle: tuple, feedback: str = "") -> str:
+def angle_message(context: str, angle: tuple, feedback: str = "", ask: str = "") -> str:
     _id, label, brief = angle
     extra = f"\n\nYOUR PREVIOUS ANSWER WAS REFUSED: {feedback}\nWrite a different, bigger rebuild." if feedback else ""
-    return f"{context}\n\nYOUR ANGLE: {label}.\n{brief}\n\nWrite a complete rule set that is a major departure from the current one.{extra}"
+    return (f"{context}\n\nYOUR ANGLE: {label}.\n{brief}\n\n"
+            f"{ask or 'Write a complete rule set that is a major departure from the current one.'}{extra}")
+
+
+@dataclass(frozen=True)
+class Profile:
+    """What differs between rebuilding an ordinary hound's rule set and rebuilding a Gematria hound's settings (owner request 2026-10-28):
+    the system and analyst prompts, the angles, and the three checks that enforce the law on every candidate (``vet`` returns
+    ``(spec, None)`` or ``(None, reason)``; ``distance`` and ``too_similar`` measure whether it is a MAJOR change). The calls, the budget,
+    the retry and the analyst are the same code for both, so nothing about the cost or the safety of a rebuild is written twice."""
+    system: Callable[[], str]
+    analyst_system: Callable[[], str]
+    angles_fn: Callable[[Optional[int]], tuple]
+    vet: Callable[[Any, Mapping], tuple]
+    distance: Callable[[Mapping, Mapping], dict]
+    too_similar: Callable[[Mapping], bool]
+    ask: str = ""
+    similar_text: Optional[Callable[[Mapping], str]] = None   # the sentence sent back when a candidate is too close (None: the rule-set one)
+
+
+def default_profile() -> Profile:
+    """The ordinary rule-set profile. Every function is looked up by name when it is CALLED, so a test that replaces one still takes effect."""
+    return Profile(system=lambda: system_text(SYSTEM_PROMPT), analyst_system=lambda: system_text(ANALYST_PROMPT),
+                   angles_fn=lambda n: angles(n), vet=lambda raw, cur: vet_spec(raw, cur),
+                   distance=lambda a, b: spec_distance(a, b), too_similar=lambda d: too_similar(d))
 
 
 # ---------------------------------------------------------------------------
@@ -454,24 +479,26 @@ def clean_summary(text: Any) -> str:
     return " ".join(str(text or "").split())[:SUMMARY_MAX]
 
 
-def run_angle(caller: Caller, context: str, angle: tuple, current: Mapping) -> dict:
+def run_angle(caller: Caller, context: str, angle: tuple, current: Mapping, profile: Optional[Profile] = None) -> dict:
     """One angle, with at most ``ANGLE_RETRIES`` sends-back. Returns ``{angle, label, spec, summary, distance, tries, refused}``;
     ``spec`` is None (and ``refused`` says why) when no try passed."""
-    system = system_text(SYSTEM_PROMPT)
+    profile = profile or default_profile()
+    system = profile.system()
     feedback, refused = "", None
     for attempt in range(1 + ANGLE_RETRIES):
-        got = caller.call(MODEL, system, angle_message(context, angle, feedback), CANDIDATE_SCHEMA, max_tokens=MAX_TOKENS_ANGLE,
+        got = caller.call(MODEL, system, angle_message(context, angle, feedback, profile.ask), CANDIDATE_SCHEMA, max_tokens=MAX_TOKENS_ANGLE,
                           stage=f"angle:{angle[0]}")
         if not got["ok"]:
             return {"angle": angle[0], "label": angle[1], "spec": None, "summary": "", "distance": None, "tries": attempt + 1,
                     "refused": got["reason"]}
-        spec, why = vet_spec(got["data"].get("spec_json"), current)
+        spec, why = profile.vet(got["data"].get("spec_json"), current)
         if spec is None:
             feedback, refused = f"it was refused by the checks: {why}.", f"invalid: {why}"
             continue
-        dist = spec_distance(current, spec)
-        if too_similar(dist):
-            feedback = (f"it differed from the current rule by only {dist['points']} points in {dist['areas']} area(s); a rebuild must "
+        dist = profile.distance(current, spec)
+        if profile.too_similar(dist):
+            feedback = (profile.similar_text(dist) if profile.similar_text else
+                        f"it differed from the current rule by only {dist['points']} points in {dist['areas']} area(s); a rebuild must "
                         f"differ by at least {MIN_DISTANCE_POINTS} points and add, remove or replace a rule or change at least "
                         f"{MIN_AREAS} different areas.")
             refused = "too_similar"
@@ -482,10 +509,11 @@ def run_angle(caller: Caller, context: str, angle: tuple, current: Mapping) -> d
             "refused": refused}
 
 
-def run_angles(caller: Caller, context: str, current: Mapping, count: Optional[int] = None) -> list:
-    chosen = angles(count)
+def run_angles(caller: Caller, context: str, current: Mapping, count: Optional[int] = None, profile: Optional[Profile] = None) -> list:
+    profile = profile or default_profile()
+    chosen = profile.angles_fn(count)
     with ThreadPoolExecutor(max_workers=len(chosen)) as pool:
-        futures = [pool.submit(run_angle, caller, context, a, current) for a in chosen]
+        futures = [pool.submit(run_angle, caller, context, a, current, profile) for a in chosen]
         return [f.result() for f in futures]
 
 
@@ -498,17 +526,18 @@ def analyst_message(context: str, candidates: Sequence[Mapping]) -> str:
     return context + "\n\n" + "\n".join(lines) + "\n\nCompare them and answer. Set chosen to a candidate id, or \"merge\" if spec_json combines several."
 
 
-def run_analyst(caller: Caller, context: str, candidates: Sequence[Mapping], current: Mapping) -> Optional[dict]:
+def run_analyst(caller: Caller, context: str, candidates: Sequence[Mapping], current: Mapping, profile: Optional[Profile] = None) -> Optional[dict]:
     """The analyst's answer after the law is applied to it, or None (no answer, or one that fails the checks or is too close to
     the current rule). The caller replays it."""
+    profile = profile or default_profile()
     model = SYNTHESIS_MODEL if USE_SONNET_SYNTHESIS else MODEL
-    got = caller.call(model, system_text(ANALYST_PROMPT), analyst_message(context, candidates), ANALYST_SCHEMA,
+    got = caller.call(model, profile.analyst_system(), analyst_message(context, candidates), ANALYST_SCHEMA,
                       max_tokens=MAX_TOKENS_ANALYST, stage="analyst")
     if not got["ok"]:
         return None
     data = got["data"]
-    spec, _why = vet_spec(data.get("spec_json"), current)
-    if spec is None or too_similar(spec_distance(current, spec)):
+    spec, _why = profile.vet(data.get("spec_json"), current)
+    if spec is None or profile.too_similar(profile.distance(current, spec)):
         return None
 
     def lines(key):

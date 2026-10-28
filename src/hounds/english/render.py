@@ -173,6 +173,12 @@ def diff_specs(old: Mapping, new: Mapping) -> list:
     ra, rb = a.get("rules") or [], b.get("rules") or []
     if user_spec.is_gematria(a) or user_spec.is_gematria(b):
         # a Gematria hound's rule is fixed text, not a card per rule: compare what each version says it does
+        if user_spec.is_gematria(a) and user_spec.is_gematria(b):
+            from src.hounds import user_gematria
+            if user_gematria.tuning_of(a) or user_gematria.tuning_of(b):
+                # a tuned hound's rule is a paragraph: say the knobs that moved, one line each
+                out.extend(user_gematria.knob_diff(a, b))
+                return out
         before = rule_sentences(a)[0] if user_spec.is_gematria(a) else " ".join(_safe_sentence(r) or "" for r in ra)
         after = rule_sentences(b)[0] if user_spec.is_gematria(b) else " ".join(_safe_sentence(r) or "" for r in rb)
         change("Rules", before, after)

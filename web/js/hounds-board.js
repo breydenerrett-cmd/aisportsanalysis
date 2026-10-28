@@ -466,6 +466,51 @@ export const COLUMNS = [
 ];
 export const DEFAULT_SORT = "bankroll";
 
+// ---- skill, not luck (owner ask 2026-10-28) ---------------------------------------------------------
+
+/**
+ * SKILL_SHRINK_K: the "Beats the close" score is the average points beaten x n / (n + K). A hound with n measurable bets keeps
+ * n/(n+K) of its average: 6 bets keep 17%, 67 keep 69%, 300 keep 91%. So a lucky 6-bet streak of +3 pts (score 0.5) sits below a
+ * steady 67-bet +1 pt (0.69), and a big sample is barely touched. Chosen over ranking by the interval's low end (`ci_low`) because
+ * that is negative for every small sample (a three-way tie at the bottom that says nothing) and is not sent when a hound is too thin
+ * to have one; the shrunk mean keeps every hound on one smooth, explainable scale. K=30: about the sample at which a mean stops
+ * being mostly noise for a few-points-wide close.
+ */
+export const SKILL_SHRINK_K = 30;
+export const SORT_MODES = [["skill", "Beats the close"], ["units", "Hot streak"], ["bets", "Most bets"]];
+export const DEFAULT_BOARD_SORT = "skill";
+
+/** The shrunk closing-price score, or null when no bet has a measurable close (such a hound sorts last). */
+export function skillScore(hound) {
+  const c = clvOf(hound);
+  if (!c || c.mean === null || !(c.n > 0)) return null;
+  return c.mean * c.n / (c.n + SKILL_SHRINK_K);
+}
+
+/** A random-picker control (Coin-Flip Collie, Dartboard Dalmatian): its category is "random". */
+export function isRandomPicker(hound) {
+  return categoryOf(hound) === "random";
+}
+export const RANDOM_TAG = "random picker — here to show what luck looks like";
+
+/** The plain-English closing-price line, or null with no measurable close. */
+export function skillLine(hound) {
+  const c = clvOf(hound);
+  if (!c || c.mean === null || !(c.n > 0)) return null;
+  const bets = `${c.n} ${c.n === 1 ? "bet" : "bets"}`;
+  const pts = Math.abs(c.mean).toFixed(1);
+  if (Number(pts) === 0) return `Matched the closing price over ${bets}`;
+  return c.mean > 0 ? `Beat the closing price by ${pts} pts over ${bets}`
+    : `Got worse prices than the close by ${pts} pts over ${bets}`;
+}
+
+/** "Too early: 6 of 150 bets" below the bar, else "". */
+export function luckMeter(hound) {
+  const c = clvOf(hound);
+  const n = c && c.n > 0 ? c.n : 0;
+  return n < MIN_CLV_BETS ? `Too early: ${n} of ${MIN_CLV_BETS} bets` : "";
+}
+
 const STATUS_RANK = { beating: 0, market: 1, early: 2, notstarted: 3, unrated: 4, vig: 5, retired: 6 };
 
 /** The value a column sorts on; `null` means "no value" and always sorts last. */
@@ -477,6 +522,7 @@ export function sortValue(hound, key) {
       const rec = hound && hound.record;
       return betsOf(hound) > 0 ? ((rec.wins ?? 0) / Math.max(1, (rec.wins ?? 0) + (rec.losses ?? 0))) : null;
     }
+    case "skill": return skillScore(hound);
     case "units": return totalUnitsOf(hound);
     case "bankroll": return balanceKey(hound);
     case "return": return referenceReturn(hound);
@@ -500,6 +546,10 @@ export function sortHounds(hounds, key, dir = "desc") {
     if (va === null && vb !== null) return 1;
     if (vb === null && va !== null) return -1;
     if (va !== null && vb !== null && va !== vb) return (va < vb ? -1 : 1) * sign;
+    if (key === "skill") {   // units break a tie in skill, best first
+      const ua = totalUnitsOf(a), ub = totalUnitsOf(b);
+      if (ua !== null && ub !== null && ua !== ub) return ub - ua;
+    }
     return String(a.name || "").localeCompare(String(b.name || ""));
   });
 }
