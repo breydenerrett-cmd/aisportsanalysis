@@ -190,13 +190,13 @@ class TheLeaderboardTable(unittest.TestCase):
         heads = [re.sub(r"\s*[▲▼]", "", t) for t in out["final"]["heads"]]
         self.assertEqual(heads, ["#", "Hound", "Type", "Record", "Bankroll", "Return", "7d", "24h", "Units", "Bets", "Avg price",
                                  "CLV", "Last 10", "Status"])
-        # the default sort is the bankroll, high to low, and the header says so; there is no ROI column any more
+        # the default order is "Beats the close", a mode button, not a column: no header is marked sorted; no ROI column any more
         self.assertNotIn("ROI", heads)
-        self.assertEqual(out["final"]["aria"][4], "descending")
-        self.assertEqual([a for i, a in enumerate(out["final"]["aria"]) if i != 4], [None] + ["none"] * 12)
+        self.assertEqual(out["final"]["aria"], [None] + ["none"] * 13)
 
-    def test_rows_default_to_bankroll_high_to_low_and_show_record_money_units_bets_price(self):
-        out = self.page(queries=[
+    def test_hot_streak_orders_bankroll_high_to_low_and_rows_show_record_money_units_bets_price(self):
+        # the default order is "Beats the close" since 2026-10-28; "Hot streak" is the old bankroll order
+        out = self.page(actions=[dict(do="click", sel="[data-sortmode='units']", label="hot")], queries=[
             q("ids", self.ROW, "attrs", attr="data-hound"), q("units", f"{self.ROW} [data-hook='row-units']", "texts"),
             q("bank", f"{self.ROW} [data-hook='row-bankroll']", "texts"), q("ret", f"{self.ROW} [data-hook='row-return']", "texts"),
             q("d7", f"{self.ROW} [data-hook='row-d7']", "texts"), q("h24", f"{self.ROW} [data-hook='row-h24']", "texts"),
@@ -284,8 +284,8 @@ class TheLeaderboardTable(unittest.TestCase):
               mk("d", "D", "TOO EARLY", bets=40, units=1, clv={"n": 37, "mean_pts": 0.3})]
         out = self.page(routes(**{"/hounds": [200, {"hounds": hs, "as_of": "2026-10-24"}]}),
                         queries=[q("st", "[data-hook='status']", "texts"), q("keys", "[data-hook='status']", "attrs", attr="data-status")])
-        self.assertEqual(out["final"]["st"], ["Beating the close", "Paying the vig", "Market", "Verdict at 150 bets (37/150)"])
-        self.assertEqual(out["final"]["keys"], ["beating", "vig", "market", "early"])
+        self.assertEqual(out["final"]["st"], ["Beating the close", "Verdict at 150 bets (37/150)", "Market", "Paying the vig"])
+        self.assertEqual(out["final"]["keys"], ["beating", "early", "market", "vig"])    # default order: Beats the close (2026-10-28)
 
     def test_clv_shows_the_share_that_beat_the_close_the_average_and_the_sample(self):
         out = self.page(queries=[q("clv", f"{self.ROW}[data-hound='closer'] [data-hook='clv']")])

@@ -45,6 +45,7 @@ import {
   COLUMNS, DEFAULT_SORT, NA, betsOf, betsShown, fmtUnitsPlain, avgPriceOf, clvOf, last10Of, openBetsOf, recordText, streakText,
   bankrollNow, returnPctOf, windowPct, totalUnitsOf, isSmallSample, smallSampleTitle, fmtUsd, fmtPct, bankrollRules,
   basisTagText, RECORDED_TITLE,
+  skillLine, luckMeter, isRandomPicker, RANDOM_TAG, SORT_MODES, DEFAULT_BOARD_SORT,
   statusOf, typeText, sportLabel, sportsOf, marketsText, presentSports, filterBySport, sortHounds, splitRanked,
   settledOf, onlyTickets, freshness, inQualifyingRound, qualifyingRows, progressText, isMemberDog, isNewDog, sortByBankroll,
 } from "./hounds-board.js";
@@ -70,7 +71,7 @@ const state = {
   scope: "all",            // all | mine | house | user
   sport: "all",
   category: "all",
-  sortKey: DEFAULT_SORT,   // the account balance (the bankroll ruling, docs/BANKROLL.md)
+  sortKey: DEFAULT_BOARD_SORT,   // the account balance (the bankroll ruling, docs/BANKROLL.md)
   sortDir: "desc",
   expanded: new Set(),     // hound ids whose drawer is open
   drawers: {},             // id -> { status: "loading" | "ok" | "error", items, error }
@@ -255,6 +256,15 @@ function progressPill(hound) {
       title: `Needs ${min} settled bets to be ranked. Referee status, all-time: ${st.text}.`, text: progressText(hound, min) })]);
 }
 
+/** The plain-English closing-price line and, under 150 measurable bets, the luck meter. Nothing is shown when no close is measurable. */
+function skillBlock(hound) {
+  const line = skillLine(hound);
+  const meter = luckMeter(hound);
+  return h("small", { class: "hd-aux hd-skill", "data-hook": "row-skill" }, [
+    h("span", { "data-hook": "row-skill-line", text: line || "No closing price to compare yet" }),
+    meter ? h("span", { class: "hd-luck", "data-hook": "row-luck", text: ` · ${meter}` }) : null]);
+}
+
 function modelCell(hound, rank, open) {
   const mine = followedIds().has(String(hound.id));
   const sports = sportsOf(hound).map(sportLabel).join(", ");
@@ -267,6 +277,7 @@ function modelCell(hound, rank, open) {
     h("span", { class: "hd-dogface", "data-hook": "row-dog" }, [dogFace(hound, { size: 44, pose: poseOfHound(hound) })]),
     h("span", { class: "hd-modelid" }, [
       h("a", { class: "hd-modelname", href: houndHref(hound.id), text: hound.name || NOT_REPORTED }),
+      isRandomPicker(hound) ? h("span", { class: "hd-tag hd-tag--random", "data-hook": "row-random", text: RANDOM_TAG }) : null,
       mine ? h("span", { class: "hd-tag hd-tag--follow", "data-hook": "row-follow", text: "Following" }) : null,
       // whose kennel it lives in: a member's own, or the one house kennel (owner ruling 2026-10-20)
       h("small", { class: "hd-aux" }, [
@@ -274,6 +285,7 @@ function modelCell(hound, rank, open) {
           "data-house": kennel.house ? "1" : "0", text: kennel.text })
           : h("span", { "data-hook": "row-kennel", text: kennel.text }),
         where ? ` · ${where}` : null]),
+      skillBlock(hound),
     ]),
   ])]);
 }
@@ -465,12 +477,12 @@ function qualifyingSection(warming) {
  * Everything on a card is a figure the table below prints: the account, its return, the record and the bet count.
  */
 function podium(active, warming, min) {
-  const ranked = sortByBankroll(active).slice(0, 3);
+  const ranked = sortHounds(active, state.sortKey, "desc").slice(0, 3);
   const filler = ranked.length < 3 ? qualifyingRows(warming).slice(0, 3 - ranked.length) : [];
   const picks = ranked.concat(filler);
   if (!picks.length) return null;
   const title = !filler.length ? "Leading now" : ranked.length ? "Leading, with the best of the qualifying round" : "Leading the qualifying round";
-  const sub = filler.length ? `A hound is ranked at ${min} settled bets. These are the closest.` : "Ranked by paper bankroll.";
+  const sub = filler.length ? `A hound is ranked at ${min} settled bets. These are the closest.` : "In the order the board is sorted.";
   return h("section", { class: "lb-podium", "data-hook": "podium", "aria-label": title }, [
     h("div", { class: "lb-podium__head" }, [h("h3", { class: "lb-podium__title", text: title }), h("p", { class: "hd-fine", text: sub })]),
     h("ol", { class: "lb-podium__row" }, picks.map((hound, i) => {
@@ -586,7 +598,16 @@ function renderMeta() {
   }
 }
 
+/** The sort-mode buttons above the table: Beats the close (default), Hot streak (units), Most bets. */
+function renderSortModes() {
+  const bar = q("hounds-sortmode");
+  if (!bar) return;
+  const current = SORT_MODES.some(([k]) => k === state.sortKey) ? state.sortKey : "";
+  segButtons(bar, SORT_MODES, current, (k) => { state.sortKey = k; state.sortDir = "desc"; renderSortModes(); renderTable(); }, "data-sortmode");
+}
+
 function renderAll() {
+  renderSortModes();
   bindViewToggle();
   renderSeasonBar();
   renderFilters();
