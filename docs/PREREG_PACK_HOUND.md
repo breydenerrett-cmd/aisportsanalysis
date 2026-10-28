@@ -113,10 +113,12 @@ speaking. Stated, not fixed.
 ## 7. Where it lives
 
 Code `src/hounds/pack/pack_consensus_hound.py`; config entry `pack_consensus` in `config/ai_hounds.json` (family
-`pack_consensus`, forward only); run by `src/hounds/ai_runner.py` with the Learner; ledger
-`evidence/ai_hounds_v1.jsonl`. Reads `evidence/hounds_house_v1.jsonl` and `evidence/ai_hounds_v1.jsonl`; both are in
-the Docker image (`COPY evidence/ evidence/`, `COPY src/`, `COPY config/`).
+`pack_consensus`, forward only); run by `src/hounds/ai_runner.py` with the Learner; its bets go to the AI hounds' ledger
+(`ai_defs.ledger_path`: on the Fly volume in production, `ai_hounds_v1.jsonl`). It reads the house ledger
+`evidence/hounds_house_v1.jsonl` (baked into the image, so a house ticket reaches the production runner when the
+image is next redeployed: a lag of up to an hour, which only costs the pack bets) and the AI ledger above. The code,
+config and evidence are in the Docker image (`COPY src/`, `COPY config/`, `COPY evidence/`).
 
 ## Changelog
 
-* 2026-10-28: frozen.
+* 2026-10-28: frozen. Same day, before any engine code: section 7 corrected to say where the ledgers physically live.
