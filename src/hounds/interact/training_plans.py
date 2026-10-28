@@ -313,6 +313,19 @@ def _basis(hound: Mapping) -> str:
     return training.proposal_basis(hound["id"], hound["spec"])
 
 
+def _hindsight_text(dog, db=None) -> str:
+    """The hound's hindsight reviews across EVERY version of it (``src/ai/hindsight_feed.py``: lessons, per-factor tallies, the newest
+    Deep review) as prompt text, trimmed to about a thousand tokens. "" for a hound with none: the prompts simply leave it out.
+    Never raises: a ledger that cannot be read must not stop a training."""
+    try:
+        from src.ai import hindsight_feed
+        ids = [h["id"] for h in user_store.lineage(dog.id, db=db)]
+        return hindsight_feed.text_for(dog.id, root_id=getattr(dog, "root_id", None) or None, member_ids=ids)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("training could not read the hindsight reviews error=%s", type(exc).__name__)
+        return ""
+
+
 def _gate(dog, user_id, now, rows, ledger_path, db) -> tuple:
     return training._ready(dog, user_id, confirmed_required=False, confirmed=False, now=now, rows=rows,  # noqa: SLF001
                            ledger_path=ledger_path, db=db)
@@ -417,7 +430,7 @@ def fine_tune(dog, user_id: int, *, now: Optional[datetime] = None, rows=None, l
     ceiling = _ceiling(ledger, env, router_spend)
     explainer = _explain_caller(env, min(ceiling, 0.05), client, client_factory)
     progress("Writing it up in plain words")
-    explanation = rebuild_ai.explain(explainer, facts)
+    explanation = rebuild_ai.explain(explainer, facts, background=(_hindsight_text(dog, db) if explainer is not None else "") or None)
     if explainer is not None and explainer.meter.calls:
         ledger.record(user_id=user_id, hound_id=dog.id, status="fine_tune_explain", calls=explainer.meter.calls,
                       cost_usd=explainer.meter.spent, input_tokens=explainer.meter.input_tokens, output_tokens=explainer.meter.output_tokens)
@@ -500,6 +513,9 @@ def full_rebuild(dog, user_id: int, *, paid: bool = False, now: Optional[datetim
         context = rebuild_ai.build_context(name=dog.name, version_no=hound["version_no"], spec_v2=current, plain_rule=user_spec.rule_text(spec),
                                            bets=_bet_rows(bets, spec, training.rule_index_of(rows, dog.id)), analysis=analysis,
                                            baseline=base_summary)
+    hindsight = _hindsight_text(dog, db)             # reviews of every past version too; left out when there are none
+    if hindsight:
+        context = context + "\n\n" + hindsight
     worst, _in_angle = _stage_cost_worst(context, count, profile.system() if gem else None)
     try:
         used = budget.check(user_id, paid=paid, worst_cost=worst, ledger=ledger, env=env, router_spend=router_spend)
@@ -568,7 +584,7 @@ def full_rebuild(dog, user_id: int, *, paid: bool = False, now: Optional[datetim
         facts = {"kind": KIND_REBUILD, "days": days, "before": base, "after": best["replay"],
                  "small_sample": best["replay"]["graded"] < 30, "changes": _change_lines(spec, best["spec"])}
         progress("Writing it up in plain words")
-        explanation = rebuild_ai.explain(caller, facts)
+        explanation = rebuild_ai.explain(caller, facts, background=hindsight or None)
     finally:
         if meter.calls or meter.spent:
             ledger.record(user_id=user_id, hound_id=dog.id, status=status, calls=meter.calls, cost_usd=meter.spent,

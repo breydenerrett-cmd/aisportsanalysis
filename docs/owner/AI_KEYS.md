@@ -105,4 +105,23 @@ $0.11 a bet on average and about 190 bets a month at $20.
 
 The spreadsheet is `GET /hounds/{id}/export` ("Download bets (spreadsheet)" on the Record page): public for house hounds, the
 owner's only for member hounds. It is a CSV (opens in Excel and Google Sheets); an Excel file is offered only once `openpyxl` is
-added to `api/requirements.txt`.
+added to `api/requirements.txt`. "All versions" beside it (`?versions=all`) is the same sheet for every version of the hound, with a
+Version and a Version status column.
+
+### 8b. The one-time backfill and the Deep review (2026-10-28)
+Code: `src/ai/postmortems.py` (the backfill), `src/ai/deep_review.py` (the per-hound Deep review), `src/ai/hindsight_feed.py` (what
+Fine-tune, Full rebuild and the hound chat are told). **Off until you switch it on:** `config/postmortem_backfill.json` is
+`{"on": false, "cap_usd": 25}`. To start it, change `false` to `true` in the file
+(<https://github.com/breydenerrett-cmd/aisportsanalysis/edit/claude/sports-betting-analysis-review-g1o0co/config/postmortem_backfill.json>,
+the pencil button, then Commit changes); the next deploy picks it up. With `false` nothing is queued and nothing is spent.
+- **Past bets.** Every settled forward bet graded before the reviews began, for every hound and every version (retired ones too), is
+  reviewed once, newest first, with the same requests and the same batches as the live reviews (The Learner at 1 bet in 5, as live).
+  A replay row is never reviewed; a bet already reviewed or queued is skipped.
+- **Deep review.** Each hound lineage with 10 settled forward bets across all its versions gets one "Deep review (hindsight)"
+  (Sonnet 5.5, no web search): every number is counted in Python, the model only explains what is working, what is failing and the
+  one or two biggest changes worth trying. Another is written after 10 more settle; old ones are kept. It shows on the hound's
+  Record page under the settled tickets and feeds Fine-tune, Full rebuild and the chat.
+- **Its own wall, apart from the $20 a month:** `cap_usd` (the API's own usage at real prices, provider
+  `anthropic_postmortem_backfill`, summed over every month, plus what open batches have reserved). Rough cost: about $0.11 a past bet
+  on average (so about 235 bets inside $25, newest first) and about $0.02 a hound for a Deep review. The Deep reviews go first (they are the cheap part).
+- **Progress:** `GET /admin/ai/status` (admin token), `postmortems.backfill`: done / queued / remaining / spent.

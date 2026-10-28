@@ -25,6 +25,16 @@ BEFORE a batch goes out, every request's WORST case (prompt, every search's resu
 has spent plus what open batches have reserved, and the batch holds only the requests that fit, in priority order; the first that
 does not fit stops the line (strict priority). A batch that is submitted reserves its worst case until its results are read.
 
+THE BACKFILL (owner ask 2026-10-28: "all previous results in previous versions still need record kept"). Reviews began on one day; every
+settled FORWARD bet graded before it, for every hound and every version (a retired one too), is reviewed once, NEWEST FIRST, through the
+same requests and the same Message Batches path. It has its OWN one-time dollar wall, separate from the $20 a month:
+``config/postmortem_backfill.json`` = ``{"on": false, "cap_usd": 25}``. With ``on`` false nothing is queued and nothing is spent. The wall
+is the API's own ``usage`` at real prices (provider ``anthropic_postmortem_backfill``) plus what open batches have reserved, summed over
+every month. It is idempotent: a bet already reviewed or queued is skipped (the same ``bet_key``), and a replay bet is never reviewed.
+While ``on``, every hound LINEAGE with ten settled forward bets across its versions also gets a "Deep review" (``src/ai/deep_review.py``,
+Sonnet 5.5, numbers counted in Python), written again after ten more settle; it counts against the same wall. Backfill items wait
+behind live ones, ride their own batches and their own batch clock, and at most ``BACKFILL_WINDOW`` past bets are queued at a time.
+
 LABELLED HINDSIGHT, EVERYWHERE (``postmortem_parse.LABEL``). A review is written after the result, from the web. It is never shown as
 pre-game reasoning and nothing in it is a prediction or a tip. Paper only; nothing here can place a bet.
 
@@ -37,18 +47,21 @@ machines on one volume, from submitting the same bets twice.
 
 from __future__ import annotations
 
+import json
 import logging
 import math
 import os
 import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence
 
+from src.ai import deep_review as dr
 from src.ai import postmortem_cost as cost_mod
 from src.ai import postmortem_parse as pm
 from src.ai import postmortem_store as store
 from src.ai.usage import UsageStore
+from src.hounds import version_chain
 
 logger = logging.getLogger("linehound.ai.postmortems")
 
@@ -58,6 +71,11 @@ ENV_FLAG = "POSTMORTEMS"                 # =off stops the tick (the queue and th
 ENV_SINCE = "POSTMORTEM_SINCE"           # YYYY-MM-DD: queue bets graded on or after this day
 ENV_KEY = "ANTHROPIC_API_KEY"
 PROVIDER = "anthropic_postmortem"        # the usage meter's label: kept apart from the hound runner's "anthropic"
+PROVIDER_BACKFILL = "anthropic_postmortem_backfill"      # the backfill's own label: its one-time wall counts only this
+BACKFILL_CONFIG_PATH = Path(__file__).resolve().parents[2] / "config" / "postmortem_backfill.json"   # in the image: Dockerfile COPY config/
+BACKFILL_WINDOW = 3 * 20                 # past-bet items waiting or in a batch at once (a few batches, never the whole backlog)
+BACKFILL_LINEAGE_WINDOW = 20             # lineage Deep reviews waiting or in a batch at once
+BACKFILL_MAX_OPEN_BATCHES = 3            # unread backfill batches at once: the spend arrives steadily, not in one burst
 OFF_VALUES = ("off", "0", "false", "no")
 
 LEARNER_SAMPLE_ONE_IN = 5                # The Learner places ~50 paper bets a day; one in five is reviewed
@@ -96,6 +114,21 @@ def monthly_cap(env: Optional[Mapping] = None) -> float:
     except ValueError:
         return POSTMORTEM_MONTHLY_USD
     return max(0.0, value) if math.isfinite(value) else POSTMORTEM_MONTHLY_USD
+
+
+def load_backfill_config(path: Optional[os.PathLike] = None) -> dict:
+    """``{"on": bool, "cap_usd": float}`` from ``config/postmortem_backfill.json``. SAFE BY DEFAULT: a missing, unreadable or malformed
+    file is off, ``on`` is on only for the JSON value ``true``, and a cap that is not a finite number of at least zero is zero (nothing
+    can be spent). Read again every tick, so flipping the committed file and deploying is the whole switch."""
+    try:
+        raw = json.loads(Path(path if path is not None else BACKFILL_CONFIG_PATH).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {"on": False, "cap_usd": 0.0}
+    if not isinstance(raw, dict):
+        return {"on": False, "cap_usd": 0.0}
+    cap = raw.get("cap_usd")
+    cap = float(cap) if isinstance(cap, (int, float)) and not isinstance(cap, bool) and math.isfinite(cap) and cap > 0 else 0.0
+    return {"on": raw.get("on") is True, "cap_usd": cap}
 
 
 def api_key(env: Optional[Mapping] = None) -> Optional[str]:
@@ -163,7 +196,9 @@ class Engine:
     def __init__(self, *, queue: store.QueueStore, ledger: store.ReviewLedger, usage: UsageStore,
                  env: Optional[Mapping] = None, clock: Optional[Callable[[], datetime]] = None,
                  client_factory: Optional[Callable[[str, float], Any]] = None,
-                 lock_path: Optional[os.PathLike] = None, peek_book: Optional[Callable[[], Any]] = None):
+                 lock_path: Optional[os.PathLike] = None, peek_book: Optional[Callable[[], Any]] = None,
+                 deep_ledger: Optional[store.DeepReviewLedger] = None, backfill_config: Optional[Callable[[], Mapping]] = None,
+                 chains_loader: Optional[Callable[[Any], Mapping]] = None):
         self.queue, self.ledger, self.usage = queue, ledger, usage
         self.env = env if env is not None else os.environ
         self._clock = clock or (lambda: datetime.now(timezone.utc))
@@ -172,6 +207,13 @@ class Engine:
         self._peek_book = peek_book
         self._thread_lock = threading.Lock()
         self._scanned = None
+        self.deep_ledger = deep_ledger if deep_ledger is not None else store.DeepReviewLedger(queue.path.with_name(store.DEEP_FILE), clock=self._clock)
+        self._backfill_config = backfill_config or load_backfill_config
+        self._chains_loader = chains_loader or (lambda book: version_chain.build_chains(book.hounds, version_chain.load_user_rows()))
+        self._bf_pool: Optional[tuple] = None          # (book, past bets newest first): rebuilt only when the book is
+        self._bf_lineages: Optional[tuple] = None      # (book, lineages with enough settled bets)
+        self._bf_remaining: Optional[int] = None       # past bets not yet queued, as of the last plan
+        self._bf_lineages_remaining: Optional[int] = None
 
     def now(self) -> datetime:
         return self._clock()
@@ -188,7 +230,8 @@ class Engine:
     def status(self) -> dict:
         return {"enabled": enabled(self.env), "key_present": api_key(self.env) is not None, "cap_usd": self.cap(),
                 "spent_usd": self.usage.month_spend(PROVIDER), "reserved_usd": self.usage.reserved(PROVIDER),
-                "queue": self.queue.counts(), "reviews": self.ledger.count()}
+                "queue": self.queue.counts(origin=store.ORIGIN_LIVE), "reviews": self.ledger.count(),
+                "backfill": self.backfill_status()}
 
     # -- scan ----------------------------------------------------------------------
 
@@ -253,18 +296,26 @@ class Engine:
 
     # -- submit -------------------------------------------------------------------------
 
-    def submit(self, client: Any) -> dict:
-        now = self.now()
-        cooling = self.usage.cooldown(PROVIDER)
-        if cooling is not None:
-            return {"submitted": 0, "reason": "cooling_down"}
-        pending = self.queue.pending()
-        if not pending:
-            return {"submitted": 0, "reason": "queue_empty"}
-        last = self.queue.last_submit()
-        if last is not None and now - last < SUBMIT_MIN_INTERVAL and len(pending) < BATCH_MAX_REQUESTS:
-            return {"submitted": 0, "reason": "batching", "pending": len(pending)}
-        cap, committed = self.cap(), self.committed()
+    def _request_for(self, item: Mapping) -> Optional[tuple]:
+        """``(params, prompt chars, model, max_tokens, searches)`` for a queued item, or None when it has nothing to ask (a lineage item
+        whose numbers are gone)."""
+        depth = item["depth"]
+        if depth == pm.DEPTH_LINEAGE:
+            stats = (item["bet"] or {}).get("stats")
+            if not isinstance(stats, Mapping):
+                return None
+            params, chars = dr.request_params(stats)
+            return params, chars, dr.MODEL, dr.MAX_TOKENS, 0
+        prior = None
+        if depth == pm.DEPTH_DEEP:
+            prior = ((self.ledger.get(item["bet_key"]).get("fast") or {}).get("review"))
+        params, chars = pm.request_params(item["bet"], depth, prior)
+        model, max_tokens, uses, _effort = pm.DEPTH_PLAN[depth]
+        return params, chars, model, max_tokens, uses
+
+    def _assemble(self, pending: Sequence[dict], *, committed: float, cap: float, stop_reason: str) -> tuple:
+        """``(requests, chosen, reserve, stopped)``: the requests of one batch, in priority order, that fit under ``cap`` once what is
+        already ``committed`` and the worst case of the ones before them are counted. The first that does not fit stops the line."""
         requests: List[dict] = []
         chosen: List[tuple] = []
         reserve = 0.0
@@ -274,24 +325,26 @@ class Engine:
             if len(requests) >= BATCH_MAX_REQUESTS:
                 break
             depth = item["depth"]
-            prior = None
-            if depth == pm.DEPTH_DEEP:
-                prior = ((self.ledger.get(item["bet_key"]).get("fast") or {}).get("review"))
-            params, chars = pm.request_params(item["bet"], depth, prior)
+            plan = self._request_for(item)
+            if plan is None:
+                self.queue.failed(item["bet_key"], depth, "nothing_to_ask", retry=False)
+                continue
+            params, chars, model, max_tokens, uses = plan
             refused = _guard(params, secrets)
             if refused:
                 self.queue.failed(item["bet_key"], depth, f"prompt_guard: {refused}", retry=False)
                 continue
-            model, max_tokens, uses, _effort = pm.DEPTH_PLAN[depth]
             worst = cost_mod.worst_case_cost(model, chars, max_tokens, uses, batch=True)
             if committed + reserve + worst > cap:
-                stopped = "monthly_cap"
+                stopped = stop_reason
                 break                                   # strict priority: nothing behind a request that does not fit goes first
             requests.append({"custom_id": pm.custom_id(item["bet_key"], depth), "params": params})
             chosen.append((item["bet_key"], depth))
             reserve += worst
-        if not requests:
-            return {"submitted": 0, "reason": stopped or "nothing_eligible", "cap_usd": cap, "committed_usd": committed}
+        return requests, chosen, reserve, stopped
+
+    def _send(self, client: Any, requests: List[dict], chosen: List[tuple], reserve: float, *, provider: str, origin: str,
+              purpose: str) -> dict:
         try:
             batch = client.messages.batches.create(requests=requests)
         except Exception as exc:  # noqa: BLE001 -- classified by name only; the message could echo a header
@@ -299,16 +352,34 @@ class Engine:
             logger.error("postmortem batch could not be submitted: %s", type(exc).__name__)
             return {"submitted": 0, "reason": "submit_failed", "error": type(exc).__name__}
         batch_id = str(batch.id)
-        self.usage.record_batch_submit(batch_id=batch_id, provider=PROVIDER, model="mixed", reserved_usd=reserve,
-                                       n_requests=len(requests), purpose="postmortem")
-        self.queue.submitted(batch_id, chosen)
+        self.usage.record_batch_submit(batch_id=batch_id, provider=provider, model="mixed", reserved_usd=reserve,
+                                       n_requests=len(requests), purpose=purpose)
+        self.queue.submitted(batch_id, chosen, origin=origin)
         return {"submitted": len(requests), "batch_id": batch_id, "reserved_usd": round(reserve, 6)}
+
+    def submit(self, client: Any) -> dict:
+        now = self.now()
+        cooling = self.usage.cooldown(PROVIDER)
+        if cooling is not None:
+            return {"submitted": 0, "reason": "cooling_down"}
+        pending = self.queue.pending(store.ORIGIN_LIVE)
+        if not pending:
+            return {"submitted": 0, "reason": "queue_empty"}
+        last = self.queue.last_submit()
+        if last is not None and now - last < SUBMIT_MIN_INTERVAL and len(pending) < BATCH_MAX_REQUESTS:
+            return {"submitted": 0, "reason": "batching", "pending": len(pending)}
+        cap, committed = self.cap(), self.committed()
+        requests, chosen, reserve, stopped = self._assemble(pending, committed=committed, cap=cap, stop_reason="monthly_cap")
+        if not requests:
+            return {"submitted": 0, "reason": stopped or "nothing_eligible", "cap_usd": cap, "committed_usd": committed}
+        return self._send(client, requests, chosen, reserve, provider=PROVIDER, origin=store.ORIGIN_LIVE, purpose="postmortem")
 
     # -- collect --------------------------------------------------------------------------
 
     def collect(self, client: Any) -> dict:
         report = {"batches_read": 0, "reviews": 0, "failed": 0}
         for batch_id, info in self.queue.open_batches().items():
+            provider = PROVIDER_BACKFILL if info.get("origin") == store.ORIGIN_BACKFILL else PROVIDER
             try:
                 batch = client.messages.batches.retrieve(batch_id)
                 status = str(getattr(batch, "processing_status", ""))
@@ -316,7 +387,7 @@ class Engine:
                 logger.error("postmortem batch status could not be read: %s", type(exc).__name__)
                 continue
             if status == "ended":
-                got = self._read_results(client, batch_id, info)
+                got = self._read_results(client, batch_id, info, provider)
                 report["batches_read"] += 1
                 report["reviews"] += got["reviews"]
                 report["failed"] += got["failed"]
@@ -325,7 +396,7 @@ class Engine:
             if submitted is not None and self.now() - submitted > BATCH_EXPIRES_AFTER:
                 for key, depth in info["items"]:
                     self._fail(key, depth, "batch_never_ended", retry=True)
-                self.usage.record_batch_done(batch_id=batch_id, provider=PROVIDER, status="expired", actual_usd=0.0)
+                self.usage.record_batch_done(batch_id=batch_id, provider=provider, status="expired", actual_usd=0.0)
                 self.queue.batch_closed(batch_id)
                 report["failed"] += len(info["items"])
         return report
@@ -335,7 +406,7 @@ class Engine:
         retry = retry and item is not None and item["attempts"] + 1 < MAX_ATTEMPTS
         self.queue.failed(key, depth, reason, retry=retry)
 
-    def _read_results(self, client: Any, batch_id: str, info: dict) -> dict:
+    def _read_results(self, client: Any, batch_id: str, info: dict, provider: str = PROVIDER) -> dict:
         out = {"reviews": 0, "failed": 0}
         total = 0.0
         seen = set()
@@ -362,47 +433,65 @@ class Engine:
                 if item is not None and item["status"] == "submitted" and item["batch_id"] == batch_id:
                     self._fail(key, depth, "no_result_in_batch", retry=True)
                     out["failed"] += 1
-        self.usage.record_batch_done(batch_id=batch_id, provider=PROVIDER, status="ended", actual_usd=total)
+        self.usage.record_batch_done(batch_id=batch_id, provider=provider, status="ended", actual_usd=total)
         self.queue.batch_closed(batch_id)
         return out
 
     def _apply_result(self, entry: Any, item: dict, batch_id: str) -> tuple:
         """``(dollars, ok)`` for one batch entry. The money is recorded BEFORE the review is stored, so a crash in between can
-        only double-count a replay (the cap errs toward spending less), never lose a charge."""
+        only double-count a replay (the cap errs toward spending less), never lose a charge. A backfill item's money goes under the
+        backfill's own provider label, so its one-time wall counts it and the month's wall does not."""
         key, depth = item["bet_key"], item["depth"]
-        model, max_tokens, uses, _effort = pm.DEPTH_PLAN[depth]
+        backfill = item.get("origin") == store.ORIGIN_BACKFILL
+        provider = PROVIDER_BACKFILL if backfill else PROVIDER
+        lineage = depth == pm.DEPTH_LINEAGE
+        model, max_tokens = (dr.MODEL, dr.MAX_TOKENS) if lineage else pm.DEPTH_PLAN[depth][:2]
         outcome = getattr(entry, "result", None)
         kind = str(getattr(outcome, "type", "errored"))
-        purpose = f"postmortem:{depth}"
+        purpose = f"postmortem{'_backfill' if backfill else ''}:{depth}"
         if kind != "succeeded":
             etype = str(getattr(getattr(outcome, "error", None), "type", "") or kind)
-            self.usage.record_call(provider=PROVIDER, model=model, status="error", cost_usd=0.0, error=etype, purpose=purpose)
+            self.usage.record_call(provider=provider, model=model, status="error", cost_usd=0.0, error=etype, purpose=purpose)
             self._fail(key, depth, f"batch_{kind}:{etype}", retry=(etype != "invalid_request"))
             return 0.0, False
         evidence = pm.analyze_message(outcome.message)
         spent = cost_mod.usage_cost(model, evidence["usage"], batch=True)
         searches = cost_mod.web_searches_in(evidence["usage"])
         if spent is None:                                # no usage at all: charge the worst case, never zero
-            params, chars = pm.request_params(item["bet"], depth)
-            spent = cost_mod.worst_case_cost(model, chars, max_tokens, uses, batch=True)
+            plan = self._request_for(item)
+            if plan is not None:
+                spent = cost_mod.worst_case_cost(model, plan[1], max_tokens, plan[4], batch=True)
+            else:
+                spent = cost_mod.worst_case_cost(model, 0, max_tokens, 0 if lineage else pm.DEPTH_PLAN[depth][2], batch=True)
         stop = evidence["stop_reason"]
         if stop == "refusal":
-            self.usage.record_call(provider=PROVIDER, model=model, status="refused", cost_usd=spent, purpose=purpose)
+            self.usage.record_call(provider=provider, model=model, status="refused", cost_usd=spent, purpose=purpose)
             self._fail(key, depth, "refusal", retry=False)
             return spent, False
-        review, problems = (None, ["pause_turn"]) if stop == "pause_turn" else pm.parse_review(evidence["text"], evidence, depth)
+        if stop == "pause_turn":
+            review, problems = None, ["pause_turn"]
+        elif lineage:
+            review, problems = dr.parse_review(evidence["text"], (item["bet"] or {}).get("stats") or {})
+        else:
+            review, problems = pm.parse_review(evidence["text"], evidence, depth)
         if review is None:
-            self.usage.record_call(provider=PROVIDER, model=model, status="invalid", cost_usd=spent,
+            self.usage.record_call(provider=provider, model=model, status="invalid", cost_usd=spent,
                                    error="; ".join(problems)[:200], purpose=purpose)
             self._fail(key, depth, "invalid: " + "; ".join(problems)[:150], retry=True)
             return spent, False
-        self.usage.record_call(provider=PROVIDER, model=model, status="ok", cost_usd=spent, purpose=purpose)
+        self.usage.record_call(provider=provider, model=model, status="ok", cost_usd=spent, purpose=purpose)
         bet = item["bet"]
+        if lineage:
+            self.deep_ledger.append(lineage_key=bet["lineage_key"], review_key=key, hound_ids=bet.get("hound_ids") or (),
+                                    settled=bet.get("settled") or 0, stats=bet.get("stats") or {}, review=review, model=model,
+                                    cost_usd=spent, batch_id=batch_id)
+            self.queue.done(key, depth)
+            return spent, True
         self.ledger.append(bet=bet, depth=depth, model=model, review=review, cost_usd=spent, web_searches=searches,
                            batch_id=batch_id)
         self.queue.done(key, depth)
         if depth == pm.DEPTH_FAST and wants_deep(bet):
-            self.queue.enqueue(bet, item["tier"], pm.DEPTH_DEEP)
+            self.queue.enqueue(bet, item["tier"], pm.DEPTH_DEEP, origin=item.get("origin") or store.ORIGIN_LIVE)
         return spent, True
 
     # -- one tick ----------------------------------------------------------------------------
@@ -452,6 +541,8 @@ class Engine:
                 if book is not None and book is not self._scanned:
                     report["scan"] = self.scan(book)
                     self._scanned = book
+                cfg = self._backfill_cfg()
+                report["backfill"] = self._plan_safely(book, cfg)
                 key = api_key(self.env)
                 if key is None:
                     report["waiting"] = "no_api_key"
@@ -463,11 +554,189 @@ class Engine:
                     return report
                 report["collect"] = self.collect(client)
                 report["submit"] = self.submit(client)
+                if cfg["on"]:
+                    report["backfill_submit"] = self.submit_backfill(client, cfg)
                 return report
             finally:
                 self._release()
         finally:
             self._thread_lock.release()
+
+    # -- the backfill (one-time catch-up on past bets, and the lineage Deep reviews) ---------------------------------------------
+
+    def _backfill_cfg(self) -> dict:
+        """The switch and its wall, read fresh. Anything unreadable is off with a zero cap."""
+        try:
+            raw = self._backfill_config()
+            cap = raw.get("cap_usd")
+            cap = float(cap) if isinstance(cap, (int, float)) and not isinstance(cap, bool) and math.isfinite(cap) and cap > 0 else 0.0
+            return {"on": raw.get("on") is True, "cap_usd": cap}
+        except Exception as exc:  # noqa: BLE001 -- a bad config is "off", never a failed tick
+            logger.error("postmortem backfill config unreadable: %s", type(exc).__name__)
+            return {"on": False, "cap_usd": 0.0}
+
+    def backfill_spent(self) -> float:
+        return self.usage.total_spend(PROVIDER_BACKFILL)
+
+    def backfill_committed(self) -> float:
+        """What the backfill has spent (every month) plus what its open batches may still cost."""
+        return round(self.usage.total_spend(PROVIDER_BACKFILL) + self.usage.reserved_total(PROVIDER_BACKFILL), 8)
+
+    def _plan_safely(self, book: Any, cfg: Mapping) -> dict:
+        """Queue the backfill's next items, or say why not. With ``on`` false this writes and spends nothing."""
+        if not cfg["on"]:
+            return {"on": False}
+        if book is None:
+            return {"on": True, "waiting": "no_book"}
+        try:
+            return self.backfill_plan(book, cfg)
+        except Exception as exc:  # noqa: BLE001 -- the live reviews must still be collected and submitted
+            logger.error("postmortem backfill plan failed: %s", type(exc).__name__)
+            return {"on": True, "error": type(exc).__name__}
+
+    def backfill_plan(self, book: Any, cfg: Mapping) -> dict:
+        report = {"on": True, "lineages_queued": 0, "bets_queued": 0, "waiting": None}
+        if self.backfill_committed() >= cfg["cap_usd"]:
+            report["waiting"] = "backfill_cap"
+            return report
+        try:
+            report["lineages_queued"] = self._plan_lineages(book)
+        except Exception as exc:  # noqa: BLE001 -- the past-bet catch-up must not stop because the lineages could not be worked out
+            logger.error("postmortem deep review plan failed: %s", type(exc).__name__)
+            report["lineages_error"] = type(exc).__name__
+        report["bets_queued"] = self._plan_bets(book)
+        return report
+
+    def _past_bets(self, book: Any) -> List[tuple]:
+        """Every settled FORWARD bet of every reviewed hound and every version, newest first, as ``(recency, key, summary, row, tier)``.
+        A replay bet is never here; a Learner bet the one-in-five draw passes over is not here either (the draw is a function of the key,
+        so it needs no record). Rebuilt only when the book is."""
+        if self._bf_pool is not None and self._bf_pool[0] is book:
+            return self._bf_pool[1]
+        pool = []
+        for data in book.hounds.values():
+            summary = data.summary
+            tier = tier_of(summary)
+            if tier is None:
+                continue
+            for row in data.bets:
+                if row.segment != "forward" or row.result not in SETTLED_FOR_REVIEW:
+                    continue
+                key = store.bet_key(summary.id, row)
+                if tier == store.TIER_LEARNER and not pm.sample_hit(key, LEARNER_SAMPLE_ONE_IN):
+                    continue
+                pool.append((store.recency({"graded_utc": row.graded_utc, "date": row.date}), key, summary, row, tier))
+        pool.sort(key=lambda t: (-t[0], t[1]))
+        self._bf_pool = (book, pool)
+        return pool
+
+    def _plan_bets(self, book: Any) -> int:
+        """Top the backfill's window up with the newest past bets nobody has reviewed or queued. Idempotent: a key that is queued,
+        skipped or already in the ledger is passed over, so a second plan queues nothing twice."""
+        counts = self.queue.counts(origin=store.ORIGIN_BACKFILL, depth=pm.DEPTH_FAST)
+        room = BACKFILL_WINDOW - counts["pending"] - counts["submitted"]
+        if room <= 0:
+            return 0
+        pool = self._past_bets(book)
+        known = self.queue.known_snapshot()
+        reviewed = self.ledger.reviewed_keys()
+        queued = remaining = 0
+        for _recent, key, summary, row, tier in pool:
+            if key in known or key in reviewed:
+                continue
+            if room > 0 and self.queue.enqueue(snapshot(summary, row, key), tier, pm.DEPTH_FAST, origin=store.ORIGIN_BACKFILL):
+                queued += 1
+                room -= 1
+                continue
+            remaining += 1
+        self._bf_remaining = remaining
+        return queued
+
+    def _lineages(self, book: Any) -> List[dict]:
+        """The lineages worth a Deep review as of this book, member hounds first then the most bets: key, tier, name, settled and the
+        members (oldest version first) with their bets. Rebuilt only when the book is."""
+        if self._bf_lineages is not None and self._bf_lineages[0] is book:
+            return self._bf_lineages[1]
+        out = []
+        for key, chain in self._chains_loader(book).items():
+            members, tier = [], None
+            for m in chain.members:
+                data = book.hounds.get(m.hound_id)
+                members.append({"label": m.label, "status": m.status_text, "hound_id": m.hound_id,
+                                "rule_text": data.summary.rule_text if data is not None else "", "bets": list(data.bets) if data is not None else []})
+                mine = tier_of(data.summary) if data is not None else None
+                if mine is not None and (tier is None or store.TIER_RANK[mine] < store.TIER_RANK[tier]):
+                    tier = mine
+            settled = dr.settled_count(members)
+            if tier is None or settled < dr.MIN_SETTLED:
+                continue
+            current = chain.current
+            name = (book.hounds[current.hound_id].summary.name if current is not None and current.hound_id in book.hounds else "") or key
+            out.append({"key": key, "tier": tier, "name": name, "settled": settled, "members": members, "hound_ids": chain.ids})
+        out.sort(key=lambda i: (store.TIER_RANK[i["tier"]], -i["settled"], i["key"]))
+        self._bf_lineages = (book, out)
+        return out
+
+    def _plan_lineages(self, book: Any) -> int:
+        """Queue a Deep review for each lineage that is due (``deep_review.due``) and has none waiting. The review key follows the
+        lineage's state, so planning twice queues once; a lineage whose attempt failed waits for ten more settled bets."""
+        counts = self.queue.counts(origin=store.ORIGIN_BACKFILL, depth=pm.DEPTH_LINEAGE)
+        room = BACKFILL_LINEAGE_WINDOW - counts["pending"] - counts["submitted"]
+        queued = remaining = 0
+        for info in self._lineages(book):
+            last = self.deep_ledger.last_settled(info["key"])
+            if not dr.due(info["settled"], last):
+                continue
+            rkey = dr.review_key(info["key"], last, info["settled"])
+            if self.queue.get(rkey, pm.DEPTH_LINEAGE) is not None or self.queue.open_for(info["key"], pm.DEPTH_LINEAGE):
+                continue
+            if room <= 0:
+                remaining += 1
+                continue
+            payload = {"bet_key": rkey, "hound_id": info["key"], "lineage_key": info["key"], "hound_ids": info["hound_ids"],
+                       "settled": info["settled"], "stats": dr.compute_stats(info["name"], info["members"]),
+                       "graded_utc": store.iso(self.now())}
+            if self.queue.enqueue(payload, info["tier"], pm.DEPTH_LINEAGE, origin=store.ORIGIN_BACKFILL):
+                queued += 1
+                room -= 1
+        self._bf_lineages_remaining = remaining
+        return queued
+
+    def submit_backfill(self, client: Any, cfg: Mapping) -> dict:
+        """One backfill batch: Deep reviews first, then past bets newest first, inside the backfill's wall. Its own batch clock and its
+        own cap on unread batches, so it never delays or crowds out a live review."""
+        now = self.now()
+        if self.usage.cooldown(PROVIDER) is not None:
+            return {"submitted": 0, "reason": "cooling_down"}
+        pending = self.queue.pending(store.ORIGIN_BACKFILL)
+        if not pending:
+            return {"submitted": 0, "reason": "queue_empty"}
+        if sum(1 for info in self.queue.open_batches().values() if info.get("origin") == store.ORIGIN_BACKFILL) >= BACKFILL_MAX_OPEN_BATCHES:
+            return {"submitted": 0, "reason": "batches_open"}
+        last = self.queue.last_submit(store.ORIGIN_BACKFILL)
+        if last is not None and now - last < SUBMIT_MIN_INTERVAL and len(pending) < BATCH_MAX_REQUESTS:
+            return {"submitted": 0, "reason": "batching", "pending": len(pending)}
+        cap, committed = cfg["cap_usd"], self.backfill_committed()
+        requests, chosen, reserve, stopped = self._assemble(pending, committed=committed, cap=cap, stop_reason="backfill_cap")
+        if not requests:
+            return {"submitted": 0, "reason": stopped or "nothing_eligible", "cap_usd": cap, "committed_usd": committed}
+        return self._send(client, requests, chosen, reserve, provider=PROVIDER_BACKFILL, origin=store.ORIGIN_BACKFILL,
+                          purpose="postmortem_backfill")
+
+    def backfill_status(self) -> dict:
+        """Progress of the one-time catch-up, for the existing status: how many past bets are done, queued and remaining, the Deep
+        reviews the same way, and the dollars spent against the wall. ``remaining`` is None until a plan has counted it."""
+        cfg = self._backfill_cfg()
+        bets = self.queue.counts(origin=store.ORIGIN_BACKFILL, depth=pm.DEPTH_FAST)
+        deep = self.queue.counts(origin=store.ORIGIN_BACKFILL, depth=pm.DEPTH_DEEP)
+        lineage = self.queue.counts(origin=store.ORIGIN_BACKFILL, depth=pm.DEPTH_LINEAGE)
+        return {"on": cfg["on"], "cap_usd": cfg["cap_usd"], "spent_usd": self.backfill_spent(),
+                "reserved_usd": self.usage.reserved_total(PROVIDER_BACKFILL),
+                "bets": {"done": bets["done"], "queued": bets["pending"] + bets["submitted"], "failed": bets["failed"],
+                         "remaining": self._bf_remaining},
+                "deep_passes": {"done": deep["done"], "queued": deep["pending"] + deep["submitted"], "failed": deep["failed"]},
+                "lineage_reviews": {"done": self.deep_ledger.count(), "queued": lineage["pending"] + lineage["submitted"],
+                                    "failed": lineage["failed"], "remaining": self._bf_lineages_remaining}}
 
     # -- reading for pages and prompts ------------------------------------------------------------
 
@@ -488,6 +757,10 @@ class Engine:
             if len(out) >= limit:
                 break
         return out
+
+    def deep_reviews_for(self, lineage_key: str, limit: int = 10) -> List[dict]:
+        """The lineage's Deep reviews, newest first, as a page may show them (``deep_review.public_review``). Every one ever written."""
+        return [dr.public_review(row) for row in self.deep_ledger.rows_for(lineage_key, limit)]
 
     def summary_for(self, hound_id: str, limit: int = SUMMARY_LIMIT_DEFAULT) -> dict:
         """Compact lessons and per-factor tallies for one hound, for the rebuild, fine-tune and chat prompts to consume.
@@ -568,7 +841,7 @@ def default_engine() -> Engine:
             from src.ai.router import default_usage_path
             queue_path, ledger_path = store.default_paths()
             _ENGINE = Engine(queue=store.QueueStore(queue_path), ledger=store.ReviewLedger(ledger_path),
-                             usage=UsageStore(default_usage_path()))
+                             usage=UsageStore(default_usage_path()), deep_ledger=store.DeepReviewLedger(store.default_deep_path()))
         return _ENGINE
 
 
@@ -592,6 +865,24 @@ def tick_safely(**kwargs) -> dict:
     finally:
         STATUS["ticks"] += 1
         STATUS["last_tick_utc"] = store.iso(datetime.now(timezone.utc))
+
+
+def deep_reviews_for(lineage_key: str, limit: int = 10, *, engine: Optional[Engine] = None) -> List[dict]:
+    """A lineage's Deep reviews, newest first, as a page may show them. [] for none, and for a ledger that cannot be read."""
+    try:
+        return (engine or default_engine()).deep_reviews_for(lineage_key, limit)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("postmortem deep reviews could not be read: %s", type(exc).__name__)
+        return []
+
+
+def status_safely(*, engine: Optional[Engine] = None) -> dict:
+    """The engine's status (the month's wall, the queue, the backfill's progress) merged with the last tick's report. Never raises."""
+    try:
+        return {**(engine or default_engine()).status(), "last_tick_utc": STATUS["last_tick_utc"], "ticks": STATUS["ticks"],
+                "last_error": STATUS["last_error"]}
+    except Exception as exc:  # noqa: BLE001
+        return {"error": type(exc).__name__}
 
 
 def summary_for(hound_id: str, limit: int = SUMMARY_LIMIT_DEFAULT, *, engine: Optional[Engine] = None) -> dict:

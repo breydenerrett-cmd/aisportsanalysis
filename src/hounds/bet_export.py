@@ -19,6 +19,11 @@ HONEST COLUMNS.
     or not reviewed (a bet graded before reviews began, a Learner bet the sample passed over, a replay bet, an open ticket). A
     review is written after the result, from web sources: it is never pre-game reasoning.
 
+ALL VERSIONS (owner ask 2026-10-28: past versions' results stay on record). ``GET /hounds/{id}/export?versions=all`` is the same sheet for
+EVERY version of the hound's lineage, oldest version first, with a "Version" column (v1, v2, ...) and a "Version status" column
+(running, replaced by a later version, retired, buried). The default sheet is unchanged: no extra columns. A bet's ID is made from its
+own version's hound id, so the IDs stay unique across versions.
+
 CSV ALWAYS, XLSX ONLY IF ``openpyxl`` IS INSTALLED (it is not in ``api/requirements.txt``, so today the answer is CSV and the
 route says so). The CSV carries a UTF-8 byte-order mark so Excel reads accents and quotes correctly. CELLS ARE NEUTRALISED against
 spreadsheet formulas: a text cell that starts with ``=``, ``+``, ``-``, ``@``, a tab or a carriage return gets a leading apostrophe
@@ -98,6 +103,10 @@ COLUMNS = (
 )
 HEADERS = [h for _k, h in COLUMNS]
 
+#: The all-versions sheet: the same columns with the version beside the hound's name.
+VERSION_COLUMNS = (("version", "Version"), ("version_status", "Version status"))
+COLUMNS_ALL_VERSIONS = COLUMNS[:3] + VERSION_COLUMNS + COLUMNS[3:]
+
 FORMULA_STARTS = ("=", "+", "-", "@", "\t", "\r")
 _NUMBER = re.compile(r"^[+-]?(\d+(\.\d*)?|\.\d+)$")
 
@@ -166,11 +175,12 @@ def _review_cells(row: Any, key: str, review: Optional[Mapping], queued: bool) -
 
 
 def build_rows(data: Any, *, reviews: Optional[Mapping[str, Mapping]] = None, queued: Optional[set] = None,
-               now: Any = None) -> List[Dict[str, Any]]:
+               now: Any = None, version: Optional[Mapping] = None) -> List[Dict[str, Any]]:
     """The sheet's rows for one hound's all-time ``HoundData`` (``view("all")``), oldest first.
 
     ``reviews`` is {bet key: public review}; ``queued`` the set of bet keys whose fast review is waiting. Both default to empty,
-    so the sheet is complete (and says "not reviewed") with no ledger at all."""
+    so the sheet is complete (and says "not reviewed") with no ledger at all. ``version`` ({"label", "status"}) fills the all-versions
+    sheet's two extra cells; without it the rows are exactly the default sheet's."""
     summary = data.summary
     reviews = reviews or {}
     queued = queued or set()
@@ -189,21 +199,35 @@ def build_rows(data: Any, *, reviews: Optional[Mapping[str, Mapping]] = None, qu
             "status": status, "segment": SEGMENT_FORWARD if r.segment == SEGMENT_FORWARD else SEGMENT_REPLAY,
             "counted": _counted(r, status), "reason": r.reason or "", "who_decided": r.who_decided}
         cells.update(_review_cells(r, key, reviews.get(key), key in queued))
+        if version is not None:
+            cells.update(version=version.get("label", ""), version_status=version.get("status", ""))
         out.append(cells)
     return out
 
 
-def to_csv(rows: Sequence[Mapping]) -> bytes:
+def build_rows_all_versions(versions: Sequence[Mapping], *, now: Any = None) -> List[Dict[str, Any]]:
+    """Every bet of every version of a lineage, version by version, oldest version first (and oldest bet first inside each).
+
+    ``versions`` is ``[{"data": HoundData, "label": "v1", "status": "running", "reviews": {...}, "queued": set()}]``. A version's
+    replay rows are shown and labelled exactly as in the single-version sheet."""
+    out: List[Dict[str, Any]] = []
+    for v in versions:
+        out.extend(build_rows(v["data"], reviews=v.get("reviews"), queued=v.get("queued"), now=now,
+                              version={"label": v.get("label", ""), "status": v.get("status", "")}))
+    return out
+
+
+def to_csv(rows: Sequence[Mapping], columns: Sequence[tuple] = COLUMNS) -> bytes:
     """UTF-8 with a byte-order mark, header row first, every cell neutralised (``safe_cell``)."""
     buf = io.StringIO(newline="")
     writer = csv.writer(buf, lineterminator="\r\n")
-    writer.writerow(HEADERS)
+    writer.writerow([h for _k, h in columns])
     for row in rows:
-        writer.writerow([safe_cell(row.get(k)) for k, _h in COLUMNS])
+        writer.writerow([safe_cell(row.get(k)) for k, _h in columns])
     return b"\xef\xbb\xbf" + buf.getvalue().encode("utf-8")
 
 
-def to_xlsx(rows: Sequence[Mapping]) -> Optional[bytes]:
+def to_xlsx(rows: Sequence[Mapping], columns: Sequence[tuple] = COLUMNS) -> Optional[bytes]:
     """An .xlsx workbook through ``openpyxl``, or None when it is not installed (the route then offers the CSV)."""
     try:
         from openpyxl import Workbook                        # noqa: PLC0415 -- optional by design
@@ -213,18 +237,18 @@ def to_xlsx(rows: Sequence[Mapping]) -> Optional[bytes]:
     book = Workbook()
     sheet = book.active
     sheet.title = "Bets"
-    sheet.append(HEADERS)
+    sheet.append([h for _k, h in columns])
     for cell in sheet[1]:
         cell.font = Font(bold=True)
     wide = {"matchup": 34, "pick": 30, "reason": 60, "what_happened": 70, "key_factors": 60, "reason_assessment": 60,
             "info_lacked": 50, "lesson": 50, "analyst_takes": 70, "deeper_notes": 70, "sources": 70}
     for row in rows:
         values = []
-        for key, _h in COLUMNS:
+        for key, _h in columns:
             value = safe_cell(row.get(key))
             values.append(value)
         sheet.append(values)
-    for idx, (key, header) in enumerate(COLUMNS, start=1):
+    for idx, (key, header) in enumerate(columns, start=1):
         letter = sheet.cell(row=1, column=idx).column_letter
         sheet.column_dimensions[letter].width = wide.get(key, max(12, min(26, len(header) + 2)))
         if key in wide:
@@ -236,7 +260,8 @@ def to_xlsx(rows: Sequence[Mapping]) -> Optional[bytes]:
     return out.getvalue()
 
 
-def filename(hound_id: str, fmt: str, today: Optional[date] = None) -> str:
-    """``linehound-<hound id>-bets-<YYYY-MM-DD>.<fmt>`` with the id reduced to letters, digits, dot, underscore and hyphen."""
+def filename(hound_id: str, fmt: str, today: Optional[date] = None, all_versions: bool = False) -> str:
+    """``linehound-<hound id>-bets-<YYYY-MM-DD>.<fmt>`` (``-bets-all-versions-`` for the all-versions sheet) with the id reduced to
+    letters, digits, dot, underscore and hyphen."""
     safe = re.sub(r"[^A-Za-z0-9_.-]", "_", str(hound_id))[:60] or "hound"
-    return f"linehound-{safe}-bets-{(today or date.today()).isoformat()}.{fmt}"
+    return f"linehound-{safe}-bets-{'all-versions-' if all_versions else ''}{(today or date.today()).isoformat()}.{fmt}"

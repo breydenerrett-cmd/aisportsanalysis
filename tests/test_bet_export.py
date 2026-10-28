@@ -214,11 +214,87 @@ class TheFormats(unittest.TestCase):
         self.assertNotIn(";", name)
 
 
+class TheAllVersionsSheet(unittest.TestCase):
+    """``versions=all``: every bet of every version, a Version and a Version status column, the default sheet untouched."""
+
+    def versions(self):
+        v1 = hound_data("u-1", [bet(1, hound_id="u-1", result="loss"), bet(2, hound_id="u-1", result="win", price=150)])
+        v2 = hound_data("u-2", [bet(3, hound_id="u-2", result="win"), bet(4, hound_id="u-2", result=None), bet(5, hound_id="u-2", result="loss", segment="replay")])
+        return [{"data": v1, "label": "v1", "status": "replaced by a later version", "reviews": {}, "queued": set()},
+                {"data": v2, "label": "v2", "status": "running"}]
+
+    def test_the_default_columns_and_rows_are_exactly_what_they_were(self):
+        rows = rows_of(hound_data("u-1", [bet(1)]))
+        self.assertNotIn("version", rows[0])
+        self.assertNotIn("version_status", rows[0])
+        self.assertEqual(parse_csv(bx.to_csv(rows))[0], bx.HEADERS)
+        self.assertEqual(bx.COLUMNS_ALL_VERSIONS[:3], bx.COLUMNS[:3])
+        self.assertEqual(bx.COLUMNS_ALL_VERSIONS[5:], bx.COLUMNS[3:])
+        self.assertEqual([h for _k, h in bx.COLUMNS_ALL_VERSIONS[3:5]], ["Version", "Version status"])
+
+    def test_every_bet_of_every_version_is_a_row_oldest_version_first(self):
+        rows = bx.build_rows_all_versions(self.versions(), now=NOW)
+        self.assertEqual(len(rows), 2 + 3)
+        self.assertEqual([r["version"] for r in rows], ["v1", "v1", "v2", "v2", "v2"])
+        self.assertEqual([r["version_status"] for r in rows], ["replaced by a later version"] * 2 + ["running"] * 3)
+        self.assertEqual([r["hound_id"] for r in rows], ["u-1", "u-1", "u-2", "u-2", "u-2"])
+        ids = [r["bet_id"] for r in rows]
+        self.assertEqual(len(set(ids)), len(ids))
+
+    def test_the_replay_and_open_rows_keep_their_labels_in_every_version(self):
+        rows = bx.build_rows_all_versions(self.versions(), now=NOW)
+        by = {(r["version"], r["counted"]): 0 for r in rows}
+        self.assertIn(("v2", bx.COUNTED_OPEN), by)
+        self.assertIn(("v2", bx.COUNTED_NO), by)
+        replay = [r for r in rows if r["segment"] == bx.SEGMENT_REPLAY]
+        self.assertEqual([(r["version"], r["review_status"]) for r in replay], [("v2", bx.REVIEW_NA)])
+
+    def test_the_csv_has_the_two_extra_columns_and_every_cell_is_still_neutralised(self):
+        rows = bx.build_rows_all_versions(self.versions(), now=NOW)
+        rows[0]["version_status"] = "=HYPERLINK(\"http://x\")"
+        sheet = parse_csv(bx.to_csv(rows, bx.COLUMNS_ALL_VERSIONS))
+        head = sheet[0]
+        self.assertEqual(head, [h for _k, h in bx.COLUMNS_ALL_VERSIONS])
+        self.assertEqual(sheet[1][head.index("Version")], "v1")
+        self.assertTrue(sheet[1][head.index("Version status")].startswith("'="))
+        self.assertTrue(all(len(r) == len(head) for r in sheet))
+
+    def test_the_xlsx_has_them_too_when_it_can_be_made(self):
+        try:
+            import openpyxl
+        except ImportError:
+            self.assertIsNone(bx.to_xlsx([], bx.COLUMNS_ALL_VERSIONS))
+            return
+        raw = bx.to_xlsx(bx.build_rows_all_versions(self.versions(), now=NOW), bx.COLUMNS_ALL_VERSIONS)
+        sheet = openpyxl.load_workbook(io.BytesIO(raw)).active
+        self.assertEqual([c.value for c in sheet[1]], [h for _k, h in bx.COLUMNS_ALL_VERSIONS])
+        self.assertEqual(sheet.max_row, 6)
+
+    def test_the_reviews_of_each_version_land_on_its_own_rows(self):
+        versions = self.versions()
+        key = store.bet_key("u-1", versions[0]["data"].bets[0])
+        versions[0]["reviews"] = {key: review(grounded=True)}
+        rows = bx.build_rows_all_versions(versions, now=NOW)
+        mine = next(r for r in rows if r["bet_id"] == key)
+        self.assertEqual((mine["version"], mine["review_status"]), ("v1", "reviewed"))
+        self.assertEqual(sum(1 for r in rows if r["review_status"] == "reviewed"), 1)
+
+    def test_the_file_name_says_all_versions_only_when_it_is_the_all_versions_sheet(self):
+        self.assertEqual(bx.filename("u-1", "csv", date(2026, 10, 28)), "linehound-u-1-bets-2026-10-28.csv")
+        self.assertEqual(bx.filename("u-1", "csv", date(2026, 10, 28), all_versions=True), "linehound-u-1-bets-all-versions-2026-10-28.csv")
+
+    def test_a_lineage_with_no_versions_is_an_empty_sheet_with_headers(self):
+        self.assertEqual(parse_csv(bx.to_csv(bx.build_rows_all_versions([], now=NOW), bx.COLUMNS_ALL_VERSIONS)),
+                         [[h for _k, h in bx.COLUMNS_ALL_VERSIONS]])
+
+
 class TheCopy(unittest.TestCase):
     def test_no_banned_word_in_a_column_header_or_a_label(self):
         import re
         banned = re.compile(r"(?<![-_A-Za-z])dogs?(?![-_A-Za-z])|\bbeta\b|\bnew\b|nothing cleared the bar|\bprofit|guarantee", re.I)
         self.assertIsNone(banned.search(" ".join(bx.HEADERS)))
+        self.assertIsNone(banned.search(" ".join(h for _k, h in bx.COLUMNS_ALL_VERSIONS)))
+        self.assertIsNone(banned.search("replaced by a later version running retired buried benched"))
         self.assertIsNone(banned.search(bx.SEGMENT_REPLAY + bx.COUNTED_OPEN))
 
 

@@ -34,8 +34,15 @@ LABEL = "Hindsight review"
 NOTE = ("Hindsight review: written after the result was known, from news and recaps found on the web. It is not what the hound "
         "knew or reasoned before the game. Paper bets only, not advice.")
 
+#: The lineage-wide Deep review's label and note (``src/ai/deep_review.py``): one hound across all its versions, written after the results.
+DEEP_LABEL = "Deep review (hindsight)"
+DEEP_NOTE = ("Deep review: written after the results, from the hound's whole record across every version. The numbers are counted by "
+             "the app; the words only explain them. It is not what the hound knew before a game. Paper bets only, not advice.")
+
 DEPTH_FAST, DEPTH_DEEP = "fast", "deep"
 DEPTHS = (DEPTH_FAST, DEPTH_DEEP)
+#: The third kind of queued request: one hound's lineage-wide "Deep review" (``src/ai/deep_review.py``), not a review of one bet.
+DEPTH_LINEAGE = "lineage"
 
 #: The closed vocabulary the per-factor tallies are counted over. Sport-neutral on purpose: one hound can bet any sport.
 FACTOR_TAGS = (
@@ -304,7 +311,7 @@ def custom_id(bet_key: str, depth: str) -> str:
     return f"{bet_key}_{depth}"
 
 
-_CUSTOM_RE = re.compile(r"^(?P<key>pm_[0-9a-f]{16})_(?P<depth>fast|deep)$")
+_CUSTOM_RE = re.compile(r"^(?P<key>(?:pm|dr)_[0-9a-f]{16})_(?P<depth>fast|deep|lineage)$")
 
 
 def split_custom_id(value: str) -> Optional[Tuple[str, str]]:

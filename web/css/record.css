@@ -111,6 +111,8 @@
 .rc-review__list ul { margin: 4px 0 0; padding-left: 18px; }
 .rc-review__list li { margin: 2px 0; overflow-wrap: anywhere; }
 .rc-review a { color: var(--lh-ink); text-decoration: underline; overflow-wrap: anywhere; }
+.rc-deep { margin-top: var(--lh-s3); }
+.rc-deep__headline { font-weight: 600; color: var(--lh-ink); }
 
 /* ---- compare -------------------------------------------------------------------------------------------------- */
 .rc-tablewrap { overflow-x: auto; }

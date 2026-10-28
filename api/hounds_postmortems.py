@@ -1,7 +1,9 @@
 """The bets spreadsheet and the hindsight reviews (owner ask 2026-10-28).
 
     GET /hounds/{id}/export?format=csv|xlsx   every bet the hound recorded, as a download (src/hounds/bet_export.py)
-    GET /hounds/{id}/postmortems              the hindsight reviews of its settled bets, keyed by bet id (src/ai/postmortems.py)
+    GET /hounds/{id}/export?versions=all      the same for EVERY version of the hound's lineage, with Version and Version status columns
+    GET /hounds/{id}/postmortems              the hindsight reviews of its settled bets, keyed by bet id, and the lineage's Deep reviews
+                                              (src/ai/postmortems.py, src/ai/deep_review.py)
 
 WHO CAN SEE WHAT. A HOUSE hound (the pack, the AI hounds, The Learner, the desk and the baselines) is public: its bets, reasons and
 reviews are open to anyone, like its record page. A MEMBER hound's spreadsheet and reviews are for its OWNER only. The export of a
@@ -27,7 +29,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 
 from src.ai import postmortem_parse, postmortems
 from src.appstate import ratelimit
-from src.hounds import bet_export
+from src.hounds import bet_export, version_chain
 from src.hounds.contract import envelope
 from src.hounds.interact import common
 
@@ -45,6 +47,7 @@ _rl_read = ratelimit.limiter_dependency(_read_limiter)
 
 MEDIA = {"csv": "text/csv; charset=utf-8", "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
 REVIEW_LIMIT = 250                         # the record page lists this many settled tickets; the reviews cover the same ones
+DEEP_LIMIT = 10                            # Deep reviews listed, newest first (every one stays in the ledger)
 
 
 def _err(status: int, code: str, message: str, **extra) -> HTTPException:
@@ -63,8 +66,45 @@ def _viewer_is_owner(dog: "common.Dog", authorization: Optional[str]) -> bool:
     return dog.kind == common.KIND_USER and viewer is not None and viewer == dog.owner_user_id
 
 
+def _lineage_members(dog: "common.Dog") -> list:
+    """Every version of the dog's lineage, oldest first (``version_chain.Member``). A member hound's come from the app database (a
+    retired or buried version too), a pack hound's from the cached book. Empty when nothing is known."""
+    try:
+        if dog.kind == common.KIND_USER:
+            from src.hounds import user_store
+            chain = version_chain.chain_for(dog.id, version_chain.build_chains({}, user_store.lineage(dog.id)))
+        else:
+            from src.hounds import stats
+            book = stats.peek_book()
+            chain = version_chain.chain_for(dog.id, version_chain.build_chains(book.hounds if book is not None else {}, []))
+        return list(chain.members) if chain is not None else []
+    except Exception:  # noqa: BLE001 -- a lineage that cannot be read still leaves the one version the caller asked for
+        return []
+
+
+def _all_versions(dog: "common.Dog", now: datetime) -> Optional[list]:
+    """The all-versions sheet's rows, or None while the asked-for version's record is still warming (the route then answers 503)."""
+    members = _lineage_members(dog) or [version_chain.Member(hound_id=dog.id, version_no=1, status=dog.status or "running", name=dog.name)]
+    versions = []
+    for m in members:
+        version_dog = dog if m.hound_id == dog.id else common.resolve(m.hound_id)
+        data = common.hound_data(version_dog) if version_dog is not None else None
+        if data is None:
+            if m.hound_id == dog.id:
+                return None
+            continue                                   # a version nobody can read a record for has no rows to show
+        try:
+            engine = postmortems.default_engine()
+            reviews, queued = engine.reviews_for_hound(m.hound_id, 5000), engine.queue.pending_keys(m.hound_id)
+        except Exception:  # noqa: BLE001 -- the sheet is complete without reviews
+            reviews, queued = {}, set()
+        versions.append({"data": data.view("all"), "label": m.label, "status": m.status_text, "reviews": reviews, "queued": queued})
+    return bet_export.build_rows_all_versions(versions, now=now)
+
+
 @router.get("/hounds/{hound_id}/export")
 def export_bets(hound_id: str, response: Response, format: str = Query("csv", pattern="^(csv|xlsx)$"),
+                versions: Optional[str] = Query(None, pattern="^all$"),
                 authorization: Optional[str] = Header(default=None), _rl: None = Depends(_rl_export)):
     dog = _dog(hound_id)
     if dog.kind == common.KIND_USER and not _viewer_is_owner(dog, authorization):
@@ -78,19 +118,27 @@ def export_bets(hound_id: str, response: Response, format: str = Query("csv", pa
     if data is None:
         response.headers["Retry-After"] = "5"
         raise _err(503, "warming_up", "The record is still being worked out. Try again in a few seconds.")
-    try:
-        engine = postmortems.default_engine()
-        reviews = engine.reviews_for_hound(dog.id, 5000)
-        queued = engine.queue.pending_keys(dog.id)
-    except Exception:  # noqa: BLE001 -- the sheet is complete without reviews; a bad ledger must not stop the download
-        reviews, queued = {}, set()
     now = datetime.now(timezone.utc)
-    rows = bet_export.build_rows(data.view("all"), reviews=reviews, queued=queued, now=now)
-    body = bet_export.to_csv(rows) if format == "csv" else bet_export.to_xlsx(rows)
+    if versions == "all":
+        rows = _all_versions(dog, now)
+        if rows is None:
+            response.headers["Retry-After"] = "5"
+            raise _err(503, "warming_up", "The record is still being worked out. Try again in a few seconds.")
+        columns = bet_export.COLUMNS_ALL_VERSIONS
+    else:
+        try:
+            engine = postmortems.default_engine()
+            reviews = engine.reviews_for_hound(dog.id, 5000)
+            queued = engine.queue.pending_keys(dog.id)
+        except Exception:  # noqa: BLE001 -- the sheet is complete without reviews; a bad ledger must not stop the download
+            reviews, queued = {}, set()
+        rows = bet_export.build_rows(data.view("all"), reviews=reviews, queued=queued, now=now)
+        columns = bet_export.COLUMNS
+    body = bet_export.to_csv(rows, columns) if format == "csv" else bet_export.to_xlsx(rows, columns)
     if body is None:
         raise _err(422, "format_unavailable", "The Excel format is not switched on here. The CSV opens in Excel and Google Sheets.",
                    available=["csv"])
-    name = bet_export.filename(dog.id, format, now.date())
+    name = bet_export.filename(dog.id, format, now.date(), all_versions=versions == "all")
     return Response(content=body, media_type=MEDIA[format],
                     headers={"Content-Disposition": f'attachment; filename="{name}"', "Cache-Control": _NO_STORE})
 
@@ -102,13 +150,16 @@ def hound_postmortems(hound_id: str, response: Response, authorization: Optional
     dog = _dog(hound_id)
     visible = dog.kind != common.KIND_USER or _viewer_is_owner(dog, authorization)
     base = {"hound_id": dog.id, "visible": visible, "label": postmortem_parse.LABEL, "note": postmortem_parse.NOTE,
-            "reviews": {}, "pending": 0}
+            "reviews": {}, "pending": 0, "deep_reviews": [], "deep_label": postmortem_parse.DEEP_LABEL,
+            "deep_note": postmortem_parse.DEEP_NOTE}
     if not visible:
         return envelope(base)
     try:
         engine = postmortems.default_engine()
         base["reviews"] = engine.reviews_for_hound(dog.id, REVIEW_LIMIT)
         base["pending"] = len(engine.queue.pending_keys(dog.id))
+        base["deep_reviews"] = engine.deep_reviews_for(
+            version_chain.lineage_key_of(dog.id, dog.root_id if dog.kind == common.KIND_USER else None), DEEP_LIMIT)
     except Exception:  # noqa: BLE001 -- a page without reviews is a page; a bad ledger must not break the record
         base["warming_up"] = True
     return envelope(base)
