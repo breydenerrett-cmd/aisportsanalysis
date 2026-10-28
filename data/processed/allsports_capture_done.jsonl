@@ -8121,3 +8121,10 @@
 {"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T07:27:29.615278Z", "regions": ["us"], "rows": 45, "sport_key": "tennis_wta_pan_pacific_open", "stored": 45}
 {"commence_utc": "2026-10-28T08:00:00Z", "event_id": "a9fac6056a7fb978aceab5182f56271b", "kind": "phase", "observed_utc": "2026-10-28T07:38:06.543926Z", "phase": "t30m", "rows": 8, "sport_key": "tennis_wta_pan_pacific_open"}
 {"call_kind": "pregame", "credits": 1, "events": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T07:38:06.543926Z", "regions": ["us"], "rows": 45, "sport_key": "tennis_wta_pan_pacific_open", "stored": 45}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-10-28T13:47:37.041537Z", "observed_utc": "2026-10-28T07:47:37.041537Z", "sport_key": "soccer_australia_aleague"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-10-28T13:47:37.041537Z", "observed_utc": "2026-10-28T07:47:37.041537Z", "sport_key": "soccer_austria_bundesliga"}
+{"commence_utc": "2026-10-28T13:40:00Z", "event_id": "84b3d47944a12f77e8f84c6442665671", "kind": "phase", "observed_utc": "2026-10-28T07:47:37.041537Z", "phase": "t6h", "rows": 7, "sport_key": "tennis_atp_vienna_open"}
+{"call_kind": "pregame", "credits": 1, "events": 8, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T07:47:37.041537Z", "regions": ["us"], "rows": 59, "sport_key": "tennis_atp_vienna_open", "stored": 59}
+{"commence_utc": "2026-10-29T07:45:00Z", "event_id": "53278095ff9bd1ebbcb4f643206ac818", "kind": "phase", "observed_utc": "2026-10-28T07:47:37.041537Z", "phase": "t24h", "rows": 4, "sport_key": "boxing_boxing"}
+{"call_kind": "pregame", "credits": 1, "events": 31, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T07:47:37.041537Z", "regions": ["us"], "rows": 78, "sport_key": "boxing_boxing", "stored": 12}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T07:47:37.041537Z", "regions": ["au"], "rows": 15, "sport_key": "cricket_test_match", "stored": 13}
