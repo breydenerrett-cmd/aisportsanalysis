@@ -20,14 +20,14 @@
    "sha256": "dac70e479a3a61445944400bd23b2dfa005352e6efac3c95945d49184be6704e"
   },
   "teams.jsonl": {
-   "bytes": 11962,
-   "newest": "2026-10-21T03:10:09Z",
-   "records": 36,
-   "sha256": "613dbbd1d96a7d46b932669eb14a7904b24bb7c22c35ac20eb86e4b5da2bc52b"
+   "bytes": 12310,
+   "newest": "2026-10-28T04:14:33Z",
+   "records": 37,
+   "sha256": "54ed546f3d23c7dc4f0fc708dfbab22e517d69558269031c016e2081bd1957e6"
   }
  },
- "generated_utc": "2026-10-28T01:14:20Z",
+ "generated_utc": "2026-10-28T04:14:35Z",
  "league": "ucl",
- "refreshed_utc": "2026-10-28T01:14:20Z",
+ "refreshed_utc": "2026-10-28T04:14:35Z",
  "title": "UEFA Champions League"
 }
