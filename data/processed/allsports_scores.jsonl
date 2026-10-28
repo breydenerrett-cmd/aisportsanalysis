@@ -4347,3 +4347,4 @@
 {"credits": 2, "days_from": 3, "events": 16, "kind": "poll", "observed_utc": "2026-10-28T18:07:05.390258+00:00", "sport_key": "soccer_germany_dfb_pokal"}
 {"away_score": null, "away_team": "Australia", "commence_time": "2026-10-29T08:30:00Z", "completed": false, "event_id": "8f8635facd49cb28543e504f176a8d59", "home_score": null, "home_team": "South Africa", "kind": "score", "last_update": null, "observed_utc": "2026-10-28T18:07:05.390258+00:00", "outcome": null, "scores": null, "sport_key": "cricket_test_match"}
 {"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-28T18:07:05.390258+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 14, "kind": "poll", "observed_utc": "2026-10-28T18:20:20.953440+00:00", "sport_key": "soccer_spain_copa_del_rey"}
