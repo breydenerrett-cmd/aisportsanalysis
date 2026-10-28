@@ -8071,3 +8071,5 @@
 {"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T04:52:58.561005Z", "regions": ["us"], "rows": 58, "sport_key": "icehockey_nhl", "stored": 58}
 {"call_kind": "inplay", "credits": 1, "events": 19, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T04:52:58.561005Z", "regions": ["us"], "rows": 138, "sport_key": "basketball_nba", "stored": 124}
 {"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T04:52:58.561005Z", "regions": ["us"], "rows": 55, "sport_key": "tennis_wta_pan_pacific_open", "stored": 55}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-10-28T11:06:07.381432Z", "observed_utc": "2026-10-28T05:06:07.381432Z", "sport_key": "soccer_spain_la_liga"}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T05:06:07.381432Z", "regions": ["au"], "rows": 15, "sport_key": "cricket_test_match", "stored": 13}
