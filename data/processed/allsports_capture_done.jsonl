@@ -8087,3 +8087,4 @@
 {"events": 18, "kind": "peek", "next_check_utc": "2026-10-28T11:45:07.796845Z", "observed_utc": "2026-10-28T05:45:07.796845Z", "sport_key": "soccer_uefa_champs_league"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-10-28T11:45:07.796845Z", "observed_utc": "2026-10-28T05:45:07.796845Z", "sport_key": "soccer_uefa_europa_conference_league"}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T05:45:07.796845Z", "regions": ["au"], "rows": 15, "sport_key": "cricket_test_match", "stored": 13}
+{"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T05:58:00.682272Z", "regions": ["us"], "rows": 53, "sport_key": "tennis_wta_pan_pacific_open", "stored": 53}
