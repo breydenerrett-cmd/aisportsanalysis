@@ -8113,3 +8113,4 @@
 {"call_kind": "pregame", "credits": 1, "events": 10, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T07:03:05.946983Z", "regions": ["us"], "rows": 78, "sport_key": "tennis_atp_swiss_indoors", "stored": 78}
 {"commence_utc": "2026-10-29T07:00:00Z", "event_id": "ab4b92de827019ff6129c853680cb36b", "kind": "phase", "observed_utc": "2026-10-28T07:03:05.946983Z", "phase": "t24h", "rows": 4, "sport_key": "boxing_boxing"}
 {"call_kind": "pregame", "credits": 1, "events": 31, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T07:03:05.946983Z", "regions": ["us"], "rows": 78, "sport_key": "boxing_boxing", "stored": 12}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-28T07:13:36.014618Z", "regions": ["au"], "rows": 15, "sport_key": "cricket_test_match", "stored": 13}
