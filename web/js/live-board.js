@@ -231,9 +231,10 @@ function houndsOnGame(ev) {
 function scoreParts(ev) {
   const s = ev.score;
   if (s && typeof s === "object") {
-    return { home: isNum(s.home) ? String(s.home) : "", away: isNum(s.away) ? String(s.away) : "", detail: s.detail ? String(s.detail) : "" };
+    return { home: isNum(s.home) ? String(s.home) : "", away: isNum(s.away) ? String(s.away) : "", detail: s.detail ? String(s.detail) : "",
+      completed: s.completed === true, delayed: s.delayed === true };
   }
-  return { home: "", away: "", detail: typeof s === "string" ? s : "" };
+  return { home: "", away: "", detail: typeof s === "string" ? s : "", completed: false, delayed: false };
 }
 
 function priceCell(price, name) {
@@ -255,12 +256,19 @@ function rowFor(ev, live) {
   const when = start ? dayClock(ev.start_utc) : "";
   const until = start && !live ? Math.round((start.getTime() - now().getTime()) / 60000) : null;
   const meta = [];
-  if (live) meta.push(h("span", { class: "lv-pill lv-pill--live", "data-hook": "live-pill" }, [h("span", { class: "lv-dot", "aria-hidden": "true" }), "Live"]));
+  if (live && sc.completed) meta.push(h("span", { class: "lv-pill", "data-hook": "live-pill", "data-state": "final", text: "Final" }));
+  else if (live) meta.push(h("span", { class: "lv-pill lv-pill--live", "data-hook": "live-pill" }, [h("span", { class: "lv-dot", "aria-hidden": "true" }), "Live"]));
   else meta.push(h("span", { class: "lv-pill", text: "Upcoming" }));
   if (ev.league_title) meta.push(h("span", { class: "lv-league", text: ev.league_title }));
   const timing = live ? (when ? `Started ${when}` : "") : [when, until !== null && until > 0 ? `in ${spanText(until)}` : ""].filter(Boolean).join(" · ");
   if (timing) meta.push(h("span", { class: "lv-when", "data-hook": "live-when", text: timing }));
-  if (sc.detail) meta.push(h("span", { class: "lv-detail", text: sc.detail }));
+  if (sc.detail && !(sc.completed && /^final$/i.test(sc.detail))) {
+    meta.push(h("span", { class: `lv-detail${sc.delayed ? " lv-detail--delayed" : ""}`, "data-hook": sc.delayed ? "live-score-delayed" : "live-period", text: sc.detail }));
+  }
+  // an in-play price is the last one a book showed, not a quote to bet at: say when it was read, per game
+  if (live && !sc.completed && toDate(ev.observed_utc)) {
+    meta.push(h("span", { class: "lv-when", "data-hook": "live-price-read", text: `Price read ${formatStamp("t", ev.observed_utc)}` }));
+  }
   const li = h("li", { class: "lv-row", id: `lv-ev-${ev.event_id}`, "data-hook": "live-row", "data-event": ev.event_id, "data-family": ev._family, "data-live": live ? "true" : "false" });
   const open = state.trays.has(ev.event_id);
   const btn = h("button", { type: "button", class: "lv-send", "data-hook": "live-send", "data-event": ev.event_id,
@@ -321,13 +329,22 @@ function renderStatus() {
   const box = q("live-status");
   if (!box) return;
   const parts = [];
-  const gen = toDate(state.data && state.data.generated_utc);
-  if (gen) {
-    const age = Math.max(0, Math.round((now().getTime() - gen.getTime()) / 60000));
-    parts.push(`Board as of ${formatStamp("c", state.data.generated_utc)}`);
+  const anyLive = families().some((f) => f.live.some((e) => !(e.score && e.score.completed)));
+  const sc = state.data && state.data.scores;
+  const upd = toDate(sc && sc.updated_utc);
+  if (upd) {
+    const secs = Math.max(0, Math.round((now().getTime() - upd.getTime()) / 1000));
+    parts.push(secs < 90 ? `Scores updated ${secs} sec ago` : `Scores updated ${spanText(Math.round(secs / 60))} ago`);
+  } else if (anyLive) {
+    parts.push("Scores delayed");
+  }
+  const read = toDate(state.data && state.data.prices_observed_utc);
+  if (read) {
+    const age = Math.max(0, Math.round((now().getTime() - read.getTime()) / 60000));
+    parts.push(`Prices read ${formatStamp("c", state.data.prices_observed_utc)}`);
     if (age >= STALE_MINUTES) parts.push(`${spanText(age)} old, so prices may have moved`);
   }
-  parts.push("refreshes every minute");
+  parts.push("page checks again every minute");
   box.textContent = parts.join(" · ") + ".";
   box.setAttribute("data-stale", state.failed ? "true" : "false");
   const warn = q("live-refresh-note");

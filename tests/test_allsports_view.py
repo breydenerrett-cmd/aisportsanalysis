@@ -231,14 +231,14 @@ def standard_now_rows():
 
 class TheSportsNowBoard(unittest.TestCase):
     def body(self, rows=None, scores=None):
-        return V.sports_now(NOW, rows=standard_now_rows() if rows is None else rows, scores_index=scores or {})
+        return V.sports_now(NOW, rows=standard_now_rows() if rows is None else rows, scores_index=scores or {}, feed_answers={})
 
     def family(self, body, code):
         return next(f for f in body["families"] if f["code"] == code)
 
     def test_the_shape_and_catalog_order(self):
         body = self.body()
-        self.assertEqual(set(body), {"generated_utc", "families", "paper_only"})
+        self.assertEqual(set(body), {"generated_utc", "families", "paper_only", "prices_observed_utc", "scores"})
         self.assertEqual(body["generated_utc"], "2026-10-20T18:00:00Z")
         order = [f["code"] for f in body["families"]]
         self.assertEqual(order, ["MLB", "NBA", "SOCCER", "TENNIS", "CRICKET"])
@@ -364,11 +364,11 @@ class TheUiContract(unittest.TestCase):
         rows = standard_now_rows()
         scores = {"nba_live": {"home_score": 61, "away_score": 58, "completed": False,
                                "observed_utc": iso(NOW - timedelta(minutes=10))}}
-        event = V.sports_now(NOW, rows=rows, scores_index=scores)["families"][1]["live"][0]
+        event = V.sports_now(NOW, rows=rows, scores_index=scores, feed_answers={})["families"][1]["live"][0]
         self.assertEqual((event["score"]["home"], event["score"]["away"], event["score"]["detail"]),
                          (61, 58, "Live"))
         scores["nba_live"]["completed"] = True
-        done = V.sports_now(NOW, rows=rows, scores_index=scores)["families"][1]["live"][0]
+        done = V.sports_now(NOW, rows=rows, scores_index=scores, feed_answers={})["families"][1]["live"][0]
         self.assertEqual(done["score"]["detail"], "Final")
 
 

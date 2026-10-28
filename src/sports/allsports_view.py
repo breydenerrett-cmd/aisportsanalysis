@@ -27,7 +27,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Callable, Iterable, Mapping, Optional
 
 from src.core import odds as odds_math
-from src.sports import catalog
+from src.sports import catalog, live_feed
 
 TTL_SECONDS = 30.0
 LIVE_FRESH_MINUTES = 90
@@ -136,19 +136,58 @@ def _with_score(event: dict, scores_index: Optional[Mapping], now: datetime) -> 
     return event
 
 
+def _apply_feed(events: Mapping, now: datetime, answers: Optional[Mapping] = None) -> None:
+    """Lay the live ESPN feed (src/sports/live_feed.py) over the events it covers, in place.
+
+    The odds snapshot says a game is "live" only because it was priced after the start; it knows nothing about the
+    game. The feed does. A fresh matched answer decides: live keeps the game on the board WITH its score, period and
+    clock; final keeps it as a Final card for the rest of its window; postponed or cancelled takes it off the live list.
+    No fresh answer for a covered game means a "Score delayed" marker, never a stored score from hours ago.
+    `answers` is the injection point (tests); production asks the feed's cache."""
+    if answers is None:
+        answers = live_feed.answers_for(events.values(), now)
+    for event_id, ans in answers.items():
+        event = events.get(event_id)
+        if event is None:
+            continue
+        state = ans.get("state")
+        if state is None:
+            event["_feed_unknown"] = True
+            if event["in_play"] and ans.get("delayed"):
+                event["score"] = {"home": None, "away": None, "detail": "Score delayed", "completed": False,
+                                  "delayed": True, "as_of": None, "source": "espn"}
+            continue
+        event["_feed_known"] = True
+        if state == "live":
+            event["in_play"] = True
+            event["score"] = ans["score"]
+        elif state == "final":
+            if event["_in_window"]:
+                event["in_play"] = True              # shown on the board as a Final card until its window closes
+                event["score"] = ans["score"]
+            else:
+                event["in_play"] = False
+        elif state in ("postponed", "cancelled"):
+            event["in_play"] = False
+            event["_off"] = True
+        elif state == "upcoming" and event["in_play"] and event["_in_window"]:
+            event["in_play"] = False                 # priced after its listed start but the scoreboard says not started
+
+
 def _public(event: dict) -> dict:
     return {k: v for k, v in event.items() if not k.startswith("_") and k != "family"
             and not (k == "best_price_draw" and v is None)}
 
 
 def sports_now(now: Optional[datetime] = None, *, rows: Optional[Iterable[Mapping]] = None,
-               scores_index: Optional[Mapping] = None, path=None) -> dict:
+               scores_index: Optional[Mapping] = None, path=None, feed_answers: Optional[Mapping] = None) -> dict:
     """GET /sports/now: {generated_utc, families: [{code, label, live, upcoming_24h, next_start_utc}]}.
 
     Families with nothing live and nothing upcoming are left out; the rest follow the catalog order, so MLB
     and NFL lead and the order never depends on which sport happens to be busy. `rows` and `scores_index`
     are the injection points (tests pass fixture rows; production reads the stores)."""
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    from_store = rows is None
     if rows is None:
         rows = read_recent_rows(now, path=path)
     if scores_index is None:
@@ -158,6 +197,9 @@ def sports_now(now: Optional[datetime] = None, *, rows: Optional[Iterable[Mappin
         except Exception:  # noqa: BLE001 -- a score is a nicety; the board stands without it
             scores_index = {}
     events = build_events(rows, now)
+    if from_store:
+        _remember_events(events, now)
+    _apply_feed(events, now, feed_answers)
     horizon = now + timedelta(hours=UPCOMING_HOURS)
     families = []
     for code in catalog.family_codes():
@@ -166,8 +208,11 @@ def sports_now(now: Optional[datetime] = None, *, rows: Optional[Iterable[Mappin
             if event["family"] != code:
                 continue
             start = event["_start"]
+            if event.get("_off"):
+                continue
             if event["in_play"]:
-                live.append(_with_score(event, scores_index, now))
+                live.append(event if event.get("score") or event.get("_feed_known") or event.get("_feed_unknown")
+                            else _with_score(event, scores_index, now))
             elif start > now:
                 future.append(start)
                 if start <= horizon:
@@ -181,7 +226,41 @@ def sports_now(now: Optional[datetime] = None, *, rows: Optional[Iterable[Mappin
             "live": [_public(e) for e in live], "upcoming_24h": [_public(e) for e in upcoming],
             "next_start_utc": _iso(min(future)) if future else None,
         })
-    return {"generated_utc": _iso(now), "families": families, "paper_only": True}
+    observed = [e["observed_utc"] for f in families for e in f["live"] + f["upcoming_24h"] if e.get("observed_utc")]
+    fed = live_feed.last_fetched(now) if feed_answers is None else _newest_as_of(feed_answers)
+    delayed = any(e.get("score", {}).get("delayed") for f in families for e in f["live"])
+    return {"generated_utc": _iso(now), "families": families, "paper_only": True,
+            "prices_observed_utc": max(observed) if observed else None,
+            "scores": {"source": "espn", "updated_utc": _iso(fed) if fed else None,
+                       "age_seconds": int((now - fed).total_seconds()) if fed else None,
+                       "stale_after_seconds": int(live_feed.STALE_AFTER_SECONDS), "delayed": bool(delayed)}}
+
+
+def _newest_as_of(answers: Mapping) -> Optional[datetime]:
+    stamps = [_parse((a.get("score") or {}).get("as_of")) for a in answers.values()]
+    stamps = [s for s in stamps if s]
+    return max(stamps) if stamps else None
+
+
+_events_memo: dict = {}
+
+
+def _remember_events(events: Mapping, now: datetime) -> None:
+    with _lock:
+        _events_memo["at"], _events_memo["events"] = time.monotonic(), events
+
+
+def current_events() -> list:
+    """The board's internal events for the live-feed loop to decide which leagues to read: the ones the last
+    store read built (at most `2 * TTL_SECONDS` old), else a fresh read."""
+    with _lock:
+        at, events = _events_memo.get("at"), _events_memo.get("events")
+    if events is not None and time.monotonic() - at < 2 * TTL_SECONDS:
+        return list(events.values())
+    now = datetime.now(timezone.utc)
+    built = build_events(read_recent_rows(now), now)
+    _remember_events(built, now)
+    return list(built.values())
 
 
 def cached_sports_now(now: Optional[datetime] = None) -> dict:
@@ -200,6 +279,7 @@ def cached_sports_now(now: Optional[datetime] = None) -> dict:
 def clear_cache() -> None:
     with _lock:
         _cache.clear()
+        _events_memo.clear()
 
 
 def live_elsewhere(own_sports: Iterable[str], now: Optional[datetime] = None, *,

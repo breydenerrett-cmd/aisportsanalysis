@@ -1,5 +1,7 @@
 {
  "generated_utc": "2026-10-19T23:30:00Z",
+ "prices_observed_utc": "2026-10-19T23:30:00Z",
+ "scores": {"source": "espn", "updated_utc": "2026-10-19T23:29:40Z", "age_seconds": 20, "stale_after_seconds": 180, "delayed": false},
  "families": [
   {
    "code": "soccer",

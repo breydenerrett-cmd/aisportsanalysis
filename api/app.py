@@ -398,6 +398,24 @@ def _start_live_settle() -> None:
     live_settle.start_loop(ready=_warm_up_done)
 
 
+# -- live scores for the Live board (src/sports/live_feed.py) -----------------------------------------------------
+#
+# The board's score, period and clock used to come from The Odds API /scores store: polled every two hours at most, committed
+# to git and shipped with the next image (owner complaint 2026-10-27: 3-0 on the page, 3-1 in the 2nd on ESPN). One daemon
+# thread now reads the FREE ESPN scoreboard JSON every 45 s for ONLY the leagues with a game in play or about to start (no
+# Odds API credit), and /sports/now overlays it with a staleness guard ("Score delayed" instead of an old score).
+# ON by default in code; LIVE_FEED=off stops it; never starts under pytest.
+@app.on_event("startup")
+def _start_live_feed() -> None:
+    from src.sports import allsports_view, live_feed
+
+    def _warm_up_done() -> bool:
+        status = warmup.status()
+        return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
+
+    live_feed.start_loop(allsports_view.current_events, ready=_warm_up_done)
+
+
 # -- transactional email (src/notify/email_jobs.py) ----------------------------------------------------------
 #
 # The nightly result (about 09:00 Eastern, once the overnight settlement has run) and the Sunday pack (10:00

@@ -189,9 +189,18 @@ export function eventLiveModel(ev, state) {
     detail = st.detail ? String(st.detail) : "";
   }
   const own = ev.score;
-  if (own && typeof own === "object") {
+  // The board's own score from the live feed (source "espn", refreshed every ~45 s) is newer than the grader cache
+  // (/hounds/live, refreshed every 5 minutes), so it wins; a "delayed" marker carries no numbers and never wins.
+  if (own && typeof own === "object" && own.source === "espn" && !own.delayed && num(own.away) !== null && num(own.home) !== null) {
+    away = num(own.away);
+    home = num(own.home);
+    detail = own.detail ? String(own.detail) : "";
+    if (own.completed === true) { kind = "final"; label = "FINAL"; }
+  } else if (own && typeof own === "object") {
+    if (own.delayed === true) { away = null; home = null; detail = "Score delayed"; }
     if (away === null || home === null) { away = num(own.away); home = num(own.home); }
     if (!detail && own.detail) detail = String(own.detail);
+    if (own.delayed === true) detail = "Score delayed";
   } else if (typeof own === "string" && !detail) {
     detail = own;
   }

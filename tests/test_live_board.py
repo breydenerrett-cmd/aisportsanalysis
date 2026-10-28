@@ -164,8 +164,11 @@ class TheBoardRenders(unittest.TestCase):
         self.assertEqual(f["pressed"], [f["chips"][0]])
         labels = {x["label"] for x in FIXTURE["families"]}
         self.assertEqual({re.sub(r"\s*\d+$", "", c) for c in f["chips"][1:]}, labels)
-        self.assertIn("Board as of 4:30 PM PT", f["status"])
-        self.assertIn("refreshes every minute", f["status"])
+        # the status line states the age of the DATA (scores from the feed, the newest price read), never the server's own clock
+        self.assertIn("Scores updated 20 sec ago", f["status"])
+        self.assertIn("Prices read 4:30 PM PT", f["status"])
+        self.assertIn("page checks again every minute", f["status"])
+        self.assertNotIn("Board as of", f["status"])
 
     def test_a_row_shows_both_sides_the_league_the_prices_and_the_viewers_clock(self):
         out = board(queries=[
