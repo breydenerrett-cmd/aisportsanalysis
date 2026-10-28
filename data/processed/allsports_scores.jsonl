@@ -4265,3 +4265,13 @@
 {"credits": 2, "days_from": 3, "events": 38, "kind": "poll", "observed_utc": "2026-10-28T07:13:40.631298+00:00", "sport_key": "basketball_nba"}
 {"credits": 2, "days_from": 3, "events": 36, "kind": "poll", "observed_utc": "2026-10-28T07:38:11.515363+00:00", "sport_key": "soccer_spain_copa_del_rey"}
 {"errors": [], "events": 2, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 1, "observed_utc": "2026-10-28T07:47:40.555775Z", "source": "espn_tennis", "unmatched": 1, "unmatched_ids": ["fc557e2864fbe07964a9d288a81d5009"], "void": 0, "written": 0}
+{"credits": 2, "days_from": 3, "events": 7, "kind": "poll", "observed_utc": "2026-10-28T09:00:19.248710+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 31, "kind": "poll", "observed_utc": "2026-10-28T09:00:19.248710+00:00", "sport_key": "boxing_boxing"}
+{"away_score": null, "away_team": "Samsung Lions", "commence_time": "2026-10-29T09:30:00Z", "completed": false, "event_id": "16b55265442558267fb4b43d29e4950c", "home_score": null, "home_team": "Kia Tigers", "kind": "score", "last_update": null, "observed_utc": "2026-10-28T09:00:19.248710+00:00", "outcome": null, "scores": null, "sport_key": "baseball_kbo"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-10-28T09:00:19.248710+00:00", "sport_key": "baseball_kbo"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-28T09:00:19.248710+00:00", "sport_key": "cricket_international_t20"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-28T09:00:19.248710+00:00", "sport_key": "cricket_odi"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-10-28T09:00:19.248710+00:00", "sport_key": "baseball_npb"}
+{"credits": 2, "days_from": 3, "events": 7, "kind": "poll", "observed_utc": "2026-10-28T09:00:19.248710+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 7, "kind": "poll", "observed_utc": "2026-10-28T09:00:19.248710+00:00", "sport_key": "soccer_finland_veikkausliiga"}
+{"errors": [], "events": 2, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 1, "observed_utc": "2026-10-28T09:00:21.318795Z", "source": "espn_tennis", "unmatched": 1, "unmatched_ids": ["fc557e2864fbe07964a9d288a81d5009"], "void": 0, "written": 0}
