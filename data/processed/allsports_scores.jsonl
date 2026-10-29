@@ -4763,3 +4763,5 @@
 {"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-10-29T12:44:46.597004+00:00", "sport_key": "baseball_npb"}
 {"errors": [], "events": 5, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 3, "observed_utc": "2026-10-29T13:11:27.091698Z", "source": "espn_tennis", "unmatched": 2, "unmatched_ids": ["fc557e2864fbe07964a9d288a81d5009", "ad2ec395411c7dd956e92178f00c0c8d"], "void": 0, "written": 0}
 {"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-29T13:36:52.875121+00:00", "sport_key": "cricket_test_match"}
+{"away_score": null, "away_team": "Oviedo", "commence_time": "2026-10-29T17:00:00Z", "completed": false, "event_id": "62876f8f2e3c8436210ea1401605ba9a", "home_score": null, "home_team": "Numancia", "kind": "score", "last_update": null, "observed_utc": "2026-10-29T14:02:33.846451+00:00", "outcome": null, "scores": null, "sport_key": "soccer_spain_copa_del_rey"}
+{"credits": 2, "days_from": 3, "events": 32, "kind": "poll", "observed_utc": "2026-10-29T14:02:33.846451+00:00", "sport_key": "soccer_spain_copa_del_rey"}
