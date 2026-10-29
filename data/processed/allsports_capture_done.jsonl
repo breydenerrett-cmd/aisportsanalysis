@@ -9433,3 +9433,8 @@
 {"call_kind": "pregame", "credits": 2, "events": 11, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-29T15:39:14.268145Z", "regions": ["us"], "rows": 132, "sport_key": "soccer_sweden_allsvenskan", "stored": 41}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T15:39:14.268145Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 2}
 {"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T15:39:14.268145Z", "regions": ["us"], "rows": 40, "sport_key": "tennis_atp_swiss_indoors", "stored": 40}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-29T21:50:53.676925Z", "observed_utc": "2026-10-29T15:50:53.676925Z", "sport_key": "aussierules_afl"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-29T16:20:53.676925Z", "observed_utc": "2026-10-29T15:50:53.676925Z", "sport_key": "soccer_turkey_super_league"}
+{"commence_utc": "2026-10-29T17:45:00Z", "event_id": "e439189529c20f665934f4eddb3e906a", "kind": "phase", "observed_utc": "2026-10-29T15:50:53.676925Z", "phase": "t2h", "rows": 7, "sport_key": "soccer_uefa_champs_league_women"}
+{"commence_utc": "2026-10-29T17:45:00Z", "event_id": "d73afd388efbc6f58d71a2d7856e4c8e", "kind": "phase", "observed_utc": "2026-10-29T15:50:53.676925Z", "phase": "t2h", "rows": 6, "sport_key": "soccer_uefa_champs_league_women"}
+{"call_kind": "pregame", "credits": 2, "events": 4, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-29T15:50:53.676925Z", "regions": ["us"], "rows": 25, "sport_key": "soccer_uefa_champs_league_women", "stored": 25}
