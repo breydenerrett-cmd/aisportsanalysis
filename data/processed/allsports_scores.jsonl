@@ -4740,3 +4740,5 @@
 {"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-29T10:35:11.969327+00:00", "sport_key": "cricket_international_t20"}
 {"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-10-29T10:35:11.969327+00:00", "sport_key": "baseball_npb"}
 {"errors": [], "events": 2, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-10-29T11:00:26.737797Z", "source": "espn_tennis", "unmatched": 2, "unmatched_ids": ["fc557e2864fbe07964a9d288a81d5009", "ad2ec395411c7dd956e92178f00c0c8d"], "void": 0, "written": 0}
+{"away_score": null, "away_team": "West Indies", "commence_time": "2026-10-30T03:30:00Z", "completed": false, "event_id": "b85291bc7008283d1887528a79365f2d", "home_score": null, "home_team": "Bangladesh", "kind": "score", "last_update": null, "observed_utc": "2026-10-29T11:26:40.704615+00:00", "outcome": null, "scores": null, "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-29T11:26:40.704615+00:00", "sport_key": "cricket_test_match"}

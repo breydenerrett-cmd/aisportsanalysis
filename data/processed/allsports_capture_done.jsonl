@@ -9253,3 +9253,7 @@
 {"events": 9, "kind": "peek", "next_check_utc": "2026-10-29T17:13:35.213144Z", "observed_utc": "2026-10-29T11:13:35.213144Z", "sport_key": "soccer_mexico_ligamx"}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T11:13:35.213144Z", "regions": ["us"], "rows": 7, "sport_key": "baseball_kbo", "stored": 7}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T11:13:35.213144Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 2}
+{"commence_utc": "2026-10-29T11:45:00Z", "event_id": "e07a0c44571a3f1c7d61184d90fc2e8c", "kind": "phase", "observed_utc": "2026-10-29T11:26:35.275607Z", "phase": "t30m", "rows": 1, "sport_key": "boxing_boxing"}
+{"call_kind": "pregame", "credits": 1, "events": 37, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T11:26:35.275607Z", "regions": ["us"], "rows": 97, "sport_key": "boxing_boxing", "stored": 4}
+{"commence_utc": "2026-10-30T05:30:00Z", "event_id": "97cd96668035a40fb27d5c40998e6fb0", "kind": "phase", "observed_utc": "2026-10-29T11:26:35.275607Z", "phase": "t24h", "rows": 3, "sport_key": "tennis_wta_pan_pacific_open"}
+{"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T11:26:35.275607Z", "regions": ["us"], "rows": 23, "sport_key": "tennis_wta_pan_pacific_open", "stored": 23}
