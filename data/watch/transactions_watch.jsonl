@@ -6299,3 +6299,10 @@
 {"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T19:10:25.373311+00:00", "player": "Victor Robles", "player_id": 645302, "team": "SEA", "transaction_id": 947277}
 {"fetched_utc": "2026-10-29T19:25:33.156157+00:00", "game_date": "2026-10-29", "poll": true}
 {"fetched_utc": "2026-10-29T19:39:48.003862+00:00", "game_date": "2026-10-29", "poll": true}
+{"fetched_utc": "2026-10-29T19:59:27.159256+00:00", "game_date": "2026-10-29", "poll": true}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T19:59:27.159256+00:00", "player": "Grant McCray", "player_id": 687529, "team": "SEA", "transaction_id": 947278}
+{"category": "il_activation", "date": "2026-10-29", "first_seen_utc": "2026-10-29T19:59:27.159256+00:00", "player": "Matt Gage", "player_id": 657424, "team": "SF", "transaction_id": 947279}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T19:59:27.159256+00:00", "player": "Matt Gage", "player_id": 657424, "team": "SF", "transaction_id": 947280}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T19:59:27.159256+00:00", "player": "Osleivis Basabe", "player_id": 678545, "team": "SF", "transaction_id": 947281}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T19:59:27.159256+00:00", "player": "Jason Foley", "player_id": 671345, "team": "SF", "transaction_id": 947282}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T19:59:27.159256+00:00", "player": "Braxton Roxby", "player_id": 694820, "team": "WSH", "transaction_id": 947283}
