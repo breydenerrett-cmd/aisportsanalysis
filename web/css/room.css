@@ -54,7 +54,8 @@
   overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin;
 }
 .rm[data-empty="true"] .rm-frame { display: none; }
-.rm-stage { position: relative; width: max(100%, 860px); aspect-ratio: 1000 / 600; container-type: inline-size; --rm-pitch: 110; --rm-bmax: 200; }
+/* isolation: each hound's inline z-index is its row on the floor (up to ~600); kept inside the stage so no page sheet is ever drawn under the room */
+.rm-stage { position: relative; isolation: isolate; width: max(100%, 860px); aspect-ratio: 1000 / 600; container-type: inline-size; --rm-pitch: 110; --rm-bmax: 200; }
 /* The room is 1000 view units across and as tall as its rows (room-scene.js sets the aspect-ratio, --rm-pitch (one seat's width) and --rm-bmax (the widest
    label: two seats less a gap) from room-layout.js planRoom). 1 view unit = .1cqw. Each zone's band is an invisible rect: its boundary. */
 .rm-zone { fill: none; stroke: none; pointer-events: none; }

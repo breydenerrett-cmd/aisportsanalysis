@@ -1234,5 +1234,13 @@ class LabelLayout(unittest.TestCase):
         self.assertLessEqual(max(travel), 8)
 
 
+class RoomStaysUnderSheets(unittest.TestCase):
+    def test_the_stage_contains_its_hounds_z_index(self):
+        # production 2026-10-29: hounds (inline z-index = their row, up to ~600) were drawn over the training sheet (z-index 200)
+        css = re.sub(r"/\*.*?\*/", "", read("css/room.css"), flags=re.S)
+        stage = re.search(r"\.rm-stage \{([^}]*)\}", css).group(1)
+        self.assertIn("isolation: isolate", stage)
+
+
 if __name__ == "__main__":
     unittest.main()
