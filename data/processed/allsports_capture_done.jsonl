@@ -9300,3 +9300,8 @@
 {"commence_utc": "2026-10-29T18:00:00Z", "event_id": "469414b1f7140ce19e5bdd1ae77ffff2", "kind": "phase", "observed_utc": "2026-10-29T12:05:28.208578Z", "phase": "t6h", "rows": 14, "sport_key": "soccer_sweden_allsvenskan"}
 {"call_kind": "pregame", "credits": 2, "events": 11, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-29T12:05:28.208578Z", "regions": ["us"], "rows": 132, "sport_key": "soccer_sweden_allsvenskan", "stored": 41}
 {"call_kind": "inplay", "credits": 1, "events": 36, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T12:05:28.208578Z", "regions": ["us"], "rows": 95, "sport_key": "boxing_boxing", "stored": 1}
+{"events": 35, "kind": "peek", "next_check_utc": "2026-10-29T18:18:31.087561Z", "observed_utc": "2026-10-29T12:18:31.087561Z", "sport_key": "boxing_boxing"}
+{"commence_utc": "2026-10-29T14:10:00Z", "event_id": "9da35734a02ec2627cd4034086584157", "kind": "phase", "observed_utc": "2026-10-29T12:18:31.087561Z", "phase": "t2h", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
+{"commence_utc": "2026-10-29T18:10:00Z", "event_id": "53d4ccf860436088aa717efdf2c38d25", "kind": "phase", "observed_utc": "2026-10-29T12:18:31.087561Z", "phase": "t6h", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
+{"call_kind": "pregame", "credits": 1, "events": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T12:18:31.087561Z", "regions": ["us"], "rows": 51, "sport_key": "tennis_atp_swiss_indoors", "stored": 51}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T12:18:31.087561Z", "regions": ["au"], "rows": 10, "sport_key": "cricket_test_match", "stored": 8}
