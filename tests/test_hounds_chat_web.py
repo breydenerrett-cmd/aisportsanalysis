@@ -57,7 +57,7 @@ OPEN = [dict(do="click", sel="[data-hook='dog-avatar']", label="open", wait=120)
 
 
 def open_ask(extra=(), **kw):
-    actions = OPEN + [dict(do="click", sel="[role='tab'][data-tab='ask']", label="ask", wait=300, capture=kw.pop("capture", []))] + list(extra)
+    actions = OPEN + [dict(do="click", sel="[role='tab'][data-tab='coach']", label="ask", wait=300, capture=kw.pop("capture", []))] + list(extra)
     return run_page("kennel", routes=kw.pop("routes", routes()), **SIGNED, actions=actions, **kw)
 
 
@@ -71,7 +71,7 @@ class TheThread(unittest.TestCase):
             q("classic", "[data-hook='ask-thread']", "count"), q("clear", "[data-hook='chat-clear']"),
             q("allowance", "[data-hook='chat-allowance']"), q("input", "[data-hook='chat-input']", "disabled")])
         cap = out["captures"]["ask"]
-        self.assertEqual(cap["selected"], ["Ask"])
+        self.assertEqual(cap["selected"], ["Coach"])        # the chat is the top of the Coach tab (2026-10-29)
         self.assertEqual(cap["you"], ["Bet fewer games a day"])
         self.assertEqual(cap["hound"], ["I'd cut it to one bet a day and double the stake.", "Tap Apply to make it so."])
         self.assertEqual((cap["rows_you"], cap["rows_hound"], cap["faces"]), (1, 1, 1), "the hound's line carries its face, the member's does not")
@@ -218,7 +218,7 @@ class TheCard(unittest.TestCase):
         v2 = dog("u-2", name="Underdog Gus", version_no=2)
         v2["root_id"] = "u-1"
         out = run_page("kennel", routes=base, **SIGNED, switchAfter={"/hounds/kennels/mine": [1, mine([v2])]}, actions=OPEN + [
-            dict(do="click", sel="[role='tab'][data-tab='ask']", label="ask", wait=300),
+            dict(do="click", sel="[role='tab'][data-tab='coach']", label="ask", wait=300),
             dict(do="click", sel="[data-hook='chat-apply']", label="apply", wait=300, capture=[
                 q("status", "[data-hook='chat-proposal']", "attr", attr="data-status"), q("result", "[data-hook='chat-proposal-status']"),
                 q("buttons", "[data-hook='chat-apply']", "count"), q("notice", "[data-hook='chat-notice']"),
@@ -231,7 +231,7 @@ class TheCard(unittest.TestCase):
         self.assertEqual(cap["buttons"], 0)
         self.assertIn("now on version 2", cap["notice"])
         self.assertEqual(cap["version"], "v2", "the studio points at the next version")
-        self.assertEqual((cap["selected"], cap["thread"]), (["Ask"], 1), "the conversation carries on in the same tab")
+        self.assertEqual((cap["selected"], cap["thread"]), (["Coach"], 1), "the conversation carries on in the same tab")
         mine_loads = [g for g in out["gets"] if g.endswith("/hounds/kennels/mine")]
         self.assertGreaterEqual(len(mine_loads), 2, "the kennel was read again after the apply")
 
@@ -240,7 +240,7 @@ class TheCard(unittest.TestCase):
         base["POST /hounds/u-2/chat"] = [200, TheBox.REPLY]
         v2 = dog("u-2", name="Underdog Gus", version_no=2)
         out = run_page("kennel", routes=base, **SIGNED, switchAfter={"/hounds/kennels/mine": [1, mine([v2])]}, actions=OPEN + [
-            dict(do="click", sel="[role='tab'][data-tab='ask']", label="ask", wait=300),
+            dict(do="click", sel="[role='tab'][data-tab='coach']", label="ask", wait=300),
             dict(do="click", sel="[data-hook='chat-apply']", label="apply", wait=300),
             dict(do="set", sel="[data-hook='chat-input']", value="Did that work?", label="typed", wait=10),
             dict(do="click", sel="[data-hook='chat-send']", label="sent", wait=200)])

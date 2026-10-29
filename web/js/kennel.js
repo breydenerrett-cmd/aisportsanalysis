@@ -8,15 +8,18 @@
  * Unleash, Send to training, Edit and Take them out back (the burial, styled as the destructive act; see dog-rites.js); the member plan
  * card ONLY when earned (a free account at its one hound, or the studio showed the server's upgrade prompt for a paid tool); the Training camp
  * (learning.html is part of My Kennel); the latest settled results; the public page and rename links; and the Graveyard. With no hound the
- * page is one button, "Create your first hound" (the quiz). Tapping a card's art opens the STUDIO, an in-place drawer with six tabs that
- * REUSE the dog page's and the builder's own modules, never a copy of their logic (Ask, Backtest and Remove live there, not on the card):
+ * page is one button, "Create your first hound" (the quiz). Tapping a card's art opens the STUDIO, an in-place drawer that REUSES the dog
+ * page's and the builder's own modules, never a copy of their logic. OWNER, 2026-10-29: it had seven tabs and a fork at every turn; it is a
+ * header and THREE tabs now (the old names still work as ?tab= values: studio-tabs.js maps them):
  *
- *   Look     dog-locker.js          the locker room, previewed live on the animated avatar
- *   Rules    hounds-build.js        the English box and the rule cards (builder-skeleton.js), saved as a new version
- *   Unleash  dog-fire.js            "Unleash": starts the hound betting today (paper), then shows the day and what it would have taken before
- *   Backtest dog-backtest.js        the rule over 7 / 14 / 30 days or Season 2 of stored boards, in paper dollars (hindsight)
- *   Ask      dog-ask.js             the dog's answers, worked out from its own data
- *   Record   dog-manual.js + tickets  the season record, the manual picks and the last tickets
+ *   header   the hound's picture (tap it: the Look editor, dog-locker.js), name, version, status; Unleash (dog-fire.js: starts the hound
+ *            betting today, paper), Train (dog-rites.js) and a ... menu with Versions, Take them out back and Remove
+ *   Overview dog-manual.js + tickets  the season record, bankroll line, open and settled tickets, the Apprentice's lessons; the Unleash panel
+ *            opens at its top; an empty slot (studio-analyze) is held for the Analyze report
+ *   Rules    hounds-build.js        ONE page: the hound's sports as chips, markets / price / bets a day, the rule in words, a live "Past 14
+ *            days with these rules" line (the builder's 14-day hindsight), the full test (dog-backtest.js) behind a button, the rule cards
+ *            folded under "Advanced", and "Save as v{N+1}" (builder-skeleton.js)
+ *   Coach    dog-chat.js / dog-ask.js  the chat or the computed Ask, then Training, then the Versions list (dog-versions.js)
  *
  * KENNEL NAMES. Until a member names their kennel it is "Handler 21E8"; the first visit to My kennel asks once ("Name your
  * kennel", PUT /me/kennel; "Not now" is remembered by the server) and a "Rename kennel" button stays on the page. The
@@ -43,7 +46,8 @@ import { signedIn, get, put, errorText, SIGNIN_HREF, removeDog, removedText } fr
 import { dogBadge, DEFAULT_LOOK, lookFor } from "./dog-avatar.js";
 import { activityStrip, quietKennel, fetchStream, tonightInfo, tonightStrip, todayLine, upgradeCard } from "./kennel-extras.js";
 import { loadFoundingOffer } from "./pricing.js";
-import { startTraining, startOutBack } from "./dog-rites.js";
+import { startTraining, startOutBack, reducedMotion } from "./dog-rites.js";
+import { studioTarget, isStudioTab } from "./studio-tabs.js";
 import { mountVersions } from "./dog-versions.js";
 import { headstoneCard, trainedBadge } from "./dog-headstone.js";
 import { mountTabs } from "./tabs.js";
@@ -77,10 +81,9 @@ const state = {
   founding: null,           // pricing.js loadFoundingOffer(): the real founding offer, or null
   tonight: null,            // tonightInfo(...) for the open tickets, or null until (or unless) they are read
   upgradeTapped: false,     // the studio showed the server's upgrade prompt for a paid tool
+  pending: null,            // what the tab being opened was asked for besides its content: {tab, fire, autofire, look, test, versions}
+  fullTest: null,           // {open(on)} for the Rules tab's "See the full test"
 };
-
-const STUDIO_TAB_KEYS = ["look", "rules", "fire", "backtest", "ask", "record", "versions", "lessons"];
-const STUDIO_TABS = ["look", "fire", "backtest", "ask", "record", "versions", "lessons"];   // the tabs that are cleared between dogs (rules is the builder's)
 
 const stop = (e) => { if (e && e.stopPropagation) e.stopPropagation(); };
 
@@ -152,13 +155,9 @@ export function heroStatus(dog, info) {
   return { key, word, detail: "Bets when a game fits its rule" };
 }
 
-/** The tab a hound opens on: its Record when it has tickets (open or settled), else Look. */
-export function defaultTab(dog) {
-  if (!dog) return "look";
-  const open = Number.isFinite(dog.open_bets) ? dog.open_bets : 0;
-  const settled = Number.isFinite(dog.settled) ? dog.settled : 0;
-  const bets = dog.record && Number.isFinite(dog.record.bets) ? dog.record.bets : 0;
-  return open + settled + bets > 0 ? "record" : "look";
+/** The tab a hound opens on: Overview, whatever it has done (owner, 2026-10-29: Look and Record are not separate tabs any more). */
+export function defaultTab() {
+  return "overview";
 }
 
 function lastPickText(dog) {
@@ -190,8 +189,8 @@ function dogCard(dog, { mine }, index) {
   const rec = dog.record || {};
   const mood = moodOf(dog);
   const open = () => openStudio(dog.id, defaultTab(dog), card);
-  // KENNEL-FIRST (owner ruling 2026-10-20): the card offers Unleash, Send to training, Edit and Take them out back, and nothing else. Ask, Backtest and Remove live in
-  // the studio (tap the card's art); the hound's page is its name.
+  // KENNEL-FIRST (owner ruling 2026-10-20): the card offers Unleash, Send to training, Edit and Take them out back, and nothing else. Ask, the full test and Remove live in
+  // the studio (tap the card's art); the hound's page is its name. Edit opens the studio's Rules tab; the art opens its Overview.
   const actions = mine && !dog.retired
     ? [
       h("button", { type: "button", class: "kn-act kn-act--primary", "data-hook": "dog-action-fire", text: "Unleash",
@@ -646,7 +645,8 @@ function studioDog() {
   return state.open && state.open !== "new" ? dogById(state.open) : null;
 }
 
-/** The ⋯ menu (Remove from my kennel lives in it, behind the person's own confirmation: dog-common.js removeDog). */
+/** The ⋯ menu: Versions (a hound that has been through more than one), Take them out back, and Remove from my kennel (each behind the
+ *  person's own confirmation: dog-rites.js, dog-common.js removeDog). */
 function setMenu(open) {
   const menu = q("studio-menu");
   const more = q("studio-more");
@@ -656,26 +656,38 @@ function setMenu(open) {
 
 const chip = (text, extra = {}) => h("span", Object.assign({ class: "kn-chip", text }, extra));
 
+/** Has the hound anything on its ledger (an open ticket, a settled one or a counted bet)? A hound that has gets the "it is going" status
+ *  panel when Unleash opens, not the first-time copy. */
+function hasTickets(dog) {
+  if (!dog) return false;
+  const open = Number.isFinite(dog.open_bets) ? dog.open_bets : 0;
+  const settled = Number.isFinite(dog.settled) ? dog.settled : 0;
+  const bets = dog.record && Number.isFinite(dog.record.bets) ? dog.record.bets : 0;
+  return open + settled + bets > 0;
+}
+
 function paintStudioHead(look) {
   const dog = studioDog();
   const av = clearNode(q("studio-avatar"));
   const sub = q("studio-sub");
-  const remove = q("studio-remove");
-  const more = q("studio-more");
   const chips = clearNode(q("studio-chips"));
   const status = clearNode(q("studio-status"));
-  const canRemove = !!(dog && !dog.retired);
-  if (remove) remove.hidden = !canRemove;
-  if (more) more.hidden = !canRemove;
+  const live = !!(dog && !dog.retired);
+  if (q("studio-actions")) q("studio-actions").hidden = !live;
+  if (q("studio-remove")) q("studio-remove").hidden = !live;
+  if (q("studio-versions-open")) q("studio-versions-open").hidden = !(live && Number(dog.version_no) > 1);
   setMenu(false);
   if (!dog) {
+    av.setAttribute("disabled", "");
     av.appendChild(dogBadge(look || DEFAULT_LOOK, { size: 80, id: "new-dog", mood: "thinking" }));
     q("studio-title").textContent = "New hound";
     sub.textContent = "Say a strategy and it becomes a hound.";
     q("studio-open").hidden = true;
     return;
   }
+  av.removeAttribute("disabled");
   av.appendChild(dogBadge(look || dog.look || lookFor(dog.root_id || dog.id), { size: 80, mood: moodOf(dog), id: dog.root_id || dog.id, name: dog.name, vibe: dog.persona && dog.persona.vibe, version: dog.version_no }));
+  av.appendChild(h("span", { class: "kn-studio__avatar-tag", "aria-hidden": "true", text: "Look" }));
   // the FULL name, wrapped over as many lines as it needs: never an ellipsis (owner, 2026-10-26: "Gema..." and "0-3, $2,35...")
   q("studio-title").textContent = dog.name;
   chips.appendChild(chip(`v${dog.version_no || 1}`, { "data-hook": "studio-version" }));
@@ -697,9 +709,32 @@ function section(hook) {
   return h("section", { class: "dk-panel kn-section" }, [h("div", { "data-hook": hook })]);
 }
 
+/** Bring a block into view in the drawer's own scroll, without motion when the person asked for less. */
+function bring(node) {
+  if (!node || typeof node.scrollIntoView !== "function") return;
+  try { node.scrollIntoView({ block: "start", behavior: reducedMotion() ? "auto" : "smooth" }); } catch (err) { /* a fake DOM */ }
+}
+
+/** The hound's kit (what the viewer may do with it), read once per hound and kept. */
+async function ensureKit(dog) {
+  if (!state.kit || state.kit.dog_id !== dog.id) state.kit = await get(`/hounds/${encodeURIComponent(dog.id)}/kit`);
+  return state.kit;
+}
+
+/** Empty every block of Overview and Coach (and the Look sheet). `keepAsk` leaves the conversation where it is. */
+function clearBlocks({ keepAsk = false } = {}) {
+  for (const hook of ["studio-fire", "studio-record", "studio-lessons", "studio-versions", "studio-training", "studio-analyze", "studio-look"]) {
+    if (q(hook)) clearNode(q(hook));
+  }
+  if (q("studio-fire")) q("studio-fire").hidden = true;
+  if (!keepAsk && q("studio-ask")) clearNode(q("studio-ask"));
+  const sheet = q("studio-look-sheet");
+  if (sheet) sheet.hidden = true;
+}
+
 /**
  * A change the member applied from the chat made the hound's NEXT VERSION (a new id). Redraw the kennel, point the studio at that id and
- * keep the Ask tab where it is, so the conversation carries on; the other tabs are rebuilt from the new version when they are opened.
+ * keep the Coach tab where it is, so the conversation carries on; the other tabs are rebuilt from the new version when they are opened.
  */
 async function afterChatApply(out) {
   const next = out && out.hound && out.hound.id;
@@ -707,13 +742,13 @@ async function afterChatApply(out) {
   if (!next || !state.data || !dogById(next)) return;
   state.open = next;
   state.kit = null;
-  state.loaded = { ask: next };
-  for (const k of STUDIO_TABS) if (k !== "ask") clearNode(q(`studio-${k}`));
+  state.loaded = { coach: next };
+  clearBlocks({ keepAsk: true });
   clearNode(q("studio-rules"));
-  syncLessonsTab();
-  syncVersionsTab();
   paintStudioHead();
-  writeUrl(next, "ask");
+  fillTraining(dogById(next));
+  fillVersions(dogById(next));
+  writeUrl(next, "coach");
 }
 
 async function buildTab(tab) {
@@ -721,58 +756,92 @@ async function buildTab(tab) {
   const id = state.open;
   if (state.loaded[tab] === id) return;
   state.loaded[tab] = id;
-  const host = q(`studio-${tab}`);
-  clearNode(host);
-  if (tab === "rules") return buildRules(host, dog);
+  if (tab === "rules") { clearNode(q("studio-rules")); return buildRules(q("studio-rules"), dog); }
   if (!dog) return;
-  host.appendChild(h("div", { class: "lh-skel lh-skel--rows", "aria-hidden": "true" }));
+  if (tab === "overview") return buildOverview(dog);
+  if (tab === "coach") return buildCoach(dog);
+}
+
+// ---- Overview: the record, the lessons, and (when asked for) Unleash ------------------------------------------
+
+/** The Record tab's content, then the Apprentice's Lessons beneath it. */
+async function buildOverview(dog) {
+  const id = dog.id;
+  const rec = clearNode(q("studio-record"));
+  const less = clearNode(q("studio-lessons"));
+  rec.appendChild(h("div", { class: "lh-skel lh-skel--rows", "aria-hidden": "true" }));
+  let kit;
   try {
-    if (!state.kit || state.kit.dog_id !== dog.id) state.kit = await get(`/hounds/${encodeURIComponent(dog.id)}/kit`);
+    kit = await ensureKit(dog);
   } catch (err) {
-    clearNode(host).appendChild(h("p", { class: "hd-muted", text: describeError(err, "this hound").text }));
-    state.loaded[tab] = null;
+    if (state.open !== id) return;
+    clearNode(rec).appendChild(h("p", { class: "hd-muted", text: describeError(err, "this hound").text }));
+    state.loaded.overview = null;
     return;
   }
-  const kit = state.kit;
-  clearNode(host);
-  if (tab === "look") {
-    const sec = section("dog-locker");
-    host.appendChild(sec);
-    mountLocker(sec, { id: dog.id, name: dog.name, kit, vibe: dog.persona && dog.persona.vibe, onChange: (look) => paintStudioHead(look),
-      onSaved: (look) => { dog.look = look; refreshCards(); } });
-  } else if (tab === "fire") {
+  if (state.open !== id) return;
+  clearNode(rec);
+  // the Apprentice's own lessons (its owner logs real bets there); every other hound's Overview is the record alone
+  const lessons = dog.style === "apprentice" && !dog.retired
+    ? (less.appendChild(h("h3", { class: "hd-h3 kn-rec__h", text: "Lessons" })), mountApprentice(less, { hound: dog })) : null;
+  await buildRecord(rec, dog, kit);
+  if (lessons) await lessons;
+}
+
+/** Redraw the record and the lessons (not the Unleash panel above them) once the kennel's numbers have moved. */
+function refreshOverview() {
+  state.loaded.overview = null;
+  if (state.tabs && state.tabs.current === "overview" && state.open) buildTab("overview");
+}
+
+/**
+ * Unleash, from the header, a hound's card or an old link: show the Unleash panel at the top of Overview (the old Unleash tab's content,
+ * mounted, not rewritten) and, with `fire`, press its button so the hound starts betting today (paper). A running hound's panel is the
+ * status with a quiet "Check today's games now".
+ */
+async function showUnleash({ fire = false } = {}) {
+  const dog = studioDog();
+  if (!dog || dog.retired) return;
+  const id = dog.id;
+  const host = q("studio-fire");
+  if (!host) return;
+  host.hidden = false;
+  if (state.loaded.fire !== id) {
+    state.loaded.fire = id;
+    clearNode(host).appendChild(h("div", { class: "lh-skel lh-skel--rows", "aria-hidden": "true" }));
+    let kit;
+    try {
+      kit = await ensureKit(dog);
+    } catch (err) {
+      if (state.open !== id) return;
+      clearNode(host).appendChild(h("p", { class: "hd-muted", text: describeError(err, "this hound").text }));
+      state.loaded.fire = null;
+      return;
+    }
+    if (state.open !== id) return;
+    clearNode(host);
     const sec = section("dog-fire");
     host.appendChild(sec);
-    // the owner's Unleash STARTS the hound today (dog-fire.js `today`); the cards redraw when it placed bets so the counts are true
-    // a hound that already has tickets, or is not running, gets a status panel instead of the first-time "Unleash starts it" copy (dog-fire.js)
+    // the owner's Unleash STARTS the hound today (dog-fire.js `today`); the cards redraw when it placed bets so the counts are true.
+    // A hound that already has tickets, or is not running, gets a status panel instead of the first-time "Unleash starts it" copy (dog-fire.js)
     const hero = heroStatus(dog, state.tonight && state.tonight.byId[dog.id]);
-    const going = hero.key !== "running" || defaultTab(dog) === "record";
-    mountFire(sec, { id: dog.id, name: dog.name, kit, onRecord: () => { state.loaded.record = null; }, today: true,
+    const going = hero.key !== "running" || hasTickets(dog);
+    mountFire(sec, { id: dog.id, name: dog.name, kit, onRecord: () => { state.loaded.overview = null; }, today: true,
       running: going ? { key: hero.key, word: hero.word, detail: hero.detail, counts: ticketCountsText(dog) } : null,
       avatar: { look: dog.look || lookFor(dog.id), id: dog.id, vibe: dog.persona && dog.persona.vibe },
-      onDone: (out) => { if (out && out.placed_now) { state.loaded.record = null; load({ quiet: true }); } } });
-  } else if (tab === "backtest") {
-    const sec = section("dog-backtest");
-    host.appendChild(sec);
-    mountBacktest(sec, { id: dog.id, name: dog.name, autoRun: true });
-  } else if (tab === "ask") {
-    const sec = section("dog-ask");
-    host.appendChild(sec);
-    // the OWNER of a member hound TALKS to it (Claude Haiku, web/js/dog-chat.js: saved history, proposals with Apply / Cancel);
-    // anyone else, and a server without chat, keeps the computed Ask, so the tab is never empty
-    const chatting = !!(kit.is_owner && kit.kind === "user") && await bootChat(sec, { id: dog.id, name: dog.name, look: dog.look || lookFor(dog.root_id || dog.id),
-      version: dog.version_no, root_id: dog.root_id }, { onApplied: afterChatApply });
-    if (!chatting) await bootAsk(sec, { id: dog.id, name: dog.name, gematria: !!kit.gematria });
-  } else if (tab === "record") {
-    await buildRecord(host, dog, kit);
-  } else if (tab === "versions") {
-    // the owner's Versions list: every version it has been, with "Go back to this version" (src/hounds/interact/revert.py)
-    const sec = section("dog-versions");
-    host.appendChild(sec);
-    await mountVersions(sec, { id: dog.id, name: dog.name, onChanged: (r) => afterRite(`${dog.name} went back to the rules of version ${r.restored_from}, as version ${r.new.version_no}. Its record starts now.`) });
-  } else if (tab === "lessons" && dog.style === "apprentice") {
-    await mountApprentice(host, { hound: dog });
+      onDone: (out) => { if (out && out.placed_now) { state.loaded.overview = null; load({ quiet: true }).then(refreshOverview); } } });
   }
+  bring(host);
+  if (fire) { const b = q("fire-btn"); if (b && b.click) b.click(); }
+}
+
+/** The header's Unleash button: Overview, with the panel open and the hound started. */
+function startUnleash() {
+  const dog = studioDog();
+  if (!dog || dog.retired || !state.tabs) return;
+  state.pending = { tab: "overview", fire: true, autofire: true };
+  if (state.tabs.current === "overview") buildTab("overview").then(() => applyPending("overview"));
+  else state.tabs.select("overview");
 }
 
 /** The paper account over its settled bets as a line: balance minus the start after each settled bet, from the bankroll block's own
@@ -834,13 +903,13 @@ async function buildRecord(host, dog, kit) {
   const tickets = h("div", { "data-hook": "studio-tickets" });
   host.appendChild(h("h3", { class: "hd-h3 kn-rec__h", text: open > 0 ? "Settled and recent" : "Last tickets" }));
   // "Last graded 02:14" and a "Grading" pill while games wait on a final; a new grade reloads the kennel's numbers at once
-  host.appendChild(gradingBadge({ onGraded: () => { state.loaded.record = null; load({ quiet: true }); } }));
+  host.appendChild(gradingBadge({ onGraded: () => { state.loaded.overview = null; load({ quiet: true }); } }));
   host.appendChild(tickets);
   try {
     const out = await apiGet(`/hounds/${id}/bets?page=1&page_size=5&segment=forward`);
     const items = (Array.isArray(out && out.items) ? out.items : []).filter((t) => !openIds.has(ticketId(t)));
     if (items.length) {
-      // after a settled loss: the next step is to ask why, or to retune the rule (the Ask and Rules tabs of this same studio)
+      // after a settled loss: the next step is to ask why, or to retune the rule (the Coach and Rules tabs of this same studio)
       const latest = items.find((t) => ticketState(t) !== "pending" && ticketState(t) !== "ungraded");
       if (latest && ticketState(latest) === "lost") tickets.appendChild(lossPrompt());
       tickets.appendChild(ticketList(items, { showModel: false, hook: "studio-ticket-list" }));
@@ -859,8 +928,106 @@ function lossPrompt() {
   return h("div", { class: "kn-lossnext", "data-hook": "studio-loss-next" }, [
     h("p", { class: "kn-lossnext__text", text: "The last ticket lost. Find out why, or change the rule." }),
     h("div", { class: "kn-lossnext__row" }, [
-      h("button", { type: "button", class: "lh-btn lh-btn--solid", "data-hook": "studio-ask-why", text: "Ask why", on: { click: go("ask") } }),
+      h("button", { type: "button", class: "lh-btn lh-btn--solid", "data-hook": "studio-ask-why", text: "Ask why", on: { click: go("coach") } }),
       h("button", { type: "button", class: "lh-btn lh-btn--soft", "data-hook": "studio-retune", text: "Retune", on: { click: go("rules") } })])]);
+}
+
+// ---- Coach: the chat, Training, and the versions it has been through ------------------------------------------
+
+/** Train: the same sheet as the card's "Send to training" (sendToTraining), with one line on what it does. */
+function fillTraining(dog) {
+  const box = q("studio-training");
+  if (!box) return;
+  clearNode(box);
+  const live = !!(dog && !dog.retired && state.mode === "mine");
+  box.hidden = !live;
+  if (!live) return;
+  const btn = h("button", { type: "button", class: "lh-btn lh-btn--soft kn-train__btn", "data-hook": "coach-train", text: "Train" });
+  btn.addEventListener("click", (e) => { stop(e); sendToTraining(dog, btn); });
+  box.appendChild(h("h3", { class: "hd-h3 kn-rec__h", text: "Training" }));
+  box.appendChild(h("p", { class: "hd-muted kn-train__line", text: "Training reads how its settled bets went and suggests a new version. Nothing changes until you tap Apply, and the new version's record starts over." }));
+  box.appendChild(btn);
+}
+
+/** The Versions list (src/hounds/interact/revert.py), for a hound that has been through more than one. */
+async function fillVersions(dog) {
+  const host = q("studio-versions");
+  if (!host) return;
+  clearNode(host);
+  if (!dog || dog.retired || !(Number(dog.version_no) > 1)) return;
+  const id = dog.id;
+  host.appendChild(h("h3", { class: "hd-h3 kn-rec__h", "data-hook": "coach-versions-title", text: "Versions" }));
+  // the owner's Versions list: every version it has been, with "Go back to this version"
+  const sec = section("dog-versions");
+  host.appendChild(sec);
+  await mountVersions(sec, { id: dog.id, name: dog.name, onChanged: (r) => afterRite(`${dog.name} went back to the rules of version ${r.restored_from}, as version ${r.new.version_no}. Its record starts now.`) });
+  if (state.open !== id) clearNode(host);
+}
+
+async function buildCoach(dog) {
+  const id = dog.id;
+  const ask = clearNode(q("studio-ask"));
+  fillTraining(dog);
+  const versions = fillVersions(dog);              // starts now and settles on its own, below the chat
+  ask.appendChild(h("div", { class: "lh-skel lh-skel--rows", "aria-hidden": "true" }));
+  let kit;
+  try {
+    kit = await ensureKit(dog);
+  } catch (err) {
+    if (state.open !== id) return;
+    clearNode(ask).appendChild(h("p", { class: "hd-muted", text: describeError(err, "this hound").text }));
+    state.loaded.coach = null;
+    await versions;
+    return;
+  }
+  if (state.open !== id) return;
+  clearNode(ask);
+  const sec = section("dog-ask");
+  ask.appendChild(sec);
+  // the OWNER of a member hound TALKS to it (Claude Haiku, web/js/dog-chat.js: saved history, proposals with Apply / Cancel);
+  // anyone else, and a server without chat, keeps the computed Ask, so the tab is never empty
+  const chatting = !!(kit.is_owner && kit.kind === "user") && await bootChat(sec, { id: dog.id, name: dog.name, look: dog.look || lookFor(dog.root_id || dog.id),
+    version: dog.version_no, root_id: dog.root_id }, { onApplied: afterChatApply });
+  if (!chatting) await bootAsk(sec, { id: dog.id, name: dog.name, gematria: !!kit.gematria });
+  await versions;
+}
+
+// ---- Look: the hound's picture opens the editor (the old Look tab) --------------------------------------------
+
+async function openLook() {
+  const dog = studioDog();
+  const sheet = q("studio-look-sheet");
+  if (!dog || !sheet) return;
+  const id = dog.id;
+  const host = clearNode(q("studio-look"));
+  sheet.hidden = false;
+  host.appendChild(h("div", { class: "lh-skel lh-skel--rows", "aria-hidden": "true" }));
+  let kit;
+  try {
+    kit = await ensureKit(dog);
+  } catch (err) {
+    if (state.open !== id) return;
+    clearNode(host).appendChild(h("p", { class: "hd-muted", text: describeError(err, "this hound").text }));
+    return;
+  }
+  if (state.open !== id || sheet.hidden) return;
+  clearNode(host);
+  const sec = section("dog-locker");
+  host.appendChild(sec);
+  mountLocker(sec, { id: dog.id, name: dog.name, kit, vibe: dog.persona && dog.persona.vibe, onChange: (look) => paintStudioHead(look),
+    onSaved: (look) => { dog.look = look; refreshCards(); } });
+  const done = q("studio-look-done");
+  if (done && done.focus) done.focus();
+}
+
+function closeLook() {
+  const sheet = q("studio-look-sheet");
+  if (!sheet || sheet.hidden) return;
+  sheet.hidden = true;
+  clearNode(q("studio-look"));
+  paintStudioHead();                       // an unsaved preview must not stay on the header's picture
+  const av = q("studio-avatar");
+  if (av && av.focus) av.focus();
 }
 
 // ONE builder per page. hounds-build.js binds its listeners once, to the first skeleton it boots on (module state).
@@ -868,6 +1035,8 @@ function lossPrompt() {
 // Rules panel of a visit (another dog, or New dog) had no listeners at all. The same element is moved back in
 // instead, listeners and all.
 let rulesSkeleton = null;
+
+// ---- Rules: one page ------------------------------------------------------------------------------------------
 
 async function buildRules(host, dog) {
   const { builderSkeleton } = await import("./builder-skeleton.js");
@@ -879,50 +1048,53 @@ async function buildRules(host, dog) {
   if (state.open !== (dog ? dog.id : "new")) return;
   if (!dog) { builder.openBlank(); return; }
   if (dog.retired) {
+    rulesSkeleton.hidden = true;                       // a retired hound has nothing to edit: its Save bar must not stay on the page
     host.appendChild(h("p", { class: "hd-muted", "data-hook": "studio-retired-note" }, [
       "A retired hound cannot be edited. ", h("a", { href: dog.builder_href || "build-a-hound.html", text: "Build a copy" }), "."]));
     return;
   }
   if (!builder.builderReady()) {
+    rulesSkeleton.hidden = true;
     host.appendChild(editProblem("The rule builder did not load (a bad connection, or it is busy for a moment).", dog));
     return;
   }
   const opened = await builder.openEdit(dog.id);
-  if (opened.ok) { showRuleFirst(host, dog, builder); return; }
-  if (!opened.ok) {
-    host.appendChild(editProblem(opened.reason === "signed_out" ? "Your sign-in has lapsed, so this hound cannot be opened for editing. "
-      : "That hound could not be found in your list just now.", dog, opened.reason === "signed_out"));
-  }
+  if (opened.ok) { paintFullTest(dog); return; }
+  rulesSkeleton.hidden = true;
+  host.appendChild(editProblem(opened.reason === "signed_out" ? "Your sign-in has lapsed, so this hound cannot be opened for editing. "
+    : "That hound could not be found in your list just now.", dog, opened.reason === "signed_out"));
 }
 
 /**
- * The Rules tab of an EXISTING hound opens on its current rule, in plain words and big type, with "Edit rules" to reveal the editor
- * (owner, 2026-10-26: it opened straight into an empty "Say it" box with a generic example). The editor is still the one builder
- * element, hidden until asked for, so nothing about saving a version changes.
+ * "See the full test", under the Rules tab's "Past 14 days" line: the old Backtest tab (dog-backtest.js) behind a button, so the line stays
+ * one line. It replays the rules the hound has SAVED, so it says so; the line above it follows the edits. It runs only when opened, because a
+ * test spends the member's hourly allowance.
  */
-function showRuleFirst(host, dog, builder) {
-  const rule = builder.currentRule();
-  const skeleton = rulesSkeleton;
-  const old = host.querySelector("[data-hook='studio-rule-now']");
-  if (old) host.removeChild(old);
-  const lines = rule.sentences.length ? rule.sentences
-    : rule.gematria ? [rule.summary || "It reads the numbers in each game."] : ["Its rule opens in the editor."];
-  const edit = h("button", { type: "button", class: "lh-btn lh-btn--solid kn-rule__edit", "data-hook": "studio-edit-rules", text: "Edit rules" });
-  const card = h("section", { class: "kn-rule", "data-hook": "studio-rule-now", "aria-label": "Current rule" }, [
-    h("p", { class: "kn-rule__eyebrow", text: `Current rule${rule.version_no ? ` · version ${rule.version_no}` : ""}` }),
-    h("h3", { class: "kn-rule__title", text: `How ${dog.name} bets` }),
-    h("ul", { class: "kn-rule__list", "data-hook": "studio-rule-lines" }, lines.map((t) => h("li", { text: t }))),
-    rule.gematria && rule.fixed ? h("p", { class: "hd-fine kn-rule__fixed", text: rule.fixed }) : null,
-    h("p", { class: "hd-fine kn-rule__note", text: "Saving a change makes a new version. The old version keeps its record." }),
-    h("div", { class: "kn-rule__actions" }, [edit])]);
-  host.insertBefore ? host.insertBefore(card, skeleton) : host.appendChild(card);
-  skeleton.hidden = true;
-  edit.addEventListener("click", () => {
-    skeleton.hidden = false;
-    card.hidden = true;
-    const body = q("studio") && q("studio").querySelector ? q("studio").querySelector(".kn-studio__body") : null;
-    if (body) body.scrollTop = 0;
-  });
+function paintFullTest(dog) {
+  const live = q("rules-live-test");
+  if (!live) return;
+  const old = live.querySelector("[data-hook='rules-full-test']");
+  if (old) live.removeChild(old);
+  state.fullTest = null;
+  if (!dog || dog.retired) return;
+  const panel = h("div", { class: "kn-fulltest__panel", id: "kn-fulltest-panel", "data-hook": "rules-full-test-panel", hidden: "" });
+  const btn = h("button", { type: "button", class: "kn-fulltest__toggle", "aria-expanded": "false", "aria-controls": "kn-fulltest-panel",
+    "data-hook": "rules-full-test-toggle", text: "See the full test" });
+  let mounted = false;
+  const open = (on) => {
+    btn.setAttribute("aria-expanded", on ? "true" : "false");
+    panel.hidden = !on;
+    if (on && !mounted) {
+      mounted = true;
+      panel.appendChild(h("p", { class: "hd-fine kn-fulltest__note", text: `The full test replays the rules saved as v${dog.version_no || 1}, not changes you have not saved yet. The line above follows your edits.` }));
+      const sec = section("dog-backtest");
+      panel.appendChild(sec);
+      mountBacktest(sec, { id: dog.id, name: dog.name, autoRun: true });
+    }
+  };
+  btn.addEventListener("click", () => open(panel.hidden));
+  live.appendChild(h("div", { class: "kn-fulltest", "data-hook": "rules-full-test" }, [btn, panel]));
+  state.fullTest = { open };
 }
 
 /** Why Edit did not open, in words, with a way forward: sign in, or try again. Never a dead end. */
@@ -945,55 +1117,51 @@ function refreshCards() {
   }
 }
 
-// The Versions tab belongs to a hound that has been through more than one version (version 2 or later); a first version has nothing to go back to.
-function syncVersionsTab() {
-  const dog = studioDog();
-  const show = !!(dog && !dog.retired && Number(dog.version_no) > 1);
-  for (const t of document.querySelectorAll("[data-hook='studio-tabs'] [data-tab='versions']")) {
-    if (show) t.removeAttribute("hidden"); else t.setAttribute("hidden", "");
-  }
+// ---- opening and closing --------------------------------------------------------------------------------------
+
+/** What a tab was asked for besides its content (the Look editor, the Unleash panel, the full test, the Versions list), done once its tab is built. */
+function applyPending(tab) {
+  const p = state.pending;
+  if (!p || p.tab !== tab || !state.open) return;
+  state.pending = null;
+  if (p.look) openLook();
+  if (p.fire) showUnleash({ fire: p.autofire });
+  if (p.test && state.fullTest) state.fullTest.open(true);
+  if (p.versions) bring(q("studio-versions"));
 }
 
-// The Lessons tab belongs to an Apprentice hound only (its owner logs real bets there); every other hound's studio is unchanged.
-function syncLessonsTab() {
-  const dog = studioDog();
-  const show = !!(dog && dog.style === "apprentice" && !dog.retired);
-  for (const t of document.querySelectorAll("[data-hook='studio-tabs'] [data-tab='lessons']")) {
-    if (show) t.removeAttribute("hidden"); else t.setAttribute("hidden", "");
-  }
-}
-
-export function openStudio(id, tab = "look", opener = null, { autofire = false } = {}) {
+/**
+ * Open the studio on `tab`: one of overview / rules / coach, or any of the old names (studio-tabs.js maps them). A hound opens on Overview.
+ * `autofire` presses Unleash for the person (the card's Unleash button, a builder next-step button); a plain link to ?tab=fire only shows the
+ * Unleash panel, because a page address must not place bets.
+ */
+export function openStudio(id, tab = "overview", opener = null, { autofire = false } = {}) {
   const studio = q("studio");
   if (!studio || state.mode !== "mine") return;
   state.open = id;
   state.opener = opener;
   state.kit = null;
   state.loaded = {};
-  for (const k of STUDIO_TABS) clearNode(q(`studio-${k}`));
-  if (id === "new" || !dogById(id)) {
-    state.open = "new";
-    clearNode(q("studio-rules"));
-  } else if (q("studio-rules")) {
-    clearNode(q("studio-rules"));
-  }
+  state.pending = null;
+  state.fullTest = null;
+  clearBlocks();
+  if (id === "new" || !dogById(id)) state.open = "new";
+  clearNode(q("studio-rules"));
   const fresh = state.open === "new";
   for (const t of document.querySelectorAll("[data-hook='studio-tabs'] [role='tab']")) {
     if (t.getAttribute("data-tab") === "rules") t.removeAttribute("hidden");
     else if (fresh) t.setAttribute("hidden", ""); else t.removeAttribute("hidden");
   }
-  syncLessonsTab();
-  syncVersionsTab();
   paintStudioHead();
   q("studio-scrim").hidden = false;
   studio.hidden = false;
   studio.setAttribute("data-open", "true");
   document.body.style.overflow = "hidden";
-  if (!state.tabs) state.tabs = mountTabs(q("studio-tabs"), { onChange: (key) => { buildTab(key).then(() => { if (key === "fire" && state.autofire) { state.autofire = false; const b = q("fire-btn"); if (b) b.click(); } }); } });
-  state.autofire = autofire;
-  const want = fresh ? "rules" : tab;
-  if (state.tabs.current === want) buildTab(want); else state.tabs.select(want);
-  writeUrl(state.open === "new" ? null : state.open, want);
+  const target = studioTarget(fresh ? "rules" : tab);
+  state.pending = { tab: target.tab, fire: target.fire, autofire: target.fire && autofire, look: target.look, test: target.test, versions: target.versions };
+  if (!state.tabs) state.tabs = mountTabs(q("studio-tabs"), { onChange: (key) => { buildTab(key).then(() => applyPending(key)); } });
+  if (state.tabs.current === target.tab) buildTab(target.tab).then(() => applyPending(target.tab)); else state.tabs.select(target.tab);
+  writeUrl(state.open === "new" ? null : state.open, target.tab);
   const close = q("studio-close");
   if (close && close.focus) close.focus();
 }
@@ -1017,8 +1185,10 @@ export function closeStudio() {
   studio.hidden = true;
   studio.removeAttribute("data-open");
   q("studio-scrim").hidden = true;
+  if (q("studio-look-sheet")) q("studio-look-sheet").hidden = true;
   document.body.style.overflow = "";
   state.open = null;
+  state.pending = null;
   writeUrl(null);
   if (state.opener && state.opener.focus) state.opener.focus();
 }
@@ -1026,6 +1196,17 @@ export function closeStudio() {
 function bindStudio() {
   q("studio-close").addEventListener("click", closeStudio);
   if (q("studio-remove")) q("studio-remove").addEventListener("click", () => { setMenu(false); const dog = studioDog(); if (dog) removeFromKennel(dog); });
+  if (q("studio-outback")) q("studio-outback").addEventListener("click", () => { setMenu(false); const dog = studioDog(); if (dog && !dog.retired) takeOutBack(dog, q("studio-more")); });
+  if (q("studio-versions-open")) q("studio-versions-open").addEventListener("click", () => {
+    setMenu(false);
+    if (!studioDog() || !state.tabs) return;
+    state.pending = { tab: "coach", versions: true };
+    if (state.tabs.current === "coach") buildTab("coach").then(() => applyPending("coach")); else state.tabs.select("coach");
+  });
+  if (q("studio-unleash")) q("studio-unleash").addEventListener("click", startUnleash);
+  if (q("studio-train")) q("studio-train").addEventListener("click", () => { const dog = studioDog(); if (dog && !dog.retired) sendToTraining(dog, q("studio-train")); });
+  if (q("studio-avatar")) q("studio-avatar").addEventListener("click", () => { if (studioDog()) openLook(); });
+  if (q("studio-look-done")) q("studio-look-done").addEventListener("click", closeLook);
   if (q("studio-more")) q("studio-more").addEventListener("click", (e) => { stop(e); const menu = q("studio-menu"); setMenu(!!(menu && menu.hidden)); });
   const studioEl = q("studio");
   if (studioEl) studioEl.addEventListener("click", (e) => {
@@ -1037,6 +1218,8 @@ function bindStudio() {
     if (evt.key !== "Escape") return;
     const menu = q("studio-menu");
     if (menu && !menu.hidden) { setMenu(false); return; }
+    const sheet = q("studio-look-sheet");
+    if (sheet && !sheet.hidden) { closeLook(); return; }
     closeStudio();
   });
   window.addEventListener("linehound:dog-saved", async (evt) => {
@@ -1047,26 +1230,26 @@ function bindStudio() {
       state.open = detail.id;
       state.loaded = {};
       for (const t of document.querySelectorAll("[data-hook='studio-tabs'] [role='tab']")) t.removeAttribute("hidden");
-      for (const k of STUDIO_TABS) clearNode(q(`studio-${k}`));
-      syncLessonsTab();
-      syncVersionsTab();
+      clearBlocks();
       paintStudioHead();
-      if (state.tabs) state.tabs.select("look");
-      writeUrl(detail.id, "look");
+      if (state.tabs) state.tabs.select("overview");
+      writeUrl(detail.id, "overview");
     } else if (detail.type === "retired") {
       closeStudio();
     } else if (detail.type === "version" && dogById(detail.id)) {
       state.open = detail.id;
       state.loaded = { rules: detail.id };
-      for (const k of STUDIO_TABS) clearNode(q(`studio-${k}`));
+      clearBlocks();
       paintStudioHead();
+      paintFullTest(dogById(detail.id));              // the full test now replays the version that was just saved
       writeUrl(detail.id, "rules");
     }
   });
-  // a next-step button inside the builder ("Backtest 30 days", "Unleash") asks the studio for that tab (hounds-build.js nextStepBlock)
+  // a next-step button inside the builder ("Backtest 30 days", "Unleash") asks the studio for that tab (hounds-build.js nextStepBlock);
+  // the old tab names land on the new tabs (studio-tabs.js), and a tap on "Unleash" starts the hound, as the card's button does
   window.addEventListener("linehound:studio-tab", (evt) => {
     const detail = (evt && evt.detail) || {};
-    if (detail.id && dogById(detail.id) && STUDIO_TAB_KEYS.includes(detail.tab)) openStudio(detail.id, detail.tab);
+    if (detail.id && dogById(detail.id) && isStudioTab(detail.tab)) openStudio(detail.id, detail.tab, null, { autofire: detail.tab === "fire" });
   });
   window.addEventListener(TOKEN_CHANGED_EVENT, () => { closeStudio(); load(); });
 }

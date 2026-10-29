@@ -4,11 +4,11 @@ One renderer serves every hound a member opens (their own, a house copy, Gematri
 
   HEADER     the FULL name (wrapped, never an ellipsis), the version chip, the owner, one status line, the ticket counts, and Remove from my kennel
              in the three-dot menu (behind its own confirmation) instead of beside the name.
-  TABS       a sticky, sideways-scrolling segmented bar that keeps the chosen tab in view; a hound with tickets opens on its Record.
-  RECORD     "1 open · 0 settled" first, a 3 + 2 grid, the open tickets listed before the settled ones (a hound with a ticket never reads as idle).
-  UNLEASH    state-aware: a hound that is already going gets a status and a read-only look at today, not "Unleash starts it".
-  BACKTEST   the 7 day window runs as the tab opens, with a loading state.
-  RULES      the current rule first, in words, with "Edit rules" revealing the editor; the example chip can never widen the screen.
+  TABS       three of them (Overview, Rules, Coach: owner 2026-10-29), a bar that fits a phone with no sideways strip; every hound opens on Overview.
+  RECORD     (Overview) "1 open · 0 settled" first, a 3 + 2 grid, the open tickets listed before the settled ones (a hound with a ticket never reads as idle).
+  UNLEASH    (the panel at the top of Overview) state-aware: a hound that is already going gets a status and a read-only look at today, not "Unleash starts it".
+  BACKTEST   (the full test under the Rules line) the 7 day window runs when it is opened, with a loading state.
+  RULES      the rule in words and the editor at once; the example chip can never widen the screen.
 
 The widths (375, 390, 1440) are measured in a real Chrome by tests/test_hound_sheet_widths.py.
 """
@@ -150,31 +150,28 @@ class TheHeader(StudioHelpers, unittest.TestCase):
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
 class TheTabs(StudioHelpers, unittest.TestCase):
-    def test_the_tab_bar_is_a_sticky_segmented_bar_that_scrolls_inside_itself(self):
-        bar = block(sheet_css(), ".lh-tabs--studio")
-        self.assertIn("position: sticky", bar)
-        self.assertIn("overflow-x: auto", bar)
-        self.assertIn("max-width: calc(100% - 2 * var(--lh-s4))", bar, "the bar scrolls inside its own box")
-        self.assertIn("data-scrollactive", read("kennel.html"))
-        self.assertIn("scrollIntoView", read("js/tabs.js"))
+    def test_the_tab_bar_is_a_segmented_bar_that_fits_the_phone_with_no_sideways_strip(self):
+        # 2026-10-29: three tabs, equal width; the old bar scrolled inside itself because it had eight
+        self.assertNotIn("data-scrollactive", read("kennel.html"))
+        css = sheet_css()
+        self.assertIn(".lh-tabs--studio { overflow: visible;", css)
+        self.assertRegex(css, r"\.lh-tabs--studio \[role=\"tab\"\] \{ flex: 1 1 0; min-width: 0; height: 44px;")
+        self.assertIn("scrollIntoView", read("js/tabs.js"), "the shared tab module still brings a chosen tab into view for a bar that asks for it")
 
-    def test_choosing_a_tab_scrolls_it_into_view(self):
-        out = self.sheet(actions=[dict(do="click", sel="[data-hook='dog-avatar']", wait=150),
-                                  dict(do="click", sel="[role='tab'][data-tab='ask']", wait=150)])
-        self.assertTrue(any(s == "Ask" or s == "button" for s in out["scrolls"]), out["scrolls"])
-
-    def test_a_hound_with_tickets_opens_on_its_record_and_one_without_on_look(self):
+    def test_every_hound_opens_on_overview_whether_or_not_it_has_tickets(self):
         out = self.sheet(dogs=[dog("u-1", "Has Tickets", wins=0, losses=2, bets=2), dog("u-2", "Nothing Yet")], actions=[
             dict(do="click", sel="[data-hook='dog-avatar']", index=0, label="busy", wait=200, capture=[q("selected", "[role='tab'][aria-selected='true']", "texts")]),
             dict(do="click", sel="[data-hook='studio-close']", wait=50),
             dict(do="click", sel="[data-hook='dog-avatar']", index=1, label="quiet", wait=200, capture=[q("selected", "[role='tab'][aria-selected='true']", "texts")])])
-        self.assertEqual(out["captures"]["busy"]["selected"], ["Record"])
-        self.assertEqual(out["captures"]["quiet"]["selected"], ["Look"])
+        self.assertEqual(out["captures"]["busy"]["selected"], ["Overview"])
+        self.assertEqual(out["captures"]["quiet"]["selected"], ["Overview"])
 
-    def test_an_open_ticket_alone_is_enough_to_open_on_the_record(self):
+    def test_an_open_ticket_alone_shows_on_overview(self):
         out = self.sheet(dogs=[dog("u-1", "Doctor Data Dog", open_bets=1)], actions=[
-            dict(do="click", sel="[data-hook='dog-avatar']", label="open", wait=200, capture=[q("selected", "[role='tab'][aria-selected='true']", "texts")])])
-        self.assertEqual(out["captures"]["open"]["selected"], ["Record"])
+            dict(do="click", sel="[data-hook='dog-avatar']", label="open", wait=250, capture=[
+                q("selected", "[role='tab'][aria-selected='true']", "texts"), q("counts", "[data-hook='studio-counts']")])])
+        self.assertEqual(out["captures"]["open"]["selected"], ["Overview"])
+        self.assertEqual(out["captures"]["open"]["counts"], "1 open · 0 settled")
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
@@ -197,8 +194,7 @@ class TheRecordTab(StudioHelpers, unittest.TestCase):
         self.assertEqual(out["captures"]["initial"]["bets"], ["1 (1 open)"], "the card never says 0 bets beside an open ticket")
 
     def test_a_hound_with_no_tickets_at_all_says_so(self):
-        out = self.sheet(dogs=[dog("u-1", "Fresh Fido")], actions=[dict(do="click", sel="[data-hook='dog-avatar']", wait=100),
-                                                                     dict(do="click", sel="[role='tab'][data-tab='record']", label="r", wait=200, capture=[q("counts", "[data-hook='studio-counts']")])])
+        out = self.sheet(dogs=[dog("u-1", "Fresh Fido")], actions=[dict(do="click", sel="[data-hook='dog-avatar']", label="r", wait=300, capture=[q("counts", "[data-hook='studio-counts']")])])
         self.assertEqual(out["captures"]["r"]["counts"], "No tickets yet")
 
     def test_the_open_ticket_is_listed_first_and_not_listed_twice(self):
@@ -266,12 +262,12 @@ class TheUnleashTab(StudioHelpers, unittest.TestCase):
 
     def test_a_hound_with_tickets_gets_a_status_and_a_read_only_look_at_today_not_the_first_time_copy(self):
         d = dog("u-1", "Doctor Data Dog", open_bets=1)
-        out = self.sheet(dogs=[d], actions=[dict(do="click", sel="[data-hook='dog-avatar']", wait=150),
-                                            dict(do="click", sel="[role='tab'][data-tab='fire']", label="fire", wait=300, capture=[
-                                                q("state", "[data-hook='unleash-state']"), q("counts", "[data-hook='unleash-counts']"),
-                                                q("note", "[data-hook='unleash-running-note']"), q("btn", "[data-hook='fire-btn']"),
-                                                q("now", "[data-hook='unleash-now']"), q("text", "[data-tabpanel='fire']")])])
-        c = out["captures"]["fire"]
+        out = self.sheet(dogs=[d], search="?dog=u-1&tab=fire", settleMs=800, queries=[
+            q("state", "[data-hook='unleash-state']"), q("counts", "[data-hook='unleash-counts']"),
+            q("note", "[data-hook='unleash-running-note']"), q("btn", "[data-hook='fire-btn']"),
+            q("now", "[data-hook='unleash-now']"), q("text", "[data-hook='studio-fire']"), q("selected", "[role='tab'][aria-selected='true']", "texts")])
+        c = out["final"]
+        self.assertEqual(c["selected"], ["Overview"], "the panel is at the top of Overview, not a tab of its own")
         self.assertRegex(c["state"], r"^Running ·")
         self.assertEqual(c["counts"], "1 open · 0 settled")
         self.assertEqual(c["btn"], "Check today's games now")
@@ -279,32 +275,29 @@ class TheUnleashTab(StudioHelpers, unittest.TestCase):
         self.assertIn("Remove from my kennel", c["note"], "there is no pause route, and the page does not pretend there is one")
         self.assertIn("Nothing qualifies right now", c["now"])
         urls = [p["url"] for p in out["posts"]]
-        self.assertEqual(urls, ["/hounds/u-1/fire"], "opening the tab only READS (the preview); it places nothing")
+        self.assertEqual(urls, ["/hounds/u-1/fire"], "opening the panel from an address only READS (the preview); it places nothing")
 
     def test_the_button_on_a_running_hound_still_runs_the_real_check(self):
         d = dog("u-1", "Doctor Data Dog", open_bets=1)
-        out = self.sheet(dogs=[d], actions=[dict(do="click", sel="[data-hook='dog-avatar']", wait=150),
-                                            dict(do="click", sel="[role='tab'][data-tab='fire']", wait=300),
-                                            dict(do="click", sel="[data-hook='fire-btn']", label="go", wait=300, capture=[q("headline", "[data-hook='unleash-headline']")])])
+        out = self.sheet(dogs=[d], search="?dog=u-1&tab=fire", settleMs=800, actions=[
+            dict(do="click", sel="[data-hook='fire-btn']", label="go", wait=300, capture=[q("headline", "[data-hook='unleash-headline']")])])
         self.assertEqual([p["url"] for p in out["posts"]], ["/hounds/u-1/fire", "/hounds/u-1/unleash"])
         self.assertIn("is unleashed", out["captures"]["go"]["headline"])
 
     def test_a_hound_that_has_never_bet_still_gets_the_unleash_button(self):
-        out = self.sheet(dogs=[dog("u-1", "Fresh Fido")], actions=[dict(do="click", sel="[data-hook='dog-avatar']", wait=100),
-                                                                     dict(do="click", sel="[role='tab'][data-tab='fire']", label="fire", wait=200, capture=[
-                                                                         q("btn", "[data-hook='fire-btn']"), q("state", "[data-hook='unleash-state']", "count"),
-                                                                         q("text", "[data-tabpanel='fire']")])])
-        c = out["captures"]["fire"]
+        out = self.sheet(dogs=[dog("u-1", "Fresh Fido")], search="?dog=u-1&tab=fire", settleMs=700, queries=[
+            q("btn", "[data-hook='fire-btn']"), q("state", "[data-hook='unleash-state']", "count"), q("text", "[data-hook='studio-fire']")])
+        c = out["final"]
         self.assertEqual((c["btn"], c["state"]), ("Unleash", 0))
         self.assertIn("Unleash starts Fresh Fido betting today", c["text"])
         self.assertEqual(out["posts"], [])
 
     def test_a_paused_hound_has_no_button_the_server_would_refuse(self):
-        out = self.sheet(dogs=[dog("u-1", "Sleepy", status="benched", open_bets=0, bets=2, wins=1, losses=1)], actions=[
-            dict(do="click", sel="[data-hook='dog-avatar']", wait=100), dict(do="click", sel="[role='tab'][data-tab='fire']", label="fire", wait=200, capture=[
-                q("btn", "[data-hook='fire-btn']", "count"), q("said", "[data-hook='unleash-not-running']")])])
-        self.assertEqual(out["captures"]["fire"]["btn"], 0)
-        self.assertIn("is not betting right now", out["captures"]["fire"]["said"])
+        out = self.sheet(dogs=[dog("u-1", "Sleepy", status="benched", open_bets=0, bets=2, wins=1, losses=1)], search="?dog=u-1&tab=fire", settleMs=700, queries=[
+            q("btn", "[data-hook='fire-btn']", "count"), q("said", "[data-hook='unleash-not-running']")])
+        self.assertEqual(out["final"]["btn"], 0)
+        self.assertIn("is not betting right now", out["final"]["said"])
+
 
     def test_no_off_season_note_is_built_without_a_schedule_the_page_already_loads(self):
         """(b) of the 2026-10-26 add-on: the kennel page loads no schedule. /sports/now lists only the next 24 hours and is not read here, so the
@@ -314,29 +307,45 @@ class TheUnleashTab(StudioHelpers, unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
-class TheBacktestTab(StudioHelpers, unittest.TestCase):
-    def test_the_seven_day_window_runs_as_the_tab_opens_with_a_loading_state(self):
+class TheFullTest(StudioHelpers, unittest.TestCase):
+    """The old Backtest tab is "See the full test" under the Rules tab's "Past 14 days" line (owner, 2026-10-29)."""
+
+    def go(self, actions, **kw):
+        extra = {"/hounds/mine": [200, {"hounds": [mine_dog()], "limit_running": 3}],
+                 "POST /hounds/builder/preview": [200, {"qualifying": 0, "would_bet": 0, "picks": [], "sentences": [], "max_bets_per_day": 2, "paper_only": True}]}
+        extra.update(kw.pop("extra", {}))
+        return self.sheet(dogs=[dog("u-1", "Underdog Gus")], extra=extra, settleMs=200, actions=actions, **kw)
+
+    @staticmethod
+    def full_tests(out):
+        return [p["body"] for p in out["posts"] if p["url"] == "/hounds/drill" and "dog_id" in p["body"]]
+
+    def test_the_seven_day_window_runs_when_the_test_is_opened_with_a_loading_state(self):
         from tests.test_backtest_kennel_web import result
-        out = self.sheet(extra={"POST /hounds/drill": [200, result(days=7)]}, delay={"POST /hounds/drill": 400}, actions=[
-            dict(do="click", sel="[data-hook='dog-avatar']", wait=100),
-            dict(do="click", sel="[role='tab'][data-tab='backtest']", label="loading", wait=120, capture=[
-                q("loading", "[data-hook='backtest-loading']", "count"), q("pressed", "[data-hook='backtest-window']", "attrs", attr="aria-pressed")]),
-            dict(do="wait", label="done", wait=700, capture=[q("loading", "[data-hook='backtest-loading']", "count"),
-                                                              q("label", "[data-hook='drill-label']"), q("empty", "[data-hook='backtest-result']", "exists")])])
-        self.assertEqual(out["captures"]["loading"]["loading"], 1, "the tab is never chips over an empty screen")
+        out = self.go([dict(do="click", sel="[data-hook='dog-action-edit']", wait=400),
+                       dict(do="click", sel="[data-hook='rules-full-test-toggle']", label="loading", wait=120, capture=[
+                           q("loading", "[data-hook='backtest-loading']", "count"), q("pressed", "[data-hook='backtest-window']", "attrs", attr="aria-pressed")]),
+                       dict(do="wait", label="done", wait=700, capture=[q("loading", "[data-hook='backtest-loading']", "count"),
+                                                                         q("label", "[data-hook='drill-label']"), q("empty", "[data-hook='backtest-result']", "exists")])],
+                      extra={"POST /hounds/drill": [200, result(days=7)]}, delay={"POST /hounds/drill": 400})
+        self.assertEqual(out["captures"]["loading"]["loading"], 1, "the test is never chips over an empty screen")
         self.assertEqual(out["captures"]["loading"]["pressed"], ["true", "false", "false", "false"])
         self.assertEqual(out["captures"]["done"]["loading"], 0)
         self.assertIn("hindsight", out["captures"]["done"]["label"])
-        self.assertEqual([p["body"] for p in out["posts"] if p["url"] == "/hounds/drill"], [{"dog_id": "u-1", "days": 7}])
+        self.assertEqual(self.full_tests(out), [{"dog_id": "u-1", "days": 7}])
 
-    def test_it_runs_once_per_open_not_on_every_look_at_the_tab(self):
+    def test_it_runs_once_per_open_not_on_every_look_at_it(self):
         from tests.test_backtest_kennel_web import result
-        out = self.sheet(extra={"POST /hounds/drill": [200, result(days=7)]}, actions=[
-            dict(do="click", sel="[data-hook='dog-avatar']", wait=100),
-            dict(do="click", sel="[role='tab'][data-tab='backtest']", wait=300),
-            dict(do="click", sel="[role='tab'][data-tab='ask']", wait=200),
-            dict(do="click", sel="[role='tab'][data-tab='backtest']", wait=300)])
-        self.assertEqual(len([p for p in out["posts"] if p["url"] == "/hounds/drill"]), 1)
+        out = self.go([dict(do="click", sel="[data-hook='dog-action-edit']", wait=400),
+                       dict(do="click", sel="[data-hook='rules-full-test-toggle']", wait=300),
+                       dict(do="click", sel="[data-hook='rules-full-test-toggle']", wait=100),
+                       dict(do="click", sel="[data-hook='rules-full-test-toggle']", wait=300)],
+                      extra={"POST /hounds/drill": [200, result(days=7)]})
+        self.assertEqual(len(self.full_tests(out)), 1)
+
+    def test_it_costs_nothing_until_it_is_opened(self):
+        out = self.go([dict(do="click", sel="[data-hook='dog-action-edit']", wait=400)])
+        self.assertEqual(self.full_tests(out), [])
 
     def test_the_dog_page_and_the_camp_do_not_auto_run(self):
         self.assertNotIn("autoRun: true", read("js/dog-camp.js"))
@@ -351,26 +360,15 @@ class TheRulesTab(StudioHelpers, unittest.TestCase):
                  "POST /hounds/builder/preview": [200, {"qualifying": 0, "would_bet": 0, "picks": [], "sentences": [], "max_bets_per_day": 2, "paper_only": True}]}
         return self.sheet(dogs=[dog("u-1", "Underdog Gus")], extra=extra, settleMs=200, **kw)
 
-    def test_an_existing_hound_opens_on_its_current_rule_in_words(self):
+    def test_an_existing_hound_opens_on_its_rule_in_words_and_the_editor_at_once(self):
+        # 2026-10-29: no "Edit rules" gate; the rule in words is the first thing of the editor itself
         out = self.go(actions=[dict(do="click", sel="[data-hook='dog-action-edit']", label="rules", wait=500, capture=[
-            q("card", "[data-hook='studio-rule-now']"), q("lines", "[data-hook='studio-rule-lines'] li", "texts"),
-            q("edit", "[data-hook='studio-edit-rules']"), q("editor_hidden", "[data-hook='build-app']", "hidden"),
-            q("card_hidden", "[data-hook='studio-rule-now']", "hidden"), q("selected", "[role='tab'][aria-selected='true']", "texts")])])
+            q("sentences", "[data-hook='rule-sentences'] li", "texts"), q("gate", "[data-hook='studio-rule-now']", "count"),
+            q("edit_btn", "[data-hook='studio-edit-rules']", "count"), q("editor_hidden", "[data-hook='build-app']", "hidden"),
+            q("title", "[data-hook='build-title']"), q("selected", "[role='tab'][aria-selected='true']", "texts")])])
         c = out["captures"]["rules"]
         self.assertEqual(c["selected"], ["Rules"])
-        self.assertEqual(c["lines"], ["Bet home underdogs between +120 and +200, at most 2 bets a day."])
-        self.assertIn("Current rule · version 3", c["card"])
-        self.assertIn("How Underdog Gus bets", c["card"])
-        self.assertEqual(c["edit"], "Edit rules")
-        self.assertEqual((c["editor_hidden"], c["card_hidden"]), (True, False), "the editor waits behind Edit rules")
-
-    def test_edit_rules_reveals_the_editor(self):
-        out = self.go(actions=[dict(do="click", sel="[data-hook='dog-action-edit']", wait=500),
-                               dict(do="click", sel="[data-hook='studio-edit-rules']", label="edit", wait=100, capture=[
-                                   q("editor_hidden", "[data-hook='build-app']", "hidden"), q("card_hidden", "[data-hook='studio-rule-now']", "hidden"),
-                                   q("title", "[data-hook='build-title']")])])
-        c = out["captures"]["edit"]
-        self.assertEqual((c["editor_hidden"], c["card_hidden"]), (False, True))
+        self.assertEqual((c["gate"], c["edit_btn"], c["editor_hidden"]), (0, 0, False))
         self.assertEqual(c["title"], "Edit Underdog Gus")
 
     def test_the_example_chip_wraps_inside_its_own_box_and_cannot_widen_the_screen(self):

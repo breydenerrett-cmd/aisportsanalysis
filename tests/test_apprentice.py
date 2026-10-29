@@ -700,8 +700,11 @@ class WebTests(unittest.TestCase):
         hooks = set(re.findall(r'"data-hook":\s*"([a-z0-9-]+)"', js))
         self.assertIn("studio-lessons", hooks | set(re.findall(r'data-hook="(studio-lessons)"', kennel)))
         self.assertEqual(kennel.count('data-hook="studio-lessons"'), 1)
-        self.assertEqual(len(re.findall(r'data-tab="lessons"', kennel)), 1)
-        self.assertEqual(len(re.findall(r'data-tabpanel="lessons"', kennel)), 1)
+        # 2026-10-29: Lessons is a block under the Record on the Overview tab, not a tab of its own
+        self.assertEqual(len(re.findall(r'data-tab="lessons"', kennel)), 0)
+        self.assertEqual(len(re.findall(r'data-tabpanel="lessons"', kennel)), 0)
+        self.assertLess(kennel.index('data-tabpanel="overview"'), kennel.index('data-hook="studio-lessons"'))
+        self.assertLess(kennel.index('data-hook="studio-lessons"'), kennel.index('data-tabpanel="rules"'))
         for hook in re.findall(r'q\("([a-z0-9-]+)"\)', js):
             self.assertIn(hook, js)
         # the builder keeps its two skeletons (static page and studio): this module touches neither

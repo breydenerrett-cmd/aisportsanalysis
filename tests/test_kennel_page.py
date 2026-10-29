@@ -505,23 +505,29 @@ class TheStudio(unittest.TestCase):
         r.update(over)
         return r
 
-    def test_clicking_a_dogs_avatar_opens_the_studio_on_the_look_tab_with_the_locker_room(self):
+    def test_clicking_a_dogs_avatar_opens_the_studio_on_overview_with_exactly_three_tabs(self):
+        # OWNER 2026-10-29: Look, Rules, Unleash, Backtest, Ask, Record, Versions and Lessons became Overview, Rules and Coach
         out = run_page("kennel", routes=self.routes([dog("u-1")]), **SIGNED, actions=[
             dict(do="click", sel="[data-hook='dog-avatar']", label="open", wait=200, capture=[
                 q("hidden", "[data-hook='studio']", "hidden"), q("title", "[data-hook='studio-title']"),
                 q("tabs", "[data-hook='studio-tabs'] [role='tab']", "texts"), q("selected", "[role='tab'][aria-selected='true']", "texts"),
-                q("preview", "[data-hook='locker-preview'] svg.dk-badge", "count"), q("head_avatar", "[data-hook='studio-avatar'] svg", "count"),
-                q("open_link", "[data-hook='studio-open']", "attr", attr="href"), q("look_panel", "[data-tabpanel='look']", "hidden"),
-                q("rules_panel", "[data-tabpanel='rules']", "hidden")])])
+                q("tab_hidden", "[data-hook='studio-tabs'] [role='tab'][hidden]", "count"), q("scroll", "[data-hook='studio-tabs']", "attr", attr="data-scrollactive"),
+                q("head_avatar", "[data-hook='studio-avatar'] svg", "count"), q("avatar_tag", "[data-hook='studio-avatar'] .kn-studio__avatar-tag"),
+                q("open_link", "[data-hook='studio-open']", "attr", attr="href"), q("overview_panel", "[data-tabpanel='overview']", "hidden"),
+                q("rules_panel", "[data-tabpanel='rules']", "hidden"), q("coach_panel", "[data-tabpanel='coach']", "hidden"),
+                q("analyze", "[data-hook='studio-analyze']", "hidden"), q("analyze_n", "[data-hook='studio-analyze']", "count"),
+                q("look_sheet", "[data-hook='studio-look-sheet']", "hidden"), q("keys", "[data-hook='studio-tabs'] [role='tab']", "attrs", attr="data-tab")])])
         cap = out["captures"]["open"]
         self.assertEqual((cap["hidden"], cap["title"]), (False, "Underdog Gus"))
-        # "Lessons" and "Versions" are in the markup but hidden unless the open hound is an Apprentice / has gone through more than one version
-        # (web/js/kennel.js syncLessonsTab, syncVersionsTab)
-        self.assertEqual(cap["tabs"], ["Look", "Rules", "Unleash", "Backtest", "Ask", "Record", "Versions", "Lessons"])
-        self.assertEqual(cap["selected"], ["Look"])
-        self.assertEqual((cap["preview"], cap["head_avatar"]), (1, 1))
+        self.assertEqual(cap["tabs"], ["Overview", "Rules", "Coach"])
+        self.assertEqual(cap["keys"], ["overview", "rules", "coach"], "the Look, Unleash, Backtest, Ask, Record, Versions and Lessons tabs are gone")
+        self.assertEqual((cap["selected"], cap["tab_hidden"]), (["Overview"], 0))
+        self.assertIsNone(cap["scroll"], "three tabs fit: the bar never scrolls sideways")
+        self.assertEqual((cap["head_avatar"], cap["avatar_tag"]), (1, "Look"))
         self.assertEqual(cap["open_link"], "hound.html?id=u-1")
-        self.assertEqual((cap["look_panel"], cap["rules_panel"]), (False, True))
+        self.assertEqual((cap["overview_panel"], cap["rules_panel"], cap["coach_panel"]), (False, True, True))
+        self.assertEqual((cap["analyze_n"], cap["analyze"]), (1, True), "an empty slot for the Analyze report, hidden until it has something")
+        self.assertTrue(cap["look_sheet"])
 
     def test_edit_opens_the_builder_inside_the_studio_with_the_advanced_cards_collapsed(self):
         dogs = [dog("u-1")]
@@ -537,15 +543,17 @@ class TheStudio(unittest.TestCase):
                 q("hidden", "[data-hook='studio']", "hidden"), q("selected", "[role='tab'][aria-selected='true']", "texts"),
                 q("builder", "[data-hook='studio-rules'] [data-hook='build-app']", "count"),
                 q("title", "[data-hook='build-title']"), q("advanced", "[data-hook='rules-advanced']", "count"),
-                q("advanced_open", "[data-hook='rules-advanced']", "attr", attr="open"), q("cards", "[data-hook='rule-card']", "count"),
-                q("name", "[data-hook='f-name']", "value"), q("sentences", "[data-hook='rule-sentences']")])])
+                q("fold_open", "[data-hook='rules-fold']", "attr", attr="open"), q("fold_summary", "[data-hook='rules-fold'] summary"),
+                q("cards", "[data-hook='rule-card']", "count"), q("name", "[data-hook='f-name']", "value"), q("sentences", "[data-hook='rule-sentences']"),
+                q("gate_rule_now", "[data-hook='studio-rule-now']", "count"), q("editor_hidden", "[data-hook='build-app']", "hidden")])])
         cap = out["captures"]["edit"]
         self.assertEqual((cap["hidden"], cap["selected"]), (False, ["Rules"]))
         self.assertEqual(cap["builder"], 1)
         self.assertEqual(cap["title"], "Edit Underdog Gus")
-        self.assertEqual((cap["advanced"], cap["advanced_open"]), (1, None), "Edit rules is closed until it is opened")
+        self.assertEqual((cap["advanced"], cap["fold_open"], cap["fold_summary"]), (1, None, "Advanced: edit each rule"), "the rule cards are folded until opened")
         self.assertEqual(cap["cards"], 1)                       # the cards exist (inside the closed details)
         self.assertEqual(cap["name"], "Underdog Gus")
+        self.assertEqual((cap["gate_rule_now"], cap["editor_hidden"]), (0, False), "no 'Edit rules' gate: the Rules tab is the editor")
 
     def test_a_second_rules_panel_in_one_visit_is_still_alive(self):
         """2026-10-20, a real member: the kennel studio built a fresh builder skeleton every time the Rules panel opened,
@@ -573,35 +581,41 @@ class TheStudio(unittest.TestCase):
         self.assertEqual(out["captures"]["second"]["title"], "Edit Totals Tina")
         self.assertEqual(out["captures"]["typed"]["count"], "18 / 600", "the second panel's builder answers typing")
 
-    def test_unleash_opens_the_fire_tab_and_starts_the_hound_at_once(self):
+    def test_unleash_on_the_card_opens_overview_with_the_unleash_panel_and_starts_the_hound_at_once(self):
         # owner request 2026-10-21: the owner's Unleash starts the dog (POST .../unleash), it is no longer the read-only preview (.../fire)
+        # 2026-10-29: there is no Unleash tab; the panel opens at the top of Overview
         out = run_page("kennel", routes=self.routes([dog("u-1")]), **SIGNED, actions=[
             dict(do="click", sel="[data-hook='dog-action-fire']", label="fire", wait=300, capture=[
                 q("selected", "[role='tab'][aria-selected='true']", "texts"), q("headline", "[data-hook='unleash-headline']"),
-                q("preview", "[data-hook='fire-headline']", "count")])])
-        self.assertEqual(out["captures"]["fire"]["selected"], ["Unleash"])
+                q("preview", "[data-hook='fire-headline']", "count"), q("fire_host", "[data-hook='studio-fire']", "hidden")])])
+        self.assertEqual(out["captures"]["fire"]["selected"], ["Overview"])
+        self.assertFalse(out["captures"]["fire"]["fire_host"])
         self.assertIn("Nothing on today's board fits its rule yet", out["captures"]["fire"]["headline"])
         self.assertEqual(out["captures"]["fire"]["preview"], 0)
         self.assertEqual([p["url"].split("/")[-2:] for p in out["posts"]], [["u-1", "unleash"]])
 
-    def test_ask_opens_the_ask_tab_with_the_hounds_greeting(self):
-        # # owner ruling 2026-10-20 kennel-first: Ask is a studio tab now, not a card button
+    def test_the_coach_tab_opens_the_hounds_greeting_then_training(self):
+        # # owner ruling 2026-10-20 kennel-first: Ask is a studio tab now, not a card button; 2026-10-29: it is the top of the Coach tab
         out = run_page("kennel", routes=self.routes([dog("u-1")]), **SIGNED, actions=[
             dict(do="click", sel="[data-hook='dog-avatar']", label="open", wait=120),
-            dict(do="click", sel="[role='tab'][data-tab='ask']", label="ask", wait=300, capture=[
+            dict(do="click", sel="[role='tab'][data-tab='coach']", label="ask", wait=300, capture=[
                 q("selected", "[role='tab'][aria-selected='true']", "texts"), q("thread", "[data-hook='ask-thread']"),
-                q("chips", "[data-hook='ask-chip']", "texts")])])
+                q("chips", "[data-hook='ask-chip']", "texts"), q("training", "[data-hook='studio-training']"), q("train_btn", "[data-hook='coach-train']", "count"),
+                q("versions", "[data-hook='studio-versions']", "count"), q("versions_title", "[data-hook='coach-versions-title']", "count")])])
         cap = out["captures"]["ask"]
-        self.assertEqual(cap["selected"], ["Ask"])
+        self.assertEqual(cap["selected"], ["Coach"])
+        self.assertIn("Training", cap["training"])
+        self.assertEqual((cap["train_btn"], cap["versions_title"]), (1, 0), "a first version has no Versions block")
         self.assertIn("Ask me about my bets", cap["thread"])
         self.assertEqual(cap["chips"], ["Why that pick?"])
 
-    def test_the_record_tab_shows_the_numbers_and_the_manual_picks_panel_stays_apart(self):
+    def test_overview_shows_the_numbers_on_open_and_the_manual_picks_panel_stays_apart(self):
         out = run_page("kennel", routes=self.routes([dog("u-1", wins=3, losses=1, bets=4, units=1.8)]), **SIGNED, actions=[
-            dict(do="click", sel="[data-hook='dog-avatar']", label="open", wait=120),
-            dict(do="click", sel="[role='tab'][data-tab='record']", label="record", wait=300, capture=[
-                q("stats", "[data-hook='studio-record-stats'] dd", "texts"), q("tickets", "[data-hook='studio-tickets']")])])
-        cap = out["captures"]["record"]
+            dict(do="click", sel="[data-hook='dog-avatar']", label="open", wait=320, capture=[
+                q("stats", "[data-hook='studio-record-stats'] dd", "texts"), q("tickets", "[data-hook='studio-tickets']"),
+                q("full", "[data-hook='studio-full-record']", "attr", attr="href"), q("lessons", "[data-hook='studio-lessons']", "count")])])
+        cap = out["captures"]["open"]
+        self.assertEqual(cap["full"], "record.html?id=u-1")
         self.assertEqual(cap["stats"], ["3-1", "$1,018", "+1.8%", "4", "0"])
         self.assertIn("No tickets recorded yet", cap["tickets"])
 

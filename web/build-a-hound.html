@@ -107,8 +107,9 @@
 <section class="hd-panel bd-step" aria-labelledby="s2-h" data-hook="step-rules">
   <p class="bd-step__no"><span class="bd-sr">Step </span>2</p>
   <h2 id="s2-h">Build the rule</h2>
+  <div class="bd-houndsports" data-hook="hound-sports" hidden></div>
   <div class="bd-empty" data-hook="rules-empty">
-    <p>Build it in steps: sports, markets, conditions, price range and limits. Or say it in words above and I will fill the steps in for you.</p>
+    <p>Build it in steps: sports, markets, conditions, price range and limits. Or say it in words and I will fill the steps in for you.</p>
   </div>
   <div class="bd-gematria" data-hook="style-gematria" hidden>
     <h3 class="hd-h3">Gematria</h3>
@@ -119,8 +120,12 @@
     <p class="hd-fine" data-hook="style-fixed"></p>
   </div>
   <div data-hook="rules-body" hidden>
+    <div class="bd-quick-row" data-hook="rules-quick" hidden></div>
     <div class="bd-sentences" data-hook="rule-sentences" aria-live="polite"></div>
     <div class="bd-problems" data-hook="build-problems" role="alert" hidden></div>
+    <section class="bd-livetest" data-hook="rules-live-test" aria-label="Past 14 days with these rules" data-state="idle">
+      <div class="bd-hind" data-hook="hind-box" aria-live="polite"><p class="bd-hind__line">Past 14 days with these rules: build a rule to see how it would have done.</p></div>
+    </section>
     <div class="bd-steps" data-hook="rules-advanced">
       <div class="bd-cards" data-hook="rule-cards"></div>
       <p><button type="button" class="btn btn--ghost" data-hook="add-rule">Add another rule</button>
@@ -183,8 +188,6 @@
     <p class="bd-preview__retry" data-hook="preview-retry-row" hidden><button type="button" class="btn btn--ghost" data-hook="preview-retry">Check again</button></p>
     <ul class="bd-picks" data-hook="preview-list"></ul>
     <p class="hd-fine" data-hook="preview-note">A read-only look at today's board. It places nothing, and it is never counted.</p>
-    <h3 class="bd-preview__sub">Last 14 days</h3>
-    <div class="bd-hind" data-hook="hind-box" aria-live="polite"><p class="bd-hind__line">Build a rule to see how it would have done over the last 14 days.</p></div>
   </section>
 </details>
 

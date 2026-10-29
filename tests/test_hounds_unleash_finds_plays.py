@@ -381,9 +381,8 @@ class TheUi(unittest.TestCase):
     def test_the_studio_record_tab_agrees(self):
         d = kennel_dog("u-1", bets=0, open_bets=5)
         out = run_page("kennel", routes=TheStudio().routes([d]), **SIGNED, actions=[
-            dict(do="click", sel="[data-hook='dog-avatar']", label="open", wait=120),
-            dict(do="click", sel="[role='tab'][data-tab='record']", label="record", wait=300, capture=[
-                q("stats", "[data-hook='studio-record-stats'] dd", "texts")])])
+            dict(do="click", sel="[data-hook='dog-avatar']", label="record", wait=400, capture=[
+                q("stats", "[data-hook='studio-record-stats'] dd", "texts")])])        # Overview is where the record lives now (2026-10-29)
         self.assertEqual(out["captures"]["record"]["stats"][3:], ["5 (5 open)", "5"])
 
 

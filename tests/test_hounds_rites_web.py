@@ -126,8 +126,10 @@ class NothingLabelsThePreviewTakeThemOutBack(unittest.TestCase):
                 self.assertEqual(self.OUT_BACK.findall(self.scan.visible_html(name)), [], name)
 
     def test_the_kennel_pages_only_say_it_for_the_burial(self):
-        for name in ("kennel.html",):
-            self.assertEqual(self.OUT_BACK.findall(self.scan.visible_html(name)), [])
+        # kennel.html says it once: the studio's ... menu item that opens the burial (2026-10-29); nothing else on it labels the preview
+        html = (WEB / "kennel.html").read_text(encoding="utf-8")
+        self.assertEqual(self.OUT_BACK.findall(self.scan.visible_html("kennel.html")), ["out back"])
+        self.assertIn('data-hook="studio-outback">Take them out back<', html)
         literals = [t for t in self.scan.literals(WEB / "js" / "kennel.js") if self.OUT_BACK.search(t)]
         self.assertTrue(literals)
         for text in literals:
@@ -140,7 +142,7 @@ class NothingLabelsThePreviewTakeThemOutBack(unittest.TestCase):
         self.assertIn("Unleashing", (WEB / "js" / "dog-camp.js").read_text(encoding="utf-8"))
         self.assertIn('text: "Unleash"', (WEB / "js" / "dog-camp.js").read_text(encoding="utf-8").replace('"data-hook": "camp-dog-fire", ', ""))
         self.assertIn(">Unleash<", (WEB / "hound.html").read_text(encoding="utf-8"))
-        self.assertIn('role="tab" data-tab="fire" aria-selected="false">Unleash<', (WEB / "kennel.html").read_text(encoding="utf-8"))
+        self.assertIn('data-hook="studio-unleash">Unleash<', (WEB / "kennel.html").read_text(encoding="utf-8"))
 
     def test_the_route_and_the_hooks_keep_the_old_word(self):
         self.assertIn("/fire`", (WEB / "js" / "dog-fire.js").read_text(encoding="utf-8"))

@@ -709,3 +709,118 @@
 .kn-lossnext { margin: 0 0 var(--lh-s3, 12px); padding: var(--lh-s3, 12px) var(--lh-s4, 16px); border-radius: var(--lh-r-lg, 14px); background: var(--lh-soft, rgba(255, 255, 255, .05)); }
 .kn-lossnext__text { margin: 0 0 var(--lh-s2, 8px); font-weight: 600; }
 .kn-lossnext__row { display: flex; flex-wrap: wrap; gap: var(--lh-s2, 8px); }
+
+/* ======================================================================================================================
+ * THE STUDIO, REVAMPED (owner, 2026-10-29: "the whole hound menu ... needs an entire revamp functionally and for UI ... minimizing the
+ * total number of forked options and menus"). A header with Unleash, Train and a ... menu, three tabs (Overview, Rules, Coach), the hound's
+ * picture as the way into its Look. Phone first (about 400px): 16px gutters, three tabs that fit with no sideways strip, 44px touch targets.
+ * ==================================================================================================================== */
+
+/* the hound's picture is a button: tap it for the Look editor */
+.kn-studio__avatar { position: relative; padding: 0; border: 0; border-radius: 22px; background: none; color: inherit; cursor: pointer; }
+.kn-studio__avatar[disabled] { cursor: default; }
+.kn-studio__avatar:focus-visible { outline: 2px solid var(--lh-accent); outline-offset: 3px; }
+.kn-studio__avatar-tag { position: absolute; right: -2px; bottom: -2px; padding: 2px 8px; border-radius: var(--lh-r-pill); background: var(--lh-bg-2);
+  box-shadow: 0 0 0 1px var(--lh-line-2); color: var(--lh-ink2); font: 600 var(--lh-fs-xs)/1.4 var(--lh-font-text); letter-spacing: .02em; }
+.kn-studio__avatar:hover .kn-studio__avatar-tag { color: var(--lh-ink); }
+
+/* the buttons row: Unleash (the one accent), Train, and the ... menu; they wrap to a second line before they squeeze */
+.kn-studio__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--lh-s2); margin: var(--lh-s4) 0 0; }
+.kn-studio__actions[hidden] { display: none; }
+.kn-studio__act { flex: 1 1 120px; min-height: 44px; padding: 0 var(--lh-s4); justify-content: center; font-size: var(--lh-fs-base); font-weight: 600; }
+.kn-studio__actions .kn-studio__more { width: 44px; height: 44px; font-size: 24px; }
+.kn-studio__actions .kn-studio__menu { right: 0; left: auto; top: calc(100% + 6px); }
+.kn-studio__menuitem--plain { color: var(--lh-ink); }
+.kn-studio__menuitem--plain:hover { background: var(--lh-soft-2); color: var(--lh-ink); }
+.kn-studio__top { justify-content: flex-end; }
+
+/* three tabs, equal width, never a sideways strip */
+.lh-tabs--studio { overflow: visible; scroll-snap-type: none; }
+.lh-tabs--studio [role="tab"] { flex: 1 1 0; min-width: 0; height: 44px; padding: 0 var(--lh-s2); text-align: center; }
+
+/* OVERVIEW and COACH blocks */
+[data-hook="studio-fire"]:empty, [data-hook="studio-record"]:empty, [data-hook="studio-lessons"]:empty, [data-hook="studio-versions"]:empty { display: none; }
+[data-hook="studio-fire"] { margin: 0 0 var(--lh-s5); }
+.kn-analyze { margin: 0 0 var(--lh-s5); }
+.kn-train { margin: var(--lh-s5) 0 0; padding: var(--lh-s4); border-radius: var(--lh-r-lg); background: var(--lh-soft); }
+.kn-train .kn-rec__h { margin-top: 0; }
+.kn-train__line { margin: 0 0 var(--lh-s3); }
+.kn-train__btn { min-height: 44px; padding: 0 var(--lh-s5); }
+[data-hook="studio-versions"] { margin: var(--lh-s5) 0 0; }
+
+/* THE LOOK EDITOR: a sheet over the drawer */
+.kn-look { position: absolute; inset: 0; z-index: 8; display: flex; flex-direction: column; background: var(--lh-bg-2, #10141A); }
+.kn-look[hidden] { display: none; }
+.kn-look__head { display: flex; align-items: center; justify-content: space-between; gap: var(--lh-s3); padding: var(--lh-s3) var(--lh-s4); flex: none; }
+.hounds-page .kn-look .kn-look__title { margin: 0; font-family: var(--lh-font-display); font-size: var(--lh-fs-lg); font-weight: 700; letter-spacing: var(--lh-track-display); }
+.kn-look__done { min-height: 44px; padding: 0 var(--lh-s5); }
+.kn-look > [data-hook="studio-look"] { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 var(--lh-s4) 40px; overscroll-behavior: contain; }
+
+/* RULES: one page. The sports row, the quick row, the rule in words, the "Past 14 days" line, the folds, the Save bar */
+.bd-houndsports { margin: 0 0 var(--lh-s4); }
+.bd-houndsports[hidden], .bd-quick-row[hidden] { display: none; }
+.bd-houndsports__label { margin: 0 0 var(--lh-s2); }
+.bd-houndsports__hint { margin: var(--lh-s2) 0 0; }
+.hounds-page .bd-step .bd-chips.bd-houndchips { max-height: none; overflow: visible; margin: 0; }
+.hounds-page .bd-houndchips .bd-chip { min-height: 44px; display: inline-flex; align-items: center; gap: var(--lh-s2); padding: 0 var(--lh-s4); }
+/* a checkbox chip: filled when every rule bets the sport, half-filled (a dashed ring and a partial fill) when only some rules do */
+.hounds-page .bd-houndchips .bd-chip[aria-checked="true"] { background: rgba(47, 208, 122, .16); color: #fff; font-weight: 600; box-shadow: inset 0 0 0 1px var(--lh-accent); }
+.hounds-page .bd-houndchips .bd-chip[aria-checked="mixed"] { background: linear-gradient(90deg, rgba(47, 208, 122, .16) 50%, var(--lh-soft) 50%); color: #fff; box-shadow: inset 0 0 0 1px var(--lh-accent); border-style: dashed; }
+.hounds-page .bd-houndchips .bd-chip[aria-checked="true"]::before { content: "\2713"; font-weight: 700; color: var(--lh-accent); }
+.hounds-page .bd-houndchips .bd-chip[aria-checked="mixed"]::before { content: "\2212"; font-weight: 700; color: var(--lh-accent); }
+.hounds-page .bd-houndchips .bd-chip[disabled] { opacity: .45; }
+.hounds-page .bd-houndchips .bd-chip[aria-checked="true"][disabled] { opacity: .8; }
+
+.bd-quick-row { display: grid; gap: var(--lh-s4); margin: 0 0 var(--lh-s5); min-width: 0; }
+.hounds-page .bd-quick-row .bd-chips { flex-wrap: wrap; overflow-x: visible; }
+.bd-quick-row .bd-chip { min-height: 44px; }
+.bd-quick-row select, .bd-quick-row input[type="number"] { min-height: 44px; }
+
+/* the "Past 14 days with these rules" line: a quiet card that says it is a rehearsal */
+.bd-livetest { margin: var(--lh-s4) 0; padding: var(--lh-s3) var(--lh-s4); border-radius: var(--lh-r-lg); background: var(--lh-soft); min-width: 0; }
+.bd-livetest .bd-hind__line { margin: var(--lh-s1) 0; font-size: var(--lh-fs-md); font-weight: 600; line-height: 1.35; }
+.bd-livetest[data-state="pending"] .bd-hind__line { color: var(--lh-mute); }
+.bd-livetest[data-outcome="empty"] .bd-hind__line { color: var(--lh-ink2); font-weight: 500; }
+.bd-livetest .dk-chip--hind { margin-bottom: var(--lh-s1); }
+.kn-fulltest { margin: var(--lh-s3) 0 0; }
+.kn-fulltest__toggle { display: inline-flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: none; color: var(--lh-ink2); font: 600 var(--lh-fs-base)/1 var(--lh-font-text); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.kn-fulltest__toggle:hover { color: var(--lh-ink); }
+.kn-fulltest__toggle:focus-visible { outline: 2px solid var(--lh-accent); outline-offset: 2px; }
+.kn-fulltest__toggle::after { content: "\25BE"; margin-left: var(--lh-s2); }
+.kn-fulltest__toggle[aria-expanded="true"]::after { content: "\25B4"; }
+.kn-fulltest__panel[hidden] { display: none; }
+.kn-fulltest__note { margin: 0 0 var(--lh-s3); }
+
+/* "Advanced: edit each rule": the cards, folded */
+.bd-fold { margin: var(--lh-s4) 0; }
+.bd-fold > summary { display: flex; align-items: center; min-height: 44px; padding: 0 var(--lh-s4); border-radius: var(--lh-r-md); background: var(--lh-soft); color: var(--lh-ink); font: 600 var(--lh-fs-base)/1 var(--lh-font-text); cursor: pointer; list-style: none; }
+.bd-fold > summary::-webkit-details-marker { display: none; }
+.bd-fold > summary::after { content: "\25BE"; margin-left: auto; color: var(--lh-mute); }
+.bd-fold[open] > summary::after { content: "\25B4"; }
+.bd-fold > summary:focus-visible { outline: 2px solid var(--lh-accent); outline-offset: 2px; }
+.bd-fold[open] > summary { margin-bottom: var(--lh-s4); }
+
+/* the live preview dock is no longer the sticky top bar of the drawer: the Rules page carries its own live line */
+.kn-studio .bd-embedded > .bd-dock { position: static; margin: var(--lh-s4) 0; }
+
+/* THE SAVE BAR: always in reach at the foot of the drawer while the page is long */
+.bd-savebar { position: sticky; bottom: 0; z-index: 5; margin: var(--lh-s5) calc(-1 * var(--lh-s4)) 0; padding: var(--lh-s3) var(--lh-s4) calc(var(--lh-s3) + env(safe-area-inset-bottom, 0px));
+  background: var(--lh-bg-2, #10141A); box-shadow: 0 -1px 0 var(--lh-line-2); }
+.bd-savebar .bd-save { display: flex; flex-wrap: wrap; align-items: center; gap: var(--lh-s2) var(--lh-s3); margin: 0; }
+.bd-savebar .bd-save .btn { min-height: 44px; }
+.bd-savebar .bd-save .btn--primary { flex: 1 1 180px; }
+
+@media (max-width: 760px) {
+  /* the old phone rule hid every header link; the Open page link stays hidden, the buttons row does not */
+  .kn-studio__actions { margin-top: var(--lh-s3); }
+  .kn-studio__head .kn-studio__actions .lh-btn { display: inline-flex; }
+  .kn-studio__act { flex-basis: 0; }
+  .bd-savebar { margin-left: calc(-1 * var(--lh-s3)); margin-right: calc(-1 * var(--lh-s3)); padding-left: var(--lh-s3); padding-right: var(--lh-s3); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .kn-look:not([hidden]) { animation: kn-look-in var(--lh-t-base) var(--lh-ease, ease) both; }
+  .bd-livetest[data-state="pending"] .bd-hind__line { animation: kn-pulse 1.4s ease-in-out infinite; }
+}
+@keyframes kn-look-in { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes kn-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
