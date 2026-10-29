@@ -4715,3 +4715,10 @@
 {"away_score": null, "away_team": "Ricardo Blandon", "commence_time": "2026-10-31T20:00:00Z", "completed": false, "event_id": "edcb610d62a8ff0427ef247c0b4365d0", "home_score": null, "home_team": "Rafael Espinoza", "kind": "score", "last_update": null, "observed_utc": "2026-10-29T08:11:35.906526+00:00", "outcome": null, "scores": null, "sport_key": "boxing_boxing"}
 {"away_score": null, "away_team": "Erson Trinidad", "commence_time": "2026-11-04T10:00:00Z", "completed": false, "event_id": "a3db1506d5a04328ff888b438cc01479", "home_score": null, "home_team": "Masataka Taniguchi", "kind": "score", "last_update": null, "observed_utc": "2026-10-29T08:11:35.906526+00:00", "outcome": null, "scores": null, "sport_key": "boxing_boxing"}
 {"credits": 2, "days_from": 3, "events": 40, "kind": "poll", "observed_utc": "2026-10-29T08:11:35.906526+00:00", "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 8, "kind": "poll", "observed_utc": "2026-10-29T08:22:49.840625+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-29T08:22:49.840625+00:00", "sport_key": "icehockey_ahl"}
+{"away_score": null, "away_team": "England", "commence_time": "2026-10-29T07:59:00Z", "completed": false, "event_id": "66a3eceb780381907635cfe940393943", "home_score": null, "home_team": "Sri Lanka", "kind": "score", "last_update": null, "observed_utc": "2026-10-29T08:22:49.840625+00:00", "outcome": null, "scores": null, "sport_key": "cricket_odi"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-29T08:22:49.840625+00:00", "sport_key": "cricket_odi"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-10-29T08:22:49.840625+00:00", "sport_key": "baseball_kbo"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-10-29T08:22:49.840625+00:00", "sport_key": "cricket_international_t20"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-10-29T08:22:49.840625+00:00", "sport_key": "baseball_npb"}
