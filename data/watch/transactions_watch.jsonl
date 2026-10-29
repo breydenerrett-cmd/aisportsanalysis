@@ -6297,3 +6297,4 @@
 {"category": "signed", "date": "2026-10-29", "first_seen_utc": "2026-10-29T18:59:45.342237+00:00", "player": "Robinson Mart\u00ednez", "player_id": 660822, "team": "BAL", "transaction_id": 947274}
 {"fetched_utc": "2026-10-29T19:10:25.373311+00:00", "game_date": "2026-10-29", "poll": true}
 {"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T19:10:25.373311+00:00", "player": "Victor Robles", "player_id": 645302, "team": "SEA", "transaction_id": 947277}
+{"fetched_utc": "2026-10-29T19:25:33.156157+00:00", "game_date": "2026-10-29", "poll": true}
