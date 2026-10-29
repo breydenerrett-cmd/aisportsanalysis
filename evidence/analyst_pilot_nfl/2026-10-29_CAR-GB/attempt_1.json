@@ -1,0 +1,129 @@
+{
+  "summary": "Green Bay is the favourite at home, and the data gives some support: the Packers allow fewer points per game and fewer yards per play than Carolina this season, and Carolina is coming off a heavy loss with a long list of players out on the offensive line. But both teams are on four days of rest, both quarterbacks are only projected, Green Bay's season margin per game is slightly negative, and the books agree with each other closely. The moneyline of -185 at the best book asks for more than I can justify, so I pass. The spread has moved from 3.0 to 3.5, half a point off the key number of 3, and the market sits at an even split on both sides, so I see no reason the number is wrong and pass. The total of 47 has crept up from 46.5. Carolina scores and allows more than Green Bay, which points one way, while Green Bay's defence points the other, so the price probably already holds it. Weather is not in the data for an outdoor game, and that matters most for the total. I pass on all three.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "GB",
+      "verdict": "PASS",
+      "price": -185,
+      "book": "draftkings",
+      "fair_estimate": 0.63,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books' own fair number for Green Bay is already well above even, so the favourite is priced as a favourite and I see nothing the price misses.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.6349},
+            {"path": "markets.moneyline.options[0].best.price", "value": -185}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Green Bay's defence is the stronger unit this season, but its season margin per game is slightly negative, so the form does not clearly justify a bigger number than the books hold.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 20.7143},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 27.6667},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": -0.1429}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both teams are on a short week with the same days of rest, and both quarterbacks are only the schedule's projection, so nothing here separates the sides beyond the price.",
+          "evidence": [
+            {"path": "sections.home.values.rest.days_since_last_game", "value": 4},
+            {"path": "sections.away.values.rest.days_since_last_game", "value": 4},
+            {"path": "sections.home.values.qb.listed_for_this_game.projected", "value": true}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -170,
+      "what_would_change_it": "A quarterback change for Carolina or a Green Bay price of -170 or better would make the favourite worth taking.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "GB -3.5",
+      "verdict": "PASS",
+      "price": -105,
+      "book": "betmgm",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books split the two sides almost exactly evenly at 3.5, so the market sees this as a coin flip and I have no reason to say the number is wrong in points.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5009},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4991}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number started at 3.0 for Carolina and has moved to 3.5, so it has moved toward Green Bay and now sits half a point off the key number of 3. That move is already in the price.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": 3.0},
+            {"path": "markets.spread.options[0].line", "value": -3.5},
+            {"path": "sections.reference.values.key_numbers", "value": "[3,6,7,10,14]"}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Green Bay's last three games look strong on margin per game, but that window is only three games and Carolina's last five look better, so the form points in both directions.",
+          "evidence": [
+            {"path": "sections.matchup.values.differentials.form_last_3_margin_per_game.diff", "value": 14.6666},
+            {"path": "sections.matchup.values.differentials.form_last_5_margin_per_game.diff", "value": -0.4}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A quarterback change on either side, or the number moving off 3.5 to 3 or to 4 at a fair price, would change the view.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 47",
+      "verdict": "PASS",
+      "price": -105,
+      "book": "bovada",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books price the over and under as equals at 47, and the number has crept up from 46.5, so the market has had a week to absorb the same scoring figures I can see.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5005},
+            {"path": "markets.total.context.number_first_captured", "value": 46.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Carolina scores and allows a lot this season, while Green Bay scores and allows about twenty points a game, so one team points toward the over and the other toward the under.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 26.5},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 27.6667},
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 20.5714},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 20.7143}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Yards per play are modest on both sides, and weather for an outdoor stadium is not in the data, so I cannot see a factor that would move a total.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.yards_per_play", "value": 5.359},
+            {"path": "sections.away.values.form.season_to_date.yards_per_play", "value": 5.7778},
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A weather forecast showing heavy wind or cold, or a quarterback change on either side, would change the view on the total.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

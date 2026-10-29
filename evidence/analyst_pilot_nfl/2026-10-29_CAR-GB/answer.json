@@ -1,0 +1,132 @@
+{
+  "summary": "Green Bay is the home favourite and the books give it a fair probability of 0.6349. I pass on the moneyline: the best home price is -185 and most books sit near -195 to -200, which is steep next to a season-long scoring margin gap of only 1.0238 points per game in Green Bay's favour. The spread is a coin flip at GB -3.5, half a point off the 3 that a field goal adds up to, and it has moved from 3.0 since it was first captured. Nothing in the data tells me that number is wrong, so I pass. On the total of 47, Green Bay has scored 20.5714 and allowed 20.7143 per game over seven games, while Carolina has scored 26.5 and allowed 27.6667 over six, so the two profiles pull in different directions and the price probably holds both. Both quarterbacks are projections, not confirmed starters, both teams are on a short week, and weather is missing for an outdoor game at Lambeau Field. I pass on all three markets.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "GB",
+      "verdict": "PASS",
+      "price": -185,
+      "book": "draftkings",
+      "fair_estimate": 0.62,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books already treat Green Bay as the clear favourite, and the best home price is -185. That is a steep price to lay with nothing in the data showing the market is too low on Green Bay.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.6349},
+            {"path": "markets.moneyline.options[0].best.price", "value": -185}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Season-long form does not separate the teams by much: the scoring margin gap in Green Bay's favour is small next to a price near -190. The three-game gap is larger but three games is noise.",
+          "evidence": [
+            {"path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": 1.0238},
+            {"path": "sections.matchup.values.differentials.form_last_3_margin_per_game.diff", "value": 14.6666}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both teams have the same short rest, so rest does not tilt this game, and both quarterbacks are schedule projections.",
+          "evidence": [
+            {"path": "sections.home.values.rest.days_since_last_game", "value": 4},
+            {"path": "sections.away.values.rest.days_since_last_game", "value": 4},
+            {"path": "sections.home.values.qb.listed_for_this_game.projected", "value": true}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -163,
+      "what_would_change_it": "Green Bay at -163 or better, or a confirmed quarterback change for Carolina, would move this off a pass.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "GB -3.5",
+      "verdict": "PASS",
+      "price": -105,
+      "book": "betmgm",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books see this as a coin flip at GB -3.5, with a fair probability for Green Bay of 0.5009. A take needs a reason the number is wrong in points, and the data does not give one.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5009},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4991}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number was 3.0 when first captured and is now 3.5, so it has moved toward Green Bay and now sits half a point off the 3, which is a field goal. That is a key number, but it does not tell us which side is wrong.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": 3.0},
+            {"path": "markets.spread.options[0].line", "value": -3.5},
+            {"path": "sections.reference.values.scoring.field_goal", "value": 3}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Form is too thin or too small to argue with the number. The three-game margin gap is large but rests on three games, and the season-long gap is small.",
+          "evidence": [
+            {"path": "sections.matchup.values.differentials.form_last_3_margin_per_game.diff", "value": 14.6666},
+            {"path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": 1.0238}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed quarterback change for either team, or the number moving off 3.5, would make me look again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 47",
+      "verdict": "PASS",
+      "price": -105,
+      "book": "bovada",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Scoring points both ways. Green Bay scores and allows about 20 and a bit per game over seven games; Carolina scores 26.5 and allows 27.6667 over six. The profiles pull in opposite directions and the 47 already sits between them.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 20.5714},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 20.7143},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 26.5},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 27.6667}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Yards per play and turnovers do not break the tie either: Carolina gains more per play and allows more, while Green Bay has the better turnover margin.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.yards_per_play.value", "value": 5.359},
+            {"path": "sections.away.values.form.season_to_date.yards_per_play.value", "value": 5.7778},
+            {"path": "sections.home.values.form.season_to_date.yards_per_play_allowed.value", "value": 4.8728},
+            {"path": "sections.away.values.form.season_to_date.yards_per_play_allowed.value", "value": 5.3805},
+            {"path": "sections.home.values.form.season_to_date.turnover_margin.value", "value": 0.7143},
+            {"path": "sections.away.values.form.season_to_date.turnover_margin.value", "value": -0.1667}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The total opened at 46.5 and is now 47, a small move. The game is outdoors and we cannot see weather, which could move the number, and both quarterbacks are projections.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 46.5},
+            {"path": "markets.total.options[0].line", "value": 47.0},
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A weather forecast showing wind or cold, or a quarterback change, would give a reason to take a side of the total.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

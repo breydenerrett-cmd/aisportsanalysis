@@ -1,0 +1,23 @@
+{
+  "sport": "nfl",
+  "game_id": "2026_08_CAR_GB",
+  "date": "2026-10-29",
+  "away": "CAR",
+  "home": "GB",
+  "kickoff_utc": "2026-10-30T00:15:00Z",
+  "built_at": "2026-10-29T20:41:55Z",
+  "packet_hash": "9d68905b3e9801fc91914d136f8cfd57e957efc01141d389eafdb77dc9fef45a",
+  "prompt_version": "analyst_prompt_nfl_v1",
+  "prompt_hash": "8b80fc0cc2622da7497bed03b851d3934b8d687a6ca9c5a17d3eeb2d1c56ea7b",
+  "token_estimate": 9665,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "spread",
+    "total"
+  ],
+  "missing_items": 2,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "nfl_store+odds_multibook"
+}
