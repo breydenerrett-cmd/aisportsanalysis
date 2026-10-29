@@ -9145,3 +9145,5 @@
 {"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T07:32:44.848893Z", "regions": ["us"], "rows": 30, "sport_key": "tennis_wta_pan_pacific_open", "stored": 30}
 {"commence_utc": "2026-10-29T09:30:00Z", "event_id": "16b55265442558267fb4b43d29e4950c", "kind": "phase", "observed_utc": "2026-10-29T07:32:44.848893Z", "phase": "t2h", "rows": 27, "sport_key": "baseball_kbo"}
 {"call_kind": "pregame", "credits": 3, "events": 1, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-29T07:32:44.848893Z", "regions": ["us"], "rows": 27, "sport_key": "baseball_kbo", "stored": 27}
+{"commence_utc": "2026-10-29T19:00:00Z", "event_id": "5b5cfa69dfc1e9b874c887c6209c1a52", "kind": "phase", "observed_utc": "2026-10-29T07:43:40.262301Z", "phase": "t24h", "rows": 8, "sport_key": "soccer_spain_copa_del_rey"}
+{"call_kind": "pregame", "credits": 2, "events": 21, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-29T07:43:40.262301Z", "regions": ["eu"], "rows": 207, "sport_key": "soccer_spain_copa_del_rey", "stored": 190}
