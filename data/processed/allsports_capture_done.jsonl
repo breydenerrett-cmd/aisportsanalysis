@@ -9899,3 +9899,4 @@
 {"call_kind": "pregame", "credits": 3, "events": 54, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-29T23:13:44.490416Z", "regions": ["us"], "rows": 325, "sport_key": "americanfootball_ncaaf_fcs", "stored": 20}
 {"commence_utc": "2026-10-30T23:10:00Z", "event_id": "45ebc54751ef3e435192eaeb0470acfb", "kind": "phase", "observed_utc": "2026-10-29T23:13:44.490416Z", "phase": "t24h", "rows": 24, "sport_key": "basketball_nba"}
 {"call_kind": "pregame", "credits": 3, "events": 18, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-29T23:13:44.490416Z", "regions": ["us"], "rows": 352, "sport_key": "basketball_nba", "stored": 313}
+{"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T23:20:15.754272Z", "regions": ["us"], "rows": 25, "sport_key": "tennis_atp_swiss_indoors", "stored": 25}
