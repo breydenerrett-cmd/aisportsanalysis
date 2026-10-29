@@ -54,11 +54,12 @@ export const EXAMPLES = [
 
 const PREVIEW_DEBOUNCE_MS = 250;
 /** The 14 day hindsight preview (POST /hounds/drill) shares a five-an-hour allowance with the member's own Backtest, cached or not. So it waits for
- *  the edits to stop, runs on its own at most twice an hour, and after that says "preview paused" and waits for a tap. */
-export const HIND_DEBOUNCE_MS = 1200;
-export const HIND_AUTO_PER_HOUR = 2;
+ *  the edits to stop (0.8 s, owner 2026-10-29: the Rules tab's "Past 14 days" line follows the rules live), runs on its own at most three times an
+ *  hour (opening the editor is one), leaving two of the five for the full test, and after that says "preview paused" and waits for a tap. */
+export const HIND_DEBOUNCE_MS = 800;
+export const HIND_AUTO_PER_HOUR = 3;
 export const HIND_DAYS = 14;
-export const EMPTY_STEPS_TEXT = "Build it in steps: sports, markets, conditions, price range and limits. Or say it in words above and I will fill the steps in for you.";
+export const EMPTY_STEPS_TEXT = "Build it in steps: sports, markets, conditions, price range and limits. Or say it in words and I will fill the steps in for you.";
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 
@@ -108,6 +109,8 @@ const S = {
   season: null,      // {code: {in_season, games_7d, phase, chip, reason}} from GET /sports/season, or null when it did not load
   hind: { timer: null, seq: 0, last: null, lastKey: "", answered: new Map(), autoRuns: [], paused: false, stale: false, busy: false },
   kept: null,        // {id, name} once THIS draft is a hound: the Keep button becomes "Open in My Kennel" (a second keep is a duplicate name)
+  houndNote: null,   // {spec, text}: the one line under the hound-level sports row, for the spec it was written about
+  fromQuick: false, cardsTimer: null,     // the quick row (studio): a plain edit made there does not redraw itself, only the cards
 };
 
 // ---- the menu ---------------------------------------------------------------------------------------
@@ -534,6 +537,188 @@ function sportGrid(rule, onChange) {
   return wrap;
 }
 
+// ---- the hound's sports: one row that sets every rule at once --------------------------------------------
+
+/** The concrete sports a rule covers: "Any sport" means every sport the menu lists. */
+function ruleSportSet(rule) {
+  const list = rule.sports || [];
+  return new Set(list.includes(ANY_VALUE) ? concreteSports(S.menu) : list);
+}
+
+/** Give a rule a new set of sports, in the menu's order, and let the stat conditions the new sports cannot run leave with the change
+ *  (the same clean-up chooseSport does; the line under that rule's own grid says how many). Returns how many conditions dropped. */
+function setRuleSports(rule, set) {
+  rule.sports = S.menu.sports.map((x) => x.value).filter((v) => set.has(v));
+  const before = rule.when ? countConditions(rule.when) : 0;
+  rule.when = pruneConditions(rule, rule.when);
+  const dropped = before - (rule.when ? countConditions(rule.when) : 0);
+  if (dropped > 0) droppedNotes.set(rule, `${dropped} stat ${dropped === 1 ? "condition was" : "conditions were"} removed because the sport you picked does not have that data.`);
+  else droppedNotes.delete(rule);
+  return dropped;
+}
+
+/** "on" when every rule bets the sport, "mixed" when only some do, "off" when none does. */
+function houndSportState(value) {
+  const rules = S.spec.rules;
+  const n = rules.filter((r) => ruleSportSet(r).has(value)).length;
+  return n === 0 ? "off" : n === rules.length ? "on" : "mixed";
+}
+
+const sportLabelOf = (value) => { const sp = S.menu.sports.find((x) => x.value === value); return sp ? sp.label : value; };
+
+/** Turning a sport OFF must leave every rule at least one sport; the chip is disabled while that would not hold (the last one). */
+function isLastSport(value) {
+  return S.spec.rules.some((r) => { const set = ruleSportSet(r); return set.size === 1 && set.has(value); });
+}
+
+/**
+ * One tap on a sport in the hound-level row. OFF everywhere when it was on in every rule; otherwise ON in every rule that can bet it
+ * (a rule whose markets are not offered in that sport is left alone, and the line under the row says so). The per-rule grids stay the
+ * way to give two rules different sports.
+ */
+function toggleHoundSport(value) {
+  if (!S.menu || !S.spec) return;
+  const rules = S.spec.rules;
+  const label = sportLabelOf(value);
+  const state = houndSportState(value);
+  const notes = [];
+  let dropped = 0;
+  if (state === "on") {
+    if (isLastSport(value)) return;
+    for (const rule of rules) {
+      const set = ruleSportSet(rule);
+      set.delete(value);
+      dropped += setRuleSports(rule, set);
+    }
+    notes.push(`${label} is off for every rule.`);
+  } else {
+    const skipped = [];
+    rules.forEach((rule, i) => {
+      const set = ruleSportSet(rule);
+      if (set.has(value)) return;
+      if (!allowedSports(rule).includes(value)) { skipped.push(i + 1); return; }
+      set.add(value);
+      dropped += setRuleSports(rule, set);
+    });
+    if (skipped.length === rules.length) { S.houndNote = { spec: S.spec, text: `No rule can bet ${label}: its markets are not offered there.` }; renderHoundSports(); return; }
+    if (skipped.length) notes.push(`${label} was added to the rules that can bet it. ${skipped.length === 1 ? `Rule ${skipped[0]} has` : `Rules ${skipped.join(", ")} have`} markets that are not offered in ${label}.`);
+  }
+  if (dropped > 0) notes.push(`${dropped} stat ${dropped === 1 ? "condition was" : "conditions were"} removed because a sport you picked does not have that data.`);
+  S.houndNote = notes.length ? { spec: S.spec, text: notes.join(" ") } : null;
+  changed(true);
+}
+
+/**
+ * THE HOUND-LEVEL SPORTS ROW (owner, 2026-10-29: "there's no simple way to just select or unselect sports it bets on"). One chip per sport
+ * the menu lists, "Any sport" left out (turning sports off is the point); on = every rule has it, mixed (aria-checked="mixed") = some do.
+ * It writes the same `rule.sports` the per-rule grids do, so it never has a second source of truth, and a Gematria hound's one rule
+ * is driven the same way.
+ */
+function renderHoundSports() {
+  const host = q("hound-sports");
+  if (!host) return;
+  clearNode(host);
+  const has = !!S.menu && !!S.spec && S.spec.rules.length > 0 && S.started;
+  host.hidden = !has;
+  if (!has) return;
+  const menu = S.menu;
+  const season = S.season;
+  const entry = (sp) => (season ? season[sp.value] || null : null);
+  const dimmed = (sp) => { const e = entry(sp); return !!e && !(e.games_7d > 0); };
+  const list = menu.sports.filter((sp) => !isAny(sp)).sort((a, b) => {
+    if (!season) return 0;
+    const da = dimmed(a) ? 1 : 0, db = dimmed(b) ? 1 : 0;
+    if (da !== db) return da - db;
+    return ((entry(b) || {}).games_7d || 0) - ((entry(a) || {}).games_7d || 0);
+  });
+  const grid = h("div", { class: "bd-chips bd-sportchips bd-houndchips", role: "group", "aria-label": "Sports this hound bets on", "data-hook": "hound-sport-chips" });
+  const none = h("p", { class: "hd-fine", role: "status", hidden: true, text: "No sport matches that." });
+  let needle = "";
+  const draw = () => {
+    clearNode(grid);
+    const shown = list.filter((sp) => !needle || houndSportState(sp.value) !== "off" || String(sp.label).toLowerCase().includes(needle));
+    for (const sp of shown) {
+      const state = houndSportState(sp.value);
+      const e = entry(sp);
+      const dim = dimmed(sp);
+      const canAdd = S.spec.rules.some((r) => allowedSports(r).includes(sp.value) || ruleSportSet(r).has(sp.value));
+      const last = state === "on" && isLastSport(sp.value);
+      const attrs = { role: "checkbox", "aria-checked": state === "on" ? "true" : state === "mixed" ? "mixed" : "false", "data-hound-sport": sp.value, "data-state": state };
+      if (dim) { attrs["data-dim"] = e.in_season ? "no_games" : "out_of_season"; attrs.class = "bd-chip bd-chip--dim"; attrs.title = e.reason || "Nothing scheduled this week."; }
+      if (state !== "on" && !canAdd) { attrs.disabled = true; attrs.title = "Not offered for the markets chosen"; }
+      if (last) { attrs.disabled = true; attrs.title = "At least one sport has to stay on."; }
+      if (state === "mixed") attrs.title = "Some of this hound's rules bet it and some do not. Tap to add it to all of them.";
+      const chip = chipButton(e ? e.chip : sp.label, false, () => toggleHoundSport(sp.value), attrs);
+      chip.removeAttribute("aria-pressed");                       // a checkbox, not a toggle button: aria-checked carries the state, "mixed" included
+      grid.appendChild(chip);
+    }
+    if (needle && shown.every((sp) => houndSportState(sp.value) !== "off")) none.removeAttribute("hidden"); else none.setAttribute("hidden", "");
+  };
+  host.appendChild(h("p", { class: "bd-label bd-houndsports__label", text: "Sports it bets on" }));
+  if (list.length > SEARCH_FROM) {
+    const search = h("input", { type: "search", class: "bd-sportsearch", placeholder: "Search sports", autocomplete: "off", "data-hook": "hound-sport-search", "aria-label": "Search sports" });
+    const fire = () => { needle = String(search.value).trim().toLowerCase(); draw(); };
+    search.addEventListener("input", fire);
+    search.addEventListener("change", fire);
+    host.appendChild(search);
+  }
+  draw();
+  host.appendChild(grid);
+  host.appendChild(none);
+  const many = S.spec.rules.length > 1;
+  host.appendChild(h("p", { class: "hd-fine bd-houndsports__hint", text: many
+    ? "Tap a sport to turn it on or off for every rule at once. A half-filled chip means only some rules bet it."
+    : "Tap a sport to turn it on or off. At least one has to stay on." }));
+  const note = S.houndNote && S.houndNote.spec === S.spec ? S.houndNote.text : "";
+  host.appendChild(h("p", { class: "hd-fine bd-note", "data-hook": "hound-sports-note", role: "status", hidden: !note, text: note }));
+}
+
+// ---- the quick row: the few settings most hounds need, above the rule cards (the studio's Rules tab) --------------
+
+/** A change made in the quick row. A plain value edit leaves the quick widgets alone (the person is holding one) and redraws the rule cards a
+ *  moment later, so the two never disagree; a structural one redraws everything, as it always did. */
+function quickChanged(structural) {
+  S.fromQuick = true;
+  try { changed(structural); } finally { S.fromQuick = false; }
+  if (!structural) {
+    if (S.cardsTimer) clearTimeout(S.cardsTimer);
+    S.cardsTimer = setTimeout(() => { S.cardsTimer = null; if (S.spec && S.started && !isGem()) renderCards(); }, 150);
+  }
+}
+
+/**
+ * Markets, which side and the price range of a hound with ONE rule, and the most bets a day for the hound: the same fields the rule card
+ * and the Limits box write, drawn once more where a phone sees them first. A hound with several rules gets the bets-a-day box and a
+ * pointer to "Advanced: edit each rule" (a market or a price is a per-rule choice). Studio only: the public builder shows its cards open.
+ */
+function renderQuick() {
+  const host = q("rules-quick");
+  if (!host) return;
+  clearNode(host);
+  const has = !!S.menu && !!S.spec && S.spec.rules.length > 0 && S.started;
+  host.hidden = !(has && embedded() && !isGem());
+  if (host.hidden) return;
+  const menu = S.menu;
+  const rules = S.spec.rules;
+  const rule = rules.length === 1 ? rules[0] : null;
+  if (rule) {
+    const kind = kindOf(rule);
+    host.appendChild(h("div", { class: "hd-field bd-field" }, [h("span", { class: "bd-label", text: "Markets" }), marketGroups(rule, quickChanged, "quick-markets")]));
+    const sideLabels = Object.fromEntries(menu.sides.map((x) => [x.value, x.label]));
+    const sideOptions = (menu.side_by_kind[kind] || ["either"]).map((v) => ({ value: v, label: sideLabels[v] || v }));
+    host.appendChild(field("Which side it backs", selectOf(sideOptions, rule.side, (v) => { rule.side = v; quickChanged(true); }, { "data-hook": "quick-side" })));
+    const minBox = h("input", { type: "number" });                  // the dual slider needs its two boxes; the card has the typed ones
+    const maxBox = h("input", { type: "number" });
+    minBox.value = isNum(rule.price_min) ? String(rule.price_min) : "";
+    maxBox.value = isNum(rule.price_max) ? String(rule.price_max) : "";
+    host.appendChild(h("div", { class: "hd-field bd-field" }, [h("span", { class: "bd-label", text: "Average price" }), priceRange(rule, () => quickChanged(false), minBox, maxBox, "quick-")]));
+  } else {
+    host.appendChild(h("p", { class: "hd-fine bd-note", "data-hook": "quick-many", text: `This hound has ${rules.length} rules, so markets, side and price are set on each one under "Advanced: edit each rule".` }));
+  }
+  host.appendChild(field("Most bets a day", sliderField({ min: menu.max_bets_per_day.min, max: menu.max_bets_per_day.max, step: 1, kind: "int", default: menu.max_bets_per_day.default },
+    S.spec.max_bets_per_day, (v) => { S.spec.max_bets_per_day = v; quickChanged(false); }, { "data-hook": "quick-bets" })));
+}
+
 // ---- the price range: one dual slider with the -200 floor drawn -------------------------------------
 
 /** American prices have no values between -100 and +100, so the slider runs on a position axis: 0 is the shortest price the program
@@ -557,15 +742,15 @@ export const posToPrice = (pos, menu = S.menu) => {
   return Math.min(menu.price.highest, price);
 };
 
-function priceRange(rule, onChange, minBox, maxBox) {
+function priceRange(rule, onChange, minBox, maxBox, ns = "") {
   const menu = S.menu;
   const lowest = menu.price.lowest, highest = menu.price.highest;
   const axisMax = priceToPos(highest, menu);
-  const readout = h("p", { class: "bd-pricerange__read", "data-hook": "price-readout", "aria-live": "polite" });
-  const note = h("p", { class: "hd-fine bd-note", "data-hook": "price-floor-note", role: "status", hidden: true });
+  const readout = h("p", { class: "bd-pricerange__read", "data-hook": `${ns}price-readout`, "aria-live": "polite" });
+  const note = h("p", { class: "hd-fine bd-note", "data-hook": `${ns}price-floor-note`, role: "status", hidden: true });
   const mk = (cls, label, slider) => h("input", { type: "range", class: `bd-range bd-range--pair ${cls}`, min: "0", max: String(axisMax), step: "1", "aria-label": label,
     "data-slider": slider });
-  const lo = mk("bd-range--lo", "Shortest average price", "price-min"), hi = mk("bd-range--hi", "Longest average price", "price-max");
+  const lo = mk("bd-range--lo", "Shortest average price", `${ns}price-min`), hi = mk("bd-range--hi", "Longest average price", `${ns}price-max`);
   const fmt = (p) => fmtPrice(p);
   const track = h("div", { class: "bd-pricerange__track" }, [h("span", { class: "bd-pricerange__fill", "aria-hidden": "true" }), lo, hi]);
   const paint = () => {
@@ -603,11 +788,11 @@ function priceRange(rule, onChange, minBox, maxBox) {
   };
   rebind(minBox, "price_min", setLo);
   rebind(maxBox, "price_max", setHi);
-  const floor = h("div", { class: "bd-pricerange__floor", "data-hook": "price-floor", title: menu.price_cap_note }, [
+  const floor = h("div", { class: "bd-pricerange__floor", "data-hook": `${ns}price-floor`, title: menu.price_cap_note }, [
     h("span", { class: "bd-pricerange__floor-no", text: "-200" }), h("span", { class: "bd-pricerange__floor-why", text: "never" })]);
   const ends = h("div", { class: "bd-pricerange__ends hd-fine" }, [h("span", { text: fmt(lowest) }), h("span", { text: "-100 | +100" }), h("span", { text: fmt(highest) })]);
   paint();
-  return h("div", { class: "bd-pricerange", "data-hook": "price-range" }, [readout, h("div", { class: "bd-pricerange__bar" }, [floor, track]), ends, note]);
+  return h("div", { class: "bd-pricerange", "data-hook": `${ns}price-range` }, [readout, h("div", { class: "bd-pricerange__bar" }, [floor, track]), ends, note]);
 }
 
 /** The shortcuts that add a plain-English block to a rule's conditions. The MENU names them (`quick_blocks`: a condition id, its words and
@@ -639,23 +824,14 @@ function stepHead(no, title, note) {
 
 // ---- the rule cards ---------------------------------------------------------------------------------
 
-function ruleCard(rule, index, onChange) {
+/**
+ * The market chips of one rule, grouped by kind (a rule is one kind). Used by the rule card and, in the studio, by the Rules tab's quick
+ * row for a hound with one rule, so both write the same fields in the same way.
+ */
+function marketGroups(rule, onChange, hook) {
   const menu = S.menu;
   const kind = kindOf(rule);
-  const card = h("article", { class: "bd-card", "data-hook": "rule-card", "aria-label": `Rule ${index + 1}` });
-  card.appendChild(h("div", { class: "bd-card__head" }, [
-    h("h3", { class: "bd-card__title", text: `Rule ${index + 1}` }),
-    S.spec.rules.length > 1 ? h("button", { type: "button", class: "btn btn--ghost bd-x", "data-hook": "remove-rule", text: "Remove rule",
-      on: { click: () => { S.spec.rules.splice(index, 1); onChange(true); } } }) : null]));
-
-  // 1. sports
-  card.appendChild(stepHead(1, "Sports", "Chips show what is in season and how many games are on in the next 7 days. A dimmed sport can still be picked."));
-  card.appendChild(h("div", { class: "hd-field bd-field" }, [h("span", { class: "bd-label", text: "Sport" }), sportGrid(rule, onChange)]));
-  // 2. markets
-  card.appendChild(stepHead(2, "Markets"));
-
-  // markets, grouped by kind; a rule is one kind
-  const markets = h("div", { class: "bd-marketgroups", "data-hook": "rule-markets" });
+  const markets = h("div", { class: "bd-marketgroups", "data-hook": hook });
   const groupsDef = [["ml_spread", "Game bets"], ["total", "Game totals"], ["prop", "Player props"]];
   for (const [gk, title] of groupsDef) {
     // a prop chip shows only for the sport(s) the rule names: NBA and NHL props appear when that sport is chosen
@@ -687,7 +863,26 @@ function ruleCard(rule, index, onChange) {
     }
     markets.appendChild(h("div", { class: "bd-marketgroup" }, [h("span", { class: "bd-label", text: title }), box]));
   }
-  card.appendChild(h("div", { class: "hd-field bd-field" }, [h("span", { class: "bd-label", text: "Market" }), markets,
+  return markets;
+}
+
+
+function ruleCard(rule, index, onChange) {
+  const menu = S.menu;
+  const kind = kindOf(rule);
+  const card = h("article", { class: "bd-card", "data-hook": "rule-card", "aria-label": `Rule ${index + 1}` });
+  card.appendChild(h("div", { class: "bd-card__head" }, [
+    h("h3", { class: "bd-card__title", text: `Rule ${index + 1}` }),
+    S.spec.rules.length > 1 ? h("button", { type: "button", class: "btn btn--ghost bd-x", "data-hook": "remove-rule", text: "Remove rule",
+      on: { click: () => { S.spec.rules.splice(index, 1); onChange(true); } } }) : null]));
+
+  // 1. sports
+  card.appendChild(stepHead(1, "Sports", "Chips show what is in season and how many games are on in the next 7 days. A dimmed sport can still be picked."));
+  card.appendChild(h("div", { class: "hd-field bd-field" }, [h("span", { class: "bd-label", text: "Sport" }), sportGrid(rule, onChange)]));
+  // 2. markets
+  card.appendChild(stepHead(2, "Markets"));
+
+  card.appendChild(h("div", { class: "hd-field bd-field" }, [h("span", { class: "bd-label", text: "Market" }), marketGroups(rule, onChange, "rule-markets"),
     h("p", { class: "hd-fine", text: "A rule is one kind of bet: game bets, totals or player props. Picking another kind switches the rule." })]));
 
   // 3. conditions: which side, then the blocks
@@ -813,28 +1008,33 @@ function renderStyle() {
   if (house.href) link.setAttribute("href", house.href);
   link.textContent = `See the house ${house.name || "Gematria Hound"}`;
   q("style-fixed").textContent = gematriaFixed().text || "";
+  // the sports of a Gematria hound are the hound-level row at the top of the step (renderHoundSports), the same rule underneath
   const sportsBox = clearNode(q("style-sports"));
-  sportsBox.appendChild(h("p", { class: "bd-style__label", text: "Sports" }));
-  sportsBox.appendChild(sportGrid(S.spec.rules[0], changed));
+  sportsBox.appendChild(h("p", { class: "hd-fine bd-style__label", "data-hook": "style-sports-pointer", text: "Its sports are the chips at the top of this step. Turn off any it should not bet." }));
   globalsGrid(changed, clearNode(q("style-globals")), true);
 }
 
 // ---- rendering --------------------------------------------------------------------------------------
+
+/** The rule cards and the Limits box, drawn from the spec. */
+function renderCards() {
+  const cards = clearNode(q("rule-cards"));
+  S.spec.rules.forEach((rule, i) => cards.appendChild(ruleCard(rule, i, changed)));
+  q("add-rule").disabled = S.spec.rules.length >= S.menu.limits.max_rules;
+  q("rule-limit").textContent = `${S.spec.rules.length} of ${S.menu.limits.max_rules} rules`;
+  globalsGrid(changed);
+}
 
 function renderRules() {
   renderStyle();
   const has = !!S.spec && S.spec.rules.length > 0 && S.started;
   q("rules-empty").hidden = has;
   q("rules-body").hidden = !has;
+  renderHoundSports();
+  renderQuick();
   if (!has) return;
   q("rules-advanced").hidden = isGem();            // a Gematria hound has one fixed rule: no cards to edit
-  if (!isGem()) {
-    const cards = clearNode(q("rule-cards"));
-    S.spec.rules.forEach((rule, i) => cards.appendChild(ruleCard(rule, i, changed)));
-    q("add-rule").disabled = S.spec.rules.length >= S.menu.limits.max_rules;
-    q("rule-limit").textContent = `${S.spec.rules.length} of ${S.menu.limits.max_rules} rules`;
-    globalsGrid(changed);
-  }
+  if (!isGem()) renderCards();
   renderSentences();
 }
 
@@ -1028,57 +1228,73 @@ function changed(structural) {
   q("diff").hidden = true;
   showSaveProblems([]);                  // the reasons a save was refused are about the draft as it WAS
   if (structural) renderRules();
-  else if (S.saveProblems.length) { S.saveProblems = []; renderSentences(); }
+  else {
+    if (S.saveProblems.length) { S.saveProblems = []; renderSentences(); }
+    if (!S.fromQuick) renderQuick();           // an edit made in a card: the quick row follows (never the other way round while it is held)
+  }
   schedulePreview();
   updateSave();
 }
 
 // ---- the 14 day hindsight preview ---------------------------------------------------------------------
 
-const HIND_LABEL = "Hindsight, not counted in the record";
+const HIND_LABEL = "Hindsight: a rehearsal on past games, not a forecast";
 const hindUnits = (u) => (isNum(u) ? `${u > 0 ? "+" : ""}${u.toFixed(2)}u` : "n/a");
+const hindLead = (days = HIND_DAYS) => `Past ${days} days with these rules:`;
 
-/** "Over the last 14 days this rule would have bet N times: W-L, +x.xxu (hindsight, not counted)." Every number is the server's. */
+/**
+ * "Past 14 days with these rules: 23 bets, 13-10, +2.10u." Every number is the server's. With nothing placed the line says so and says why
+ * that is not a verdict ("not enough games fit"), and with bets that have not settled it says that instead of a record.
+ */
 export function hindSentence(data, days = HIND_DAYS) {
   const rec = (data && data.record) || {};
   const bets = rec.bets || 0;
-  if (!bets) return `Over the last ${days} days this rule would not have placed a bet (hindsight, not counted).`;
+  if (!bets) return `${hindLead(days)} no bets. Not enough games fit these rules in that window to judge them.`;
   const graded = rec.graded || 0;
+  const count = `${bets} ${bets === 1 ? "bet" : "bets"}`;
+  if (!graded) return `${hindLead(days)} ${count}, none settled yet.`;
   const wl = `${rec.wins || 0}-${rec.losses || 0}${rec.pushes ? `-${rec.pushes}` : ""}`;
-  const times = `${bets} ${bets === 1 ? "time" : "times"}`;
-  if (!graded) return `Over the last ${days} days this rule would have bet ${times}, none settled yet (hindsight, not counted).`;
-  return `Over the last ${days} days this rule would have bet ${times}: ${wl}, ${hindUnits(data.units_average_price)} (hindsight, not counted).`;
+  return `${hindLead(days)} ${count}, ${wl}, ${hindUnits(data.units_average_price)}.`;
 }
 
 function hindName() { return String((S.spec && S.spec.name) || "").trim() || "Draft Hound"; }
 function hindSpec() { const spec = clone(S.spec); spec.name = hindName(); return cleanSpec(spec); }
 
-/** Draw the preview's one state into its box. `kind` is idle, blocked, signin, pending, result, paused, error or gematria. */
+/** Draw the preview's one state into its box (the "Past 14 days" line of the Rules step). `kind` is idle, blocked, signin, pending, result,
+ *  paused, error, upgrade or gematria. */
 function renderHind(kind, { data = null, text = "", err = null } = {}) {
   const box = q("hind-box");
   if (!box) return;
   S.hind.kind = kind;
   box.setAttribute("data-state", kind);
+  const wrap = q("rules-live-test");
+  if (wrap) {
+    wrap.setAttribute("data-state", kind);
+    wrap.setAttribute("aria-busy", kind === "pending" ? "true" : "false");
+    const rec = (data && data.record) || {};
+    if (kind === "result") wrap.setAttribute("data-outcome", !(rec.bets || 0) ? "empty" : !(rec.graded || 0) ? "unsettled" : "settled");
+    else wrap.removeAttribute("data-outcome");
+  }
   if (kind === "upgrade" && showUpgrade(box, err)) return;
   clearNode(box);
   const line = (t) => h("p", { class: "bd-hind__line", "data-hook": "hind-line", role: "status", text: t });
   const chip = h("span", { class: "dk-chip dk-chip--hind", "data-hook": "hind-label", text: HIND_LABEL });
   const stale = S.hind.last && (kind === "paused" || kind === "error");
-  if (kind === "idle") { box.appendChild(line("Build a rule to see how it would have done over the last 14 days.")); return; }
-  if (kind === "blocked") { box.appendChild(line("Fix the rules to see the last 14 days.")); return; }
-  if (kind === "gematria") { box.appendChild(line("A Gematria hound is only tested going forward, so there is no hindsight preview for it.")); return; }
+  if (kind === "idle") { box.appendChild(line(`${hindLead()} build a rule to see how it would have done.`)); return; }
+  if (kind === "blocked") { box.appendChild(line(`${hindLead()} fix the rules above to see this.`)); return; }
+  if (kind === "gematria") { box.appendChild(line("A Gematria hound is only tested going forward, so there is no replay of the past 14 days for it.")); return; }
   if (kind === "signin") {
-    const ask = line("Sign in to see how this rule would have done over the last 14 days (hindsight, not counted). ");
+    const ask = line(`${hindLead()} sign in to see how they would have done. `);
     ask.appendChild(signInLink("Sign in"));
     box.appendChild(ask);
     return;
   }
   box.appendChild(chip);
-  if (kind === "pending") { box.appendChild(line(S.hind.last ? `Checking the last ${HIND_DAYS} days again...` : `Checking the last ${HIND_DAYS} days...`)); return; }
+  if (kind === "pending") { box.appendChild(line(`${hindLead()} ${S.hind.last ? "checking again..." : "checking..."}`)); return; }
   if (kind === "result") {
     box.appendChild(line(hindSentence(data)));
     if (data && data.sample_note) box.appendChild(h("p", { class: "hd-fine", "data-hook": "hind-sample", text: data.sample_note }));
-    box.appendChild(h("p", { class: "hd-fine", text: "Units are at the board-average price, replayed over boards already stored. You can see how those games ended, so this is a rehearsal." }));
+    box.appendChild(h("p", { class: "hd-fine", text: "A rehearsal: it replays these rules over boards already stored, and you can see how those games ended, so it is not a forecast. Units are at the board-average price. Not counted in the record." }));
     return;
   }
   // paused (a limit) or error: the last result stays, marked out of date, and one tap asks again
@@ -1120,7 +1336,7 @@ async function hindRun(manual) {
     else if (err && err.status === 402) renderHind("upgrade", { err });
     else if (err && err.status === 401) { S.signedIn = false; renderHind("signin"); }
     else if (err && err.status === 422) renderHind("error", { text: describeError(err, "the hindsight preview").text });
-    else renderHind("error", { text: "The last 14 days could not be checked just now. Tap to try again." });
+    else renderHind("error", { text: "The past 14 days could not be checked just now. Tap to try again." });
   }
 }
 
@@ -1600,7 +1816,8 @@ function updateSave() {
   const editing = !!S.edit;
   q("edit-cancel").hidden = !editing;
   let label = keepLabel(S.spec && S.spec.name);
-  if (editing) label = S.diffReady ? `Save as version ${S.edit.version_no + 1}` : "Review the changes";
+  if (editing && embedded()) label = S.diffReady ? `Confirm and save as v${S.edit.version_no + 1}` : `Save as v${S.edit.version_no + 1}`;      // the studio: the first tap shows what changes, the second saves
+  else if (editing) label = S.diffReady ? `Save as version ${S.edit.version_no + 1}` : "Review the changes";
   const opensKennel = !editing && !!S.kept && !embedded();
   if (opensKennel) label = "Open in My Kennel";
   btn.textContent = label;

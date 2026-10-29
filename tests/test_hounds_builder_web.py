@@ -104,7 +104,7 @@ class StaticFacts(unittest.TestCase):
         self.assertIn(">Build the rule<", HTML)
         self.assertIn(">Name it<", HTML)
         self.assertIn("Live preview", HTML)
-        self.assertIn("Last 14 days", HTML)
+        self.assertIn("Past 14 days with these rules", HTML)       # 2026-10-29: the 14-day line is part of the rule step now, not the rail
 
     def test_the_steps_are_open_on_the_page_not_folded_away(self):
         # 2026-10-26: the rule cards ARE the step builder now, so they are a plain block under the sentences, not a closed <details>

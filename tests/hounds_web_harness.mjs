@@ -339,6 +339,9 @@ try {
     } else if (a.do === "pointer") {
       const el = find(a.sel, a.index || 0);
       el.dispatchEvent({ type: a.type || "pointermove", clientX: a.x, clientY: 0, target: el });
+    } else if (a.do === "window_event") {
+      // the page's own window.dispatchEvent is a no-op here; this calls the listeners it registered (e.g. "linehound:studio-tab"), with `detail`
+      for (const f of [...(winListeners[a.type] || [])]) f({ type: a.type, detail: a.detail });
     }
     await settle(a.wait ?? 40);
     if (a.capture) capture(label, a.capture);

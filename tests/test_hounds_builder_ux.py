@@ -222,7 +222,7 @@ class EveryWayAReadCanFailEndsInWordsAndAUsableBuilder(unittest.TestCase):
                         dict(do="click", sel="[data-hook='blank-rule']", wait=150)], queries=[q("cards", "[data-hook='rule-card']", "count")])
         self.assertEqual(out["captures"]["initial"], {"go": True, "retry": 1})
         self.assertEqual(out["captures"]["retry"], {"go": False, "blank": False, "retry": 0,
-                                                    "empty": "Build it in steps: sports, markets, conditions, price range and limits. Or say it in words above and I will fill the steps in for you."})
+                                                    "empty": "Build it in steps: sports, markets, conditions, price range and limits. Or say it in words and I will fill the steps in for you."})
         self.assertEqual(out["final"]["cards"], 1)
 
     def test_a_server_error_says_so(self):

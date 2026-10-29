@@ -14,7 +14,7 @@
        kennel.html           MY KENNEL, for a signed-in member: each hound as a big card (art, record, bankroll, today's status) with
                              Unleash / Send to training / Take them out back (the burial) and Edit; a "Tonight" strip with the open tickets and the next
                              locks; the Training camp, the Graveyard and (only when earned) the member plan. Tapping a card's art opens the STUDIO, an
-                             in-place drawer with tabs (Look, Rules, Unleash, Backtest, Ask, Record). With no hound the page is one button,
+                             in-place drawer: a header (Unleash, Train, a ... menu) and three tabs (Overview, Rules, Coach). With no hound the page is one button,
                              "Create your first hound". A signed-out visitor is asked to sign in or to see the leaderboard.
        kennel.html?u=<handle>  a member's PUBLIC kennel: their non-retired hounds (one with no bet yet included), read only. The handle is the
                              anonymous owner label as a slug ("handler-3f2a"); never an email.
@@ -90,16 +90,10 @@
   <header class="kn-studio__head">
     <div class="kn-studio__top">
       <a class="lh-btn lh-btn--soft kn-studio__open" data-hook="studio-open" href="hounds.html" hidden>Open page</a>
-      <div class="kn-studio__menuwrap">
-        <button type="button" class="kn-studio__more" data-hook="studio-more" aria-haspopup="menu" aria-expanded="false" aria-label="More for this hound" hidden>&#8943;</button>
-        <div class="kn-studio__menu" data-hook="studio-menu" role="menu" aria-label="More for this hound" hidden>
-          <button type="button" role="menuitem" class="kn-studio__menuitem" data-hook="studio-remove" hidden>Remove from my kennel</button>
-        </div>
-      </div>
       <button type="button" class="kn-studio__close" data-hook="studio-close" aria-label="Close the studio">&times;</button>
     </div>
     <div class="kn-studio__hero" data-hook="studio-hero">
-      <div class="kn-studio__avatar" data-hook="studio-avatar"></div>
+      <button type="button" class="kn-studio__avatar" data-hook="studio-avatar" aria-label="Change how this hound looks"></button>
       <div class="kn-studio__who">
         <h2 id="studio-title" data-hook="studio-title">Hound studio</h2>
         <p class="kn-studio__chips" data-hook="studio-chips"></p>
@@ -107,27 +101,48 @@
         <p class="hd-fine kn-studio__sub" data-hook="studio-sub"></p>
       </div>
     </div>
+    <div class="kn-studio__actions" data-hook="studio-actions" hidden>
+      <button type="button" class="lh-btn lh-btn--solid kn-studio__act" data-hook="studio-unleash">Unleash</button>
+      <button type="button" class="lh-btn lh-btn--soft kn-studio__act" data-hook="studio-train">Train</button>
+      <div class="kn-studio__menuwrap">
+        <button type="button" class="kn-studio__more" data-hook="studio-more" aria-haspopup="menu" aria-expanded="false" aria-label="More for this hound">&#8943;</button>
+        <div class="kn-studio__menu" data-hook="studio-menu" role="menu" aria-label="More for this hound" hidden>
+          <button type="button" role="menuitem" class="kn-studio__menuitem kn-studio__menuitem--plain" data-hook="studio-versions-open" hidden>Versions</button>
+          <button type="button" role="menuitem" class="kn-studio__menuitem" data-hook="studio-outback">Take them out back</button>
+          <button type="button" role="menuitem" class="kn-studio__menuitem" data-hook="studio-remove" hidden>Remove from my kennel</button>
+        </div>
+      </div>
+    </div>
   </header>
-  <div class="lh-tabs lh-tabs--studio" role="tablist" aria-label="Studio" data-hook="studio-tabs" data-scrollactive>
-    <button type="button" role="tab" data-tab="look" aria-selected="true">Look</button>
+  <!-- THREE TABS (owner, 2026-10-29): Overview, Rules, Coach. The old Look, Unleash, Backtest, Record, Versions, Lessons and Ask tabs live on as
+       blocks inside these (web/js/kennel.js): ?tab=record|lessons|fire|look -> Overview, backtest -> Rules, ask|versions -> Coach. -->
+  <div class="lh-tabs lh-tabs--studio" role="tablist" aria-label="Studio" data-hook="studio-tabs">
+    <button type="button" role="tab" data-tab="overview" aria-selected="true">Overview</button>
     <button type="button" role="tab" data-tab="rules" aria-selected="false">Rules</button>
-    <button type="button" role="tab" data-tab="fire" aria-selected="false">Unleash</button>
-    <button type="button" role="tab" data-tab="backtest" aria-selected="false">Backtest</button>
-    <button type="button" role="tab" data-tab="ask" aria-selected="false">Ask</button>
-    <button type="button" role="tab" data-tab="record" aria-selected="false">Record</button>
-    <button type="button" role="tab" data-tab="versions" aria-selected="false" hidden>Versions</button>
-    <button type="button" role="tab" data-tab="lessons" aria-selected="false" hidden>Lessons</button>
+    <button type="button" role="tab" data-tab="coach" aria-selected="false">Coach</button>
   </div>
   <div class="kn-studio__body">
-    <div class="lh-tabpanel" data-tabpanel="look" role="tabpanel" aria-label="Look" data-hook="studio-look"></div>
+    <div class="lh-tabpanel" data-tabpanel="overview" role="tabpanel" aria-label="Overview" data-hook="studio-overview">
+      <section class="kn-analyze" data-hook="studio-analyze" hidden></section>
+      <div data-hook="studio-fire"></div>
+      <div data-hook="studio-record"></div>
+      <div data-hook="studio-lessons"></div>
+    </div>
     <div class="lh-tabpanel" data-tabpanel="rules" role="tabpanel" aria-label="Rules" data-hook="studio-rules" hidden></div>
-    <div class="lh-tabpanel" data-tabpanel="fire" role="tabpanel" aria-label="Unleash" data-hook="studio-fire" hidden></div>
-    <div class="lh-tabpanel" data-tabpanel="backtest" role="tabpanel" aria-label="Backtest" data-hook="studio-backtest" hidden></div>
-    <div class="lh-tabpanel" data-tabpanel="ask" role="tabpanel" aria-label="Ask" data-hook="studio-ask" hidden></div>
-    <div class="lh-tabpanel" data-tabpanel="record" role="tabpanel" aria-label="Record" data-hook="studio-record" hidden></div>
-    <div class="lh-tabpanel" data-tabpanel="versions" role="tabpanel" aria-label="Versions" data-hook="studio-versions" hidden></div>
-    <div class="lh-tabpanel" data-tabpanel="lessons" role="tabpanel" aria-label="Lessons" data-hook="studio-lessons" hidden></div>
+    <div class="lh-tabpanel" data-tabpanel="coach" role="tabpanel" aria-label="Coach" data-hook="studio-coach" hidden>
+      <div data-hook="studio-ask"></div>
+      <section class="kn-section kn-train" data-hook="studio-training" hidden></section>
+      <div data-hook="studio-versions"></div>
+    </div>
   </div>
+  <!-- the Look editor (the old Look tab): a sheet over the drawer, opened by tapping the hound's picture -->
+  <section class="kn-look" data-hook="studio-look-sheet" role="region" aria-label="Look" hidden>
+    <div class="kn-look__head">
+      <h3 class="kn-look__title">Look</h3>
+      <button type="button" class="lh-btn lh-btn--soft kn-look__done" data-hook="studio-look-done">Done</button>
+    </div>
+    <div data-hook="studio-look"></div>
+  </section>
 </aside>
 
 </main>

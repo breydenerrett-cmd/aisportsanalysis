@@ -134,7 +134,8 @@ class TheBuilderPicker(unittest.TestCase):
             bq("advanced_hidden", "[data-hook='rules-advanced']", "hidden"), bq("cards", "[data-hook='rule-card']", "count"),
             bq("bets", "[data-hook='style-globals'] [data-hook='g-bets']", "count"), bq("lock", "[data-hook='style-globals'] [data-hook='g-lock']", "count"),
             bq("rank", "[data-hook='style-globals'] [data-hook='g-rank']", "count"),
-            bq("sports", "[data-hook='style-sports'] [data-hook='rule-sports'] button", "count"),
+            bq("sports", "[data-hook='hound-sports'] [data-hound-sport]", "count"), bq("sports_hidden", "[data-hook='hound-sports']", "hidden"),
+            bq("old_grid", "[data-hook='style-sports'] [data-hook='rule-sports']", "count"), bq("pointer", "[data-hook='style-sports-pointer']", "count"),
             bq("pressed", "[data-hook='style-choice']", "attrs", attr="aria-pressed")])
         f = out["final"]
         gem = next(s for s in MENU["styles"] if s["value"] == "gematria")
@@ -144,7 +145,10 @@ class TheBuilderPicker(unittest.TestCase):
         self.assertEqual(f["fixed"], gem["fixed"]["text"])
         self.assertTrue(f["advanced_hidden"])
         self.assertEqual((f["cards"], f["bets"], f["lock"], f["rank"]), (0, 1, 0, 0))
+        # 2026-10-29: a Gematria hound's sports are the hound-level row at the top of the step (the same rule underneath), not a second grid
         self.assertGreater(f["sports"], 5)
+        self.assertFalse(f["sports_hidden"])
+        self.assertEqual((f["old_grid"], f["pointer"]), (0, 1))
         self.assertEqual(f["pressed"], ["false", "true"])
 
     def test_the_preview_and_the_save_carry_the_style_and_the_server_accepts_it(self):

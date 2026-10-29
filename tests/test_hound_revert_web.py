@@ -59,8 +59,9 @@ def routes(**over):
 
 
 def studio_versions(rts, actions):
+    # 2026-10-29: the Versions list is the foot of the Coach tab
     return run_page("kennel", routes=rts, **SIGNED, reducedMotion=True,
-                    actions=[click("[data-hook='dog-avatar']", "open", wait=250), click("[role='tab'][data-tab='versions']", "tab", wait=300)] + actions)
+                    actions=[click("[data-hook='dog-avatar']", "open", wait=250), click("[role='tab'][data-tab='coach']", "tab", wait=400)] + actions)
 
 
 @unittest.skipUnless(HAS_NODE, "node is not installed")
@@ -69,7 +70,7 @@ class TheStudiosVersionsTab(unittest.TestCase):
         out = studio_versions(routes(), [dict(do="wait", ms=10, label="x", capture=[
             q("rows", hook("version"), "count"), q("nos", hook("version-no"), "texts"), q("status", hook("version-status"), "texts"),
             q("when", hook("version-when"), "texts"), q("records", hook("version-record"), "texts"), q("buttons", hook("version-go-back"), "texts"),
-            q("cannot", hook("version-cannot"), "texts"), q("tab_hidden", "[role='tab'][data-tab='versions']", "hidden"),
+            q("cannot", hook("version-cannot"), "texts"), q("menu_hidden", "[data-hook='studio-versions-open']", "hidden"),
             q("all", hook("studio-versions"))])])
         cap = out["captures"]["x"]
         self.assertEqual(cap["rows"], 2)
@@ -80,7 +81,7 @@ class TheStudiosVersionsTab(unittest.TestCase):
         self.assertIn("(5 graded bets)", cap["records"][0])
         self.assertEqual(cap["buttons"], ["Go back to this version"])             # only the earlier version has the button
         self.assertEqual(cap["cannot"], ["This is the version it is on now."])
-        self.assertFalse(cap["tab_hidden"])
+        self.assertFalse(cap["menu_hidden"], "the menu offers Versions for a hound past its first version")
         low = cap["all"].lower()
         for word in BANNED:
             self.assertNotIn(word, low)
@@ -119,10 +120,13 @@ class TheStudiosVersionsTab(unittest.TestCase):
         self.assertEqual(cap["code"], "version_stale")
         self.assertIn("moved to another version", cap["text"])
 
-    def test_a_first_version_has_no_versions_tab(self):
+    def test_a_first_version_has_no_versions_list_and_no_menu_item(self):
         out = run_page("kennel", routes=rites_web.kennel_routes([dog("u-1", version_no=1)]), **SIGNED, reducedMotion=True,
-                       actions=[click("[data-hook='dog-avatar']", "open", wait=250, capture=[q("hidden", "[role='tab'][data-tab='versions']", "hidden")])])
-        self.assertTrue(out["captures"]["open"]["hidden"])
+                       actions=[click("[data-hook='dog-avatar']", "open", wait=250), click("[role='tab'][data-tab='coach']", "coach", wait=400, capture=[
+                           q("hidden", "[data-hook='studio-versions-open']", "hidden"), q("title", hook("coach-versions-title"), "count"),
+                           q("rows", hook("version"), "count")])])
+        self.assertTrue(out["captures"]["coach"]["hidden"])
+        self.assertEqual((out["captures"]["coach"]["title"], out["captures"]["coach"]["rows"]), (0, 0))
 
 
 @unittest.skipUnless(HAS_NODE, "node is not installed")
@@ -213,10 +217,13 @@ class TheStaticPages(unittest.TestCase):
         self.assertIn("mountVersions", js)
         self.assertIn("kit.is_owner", js)
 
-    def test_the_studio_has_a_versions_tab_and_panel_hidden_by_default(self):
+    def test_the_studio_holds_the_versions_list_in_the_coach_tab_and_a_menu_item_hidden_by_default(self):
+        # 2026-10-29: no Versions tab; the list is the foot of Coach and the ... menu has an item that brings it into view
         html = (WEB / "kennel.html").read_text(encoding="utf-8")
-        self.assertRegex(html, r'data-tab="versions" aria-selected="false" hidden>Versions<')
+        self.assertNotIn('data-tab="versions"', html)
+        self.assertRegex(html, r'data-hook="studio-versions-open" hidden>Versions<')
         self.assertIn('data-hook="studio-versions"', html)
+        self.assertLess(html.index('data-tabpanel="coach"'), html.index('data-hook="studio-versions"'))
 
     def test_the_words_on_the_page_follow_the_copy_rules(self):
         text = (WEB / "js" / "dog-versions.js").read_text(encoding="utf-8")

@@ -265,7 +265,7 @@ class TheLiveHindsightPreview(unittest.TestCase):
     def test_it_says_what_the_rule_would_have_done_and_labels_it_hindsight(self):
         out = self.run_it([dict(do="set", sel="[data-hook='g-bets']", value="3", wait=1900)])
         f = out["final"]
-        self.assertEqual(f["line"], "Over the last 14 days this rule would have bet 23 times: 13-10, +2.10u (hindsight, not counted).")
+        self.assertEqual(f["line"], "Past 14 days with these rules: 23 bets, 13-10, +2.10u.")
         self.assertIn("Hindsight", f["label"])
         posts = self.drills(out)
         self.assertEqual(len(posts), 1)
@@ -285,17 +285,17 @@ class TheLiveHindsightPreview(unittest.TestCase):
                            dict(do="set", sel="[data-hook='g-bets']", value="3", wait=1900)])
         self.assertEqual(len(self.drills(out)), 2, "3 then 4 are two rules; going back to 3 is the one already answered")
 
-    def test_it_runs_on_its_own_only_twice_an_hour_then_waits_for_a_tap(self):
-        out = self.run_it([dict(do="set", sel="[data-hook='g-bets']", value=str(v), wait=1900) for v in (3, 4, 5)])
+    def test_it_runs_on_its_own_only_three_times_an_hour_then_waits_for_a_tap(self):
+        out = self.run_it([dict(do="set", sel="[data-hook='g-bets']", value=str(v), wait=1900) for v in (3, 4, 5, 1)])
         f = out["final"]
-        self.assertEqual(len(self.drills(out)), 2, "the third edit does not spend the member's backtest allowance")
+        self.assertEqual(len(self.drills(out)), 3, "the fourth edit does not spend the member's backtest allowance")
         self.assertEqual(f["state"], "paused")
         self.assertIn("Preview paused, tap to refresh.", f["line"])
         self.assertEqual(f["refresh"], 1)
         self.assertIn("Out of date", out["text"], "the last result stays, marked out of date")
-        tap = self.run_it([dict(do="set", sel="[data-hook='g-bets']", value=str(v), wait=1900) for v in (3, 4, 5)]
+        tap = self.run_it([dict(do="set", sel="[data-hook='g-bets']", value=str(v), wait=1900) for v in (3, 4, 5, 1)]
                           + [dict(do="click", sel="[data-hook='hind-refresh']", wait=300)])
-        self.assertEqual(len(self.drills(tap)), 3, "a tap always asks")
+        self.assertEqual(len(self.drills(tap)), 4, "a tap always asks")
         self.assertEqual(tap["final"]["state"], "result")
 
     def test_the_servers_limit_reads_as_paused_with_a_button(self):
@@ -326,7 +326,7 @@ class TheLiveHindsightPreview(unittest.TestCase):
     def test_no_zero_bet_window_reads_as_a_win(self):
         zero = dict(HIND, record={"bets": 0, "graded": 0, "wins": 0, "losses": 0, "pushes": 0, "pending": 0}, units_average_price=0)
         out = self.run_it([dict(do="set", sel="[data-hook='g-bets']", value="3", wait=1900)], drill=[200, zero])
-        self.assertEqual(out["final"]["line"], "Over the last 14 days this rule would not have placed a bet (hindsight, not counted).")
+        self.assertEqual(out["final"]["line"], "Past 14 days with these rules: no bets. Not enough games fit these rules in that window to judge them.")
 
     def test_the_rule_sentence_sits_in_the_preview_beside_the_numbers(self):
         out = B.build(routes(), actions=[dict(BLANK, wait=500)], queries=[q("rule", "[data-hook='preview-rule-text']")])
@@ -409,7 +409,7 @@ class SavingMakesTheNextVersion(unittest.TestCase):
         self.assertGreaterEqual(f["quick"], 4)
         self.assertGreaterEqual(f["sliders"], 3)
         self.assertEqual(f["dock"], 1)
-        self.assertIn("hindsight, not counted", f["line"])
+        self.assertIn("Past 14 days with these rules", f["line"])
 
 
 class TheWordsStayHonest(unittest.TestCase):
@@ -428,8 +428,9 @@ class TheWordsStayHonest(unittest.TestCase):
                 self.assertNotRegex(words.lower(), r"\bdogs?\b|\bbeta\b|\bnew\b(?! version)|guarantee|profit|\bedge\b", f"{name}: {words}")
 
     def test_the_hindsight_line_always_carries_its_label(self):
-        self.assertIn("(hindsight, not counted)", JS)
-        self.assertIn("Hindsight, not counted in the record", JS)
+        # 2026-10-29: the line reads "Past 14 days with these rules: ..." and its label says what kind of number that is
+        self.assertIn("Hindsight: a rehearsal on past games, not a forecast", JS)
+        self.assertIn("Not counted in the record", JS)
 
     def test_the_page_uses_no_script_tag_of_its_own_beyond_the_module(self):
         self.assertEqual(len(re.findall(r"<script\b", HTML)), len(re.findall(r"<script\b[^>]*src=", HTML)))

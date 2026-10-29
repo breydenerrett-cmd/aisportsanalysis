@@ -178,19 +178,25 @@ class TheCopyInTheKennel(unittest.TestCase):
                 q("selected", "[role='tab'][aria-selected='true']", "texts"), q("btn", "[data-hook='fire-btn']"),
                 q("title", "[data-hook='unleash-title']")])])
         self.assertEqual(out["final"]["btn"], ["Unleash"])
-        self.assertEqual(out["captures"]["out"]["selected"], ["Unleash"])
+        self.assertEqual(out["captures"]["out"]["selected"], ["Overview"])     # the Unleash panel opens at the top of Overview (2026-10-29)
         self.assertEqual(out["captures"]["out"]["title"], "Underdog Gus's day")      # the owner's Unleash starts the dog (2026-10-21)
 
-    def test_the_studio_backtest_tab_runs_a_backtest_for_that_dog(self):
+    def test_the_studios_full_test_runs_a_backtest_for_that_dog(self):
+        # 2026-10-29: the Backtest tab is "See the full test" under the Rules tab's "Past 14 days" line
+        from tests.test_studio_revamp import member_dog
         routes = TheStudio().routes([dog("u-1")])
+        routes["/hounds/mine"] = [200, {"hounds": [member_dog()], "limit_running": 3}]
+        routes["POST /hounds/builder/preview"] = [200, {"qualifying": 0, "would_bet": 0, "picks": [], "sentences": [], "max_bets_per_day": 2, "paper_only": True}]
         routes["POST /hounds/drill"] = [200, result(days=14)]
         out = run_page("kennel", routes=routes, **SIGNED, actions=[
             dict(do="click", sel="[data-hook='dog-avatar']", label="open", wait=200),
-            dict(do="click", sel="[data-tab='backtest']", label="tab", wait=200, capture=[q("windows", hook("backtest-window"), "texts")]),
+            dict(do="click", sel="[role='tab'][data-tab='rules']", label="rules", wait=500),
+            dict(do="click", sel="[data-hook='rules-full-test-toggle']", label="tab", wait=300, capture=[q("windows", hook("backtest-window"), "texts")]),
             dict(do="click", sel=hook("backtest-window") + "[data-window='s2']", label="run", wait=200, capture=BACKTEST_QUERIES)])
         self.assertEqual(out["captures"]["tab"]["windows"], ["7 days", "14 days", "30 days", "Season 2"])
-        # the tab runs the 7 day window as it opens (2026-10-26); a tap on Season 2 then asks for that window too
-        bodies = [p["body"] for p in out["posts"] if p["url"] == "/hounds/drill"]
+        # the test runs the 7 day window as it opens (2026-10-26); a tap on Season 2 then asks for that window too. The line above it
+        # asks for the SPEC's 14 days on its own; only the hound's own tests carry a dog_id
+        bodies = [p["body"] for p in out["posts"] if p["url"] == "/hounds/drill" and "dog_id" in p["body"]]
         self.assertEqual(bodies, [{"dog_id": "u-1", "days": 7}, {"dog_id": "u-1", "season": "s2"}])
         self.assertIn(LABEL, out["captures"]["run"]["label"])
         self.assertEqual(out["captures"]["run"]["usd"], "+$12.00 on the $1,000 paper bankroll")
@@ -393,7 +399,7 @@ class NoFireNowLeftInTheWords(unittest.TestCase):
     def test_the_hooks_and_routes_keep_the_old_words(self):
         self.assertIn('data-hook="dog-fire-section"', (WEB / "hound.html").read_text(encoding="utf-8"))
         self.assertIn('data-hook="camp-drills-section"', (WEB / "learning.html").read_text(encoding="utf-8"))
-        self.assertIn('data-tab="fire"', (WEB / "kennel.html").read_text(encoding="utf-8"))
+        self.assertIn('data-hook="studio-unleash"', (WEB / "kennel.html").read_text(encoding="utf-8"))
         fire = (WEB / "js" / "dog-fire.js").read_text(encoding="utf-8")
         self.assertIn('"data-hook": "fire-btn"', fire)
         self.assertIn("/fire`", fire)
