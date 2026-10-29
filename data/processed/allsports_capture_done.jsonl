@@ -9250,3 +9250,6 @@
 {"call_kind": "pregame", "credits": 2, "events": 16, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-29T11:00:22.709843Z", "regions": ["eu"], "rows": 180, "sport_key": "soccer_spain_copa_del_rey", "stored": 168}
 {"commence_utc": "2026-10-30T03:30:00Z", "event_id": "b85291bc7008283d1887528a79365f2d", "kind": "phase", "observed_utc": "2026-10-29T11:00:22.709843Z", "phase": "t24h", "rows": 3, "sport_key": "cricket_test_match"}
 {"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T11:00:22.709843Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_test_match", "stored": 11}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-29T17:13:35.213144Z", "observed_utc": "2026-10-29T11:13:35.213144Z", "sport_key": "soccer_mexico_ligamx"}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T11:13:35.213144Z", "regions": ["us"], "rows": 7, "sport_key": "baseball_kbo", "stored": 7}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T11:13:35.213144Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 2}
