@@ -9098,3 +9098,4 @@
 {"commence_utc": "2026-10-29T09:10:00Z", "event_id": "9ed69f263dbf66855e60f90e731aed71", "kind": "phase", "observed_utc": "2026-10-29T06:01:28.428217Z", "phase": "t24h", "rows": 5, "sport_key": "boxing_boxing"}
 {"commence_utc": "2026-10-29T09:10:00Z", "event_id": "9ed69f263dbf66855e60f90e731aed71", "kind": "phase", "observed_utc": "2026-10-29T06:01:28.428217Z", "phase": "t6h", "rows": 5, "sport_key": "boxing_boxing"}
 {"call_kind": "pregame", "credits": 1, "events": 40, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T06:01:28.428217Z", "regions": ["us"], "rows": 110, "sport_key": "boxing_boxing", "stored": 16}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T06:14:19.612948Z", "regions": ["au"], "rows": 13, "sport_key": "cricket_test_match", "stored": 11}
