@@ -9107,3 +9107,14 @@
 {"events": 5, "kind": "peek", "next_check_utc": "2026-10-29T12:27:40.813740Z", "observed_utc": "2026-10-29T06:27:40.813740Z", "sport_key": "soccer_league_of_ireland"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-10-29T12:27:40.813740Z", "observed_utc": "2026-10-29T06:27:40.813740Z", "sport_key": "soccer_uefa_champs_league"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-10-29T12:27:40.813740Z", "observed_utc": "2026-10-29T06:27:40.813740Z", "sport_key": "soccer_uefa_europa_conference_league"}
+{"commence_utc": "2026-10-29T07:00:00Z", "event_id": "ab4b92de827019ff6129c853680cb36b", "kind": "phase", "observed_utc": "2026-10-29T06:40:49.097264Z", "phase": "t30m", "rows": 3, "sport_key": "boxing_boxing"}
+{"commence_utc": "2026-10-29T08:30:00Z", "event_id": "d8dd22f7191c3f73e12aff7f62008be8", "kind": "phase", "observed_utc": "2026-10-29T06:40:49.097264Z", "phase": "t2h", "rows": 3, "sport_key": "boxing_boxing"}
+{"call_kind": "pregame", "credits": 1, "events": 40, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T06:40:49.097264Z", "regions": ["us"], "rows": 108, "sport_key": "boxing_boxing", "stored": 14}
+{"commence_utc": "2026-10-29T08:30:00Z", "event_id": "8f8635facd49cb28543e504f176a8d59", "kind": "phase", "observed_utc": "2026-10-29T06:40:49.097264Z", "phase": "t2h", "rows": 6, "sport_key": "cricket_test_match"}
+{"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T06:40:49.097264Z", "regions": ["au"], "rows": 12, "sport_key": "cricket_test_match", "stored": 10}
+{"commence_utc": "2026-10-29T12:30:00Z", "event_id": "9744d2cb822ca005f4607e336b1b2b81", "kind": "phase", "observed_utc": "2026-10-29T06:40:49.097264Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
+{"commence_utc": "2026-10-29T12:30:00Z", "event_id": "9f79477cee7d1e998aa4b8a7beec9b28", "kind": "phase", "observed_utc": "2026-10-29T06:40:49.097264Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
+{"call_kind": "pregame", "credits": 1, "events": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T06:40:49.097264Z", "regions": ["us"], "rows": 48, "sport_key": "tennis_atp_vienna_open", "stored": 48}
+{"commence_utc": "2026-10-30T06:30:00Z", "event_id": "29bd6d33c7d095a88d0a3a17369ddd7e", "kind": "phase", "observed_utc": "2026-10-29T06:40:49.097264Z", "phase": "t24h", "rows": 3, "sport_key": "basketball_nbl"}
+{"call_kind": "pregame", "credits": 3, "events": 4, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-29T06:40:49.097264Z", "regions": ["us"], "rows": 9, "sport_key": "basketball_nbl", "stored": 9}
+{"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T06:40:49.097264Z", "regions": ["us"], "rows": 30, "sport_key": "tennis_wta_pan_pacific_open", "stored": 30}
