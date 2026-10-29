@@ -9090,3 +9090,11 @@
 {"commence_utc": "2026-10-29T20:00:00Z", "event_id": "89f8a4a7d15371b1e8a1bb535aaf0030", "kind": "phase", "observed_utc": "2026-10-29T05:46:24.935338Z", "phase": "t24h", "rows": 8, "sport_key": "soccer_spain_copa_del_rey"}
 {"call_kind": "pregame", "credits": 2, "events": 16, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-29T05:46:24.935338Z", "regions": ["eu"], "rows": 140, "sport_key": "soccer_spain_copa_del_rey", "stored": 128}
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T05:46:24.935338Z", "regions": ["us"], "rows": 32, "sport_key": "tennis_wta_pan_pacific_open", "stored": 32}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-29T12:01:28.428217Z", "observed_utc": "2026-10-29T06:01:28.428217Z", "sport_key": "soccer_china_superleague"}
+{"commence_utc": "2026-10-29T08:00:00Z", "event_id": "66a3eceb780381907635cfe940393943", "kind": "phase", "observed_utc": "2026-10-29T06:01:28.428217Z", "phase": "t2h", "rows": 1, "sport_key": "cricket_odi"}
+{"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T06:01:28.428217Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 2}
+{"commence_utc": "2026-10-29T08:00:00Z", "event_id": "1fa60410ca17efcd43616ab025a3b0e4", "kind": "phase", "observed_utc": "2026-10-29T06:01:28.428217Z", "phase": "t2h", "rows": 8, "sport_key": "tennis_wta_pan_pacific_open"}
+{"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T06:01:28.428217Z", "regions": ["us"], "rows": 32, "sport_key": "tennis_wta_pan_pacific_open", "stored": 32}
+{"commence_utc": "2026-10-29T09:10:00Z", "event_id": "9ed69f263dbf66855e60f90e731aed71", "kind": "phase", "observed_utc": "2026-10-29T06:01:28.428217Z", "phase": "t24h", "rows": 5, "sport_key": "boxing_boxing"}
+{"commence_utc": "2026-10-29T09:10:00Z", "event_id": "9ed69f263dbf66855e60f90e731aed71", "kind": "phase", "observed_utc": "2026-10-29T06:01:28.428217Z", "phase": "t6h", "rows": 5, "sport_key": "boxing_boxing"}
+{"call_kind": "pregame", "credits": 1, "events": 40, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T06:01:28.428217Z", "regions": ["us"], "rows": 110, "sport_key": "boxing_boxing", "stored": 16}
