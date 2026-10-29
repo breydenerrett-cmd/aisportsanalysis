@@ -334,13 +334,16 @@ class FullRebuild(Base):
         ids = [card["choice"]] + [u["choice"] for u in card["runners_up"]]
         self.assertTrue(all(i for i in ids))
 
-    def test_when_every_answer_is_too_similar_nothing_is_shown_and_the_day_still_counts(self):
+    def test_when_every_answer_is_too_similar_nothing_is_shown_and_the_day_is_not_used_up(self):
+        """Until 2026-10-29 this rebuild "counted as one of today's rebuilds"; the owner found that unhelpful. The spend is still logged
+        (tests/test_rebuild_no_candidate.py holds the whole story); the member keeps the allowance."""
         cur = rebuild_ai.v2_of(self.dog_obj().spec)
         small = {"summary": "tiny", "spec_json": json.dumps(dict(cur, max_bets_per_day=cur["max_bets_per_day"] % 5 + 1))}
         card, _client = self.rebuild(client=FakeClient(lambda kw: small if stage_of(kw) == "angle" else {}))
         self.assertFalse(card["found"])
         self.assertNotIn("plan_id", card)
-        self.assertEqual(self.ledger_book.used_today(self.owner.id), 1)
+        self.assertEqual(self.ledger_book.used_today(self.owner.id), 0)
+        self.assertTrue(self.ledger_book.rows())
 
     def test_the_law_is_enforced_on_every_candidate_and_on_the_analysts_merge(self):
         cap = big_spec(2)

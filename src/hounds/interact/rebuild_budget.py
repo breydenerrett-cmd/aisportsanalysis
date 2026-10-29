@@ -14,6 +14,12 @@ stand in front of every call, all checked BEFORE any model is asked:
      ``AI_PAID_CAP_USD``. Spend is the API's own ``usage`` times the price, never a guess; a call whose usage is missing is
      charged its worst case.
 
+A REBUILD THAT FOUND NOTHING IS NOT A REBUILD (owner, 2026-10-29: a Gematria hound's rebuild came back with no usable rule set and
+"counted as one of today's rebuilds", "this doesn't feel very helpful"). Its row is written with ``NO_CANDIDATE_STATUS``: the money
+it spent still counts against the month (the AI was really paid), but ``used_today`` ignores it, so the member keeps the day's
+allowance. So that a model that keeps failing cannot be re-asked for free all day, ``NO_CANDIDATE_RETRIES_PER_DAY`` such rows end the
+day's rebuilds the same way the allowance does.
+
 The ledger is an append-only JSON-lines file next to the router's usage file (it survives deploys). It holds who (a user id and
 a hound id), when, how many calls and what they cost. It never holds a prompt, a reply or a key.
 """
@@ -31,6 +37,8 @@ from typing import Callable, Mapping, Optional
 KEY_ENV = "ANTHROPIC_API_KEY"
 LEDGER_ENV = "HOUNDS_REBUILD_LEDGER"
 FINE_TUNE_STATUS_PREFIX = "fine_tune"
+NO_CANDIDATE_STATUS = "no_candidate"          # a rebuild whose candidates all failed the checks or could not be rehearsed
+NO_CANDIDATE_RETRIES_PER_DAY = 3              # free retries a member gets after such a rebuild, each of which still spends real money
 
 # The member's day. One for a free account (their one hound can still be rebuilt once a day), three for a paid one.
 FREE_REBUILDS_PER_DAY = 1
@@ -166,12 +174,19 @@ class RebuildLedger:
                 fh.write(json.dumps(row, sort_keys=True, separators=(",", ":")) + "\n")
         return row
 
+    def _today(self, user_id: int) -> list:
+        day = self.now().astimezone(timezone.utc).date().isoformat()
+        return [r for r in self.rows() if r.get("user_id") == int(user_id) and r.get("day") == day]
+
     def used_today(self, user_id: int) -> int:
         """Full rebuilds this member has made today. A fine-tune's one-line write-up is logged here for its few cents of spend but is
-        not a rebuild, so it never counts against the member's day."""
-        day = self.now().astimezone(timezone.utc).date().isoformat()
-        return sum(1 for r in self.rows() if r.get("user_id") == int(user_id) and r.get("day") == day
-                   and not str(r.get("status") or "").startswith(FINE_TUNE_STATUS_PREFIX))
+        not a rebuild, so it never counts against the member's day; neither does a rebuild that found no usable rule set."""
+        return sum(1 for r in self._today(user_id)
+                   if not str(r.get("status") or "").startswith(FINE_TUNE_STATUS_PREFIX) and r.get("status") != NO_CANDIDATE_STATUS)
+
+    def no_candidates_today(self, user_id: int) -> int:
+        """Rebuilds today that found nothing usable (they cost money and did not use up the day's allowance)."""
+        return sum(1 for r in self._today(user_id) if r.get("status") == NO_CANDIDATE_STATUS)
 
     def month_spend(self) -> float:
         month = self.now().astimezone(timezone.utc).strftime("%Y-%m")
@@ -204,6 +219,9 @@ def check(user_id: int, *, paid: bool, worst_cost: float, ledger: RebuildLedger,
         raise BudgetError("daily_limit", f"You have used today's {limit} full rebuild{'s' if limit != 1 else ''}. "
                                          "Fine-tune is still open, and the rebuild resets tomorrow (UTC).", 429,
                           used=used, limit=limit)
+    if ledger.no_candidates_today(user_id) >= NO_CANDIDATE_RETRIES_PER_DAY:
+        raise BudgetError("daily_limit", f"{NO_CANDIDATE_RETRIES_PER_DAY} rebuilds today did not come back with a usable rule set. "
+                                         "Fine-tune is still open, and the rebuild is back tomorrow (UTC).", 429, used=used, limit=limit)
     spent = ledger.month_spend()
     cap = monthly_cap(env)
     headroom = router_headroom(router_spend)

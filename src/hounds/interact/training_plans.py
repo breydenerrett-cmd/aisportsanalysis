@@ -25,6 +25,10 @@ Full rebuild is the same pipeline with its own prompts and checks. It rehearses 
 current rule and every candidate in ONE pass (``drill.drill_many``). It can only come back as a Gematria hound: ``apply_plan`` refuses a
 plan whose rule set is any other kind.
 
+A REBUILD THAT COMES BACK WITH NOTHING (owner, 2026-10-29) is not one of the member's rebuilds: ``full_rebuild`` returns ``found: false`` with a ``why``
+block (``rebuild_why``: how many versions it tried, how many broke a rule check, were too close, could not be read, were rehearsed, and the plain
+lines that say so) and writes its ledger row as ``no_candidate``, so the real spend still counts against the month and the day's allowance does not.
+
 THE REHEARSAL IS HINDSIGHT, NEVER COUNTED. It is ``drill.drill`` over the last ``REPLAY_DAYS`` completed days of captured boards,
 written to a throwaway ledger. The hound's record, the leaderboard and the learning loop never see it, and every card says so.
 
@@ -141,12 +145,73 @@ def _replay_numbers(replay_fn: Callable, spec: Mapping, now: datetime) -> Option
 
 
 def rehearsal_block(base: Optional[Mapping], after: Optional[Mapping], *, days: int = REPLAY_DAYS) -> dict:
-    """The labelled before/after of a rehearsal (``days`` is the window it covered)."""
-    n = (after or {}).get("graded", 0)
+    """The labelled before/after of a rehearsal (``days`` is the window it covered).
+
+    With no ``after`` (no candidate was rehearsed) the sample line speaks about the rules it has now and nothing else: it used to say "0 graded
+    bets in the rehearsal", which read as a measurement of a candidate that was never rehearsed (owner, 2026-10-29)."""
+    shown = after if after is not None else base
+    n = (shown or {}).get("graded", 0)
     small = n < 30
+    whose = "" if after is not None else " of the rules it has now"
+    sample = (f"{n} graded {'bet' if n == 1 else 'bets'} in the rehearsal{whose}" + (": a small sample, so treat it as a rough look." if small else ".")
+              if shown is not None else "")
     return {"label": REHEARSAL_LABEL, "note": REHEARSAL_NOTE, "counted": False, "days": days, "before": base, "after": after,
-            "small_sample": small,
-            "sample_text": (f"{n} graded bets in the rehearsal" + (": a small sample, so treat it as a rough look." if small else "."))}
+            "small_sample": small, "sample_text": sample}
+
+
+def _count(n: int, one: str, many: str) -> str:
+    return f"{n} {one if n == 1 else many}"
+
+
+def refusal_kind(refused: Optional[str]) -> str:
+    """Which plain-words bucket an angle's ``refused`` code (``rebuild_ai.run_angle``) belongs in."""
+    text = str(refused or "")
+    if text.startswith("invalid"):
+        return "broke_checks"                     # the rules checks (limits, -200, a knob that does not exist) threw it away
+    if text == "too_similar":
+        return "too_close"                        # passed the checks but was a tweak, not a rebuild, even after one send-back
+    if text == "over_budget":
+        return "stopped_early"                    # the rebuild's own spending ceiling stopped the call
+    return "unreadable"                           # the call failed, the answer was cut off, refused or was not JSON
+
+
+def rebuild_why(results: Sequence[Mapping], survivors: Sequence[Mapping], replayed: Sequence[Mapping], *, days: int) -> dict:
+    """Why a rebuild came back with nothing to offer, in numbers and as 2 to 4 short plain lines (owner, 2026-10-29: "this doesn't feel
+    very helpful"). Everything here is counted from what the rebuild really did: ``results`` are the angles' answers, ``survivors`` the ones
+    that passed the checks and were not repeats, ``replayed`` the ones that were rehearsed. Nothing is guessed, so a count that is zero says
+    zero. The lines promise nothing and say nothing about how any rule set would have done."""
+    kinds = {"broke_checks": 0, "too_close": 0, "stopped_early": 0, "unreadable": 0}
+    for r in results:
+        if r.get("spec") is None:
+            kinds[refusal_kind(r.get("refused"))] += 1
+    built = sum(1 for r in results if r.get("spec") is not None)
+    repeats = max(0, built - len(survivors))
+    graded = sorted(int(c["replay"]["graded"]) for c in replayed if c.get("replay"))
+    why = {"tried": len(results), "built": built, "repeats": repeats, **kinds, "rehearsed": len(graded), "graded": graded,
+           "min_bets": MIN_REPLAY_BETS, "days": days}
+    lines = [f"It tried {_count(why['tried'], 'version', 'versions')} of the rules."]
+    problems = []
+    if kinds["broke_checks"]:
+        problems.append(f"{kinds['broke_checks']} broke a rule check")
+    if kinds["too_close"]:
+        problems.append(f"{kinds['too_close']} {'was' if kinds['too_close'] == 1 else 'were'} too close to the rules it has now")
+    if repeats:
+        problems.append(f"{repeats} repeated another version")
+    if kinds["unreadable"]:
+        problems.append(f"{kinds['unreadable']} could not be read")
+    if kinds["stopped_early"]:
+        problems.append(f"{kinds['stopped_early']} {'was' if kinds['stopped_early'] == 1 else 'were'} not asked for, to stay inside the spending limit")
+    if problems:
+        lines.append(", ".join(problems) + ".")
+    if not graded:
+        lines.append(f"None got as far as a rehearsal on the last {days} days.")
+    else:
+        counts = ", ".join(str(n) for n in graded)
+        small = all(n < MIN_REPLAY_BETS for n in graded)
+        lines.append(f"{_count(len(graded), 'was', 'were')} rehearsed on the last {days} days, with {counts} graded bets"
+                     + (f", each under the {MIN_REPLAY_BETS} needed to compare." if small else "."))
+    why["lines"] = lines[:4]
+    return why
 
 
 # ---------------------------------------------------------------------------
@@ -571,13 +636,18 @@ def full_rebuild(dog, user_id: int, *, paid: bool = False, now: Optional[datetim
                     analyst_result["candidate"] = node
         ranked = rank(base, replayed)
         if not ranked:
-            status = "no_candidate"
+            status = budget.NO_CANDIDATE_STATUS               # real money was spent (the ledger row below), but it is not one of the day's rebuilds
+            why = rebuild_why(results, survivors, replayed, days=days)
+            logger.warning("rebuild found no candidate hound=%s %s", dog.id, json.dumps({k: v for k, v in why.items() if k != "lines"}, sort_keys=True))
+            for r in results:
+                if r.get("spec") is None:
+                    logger.info("rebuild angle refused hound=%s angle=%s reason=%s", dog.id, r.get("angle"), str(r.get("refused"))[:160])
             return {"kind": KIND_REBUILD, "found": False, "name": dog.name, "version_no": hound["version_no"], "paper_only": True,
-                    "basis": _basis(hound), "usage": {"used_today": used["used_today"] + 1, "limit_per_day": used["limit_per_day"],
-                                                      "left_today": max(0, used["left_today"] - 1)}, **({"chalk": chalk} if gem else {}),
-                    "message": ("The rebuild did not produce a rule set that passed the checks and could be rehearsed this time. "
-                                "Fine-tune is still open. This counted as one of today's rebuilds."),
-                    "rehearsal": rehearsal_block(base, None, days=days)}
+                    "basis": _basis(hound), "usage": {"used_today": used["used_today"], "limit_per_day": used["limit_per_day"],
+                                                      "left_today": used["left_today"]}, **({"chalk": chalk} if gem else {}),
+                    "message": ("This rebuild did not come back with a version good enough to show. Nothing was changed, and it did not use up "
+                                "one of today's rebuilds. Fine-tune is still open."),
+                    "why": why, "rehearsal": rehearsal_block(base, None, days=days)}
         best = ranked[0]
         best_tied = next((c for c in ranked if c.get("analyst_pick") and c["replay"]["units"] >= best["replay"]["units"] - 0.5), best)
         best = best_tied
