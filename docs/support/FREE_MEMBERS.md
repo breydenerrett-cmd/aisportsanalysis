@@ -188,7 +188,11 @@ where that member's access ends (`src/appstate/access.py`, `access_token_end`).
 A wrong password, an unknown email and an account with no password all get the same
 answer: "That email and password do not match."
 
-### Forgot password (there is no email sender, so this is manual)
+### Forgot password (self-serve since 2026-10-29: see docs/owner/PASSWORD_RESET.md)
+
+Members use "Forgot your password?" on the sign-in page; or, in admin People, Send password reset link
+shows you a one-time link to text. The manual procedure below still works (it clears the password and
+re-issues a code).
 
 1. Verify the person the same way as a lost access code: a reply from the account's
    own mailbox (`docs/billing/RECOVERY_PROCEDURE.md`). Nothing else proves it.

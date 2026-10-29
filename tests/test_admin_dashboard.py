@@ -341,11 +341,12 @@ class ThePeopleTab(unittest.TestCase):
                 q("actions", "[data-hook='admin-menu-item']", "attrs", attr="data-action")])
             return out["final"]["actions"]
         # "kennel" (Set kennel name) is offered for everyone: any member can have a public kennel name
-        self.assertEqual(items(14), ["approve", "grant", "password", "kennel"])                 # waitlisted
-        self.assertEqual(items(12), ["approve", "extend", "reissue", "password", "kennel"])     # running tester
-        self.assertEqual(items(9), ["reissue", "password", "kennel", "revoke"])                 # free member
-        self.assertEqual(items(6), ["password", "kennel"])                                      # suspended
-        self.assertEqual(items(7), ["reissue", "password", "kennel"])                           # paying: nothing to give
+        # "resetlink" (Send password reset link, 2026-10-29) follows "password" for everyone
+        self.assertEqual(items(14), ["approve", "grant", "password", "resetlink", "kennel"])                 # waitlisted
+        self.assertEqual(items(12), ["approve", "extend", "reissue", "password", "resetlink", "kennel"])     # running tester
+        self.assertEqual(items(9), ["reissue", "password", "resetlink", "kennel", "revoke"])                 # free member
+        self.assertEqual(items(6), ["password", "resetlink", "kennel"])                                      # suspended
+        self.assertEqual(items(7), ["reissue", "password", "resetlink", "kennel"])                           # paying: nothing to give
 
     def test_reset_password_is_enabled_now_that_the_route_exists(self):
         out = run(actions=[go("people"), dict(do="click", sel=row_sel(12, "admin-row-menu"))], queries=[

@@ -192,6 +192,70 @@ out.expanded = hook("show-access-code").attrs["aria-expanded"];
         self.assertEqual([c for c in out["calls"] if c["url"] != "/meta"], [],
                          "a signed-out visitor triggers no request but the public /meta")
 
+    # ---- forgot password (owner ask 2026-10-29) -----------------------------
+
+    def test_forgot_link_sits_under_sign_in_and_shows_only_the_neutral_sentence(self):
+        neutral = "If that email has an account, a reset link is on its way."
+        out = self.run_page("""
+const kids = hook("login-form").children.map((n) => n.attrs["data-hook"] || n.tagName);
+out.order = kids;
+out.label = say("forgot-link");
+out.hiddenFirst = hook("forgot-box").hidden;
+hook("login-email").value = "Me@Example.com";
+await click("forgot-link");
+out.prefill = hook("forgot-email").value;
+out.hiddenAfter = hook("forgot-box").hidden;
+await click("forgot-send");
+await settle();
+out.status = say("forgot-status");
+""", routes={"POST /auth/password/forgot": {"code": 200, "body": {"ok": True, "message": neutral}}},
+                            storage={"linehound.had_account": "1"})
+        self.assertEqual(out["label"], "Forgot your password?")
+        # the Sign in button lives in the actions DIV; the link comes after it
+        self.assertLess(len(out["order"]) - 1 - out["order"][::-1].index("DIV"), out["order"].index("forgot-link"))
+        self.assertTrue(out["hiddenFirst"])
+        self.assertFalse(out["hiddenAfter"])
+        self.assertEqual(out["prefill"], "Me@Example.com")
+        self.assertEqual(out["status"], neutral)
+        sent = [c for c in out["calls"] if c["url"] == "/auth/password/forgot"]
+        self.assertEqual([c["body"] for c in sent], [{"email": "Me@Example.com"}])
+
+    def test_the_reset_page_posts_token_and_password_then_opens_the_kennel(self):
+        out = self.run_page("""
+const { renderReset } = await import("./reset.js");
+await renderReset(main, { token: "RESET-TOKEN" });
+hook("reset-new").value = "another long passphrase 42";
+hook("reset-again").value = "another long passphrase 42";
+await submit("reset-form"); await settle();
+out.status = say("reset-status");
+""", routes={"POST /auth/password/reset": {"code": 200, "body": {"ok": True, "token": "FRESH", "has_password": True}}})
+        sent = [c for c in out["calls"] if c["url"] == "/auth/password/reset"]
+        self.assertEqual(sent[0]["body"], {"token": "RESET-TOKEN", "new_password": "another long passphrase 42"})
+        self.assertEqual(out["storage"][TOKEN_KEY], "FRESH")
+        self.assertEqual(out["assigned"], ["kennel.html"])
+
+    def test_the_reset_page_shows_the_servers_refusal_and_stores_nothing(self):
+        out = self.run_page("""
+const { renderReset } = await import("./reset.js");
+await renderReset(main, { token: "RESET-TOKEN" });
+hook("reset-new").value = "short"; hook("reset-again").value = "short";
+await submit("reset-form"); await settle();
+out.status = say("reset-status");
+""", routes={"POST /auth/password/reset": {"code": 400, "body": {"detail": {"error": "password_rejected",
+                                                                           "message": "Use at least 10 characters."}}}})
+        self.assertEqual(out["status"], "Use at least 10 characters.")
+        self.assertNotIn(TOKEN_KEY, out["storage"])
+
+    def test_the_reset_page_without_a_token_asks_for_a_new_link(self):
+        out = self.run_page("""
+const { renderReset } = await import("./reset.js");
+await renderReset(main, {});
+out.missing = say("reset-missing");
+out.form = hook("reset-form");
+""")
+        self.assertIn("missing its code", out["missing"])
+        self.assertIsNone(out["form"])
+
     def test_no_account_box_for_a_signed_out_visitor(self):
         out = self.run_page("out.account = hook('signin-account').hidden;")
         self.assertTrue(out["account"])

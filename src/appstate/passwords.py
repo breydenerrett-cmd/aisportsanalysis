@@ -358,7 +358,8 @@ def _key_hash(scope: str, identity: str) -> str:
 
 
 def check_and_record_attempt(keys: List[Tuple[str, str]], *, now: Optional[float] = None,
-                             db: Optional[Path] = None) -> Optional[float]:
+                             db: Optional[Path] = None,
+                             limits: Optional[Tuple[Tuple[int, int], ...]] = None) -> Optional[float]:
     """Count one attempt against every (scope, identity) pair in `keys`, atomically.
 
     Returns None if the attempt is allowed (and has been recorded against every
@@ -378,7 +379,7 @@ def check_and_record_attempt(keys: List[Tuple[str, str]], *, now: Optional[float
         conn.execute("DELETE FROM login_attempts WHERE at < ?", (when - _PRUNE_AFTER_S,))
         worst: Optional[float] = None
         for scope, key in hashed:
-            for window, limit in LOGIN_LIMITS:
+            for window, limit in (limits or LOGIN_LIMITS):
                 rows = conn.execute(
                     "SELECT at FROM login_attempts WHERE scope = ? AND key_hash = ? "
                     "AND at > ? ORDER BY at ASC",

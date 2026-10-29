@@ -112,7 +112,7 @@ function hadAccount() {
   }
 }
 
-function markHadAccount() {
+export function markHadAccount() {
   try {
     window.localStorage.setItem(HAD_ACCOUNT_KEY, "1");
   } catch (err) { /* nothing to remember it in */ }
@@ -160,6 +160,7 @@ export function authErrorText(err, fallback) {
 }
 
 const LOGIN_FALLBACK = "Could not sign in. Check your connection and try again.";
+const FORGOT_FALLBACK = "Could not send the reset link. Check your connection and try again.";
 const SAVE_FALLBACK = "Could not save the password. Check your connection and try again.";
 
 /** Only an in-app hash route is a place to send someone after sign-in. */
@@ -329,6 +330,57 @@ export async function renderSignin(container, query = {}) {
   loginActions.appendChild(loginButton);
   loginForm.appendChild(loginActions);
   loginForm.appendChild(loginStatus);
+
+  // ---- "Forgot your password?" (POST /auth/password/forgot) -------------------
+  // Under the Sign in button. The server answers with ONE neutral sentence whether or not the address has an account,
+  // and the page shows exactly that sentence: it never says which. An account that never had a password (a free
+  // member the owner added) uses the same link to set its first one.
+  const forgotLink = el("button", { type: "button", class: "btn btn--text",
+    "data-hook": "forgot-link", "aria-expanded": "false", text: "Forgot your password?" });
+  loginForm.appendChild(forgotLink);
+  const forgotBox = el("div", { class: "signin__section", "data-hook": "forgot-box" });
+  forgotBox.hidden = true;
+  const forgotEmail = field("Email for the reset link", "forgot-email", {
+    type: "email", name: "forgot_email", autocomplete: "email", inputmode: "email",
+    autocapitalize: "none", spellcheck: "false", "data-hook": "forgot-email" });
+  forgotBox.appendChild(forgotEmail.wrap);
+  const forgotSend = el("button", { type: "button", class: "btn btn--primary",
+    "data-hook": "forgot-send", text: "Send reset link" });
+  forgotBox.appendChild(forgotSend);
+  const forgotStatus = el("p", { class: "signin__status", role: "status", "data-hook": "forgot-status" });
+  forgotBox.appendChild(forgotStatus);
+  loginForm.appendChild(forgotBox);
+  forgotLink.addEventListener("click", () => {
+    forgotBox.hidden = !forgotBox.hidden;
+    forgotLink.setAttribute("aria-expanded", forgotBox.hidden ? "false" : "true");
+    if (!forgotBox.hidden && !forgotEmail.input.value) forgotEmail.input.value = emailField.input.value.trim();
+  });
+  let forgotBusy = false;
+  async function sendForgot() {
+    if (forgotBusy) return;
+    const address = forgotEmail.input.value.trim();
+    if (!address) {
+      forgotStatus.textContent = "Enter your email first.";
+      return;
+    }
+    forgotBusy = true;
+    forgotSend.disabled = true;
+    forgotStatus.textContent = "Sending...";
+    try {
+      const out = await apiPost("/auth/password/forgot", { email: address });
+      forgotStatus.textContent = out && out.message ? out.message
+        : "If that email has an account, a reset link is on its way.";
+    } catch (err) {
+      forgotStatus.textContent = authErrorText(err, FORGOT_FALLBACK);
+    } finally {
+      forgotBusy = false;
+      forgotSend.disabled = false;
+    }
+  }
+  forgotSend.addEventListener("click", sendForgot);
+  forgotEmail.input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") { event.preventDefault(); sendForgot(); }
+  });
   card.appendChild(loginForm);
 
   // ---- the access code (secondary) ------------------------------------------

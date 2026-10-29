@@ -373,7 +373,8 @@ function boot() {
       hook: "admin-confirm",
       actions: [{ label, variant, hook: "admin-confirm-submit", pendingLabel: "Working...", run }],
       onDone: async (result) => {
-        if (result && result.token) showToken(result, plan || { verb: "Access issued", forever: false });
+        if (result && result.link) showResetLink(result);
+        else if (result && result.token) showToken(result, plan || { verb: "Access issued", forever: false });
         else if (done) toast(hosts.toasts, done(result), "ok");
         await loadAll({ quiet: true });
       },
@@ -444,6 +445,16 @@ function boot() {
         label: "Set kennel name",
         run: (v) => adminPost("/admin/users/kennel-name", { user_id: row.id, kennel_name: String(v.kennel_name || "").trim(), reason: v.reason }),
         done: (result) => (result && result.kennel_name ? `Kennel name for ${who} is now ${result.kennel_name}.` : `Kennel name cleared for ${who}.`),
+      });
+    } else if (key === "resetlink") {
+      confirmAction({
+        title: "Send password reset link",
+        intro: [`Makes a one-time link for ${who} to choose a new password. It works once and ends in 30 minutes. You see it once, to text it to them.`,
+                "Only do this after a reply came from that mailbox, or you know the person. Their other sessions end when they use it."],
+        fields: [{ key: "reason", label: "What did you verify, and for which ticket?", type: "textarea", required: true,
+                   requiredMessage: "say what was verified", hint: REASON_NOTE }],
+        label: "Make reset link",
+        run: (v) => adminPost("/admin/users/password-reset-link", { user_id: row.id, reason: v.reason }),
       });
     } else if (key === "password") {
       confirmAction({
@@ -563,6 +574,29 @@ function boot() {
     body.appendChild(messageRow);
 
     dialog.footer.appendChild(button("Done, I have sent it", { variant: "ghost", hook: "admin-token-close", onClick: closeDialog }));
+    focusSoon(copy);
+  }
+
+  /** The password-reset link, shown ONCE (the server keeps only a hash). Same shape as showToken. */
+  function showResetLink(issued) {
+    const dialog = showDialog(hosts.modal, { title: `Password reset link: ${issued.email}`, hook: "admin-reset-dialog",
+      sticky: true, inertTargets: inert });
+    const body = dialog.body;
+    body.appendChild(el("p", { class: "adm-dialog__text", "data-hook": "admin-reset-summary",
+      text: `Works once and ends ${momentLabel(issued.expires_at)}.` }));
+    body.appendChild(el("p", { class: "adm-warning", role: "alert", "data-hook": "admin-reset-warning", text:
+      "Shown once. This link is not stored and cannot be shown again. Closing this window clears it from the page." }));
+    const row = el("div", { class: "adm-field" });
+    row.appendChild(el("label", { class: "adm-field__label", for: "adm-reset-link", text: "Reset link" }));
+    row.appendChild(el("input", { id: "adm-reset-link", type: "text", readonly: "readonly", class: "adm-code",
+      value: issued.link, autocomplete: "off", "data-hook": "admin-reset-link" }));
+    const copy = button("Copy link", { variant: "primary", hook: "admin-reset-copy" });
+    copy.addEventListener("click", async () => {
+      copy.textContent = (await copyText(issued.link)) ? "Copied" : "Copy blocked: select it by hand";
+    });
+    row.appendChild(copy);
+    body.appendChild(row);
+    dialog.footer.appendChild(button("Done, I have sent it", { variant: "ghost", hook: "admin-reset-close", onClick: closeDialog }));
     focusSoon(copy);
   }
 

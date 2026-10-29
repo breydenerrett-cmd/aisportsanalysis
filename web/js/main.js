@@ -96,6 +96,7 @@ import { renderTennisBoard } from "./tennis.js";
 import { renderGamesList, renderGameDetail } from "./games.js";
 import { renderBetCheck } from "./betcheck.js";
 import { renderSignin } from "./signin.js";
+import { renderReset } from "./reset.js";
 import { renderOdds, renderOddsGame } from "./odds.js";
 import { renderMyBets } from "./mybets.js";
 import { renderSupport } from "./support.js";
@@ -437,6 +438,9 @@ async function _renderRouteInner(main) {
     await renderLive(main);
   } else if (route === "signin") {
     await renderSignin(main, query);
+  } else if (route === "reset") {
+    // #/reset?token=... : the link in the password-reset email (web/js/reset.js)
+    await renderReset(main, query);
   } else if (route === "support") {
     await renderSupport(main);
   } else if (route === "signup" && rest[0] === "complete") {

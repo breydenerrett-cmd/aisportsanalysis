@@ -5,6 +5,9 @@
     GET  /auth/password                 {has_password}
     POST /auth/password                 {new_password, current_password?}
     POST /admin/users/password-reset    {user_id | email, reason}   (admin only)
+    POST /auth/password/forgot          {email} -> always the same neutral message
+    POST /auth/password/reset           {token, new_password} -> spends the link, new session
+    POST /admin/users/password-reset-link {user_id | email, reason} (admin; shows the link once)
 
 The storage, hashing, rules and rate limits are src/appstate/passwords.py; where a
 session token ends is src/appstate/access.py. This file is the HTTP shape only,
@@ -54,7 +57,9 @@ import sys
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+import logging
+
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Request
 from pydantic import BaseModel
 
 from api.admin import REISSUE_REASON_MAX, _LOOKS_LIKE_A_TOKEN, _SECRET_HINTS, _account_id
@@ -64,6 +69,12 @@ from src.appstate import events
 from src.appstate import passwords
 from src.appstate import ratelimit
 from src.appstate import users as users_store
+from src.appstate import password_reset
+from src.appstate import billing
+from src.notify import email as mail
+from src.notify import password_reset_email
+
+logger = logging.getLogger("linehound.password_reset")
 
 router = APIRouter()
 
@@ -338,3 +349,154 @@ def admin_password_reset(body: PasswordResetRequest,
     return {"user_id": user.id, "had_password": had, "cleared": True,
             "next_step": "POST /admin/users/reissue for this account, send the new access "
                          "code to its address, and have the member set a new password."}
+
+
+# ---------------------------------------------------------------------------
+# Forgot password (owner ask 2026-10-29)
+# ---------------------------------------------------------------------------
+
+FORGOT_NEUTRAL_MESSAGE = "If that email has an account, a reset link is on its way."
+RESET_BAD_LINK_MESSAGE = "That reset link has expired or was already used. Ask for a new one."
+
+
+def _reset_link(raw_token: str) -> str:
+    return f"{billing._public_base_url()}/web/#/reset?token={raw_token}"
+
+
+class ForgotRequest(BaseModel):
+    email: Optional[Any] = None
+
+
+def _send_reset_link(email: str) -> None:
+    """Runs AFTER the response (BackgroundTasks) so the caller's wait cannot tell
+    an account from no account. Never raises; never logs the token or a full
+    address. With no email provider it says so in one safe line and the owner
+    uses People -> Send password reset link instead (docs/owner/PASSWORD_RESET.md).
+
+    An account with no password (a comp or tester the admin made) is a user row
+    like any other, so it gets a link and can set its first password here."""
+    try:
+        user = users_store.get_user_by_email(email)
+        if user is None:
+            return
+        masked = mail.mask_email(user.email)
+        raw, _ends = password_reset.create_token(user.id)
+        if not mail.enabled():
+            mail.note_disabled()
+            logger.warning("password reset requested for %s but no email provider is configured "
+                           "(RESEND_API_KEY unset); owner can send a link from admin People", masked)
+            return
+        minutes = int(password_reset.TOKEN_TTL.total_seconds() // 60)
+        message = password_reset_email.build(to=user.email, link=_reset_link(raw), minutes=minutes)
+        result = mail.send(message, user_id=user.id, kind=password_reset_email.KIND_PASSWORD_RESET,
+                           date=password_reset.hash_token(raw)[:16])
+        if result.get("status") != mail.R_SENT:
+            logger.warning("password reset email to %s was not sent: %s", masked, result.get("status"))
+    except Exception as exc:  # noqa: BLE001 -- a background job must not crash the worker
+        logger.error("password reset send failed: %s", type(exc).__name__)
+
+
+@router.post("/auth/password/forgot")
+def forgot_password(body: ForgotRequest, request: Request, background: BackgroundTasks) -> dict:
+    """Ask for a reset link. The answer is the same sentence for a known address,
+    an unknown one, an account with no password and a malformed body; the work
+    (lookup, token, email) happens after the response. Rate limited per email
+    and per client address: counted for ANY string, so the limiter is not an
+    oracle either."""
+    email = body.email.strip().lower() if isinstance(body.email, str) else ""
+    email = email[:passwords.MAX_EMAIL_LENGTH + 1]
+    for keys, limits in (([(password_reset.SCOPE_FORGOT_IP, ratelimit.client_ip(request))],
+                          password_reset.FORGOT_IP_LIMITS),
+                         ([(password_reset.SCOPE_FORGOT_EMAIL, email)], password_reset.FORGOT_LIMITS)):
+        try:
+            retry = passwords.check_and_record_attempt(keys, limits=limits)
+        except Exception as exc:  # noqa: BLE001 -- fail closed
+            print(f"auth: forgot limiter unavailable: {exc!r}", file=sys.stderr, flush=True)
+            raise _err(503, "login_unavailable", "That is unavailable right now. Try again shortly.")
+        if retry is not None:
+            raise _rate_limited(retry)
+    if email and len(email) <= passwords.MAX_EMAIL_LENGTH and "@" in email:
+        background.add_task(_send_reset_link, email)
+    return {"ok": True, "message": FORGOT_NEUTRAL_MESSAGE}
+
+
+class ResetRequest(BaseModel):
+    token: Optional[Any] = None
+    new_password: Optional[Any] = None
+
+
+@router.post("/auth/password/reset")
+def reset_password(body: ResetRequest, request: Request) -> dict:
+    """Spend a reset link and set the new password.
+
+    Order: rate limit by client address; check the password rules BEFORE the link
+    is spent (a too-weak password must not burn it); spend the link (single use,
+    30 minutes); set the password; revoke EVERY session of the account (the
+    access codes too: that is the point of a reset after a leak); then, if the
+    account still has access, mint one fresh session so the member lands signed
+    in. A comp or tester keeps their access, just under a new code."""
+    _count_attempt([(password_reset.SCOPE_RESET_IP, ratelimit.client_ip(request))])
+    token = body.token
+    owner_id = password_reset.live_owner(token)
+    user = users_store.get_user(owner_id) if owner_id is not None else None
+    if user is None:
+        raise _err(400, "reset_link_invalid", RESET_BAD_LINK_MESSAGE)
+    try:
+        passwords.check_password_rules(body.new_password, user.email)
+    except passwords.PasswordRejected as exc:
+        raise _err(400, "password_rejected", str(exc))
+    if password_reset.consume_token(token) != user.id:
+        raise _err(400, "reset_link_invalid", RESET_BAD_LINK_MESSAGE)
+    try:
+        passwords.set_password(user.id, body.new_password, email=user.email)
+        now = datetime.now(timezone.utc)
+        plan = access.access_token_end(user)
+        with users_store._connect() as conn:
+            users_store.revoke_tokens_on(conn, user.id, when=now)
+            raw_token = (users_store.insert_token(conn, user.id, ttl=plan[1] - now, now=now)
+                         if plan is not None else None)
+    except Exception as exc:  # noqa: BLE001
+        print(f"auth: password reset failed: {exc!r}", file=sys.stderr, flush=True)
+        raise _err(503, "login_unavailable", "That is unavailable right now. Ask for a new link.")
+    events.record_event_safe(user.id, events.PASSWORD_SET, {"changed": True, "via": "reset_link"})
+    out: dict = {"ok": True, "has_password": True}
+    if raw_token is not None:
+        out.update({"token": raw_token, "expires_at": plan[1].isoformat(), "kind": plan[0],
+                    "access_active": plan[1] > now})
+    return out
+
+
+@router.post("/admin/users/password-reset-link")
+def admin_password_reset_link(body: PasswordResetRequest,
+                              _admin: None = Depends(_require_admin)) -> dict:
+    """THE FALLBACK WHEN NO EMAIL PROVIDER IS CONFIGURED. Makes a reset link for
+    the account and returns it ONCE (nothing stores the raw link) so the owner can
+    text it. Same single-use, 30-minute token as the emailed one. Audited like a
+    password clear: hashed user, the reason, never the link."""
+    if (body.email is None) == (body.user_id is None):
+        raise HTTPException(status_code=400, detail="send exactly one of email or user_id")
+    why = (body.reason or "").strip()
+    if not why:
+        raise _err(400, "reason_required", "say what was verified and for which ticket")
+    if len(why) > REISSUE_REASON_MAX:
+        raise _err(400, "reason_too_long", f"keep the reason under {REISSUE_REASON_MAX} characters")
+    if _LOOKS_LIKE_A_TOKEN.search(why) or _SECRET_HINTS.search(why) or _PASSWORD_HINT.search(why):
+        raise _err(400, "reason_looks_like_a_secret",
+                   "the reason is stored in a log; do not paste a token, key or password into it")
+    if body.email is not None:
+        user = users_store.get_user_by_email(body.email.strip().lower())
+    else:
+        account_id = _account_id(body.user_id)
+        user = users_store.get_user(account_id) if account_id is not None else None
+    if user is None:
+        raise HTTPException(status_code=409, detail=dict(PASSWORD_RESET_REFUSED))
+    had = passwords.has_password(user.id)
+    try:
+        with users_store._connect() as conn:
+            raw, ends = password_reset.create_token(user.id, via="admin", conn=conn)
+            _write_audit(conn, user.id, {"action": "reset_link", "reason": why, "had_password": had})
+    except Exception as exc:  # noqa: BLE001
+        print(f"admin: reset link failed, nothing changed: {exc!r}", file=sys.stderr, flush=True)
+        raise _err(503, "password_reset_failed", "the link could not be made; nothing was changed")
+    return {"user_id": user.id, "email": user.email, "link": _reset_link(raw),
+            "expires_at": ends.isoformat(), "shown_once": True}
