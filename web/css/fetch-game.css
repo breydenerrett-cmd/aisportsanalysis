@@ -1,0 +1,64 @@
+/*
+ * THE WAIT SCREEN (web/js/fetch-game.js): a game of fetch, or a loading screen, shown inside the training sheet while the AI coach works.
+ * Imported by css/dog-kit.css, so every page that can send a hound to training has it.
+ *
+ * Phone first: the box is the full width of the sheet and about 220px tall, every tap target is at least 44px, nothing makes the page
+ * scroll sideways. Nothing moves by CSS except inside prefers-reduced-motion: no-preference (the trot, the bar, the score pop); the
+ * game's own motion is script, and the script stills it too when the page says reduced motion. Colour never carries meaning alone.
+ *
+ * The sheet is a fixed dark card (css/dog-kit.css .rt-sheet), so these colours are fixed too, with the page's tokens first when it has them.
+ */
+
+.fg { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 100%; box-sizing: border-box; margin: 12px 0 0; }
+.fg[hidden] { display: none; }
+.fg * { box-sizing: border-box; min-width: 0; }
+.fg__heading { margin: 0; font-size: 15px; line-height: 1.4; color: var(--hd-text-2, #D6DBE4); overflow-wrap: anywhere; }
+.fg__view { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+
+/* ---- the stage line: small under the game, large on the loading screen ---------------------------------------------------- */
+.fg__stage { margin: 0; min-height: 1.3em; font-size: 14px; line-height: 1.4; color: var(--hd-mute, #9AA3B2); overflow-wrap: anywhere; }
+.fg[data-mode="loading"] .fg__stage { font-size: 20px; line-height: 1.3; font-weight: 650; color: #fff; text-align: center; min-height: 2.6em; }
+
+/* ---- the game ------------------------------------------------------------------------------------------------------------------------------ */
+.fg__box {
+  position: relative; width: 100%; height: 220px; overflow: hidden; border: 1px solid var(--hd-line, rgba(255, 255, 255, .14)); border-radius: 12px;
+  background: linear-gradient(to bottom, #1b2a3a 0%, #20384a 62%, #23402f 62%, #1b3324 100%);
+  touch-action: manipulation; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.fg__box:focus-visible { outline: 3px solid var(--hd-accent, #2FD07A); outline-offset: 2px; }
+.fg__ground { position: absolute; left: 0; right: 0; bottom: 18px; height: 2px; background: rgba(255, 255, 255, .16); pointer-events: none; }
+.fg__dog, .fg__ball, .fg__pop { position: absolute; left: 0; top: 0; pointer-events: none; will-change: transform; }
+.fg__dog { width: 56px; height: 56px; transform-origin: 50% 50%; }
+.fg__dog svg { display: block; width: 56px; height: 56px; max-width: none; }
+.fg__ball { width: 18px; height: 18px; border-radius: 50%; background: #f4d03f; border: 2px solid #b8941f; box-shadow: inset -3px -3px 0 rgba(0, 0, 0, .18); }
+.fg__pop { font-weight: 800; font-size: 20px; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .7); white-space: nowrap; }
+.fg__pop[hidden] { display: none; }
+.fg__pop[data-kind="catch"] { color: #f4d03f; font-size: 24px; }
+.fg__score { margin: 0; display: flex; gap: 6px; align-items: center; font-size: 15px; font-weight: 650; color: #fff; }
+.fg__hint { margin: 0; font-size: 13px; line-height: 1.4; color: var(--hd-mute, #9AA3B2); }
+.fg__noface { display: inline-block; width: 56px; height: 56px; }
+
+/* ---- the loading screen -------------------------------------------------------------------------------------------------------------- */
+.fg__trot { display: grid; place-items: center; padding: 8px 0 0; }
+.fg__trot svg { display: block; width: 88px; height: 88px; max-width: none; }
+.fg__bar { display: none; position: relative; width: 100%; height: 6px; overflow: hidden; border-radius: 3px; background: rgba(255, 255, 255, .1); }
+.fg[data-mode="loading"] .fg__bar { display: block; }
+.fg__bar-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 35%; border-radius: 3px; background: var(--hd-accent, #2FD07A); opacity: .75; }
+
+/* ---- the switch ------------------------------------------------------------------------------------------------------------------------- */
+.fg__toggle {
+  align-self: flex-start; min-height: 44px; padding: 0 4px; margin: 0; border: 0; background: none; font: inherit; font-size: 14px;
+  color: var(--hd-accent, #2FD07A); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+.fg__toggle:focus-visible { outline: 3px solid var(--hd-accent, #2FD07A); outline-offset: 2px; border-radius: 4px; }
+.fg[data-mode="loading"] .fg__toggle { align-self: center; }
+
+/* ---- motion: only for people who have not asked for less ------------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .fg__trot--bob svg { animation: fg-bob 0.9s ease-in-out infinite; transform-origin: 50% 100%; }
+  .fg__bar-fill { width: 40%; animation: fg-slide 1.6s ease-in-out infinite; }
+  .fg__pop { animation: fg-pop 0.9s ease-out both; }
+}
+@keyframes fg-bob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-6px) rotate(2deg); } }
+@keyframes fg-slide { 0% { left: -40%; } 100% { left: 100%; } }
+@keyframes fg-pop { 0% { opacity: 0; margin-top: 8px; } 15% { opacity: 1; } 100% { opacity: 0; margin-top: -22px; } }

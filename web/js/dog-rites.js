@@ -30,6 +30,8 @@ import { runEvolution } from "./dog-evolve.js";
 import { runDiagnosis } from "./dog-diagnose.js";
 import { reviewProposal } from "./dog-review.js";
 import { showPlan, runJob } from "./dog-plans.js";
+import { askCoach } from "./dog-plans.js";
+import { mountWait } from "./fetch-game.js";            // a game of fetch or a loading screen while the AI coach works (owner request 2026-10-29)
 
 const SLOW = 90000;
 
@@ -304,17 +306,20 @@ function trainingFlow(dog, { opener = null, onTrained = null, backHref = null, r
       clearNode(sheet.body);
       const status = h("p", { class: "rt-status", role: "status", "aria-live": "polite", "data-hook": "training-plan-status", text: "Starting..." });
       sheet.body.appendChild(status);
+      const wait = mountWait(sheet.body, { dog, reduced: reducedMotion(), stageText: status.textContent, replaces: status, delay: 600 });
       let card;
       try {
         card = await runJob({ start: () => post(`${base}/${kind}`, {}, SLOW), poll: (id) => get(`${base}/job/${encodeURIComponent(id)}`),
-          onStage: (t) => { status.textContent = `${t}...`; } });
-      } catch (e) { sheet.setBusy(false); showTrainingRefusal(e, null); return; }
+          onStage: (t) => { status.textContent = `${t}...`; wait.setStage(`${t}...`); } });
+      } catch (e) { wait.destroy(); sheet.setBusy(false); showTrainingRefusal(e, null); return; }
+      wait.destroy();
       sheet.setBusy(false);
       sheet.el.setAttribute("data-hook", "training-plan-sheet");
       if (titleEl) titleEl.textContent = card.kind === "rebuild" ? `${dog.name}'s rebuild` : `${dog.name}'s fine-tune`;
       const decision = await showPlan({ body: sheet.body, card });
       if (decision.action === "close") { sheet.close(); return; }
-      if (decision.action === "rebuild") { plan("rebuild"); return; }
+      if (decision.action === "rebuild" || decision.action === "fine-tune") { plan(decision.action); return; }
+      if (decision.action === "ask") { askCoach(dog); sheet.close(); return; }
       await applyThenReveal(null, titleEl, () => post(`${base}/plan/apply`, Object.assign({ confirm: true, plan_id: decision.plan_id },
         decision.choice ? { choice: decision.choice } : {}, decision.basis ? { basis: decision.basis } : {}), SLOW));
     };
@@ -363,11 +368,14 @@ function trainingFlow(dog, { opener = null, onTrained = null, backHref = null, r
       }
       // THE PROPOSAL: read only. The same checks as the training itself, so an open ticket or a wait is said here, before any choice.
       clearNode(sheet.body);
-      sheet.body.appendChild(h("p", { class: "rt-status", role: "status", "aria-live": "polite", "data-hook": "training-proposing",
-        text: retune ? "Reading what you said and what today's board shows..." : "Preparing the proposal..." }));
+      const proposing = h("p", { class: "rt-status", role: "status", "aria-live": "polite", "data-hook": "training-proposing",
+        text: retune ? "Reading what you said and what today's board shows..." : "Preparing the proposal..." });
+      sheet.body.appendChild(proposing);
+      const wait = mountWait(sheet.body, { dog, reduced: reducedMotion(), stageText: proposing.textContent, replaces: proposing, delay: 1500 });
       const propose = (extra = {}) => post(`${base}/propose`, Object.assign(origin ? { origin, chat } : {}, extra), SLOW);
       let first;
-      try { first = await propose(); } catch (e) { sheet.setBusy(false); showTrainingRefusal(e, layer); return; }
+      try { first = await propose(); } catch (e) { wait.destroy(); sheet.setBusy(false); showTrainingRefusal(e, layer); return; }
+      wait.destroy();
       // THE REVIEW: Apply, Veto or Tweak. Nothing has been written yet.
       if (layer && layer.removeAttribute) layer.removeAttribute("data-evolve");
       sheet.setBusy(false);

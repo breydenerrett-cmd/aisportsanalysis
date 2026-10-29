@@ -7,6 +7,7 @@
 @import url("evolve.css");   /* Send to training as an evolution (web/js/dog-evolve.js) */
 @import url("diagnose.css");   /* the coach's diagnosis before it (web/js/dog-diagnose.js) */
 @import url("gematria-stream.css");   /* the Gematria hound's analysis while it works (web/js/dog-gematria-stream.js) */
+@import url("fetch-game.css");   /* the wait screen of a fine-tune or rebuild: a game of fetch or a loading screen (web/js/fetch-game.js) */
 
 /* ---- layout ------------------------------------------------------------------------------------------------ */
 .dk-top { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); margin: 0 0 18px; }

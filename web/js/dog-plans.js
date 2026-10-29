@@ -11,6 +11,10 @@
  *
  * THE REHEARSAL IS ALWAYS LABELLED. Before and after sit side by side under "Rehearsal (hindsight, not counted in the record)", with
  * the number of graded bets said in words; a small sample says so. The card never says the next version will do better.
+ *
+ * A REBUILD THAT CAME BACK WITH NOTHING (owner, 2026-10-29: "this doesn't feel very helpful") is a card of its own: the server's `why`
+ * (how many versions it tried and what became of them, as 2 to 4 short lines it wrote), the rehearsal of the rules the hound has now
+ * WITHOUT an "Updated rules" side that was never rehearsed, and the next steps: Try fine-tune, Ask the coach, Close.
  */
 
 import { h, clearNode } from "./hounds-core.js";
@@ -38,9 +42,34 @@ export function rehearsalBlock(r) {
     h("p", { class: "rt-coach__label", "data-hook": "plan-rehearsal-label", text: r.label || "Rehearsal (hindsight, not counted in the record)" }),
     h("dl", { class: "rt-record", "data-hook": "plan-rehearsal-sides" }, [
       h("div", {}, [h("dt", { text: `Rules it has now, last ${r.days} days` }), h("dd", { "data-hook": "plan-before", text: sideText(r.before) })]),
-      h("div", {}, [h("dt", { text: "Updated rules, same days" }), h("dd", { "data-hook": "plan-after", text: sideText(r.after) })])]),
+      // no candidate was rehearsed: say nothing about "updated rules" rather than a row of "Not rehearsed"
+      r.after ? h("div", {}, [h("dt", { text: "Updated rules, same days" }), h("dd", { "data-hook": "plan-after", text: sideText(r.after) })]) : null]),
     h("p", { class: "hd-fine", "data-hook": "plan-sample", text: r.sample_text || "" }),
     h("p", { class: "hd-fine", "data-hook": "plan-rehearsal-note", text: r.note || "" })]);
+}
+
+/** Ask the coach: the studio's Ask tab. Inside the kennel studio the page hears "linehound:studio-tab" (the same event the builder's next steps send);
+ * anywhere else (the hound's own page) it is a plain link to the kennel's Ask tab. Returns true when it asked. */
+export function askCoach(dog) {
+  const id = dog && dog.id;
+  if (!id) return false;
+  try {
+    if (document.querySelector("[data-hook='studio']")) {
+      const evt = new Event("linehound:studio-tab");
+      evt.detail = { id, tab: "ask" };
+      window.dispatchEvent(evt);
+    } else {
+      window.location.href = `kennel.html?dog=${encodeURIComponent(id)}&tab=ask`;
+    }
+    return true;
+  } catch (err) { return false; }
+}
+
+/** The server's plain lines about why a rebuild came back with nothing (2 to 4 of them; the page works out nothing). */
+export function whyBlock(why) {
+  const lines = why && Array.isArray(why.lines) ? why.lines.filter((t) => typeof t === "string" && t.trim()).slice(0, 4) : [];
+  if (!lines.length) return null;
+  return h("ul", { class: "rt-why", "data-hook": "plan-why" }, lines.map((t) => h("li", { class: "plan-line", text: t })));
 }
 
 function list(hook, items) {
@@ -51,6 +80,8 @@ function list(hook, items) {
  * Draw a plan card in `body` and resolve with the owner's decision:
  *   { action: "apply", plan_id, choice, basis }   Apply was tapped (choice is the option picked; the main one by default)
  *   { action: "rebuild" }                          fine-tune found nothing and the owner chose the full rebuild
+ *   { action: "fine-tune" }                        the rebuild found nothing and the owner chose to try the fine-tune
+ *   { action: "ask" }                              the rebuild found nothing and the owner chose to ask the coach (the caller opens the Ask tab)
  *   { action: "close" }                            Not now
  */
 export function showPlan({ body, card }) {
@@ -60,10 +91,17 @@ export function showPlan({ body, card }) {
     body.appendChild(root);
     if (!card.found) {
       root.appendChild(h("p", { class: "rt-note", role: "status", "data-hook": "plan-none", text: card.message || "Nothing to offer this time." }));
+      const why = whyBlock(card.why);
+      if (why) root.appendChild(why);
       if (card.rehearsal) root.appendChild(rehearsalBlock(card.rehearsal));
       if (card.chalk && card.chalk.text) root.appendChild(h("p", { class: "hd-fine", "data-hook": "plan-chalk", text: card.chalk.text }));
       const actions = [button("Close", "plan-close", "quiet", () => resolve({ action: "close" }))];
       if (card.kind === "minor" && card.rebuild_offer) actions.push(button("Full rebuild", "plan-to-rebuild", "primary", () => resolve({ action: "rebuild" })));
+      // a rebuild that found nothing is not a dead end: the fine-tune is still open, and the coach can be asked (owner, 2026-10-29)
+      if (card.kind === "rebuild") {
+        actions.push(button("Ask the coach", "plan-ask-coach", "quiet", () => resolve({ action: "ask" })));
+        actions.push(button("Try fine-tune", "plan-try-fine-tune", "primary", () => resolve({ action: "fine-tune" })));
+      }
       root.appendChild(h("div", { class: "rt-actions", "data-hook": "rites-actions" }, actions));
       return;
     }
