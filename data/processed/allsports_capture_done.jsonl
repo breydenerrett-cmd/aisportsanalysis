@@ -9072,3 +9072,15 @@
 {"call_kind": "pregame", "credits": 1, "events": 31, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T05:09:25.269350Z", "regions": ["us"], "rows": 82, "sport_key": "boxing_boxing", "stored": 12}
 {"commence_utc": "2026-10-29T11:00:00Z", "event_id": "f7fa6060659fec573d7a7df3881aff82", "kind": "phase", "observed_utc": "2026-10-29T05:09:25.269350Z", "phase": "t6h", "rows": 9, "sport_key": "tennis_atp_swiss_indoors"}
 {"call_kind": "pregame", "credits": 1, "events": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T05:09:25.269350Z", "regions": ["us"], "rows": 54, "sport_key": "tennis_atp_swiss_indoors", "stored": 54}
+{"events": 14, "kind": "peek", "next_check_utc": "2026-10-29T11:35:49.186804Z", "observed_utc": "2026-10-29T05:35:49.186804Z", "sport_key": "soccer_england_league1"}
+{"events": 13, "kind": "peek", "next_check_utc": "2026-10-29T11:35:49.186804Z", "observed_utc": "2026-10-29T05:35:49.186804Z", "sport_key": "soccer_england_league2"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-29T11:35:49.186804Z", "observed_utc": "2026-10-29T05:35:49.186804Z", "sport_key": "soccer_france_ligue_one"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-10-29T11:35:49.186804Z", "observed_utc": "2026-10-29T05:35:49.186804Z", "sport_key": "soccer_france_ligue_two"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-10-29T11:35:49.186804Z", "observed_utc": "2026-10-29T05:35:49.186804Z", "sport_key": "soccer_japan_j_league"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-10-29T11:35:49.186804Z", "observed_utc": "2026-10-29T05:35:49.186804Z", "sport_key": "soccer_netherlands_eredivisie"}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-10-29T11:35:49.186804Z", "observed_utc": "2026-10-29T05:35:49.186804Z", "sport_key": "soccer_spain_la_liga"}
+{"events": 11, "kind": "peek", "next_check_utc": "2026-10-29T11:35:49.186804Z", "observed_utc": "2026-10-29T05:35:49.186804Z", "sport_key": "soccer_spain_segunda_division"}
+{"commence_utc": "2026-10-29T18:00:00Z", "event_id": "9989f33d869111005647b7440a9f2f8d", "kind": "phase", "observed_utc": "2026-10-29T05:35:49.186804Z", "phase": "t24h", "rows": 7, "sport_key": "soccer_spain_copa_del_rey"}
+{"commence_utc": "2026-10-29T19:00:00Z", "event_id": "27bc73225903e678b07781eacd17b95d", "kind": "phase", "observed_utc": "2026-10-29T05:35:49.186804Z", "phase": "t24h", "rows": 6, "sport_key": "soccer_spain_copa_del_rey"}
+{"call_kind": "pregame", "credits": 2, "events": 14, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-29T05:35:49.186804Z", "regions": ["eu"], "rows": 131, "sport_key": "soccer_spain_copa_del_rey", "stored": 119}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T05:35:49.186804Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_test_match", "stored": 12}
