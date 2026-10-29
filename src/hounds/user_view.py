@@ -104,5 +104,8 @@ def bets_for(hound_id: str, *, page: int = 1, page_size: Optional[int] = None,
     from src.hounds.contract import bets_payload, filter_by_status, refine_bets
     rows = refine_bets(filter_by_status(rows, status), outcome, sort)
     book = stats.peek_book()
-    return bets_payload(hound_id, paginate(rows, page, page_size), book.as_of if book else None,
-                        seasons.meta(season))
+    page_rows = paginate(rows, page, page_size)
+    payload = bets_payload(hound_id, page_rows, book.as_of if book else None, seasons.meta(season))
+    from src.hounds import pick_grades_feed
+    return pick_grades_feed.attach_grades(payload, page_rows["items"], hound_id, data,
+                                          lambda vid: hound_data(vid, kick_build=False))

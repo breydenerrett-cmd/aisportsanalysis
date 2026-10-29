@@ -273,6 +273,10 @@ class BetRow:
     # The paper stake, in units, a MEMBER hound's spec chose for this bet (its ledger row's ``stake_units``); None means one unit
     # (``bankroll.stake_of``). Added 2026-10-28, additive: the bets spreadsheet's Stake column (src/hounds/bet_export.py).
     stake_units: Optional[float] = None
+    # The instant the bet was decided (its ledger row's ``lock_utc``), added 2026-10-29, additive: the pick grades
+    # (src/hounds/pick_grades.py) read only the bets settled before this moment, so a grade can never see a later result.
+    # None when the source row carried none; the grade then falls back to ``recorded_utc``, or says it is not available.
+    lock_utc: Optional[str] = None
 
 
 @dataclass

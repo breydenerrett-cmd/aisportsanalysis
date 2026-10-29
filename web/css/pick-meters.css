@@ -1,0 +1,145 @@
+/*
+ * Pick meters (web/js/pick-meters.js): two half-dial gauges, Confidence and Value, on a ticket.
+ *
+ * Loaded by the module itself (it links this file once), so no page has to list it. Built on the hounds pages' own tokens
+ * (--hd-*, css/hounds.css) with a fallback for every one, so the dials also read on the kennel studio and the record page.
+ * Phone first: two dials side by side at 320px, nothing scrolls sideways.
+ *
+ * Colour is never the only signal: each dial carries its number and its word, and the zone the server's word names is the
+ * bright one. Value runs red (Overpriced) to green (Value); Confidence stays in one cool hue (dim to bright) so a Low
+ * confidence never reads as "bad", only as "less to go on".
+ *
+ * MOTION: the needle rests on its score. Only for a viewer with prefers-reduced-motion: no-preference does the JS add
+ * .pm--anim, and then the needle starts at the left end and sweeps to its score (600 ms, ease-out) when .pm--in lands.
+ */
+
+.pm {
+  --pm-text: var(--hd-text, #F2F4F8);
+  --pm-text-2: var(--hd-text-2, #D6DBE4);
+  --pm-mute: var(--hd-mute, #9AA3B2);
+  --pm-line: var(--hd-line, rgba(255, 255, 255, .09));
+  --pm-bad: var(--hd-bad, #FF6B7A);
+  --pm-warn: var(--hd-warn, #F2B84B);
+  --pm-good: var(--hd-good, #3DDC84);
+  --pm-cool-lo: #3A4A63;
+  --pm-cool-mid: #3E7FA8;
+  --pm-cool-hi: #5CD6F0;
+  --pm-dim: .38;
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 2px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pm__dials {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+
+.pm__dial {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px 4px 4px;
+  border: 1px solid var(--pm-line);
+  border-radius: 6px;
+}
+
+.pm__title {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--pm-mute);
+}
+
+.pm__gauge { width: 100%; max-width: 150px; line-height: 0; }
+.pm--compact .pm__gauge { max-width: 116px; }
+.pm__svg { display: block; width: 100%; height: auto; overflow: visible; }
+
+.pm__zone { stroke-width: 9; stroke-linecap: butt; opacity: var(--pm-dim); }
+.pm__zone--on { opacity: 1; }
+.pm__dial--value .pm__zone--lo { stroke: var(--pm-bad); }
+.pm__dial--value .pm__zone--mid { stroke: var(--pm-warn); }
+.pm__dial--value .pm__zone--hi { stroke: var(--pm-good); }
+.pm__dial--confidence .pm__zone--lo { stroke: var(--pm-cool-lo); }
+.pm__dial--confidence .pm__zone--mid { stroke: var(--pm-cool-mid); }
+.pm__dial--confidence .pm__zone--hi { stroke: var(--pm-cool-hi); }
+
+/* a dial with no reading: grey arcs, no needle, no bright zone */
+.pm__dial--na .pm__zone { stroke: var(--pm-mute); opacity: .22; }
+.pm__dial--na .pm__hub { display: none; }
+
+.pm__stem { stroke: var(--pm-text); stroke-width: 2.6; stroke-linecap: round; }
+.pm__hub { fill: var(--pm-text); }
+
+/* rest: the needle sits on its score (angle 0 is straight up; --pm-angle is set inline by the module) */
+.pm__needle {
+  transform-box: view-box;
+  transform-origin: 60px 60px;
+  transform: rotate(var(--pm-angle, 0deg));
+}
+
+/* the sweep, only for a viewer who has not asked for reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+  .pm--anim .pm__needle {
+    transform: rotate(-90deg);
+    transition: transform 600ms cubic-bezier(.22, .8, .3, 1);
+  }
+  .pm--anim.pm--in .pm__needle { transform: rotate(var(--pm-angle, 0deg)); }
+}
+
+.pm__read { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 0 6px; margin-top: -2px; }
+.pm__num { font-size: 20px; line-height: 1.1; color: var(--pm-text); font-variant-numeric: tabular-nums; }
+.pm__label { font-size: 13px; font-weight: 600; color: var(--pm-text-2); }
+.pm__label--na { font-size: 12.5px; font-weight: 500; color: var(--pm-mute); text-align: center; }
+
+.pm--compact .pm__num { font-size: 17px; }
+.pm--compact .pm__label { font-size: 12.5px; }
+
+.pm__scale {
+  display: flex; justify-content: space-between; width: 100%; max-width: 150px;
+  font-size: 10.5px; color: var(--pm-mute); line-height: 1.2;
+}
+
+.pm__why { display: grid; gap: 6px; }
+.pm__reason { margin: 0; font-size: 13px; line-height: 1.4; color: var(--pm-text-2); overflow-wrap: anywhere; }
+.pm__reason strong { color: var(--pm-text); }
+
+.pm__clvrow { display: flex; }
+.pm__clv {
+  display: inline-block; padding: 2px 9px; border: 1px solid var(--pm-line); border-radius: 999px;
+  font-size: 12px; font-weight: 600; color: var(--pm-text-2);
+}
+.pm__clv--up { border-color: var(--pm-good); }
+.pm__clv--down { border-color: var(--pm-bad); }
+
+.pm__note { margin: 0; font-size: 11.5px; line-height: 1.35; color: var(--pm-mute); }
+
+/* the one-line form in a table cell: C 72 · V 61 */
+.pm-chip {
+  display: inline-block; margin-top: 2px; padding: 0 6px; border: 1px solid var(--hd-line, rgba(255, 255, 255, .09));
+  border-radius: 999px; font-size: 11.5px; font-variant-numeric: tabular-nums; color: var(--hd-text-2, #D6DBE4);
+  white-space: nowrap;
+}
+
+/* the fold form (wide table, list row): the chip is the summary, the dials open under it */
+.pm-fold { margin-top: 2px; }
+.pm-fold > summary { display: inline-block; cursor: pointer; list-style: none; }
+.pm-fold > summary::-webkit-details-marker { display: none; }
+.pm-fold > summary:focus-visible { outline: 2px solid var(--hd-accent, #2FD07A); outline-offset: 2px; border-radius: 999px; }
+.pm-fold[open] > .pm { margin-top: 6px; min-width: 260px; max-width: 340px; white-space: normal; }
+.pm-fold[open] > summary .pm-chip { border-color: var(--hd-accent, #2FD07A); }
+
+/* on a phone's card the dials sit under the result line and the fold holds only the sentences */
+.hd-card__meters { margin-top: 4px; }
+.hd-card__why .pm { margin: 6px 0 0; }
+
+@media (max-width: 359px) {
+  .pm__dials { gap: 6px; }
+  .pm__label { font-size: 12px; }
+}
