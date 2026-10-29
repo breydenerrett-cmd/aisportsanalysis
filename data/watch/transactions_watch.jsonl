@@ -6306,3 +6306,6 @@
 {"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T19:59:27.159256+00:00", "player": "Osleivis Basabe", "player_id": 678545, "team": "SF", "transaction_id": 947281}
 {"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T19:59:27.159256+00:00", "player": "Jason Foley", "player_id": 671345, "team": "SF", "transaction_id": 947282}
 {"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T19:59:27.159256+00:00", "player": "Braxton Roxby", "player_id": 694820, "team": "WSH", "transaction_id": 947283}
+{"fetched_utc": "2026-10-29T20:10:58.766607+00:00", "game_date": "2026-10-29", "poll": true}
+{"category": "il_activation", "date": "2026-10-29", "first_seen_utc": "2026-10-29T20:10:58.766607+00:00", "player": "Brooks Baldwin", "player_id": 681460, "team": "CWS", "transaction_id": 947284}
+{"category": "il_activation", "date": "2026-10-29", "first_seen_utc": "2026-10-29T20:10:58.766607+00:00", "player": "Prelander Berroa", "player_id": 672860, "team": "CWS", "transaction_id": 947285}
