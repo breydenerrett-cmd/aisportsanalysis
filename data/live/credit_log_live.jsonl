@@ -300,4 +300,7 @@
 {"budget_band": "live_odds", "caller": "live_odds.capture_inplay", "credits_remaining": null, "credits_used_last": 1, "utc": "2026-10-28T00:26:31.852286Z"}
 {"budget_band": "live_odds", "caller": "live_odds.capture_inplay", "credits_remaining": null, "credits_used_last": 1, "utc": "2026-10-28T00:27:34.054530Z"}
 {"budget_band": "live_odds", "caller": "live_odds.capture_inplay", "credits_remaining": null, "credits_used_last": 1, "utc": "2026-10-28T00:31:34.931349Z"}
+{"budget_band": "live_odds", "caller": "live_odds.capture_inplay", "credits_remaining": null, "credits_used_last": 1, "utc": "2026-10-29T00:23:53.752144Z"}
+{"budget_band": "live_odds", "caller": "live_odds.capture_inplay", "credits_remaining": null, "credits_used_last": 1, "utc": "2026-10-29T00:24:55.835853Z"}
+{"budget_band": "live_odds", "caller": "live_odds.capture_inplay", "credits_remaining": null, "credits_used_last": 1, "utc": "2026-10-29T00:28:56.782493Z"}
 {"budget_band": "live_odds", "caller": "live_tennis.capture.prematch", "credits_remaining": 84713, "credits_used_last": 1, "utc": "2026-10-29T01:11:51.795312Z"}
