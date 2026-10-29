@@ -8923,3 +8923,4 @@
 {"commence_utc": "2026-10-30T00:30:00Z", "event_id": "f3988a6a614eb29fb8b3dd7eb561fa3b", "kind": "phase", "observed_utc": "2026-10-29T00:45:28.773307Z", "phase": "t24h", "rows": 13, "sport_key": "soccer_brazil_campeonato"}
 {"call_kind": "pregame", "credits": 2, "events": 18, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-29T00:45:28.773307Z", "regions": ["us"], "rows": 198, "sport_key": "soccer_brazil_campeonato", "stored": 68}
 {"call_kind": "inplay", "credits": 1, "events": 67, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T00:45:28.773307Z", "regions": ["us"], "rows": 597, "sport_key": "americanfootball_ncaaf", "stored": 36}
+{"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T00:55:47.404288Z", "regions": ["us"], "rows": 73, "sport_key": "soccer_chile_campeonato", "stored": 4}
