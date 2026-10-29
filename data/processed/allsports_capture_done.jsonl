@@ -9818,3 +9818,10 @@
 {"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 7, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T21:32:00.742113Z", "regions": ["eu"], "rows": 19, "sport_key": "soccer_spain_copa_del_rey", "stored": 18}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T21:32:00.742113Z", "regions": ["us"], "rows": 3, "sport_key": "soccer_uefa_champs_league_women", "stored": 3}
 {"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T21:32:00.742113Z", "regions": ["us"], "rows": 57, "sport_key": "basketball_euroleague", "stored": 57}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-10-30T03:42:12.924423Z", "observed_utc": "2026-10-29T21:42:12.924423Z", "sport_key": "basketball_ncaab"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-30T03:42:12.924423Z", "observed_utc": "2026-10-29T21:42:12.924423Z", "sport_key": "soccer_conmebol_copa_sudamericana"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-10-30T03:42:12.924423Z", "observed_utc": "2026-10-29T21:42:12.924423Z", "sport_key": "soccer_italy_serie_b"}
+{"commence_utc": "2026-10-29T23:40:00Z", "event_id": "35f166bc5dbb833315fe376ae27e63a3", "kind": "phase", "observed_utc": "2026-10-29T21:42:12.924423Z", "phase": "t2h", "rows": 32, "sport_key": "icehockey_nhl"}
+{"call_kind": "pregame", "credits": 3, "events": 14, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-29T21:42:12.924423Z", "regions": ["us"], "rows": 430, "sport_key": "icehockey_nhl", "stored": 430}
+{"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T21:42:12.924423Z", "regions": ["us"], "rows": 6, "sport_key": "soccer_england_efl_cup", "stored": 0}
+{"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T21:42:12.924423Z", "regions": ["us"], "rows": 105, "sport_key": "soccer_italy_serie_a", "stored": 6}
