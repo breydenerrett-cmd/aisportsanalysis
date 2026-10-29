@@ -51,6 +51,7 @@ from api.hounds_tips import router as hounds_tips_router
 from api.hounds_kennels import router as hounds_kennels_router
 from api.hounds_live import router as hounds_live_router
 from api.hounds_postmortems import router as hounds_postmortems_router
+from api.hounds_report import router as hounds_report_router
 from api.research_read import router as research_read_router
 from api.feeds import router as feeds_router
 from api.support import router as support_router
@@ -133,6 +134,9 @@ app.include_router(hounds_live_router)
 # the bets spreadsheet and the hindsight reviews (api/hounds_postmortems.py): /hounds/{id}/export has the shape of the literal
 # /hounds/tips/export, so it is mounted AFTER api.hounds_tips (tests/test_postmortems_api.py pins the order).
 app.include_router(hounds_postmortems_router)
+# the Analyze report (api/hounds_report.py): /hounds/{id}/report, a free teaser for anyone and the full report for a paid owner.
+# Its tail is literal and nothing else declares it, so the order against api.hounds does not matter.
+app.include_router(hounds_report_router)
 # the owner's read-only research feed (api/research_read.py): its own /research prefix, no ordering constraint; 404 unless
 # RESEARCH_READ_TOKEN is set and matched.
 app.include_router(research_read_router)

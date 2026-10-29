@@ -1,0 +1,128 @@
+/*
+ * THE ANALYZE REPORT (web/js/analyze-report.js): a headline and a "hot hand or hot dice?" dial, what is driving the record, every ticket,
+ * the case for changing nothing, ways to find more of the same, and the coach's read. Phone first: built for 400 px, 16 px gutters, one
+ * column, nothing wider than the screen. Inserted by the module with a single <link>; the page needs no markup for it.
+ *
+ * Colours come from css/lh.css when the page has it and fall back to the same values when it does not. Nothing moves except inside
+ * prefers-reduced-motion: no-preference: the needle sweeps once in 700 ms and the cards rise in; the reduced path is the finished page.
+ */
+
+.ar {
+  --ar-gutter: 16px;
+  --ar-ink: var(--lh-ink, #F2F4F8); --ar-ink2: var(--lh-ink2, #C9D0DB); --ar-mute: var(--lh-mute, #8D96A6);
+  --ar-line: var(--lh-line, rgba(255, 255, 255, .07)); --ar-soft: var(--lh-soft, rgba(255, 255, 255, .05));
+  --ar-accent: var(--lh-accent, #2FD07A); --ar-win: var(--lh-win, #5BE39A); --ar-loss: var(--lh-loss, #FF8A96);
+  --ar-amber: var(--lh-pending, #F2B84B);
+  box-sizing: border-box; width: 100%; max-width: 680px; margin: 0 auto; padding: 0 var(--ar-gutter) 24px;
+  display: flex; flex-direction: column; gap: 14px; color: var(--ar-ink);
+  font: 15px/1.5 var(--lh-font-text, 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif);
+}
+.ar *, .ar *::before, .ar *::after { box-sizing: border-box; min-width: 0; }
+.ar p, .ar h2, .ar h3, .ar h4, .ar ul, .ar ol { margin: 0; padding: 0; }
+.ar ul, .ar ol { list-style: none; }
+.ar-card { padding: 16px; border-radius: 18px; background: var(--ar-soft); overflow-wrap: anywhere; }
+.ar-h { margin-bottom: 10px; font-size: 17px; font-weight: 600; line-height: 1.25; }
+.ar-eyebrow { margin-bottom: 4px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ar-accent); }
+.ar-headline { font-size: 21px; font-weight: 600; line-height: 1.25; letter-spacing: -.01em; }
+.ar-muted { color: var(--ar-mute); font-size: 14px; }
+.ar-fine { margin-top: 8px; color: var(--ar-mute); font-size: 12px; line-height: 1.45; }
+
+/* ---- the dial ---------------------------------------------------------------------------------------------------------- */
+.ar-hot { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 12px; align-items: center; }
+.ar-gauge { width: 100%; max-width: 280px; margin: 0 auto; text-align: center; }
+.ar-dial { display: block; width: 100%; height: auto; overflow: visible; }
+.ar-dial__zone--dice { stroke: var(--ar-amber); opacity: .85; }
+.ar-dial__zone--mid { stroke: var(--lh-faint, #6B7482); opacity: .7; }
+.ar-dial__zone--hand { stroke: var(--ar-win); opacity: .85; }
+.ar-dial__tick { stroke: var(--ar-ink); stroke-width: 2; opacity: .5; }
+.ar-needle { transform: rotate(var(--ar-angle, -90deg)); transform-origin: 100px 100px; }
+.ar-needle__stem { stroke: var(--ar-ink); stroke-width: 3; stroke-linecap: round; }
+.ar-needle__hub { fill: var(--ar-ink); }
+.ar-gauge__ends { display: flex; justify-content: space-between; margin-top: -6px; padding: 0 4px; font-size: 11px; color: var(--ar-mute); text-transform: uppercase; letter-spacing: .05em; }
+.ar-gauge__read { margin-top: 4px; font-size: 13px; color: var(--ar-mute); }
+.ar-gauge__n { font-size: 34px; line-height: 1; font-weight: 600; color: var(--ar-ink); font-variant-numeric: tabular-nums; }
+.ar-gauge__label { margin-top: 2px; font-weight: 600; font-size: 15px; }
+.ar-verdict { display: inline-block; padding: 2px 10px; border-radius: 999px; background: rgba(255, 255, 255, .08); font-size: 12px; font-weight: 600; letter-spacing: .02em; }
+.ar-verdict[data-verdict="too_early"] { background: rgba(242, 184, 75, .14); color: var(--ar-amber); }
+.ar-verdict[data-verdict="real_signal"] { background: rgba(61, 220, 132, .14); color: var(--ar-win); }
+.ar-verdict[data-verdict="looks_like_luck"] { background: rgba(255, 107, 122, .12); color: var(--ar-loss); }
+.ar-hot__text { margin-top: 8px; color: var(--ar-ink2); }
+.ar-run { margin-top: 6px; font-size: 13px; color: var(--ar-mute); }
+.ar-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.ar-chip { display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; border-radius: 12px; background: rgba(255, 255, 255, .06); }
+.ar-chip__k { font-size: 11px; color: var(--ar-mute); text-transform: uppercase; letter-spacing: .04em; }
+.ar-chip__v { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* ---- drivers ----------------------------------------------------------------------------------------------------------- */
+.ar-drivers { display: grid; grid-template-columns: 1fr; gap: 14px; }
+.ar-drivers__h { margin-bottom: 6px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ar-mute); }
+.ar-drivers__col:first-child .ar-drivers__h { color: var(--ar-win); }
+.ar-drivers__col:last-child .ar-drivers__h { color: var(--ar-loss); }
+.ar-driver { display: flex; flex-direction: column; gap: 4px; padding: 10px 0; border-top: 1px solid var(--ar-line); }
+.ar-driver:first-child { border-top: 0; }
+.ar-driver__main { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ar-driver__name { font-weight: 600; }
+.ar-driver__rec { color: var(--ar-ink2); font-variant-numeric: tabular-nums; }
+.ar-badge { align-self: flex-start; padding: 1px 8px; border-radius: 999px; background: rgba(255, 255, 255, .07); font-size: 12px; color: var(--ar-mute); }
+
+/* ---- tickets ----------------------------------------------------------------------------------------------------------- */
+.ar-picks { display: flex; flex-direction: column; }
+.ar-pick { display: flex; flex-direction: column; gap: 4px; padding: 10px 0; border-top: 1px solid var(--ar-line); }
+.ar-pick:first-child { border-top: 0; }
+.ar-pick[hidden] { display: none; }
+.ar-picks__more { margin-top: 10px; }
+.ar-pick__top, .ar-pick__sub { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; }
+.ar-pick__result { flex: none; padding: 1px 8px; border-radius: 999px; background: rgba(255, 255, 255, .08); font-size: 12px; font-weight: 600; }
+.ar-pick__result[data-result="win"] { background: rgba(61, 220, 132, .14); color: var(--ar-win); }
+.ar-pick__result[data-result="loss"] { background: rgba(255, 107, 122, .12); color: var(--ar-loss); }
+.ar-pick__result[data-result="open"] { background: rgba(242, 184, 75, .14); color: var(--ar-amber); }
+.ar-pick__sel { flex: 1 1 140px; font-weight: 600; }
+.ar-pick__units { font-variant-numeric: tabular-nums; color: var(--ar-ink2); }
+.ar-pick__game { color: var(--ar-mute); font-size: 13px; }
+.ar-clv { font-size: 12px; padding: 0 6px; border-radius: 6px; background: rgba(255, 255, 255, .06); color: var(--ar-mute); }
+.ar-clv[data-beat="1"] { color: var(--ar-win); }
+.ar-grade { font-size: 12px; padding: 0 6px; border-radius: 6px; background: rgba(255, 255, 255, .06); color: var(--ar-ink2); font-variant-numeric: tabular-nums; }
+.ar-pick__reason { font-size: 13px; color: var(--ar-mute); }
+.ar-hind { padding: 6px 10px; border-left: 2px solid var(--ar-amber); background: rgba(242, 184, 75, .06); font-size: 13px; color: var(--ar-ink2); }
+.ar-hind__k { color: var(--ar-amber); font-weight: 600; }
+
+/* ---- keep it up, expand, coach ----------------------------------------------------------------------------------------- */
+.ar-keep__text { color: var(--ar-ink2); }
+.ar-points { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; color: var(--ar-ink2); font-size: 14px; }
+.ar-points li { position: relative; padding-left: 16px; }
+.ar-points li::before { content: ""; position: absolute; left: 2px; top: .6em; width: 6px; height: 6px; border-radius: 50%; background: var(--ar-accent); }
+.ar-expands { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+.ar-expand { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 12px; background: rgba(255, 255, 255, .04); }
+.ar-expand__text { font-weight: 600; }
+.ar-expand__because, .ar-expand__today { font-size: 14px; color: var(--ar-ink2); }
+.ar-expand__today { color: var(--ar-accent); }
+.ar-expand__go { align-self: flex-start; }
+.ar-coach__label { margin-bottom: 6px; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ar-accent); }
+.ar-coach__text { color: var(--ar-ink); font-size: 16px; line-height: 1.55; }
+
+/* ---- teaser, loading, error -------------------------------------------------------------------------------------------- */
+.ar-locked { border: 1px dashed var(--lh-line-2, rgba(255, 255, 255, .13)); background: transparent; }
+.ar-locked .btn { margin-top: 12px; }
+.ar-loading { display: flex; flex-direction: column; gap: 10px; padding: 16px; }
+.ar-skel { height: 14px; border-radius: 7px; background: rgba(255, 255, 255, .07); }
+.ar-skel--short { width: 60%; }
+.ar-error { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px; border-radius: 12px; background: rgba(255, 107, 122, .08); }
+
+@media (min-width: 560px) {
+  .ar-hot { grid-template-columns: 240px 1fr; }
+  .ar-drivers { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---- MOTION: off for prefers-reduced-motion ---------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .ar-needle { animation: ar-sweep 700ms cubic-bezier(.2, .7, .2, 1) both; }
+  @keyframes ar-sweep { from { transform: rotate(-90deg); } to { transform: rotate(var(--ar-angle, -90deg)); } }
+  .ar-card { animation: ar-rise 420ms cubic-bezier(.2, .7, .2, 1) both; }
+  .ar-card:nth-child(2) { animation-delay: 60ms; }
+  .ar-card:nth-child(3) { animation-delay: 120ms; }
+  .ar-card:nth-child(4) { animation-delay: 180ms; }
+  .ar-card:nth-child(5) { animation-delay: 240ms; }
+  @keyframes ar-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .ar-skel { animation: ar-pulse 1.2s ease-in-out infinite; }
+  @keyframes ar-pulse { 50% { opacity: .5; } }
+}

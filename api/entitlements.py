@@ -5,6 +5,10 @@ OWNER DECISION 2026-10-20. Free: one active dog. Paid: up to five active dogs, e
 paid dog tools; the dog-count limit is api/hounds_create.py + src/hounds/user_store.py (so it holds
 inside the creating transaction).
 
+A fourth feature, FEATURE_ANALYZE (the full Analyze report, owner decision 2026-10-29), is asked with `has_paid_dog_tool` and never raised:
+GET /hounds/{id}/report serves a teaser to everyone and the full report to a paid owner (api/hounds_report.py), so a free account gets
+the teaser and the owner's upgrade line, not a 402.
+
 WHO IS "PAID" HERE. Exactly src/appstate/access.py's level, asked through api/auth.py's is_free_member
 (auth.py is the one module allowed to read it): "paid" is every
 account with a session that is not a free-only account, which includes a subscriber paid through, a
@@ -41,11 +45,13 @@ FEATURE_LIVE_SEND = "live_send"
 FEATURE_BACKTEST = "backtest"
 FEATURE_ASK = "ask"
 FEATURE_MORE_DOGS = "more_dogs"
+FEATURE_ANALYZE = "analyze"
 
 _FEATURE_WORDS = {
     FEATURE_LIVE_SEND: "Sending a hound at a live game",
     FEATURE_BACKTEST: "Backtest",
     FEATURE_ASK: "Ask",
+    FEATURE_ANALYZE: "The full Analyze report",
 }
 
 
@@ -71,3 +77,16 @@ def paid_dog_tool_for(authorization: Optional[str], request, feature: str) -> us
     # `request` only carries the user id to the request log; a caller without one (a direct call) is fine.
     user = auth_mod.get_current_user(authorization, request if hasattr(request, "state") else None)
     return require_paid_dog_tool(user, feature)
+
+
+def has_paid_dog_tool(user: users_store.User, feature: str = FEATURE_ANALYZE) -> bool:
+    """True when `user` may use a paid dog tool right now, False for a free account and for a lapsed subscriber. Never raises.
+
+    For a route that serves everyone something and the paid person more (GET /hounds/{id}/report: the teaser to anyone, the full
+    report to the owner on a paid plan), where `require_paid_dog_tool`'s 402 would be the wrong answer. The decision is the same one:
+    this asks it and turns the refusal into a plain no."""
+    try:
+        require_paid_dog_tool(user, feature)
+    except HTTPException:
+        return False
+    return True
