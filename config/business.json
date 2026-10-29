@@ -131,10 +131,10 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-10-29 (8:30 am PT run): the Brewers won the World Series 4-1 last night; the MLB postseason is over, so no more MLB briefs this season.",
-    "Game 5 brief (all three markets passed) is graded; the public sample now shows it.",
-    "Tonight's Thursday NFL game goes to the 1:30 pm PT run.",
-    "Production /health ok; memory peak 817 of 850 MB. Scheduled daily loop on the default branch failed (pre-slate guard: no captures at 10:10Z). Public MLB value picks remain paused.",
+    "2026-10-29 (1:30 pm PT run): Thursday NFL brief published for Carolina at Green Bay (kickoff 5:15 pm PT): all three markets passed (moneyline, spread, total).",
+    "The brief cleared the checker on its second attempt; the first was rejected for citing grouped figures.",
+    "The MLB postseason is over (Brewers won the World Series); the public sample still shows Game 5 until tonight's game is graded.",
+    "Production /health ok; memory peak 848 of 850 MB. Scheduled daily loop failed again (pre-slate guard, no MLB slate). Public MLB value picks remain paused.",
     "Sends 0, replies 0, testers 0, paid 0."
   ],
   "next_customer_action": "Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.",

@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-29 15:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-29 20:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-29 (8:30 am PT run): the Brewers won the World Series 4-1 last night; the MLB postseason is over, so no more MLB briefs this season.
-- Game 5 brief (all three markets passed) is graded; the public sample now shows it.
-- Tonight's Thursday NFL game goes to the 1:30 pm PT run.
-- Production /health ok; memory peak 817 of 850 MB. Scheduled daily loop on the default branch failed (pre-slate guard: no captures at 10:10Z). Public MLB value picks remain paused.
+- 2026-10-29 (1:30 pm PT run): Thursday NFL brief published for Carolina at Green Bay (kickoff 5:15 pm PT): all three markets passed (moneyline, spread, total).
+- The brief cleared the checker on its second attempt; the first was rejected for citing grouped figures.
+- The MLB postseason is over (Brewers won the World Series); the public sample still shows Game 5 until tonight's game is graded.
+- Production /health ok; memory peak 848 of 850 MB. Scheduled daily loop failed again (pre-slate guard, no MLB slate). Public MLB value picks remain paused.
 - Sends 0, replies 0, testers 0, paid 0.
 
