@@ -6285,3 +6285,11 @@
 {"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T18:07:30.813213+00:00", "player": "Brock Burke", "player_id": 656271, "team": "CIN", "transaction_id": 947262}
 {"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T18:07:30.813213+00:00", "player": "Brady Singer", "player_id": 663903, "team": "CIN", "transaction_id": 947263}
 {"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T18:07:30.813213+00:00", "player": "Tyler Stephenson", "player_id": 663886, "team": "CIN", "transaction_id": 947264}
+{"fetched_utc": "2026-10-29T18:43:21.559340+00:00", "game_date": "2026-10-29", "poll": true}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T18:43:21.559340+00:00", "player": "Henry Baez", "player_id": 692013, "team": "OAK", "transaction_id": 947266}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T18:43:21.559340+00:00", "player": "Joey Estes", "player_id": 683155, "team": "OAK", "transaction_id": 947267}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T18:43:21.559340+00:00", "player": "Geoff Hartlieb", "player_id": 664129, "team": "OAK", "transaction_id": 947269}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T18:43:21.559340+00:00", "player": "Brian Serven", "player_id": 661531, "team": "OAK", "transaction_id": 947270}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T18:43:21.559340+00:00", "player": "Michael Stefanic", "player_id": 683021, "team": "OAK", "transaction_id": 947271}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T18:43:21.559340+00:00", "player": "Johnathan Rodr\u00edguez", "player_id": 671286, "team": "OAK", "transaction_id": 947272}
+{"category": "traded", "date": "2026-10-29", "first_seen_utc": "2026-10-29T18:43:21.559340+00:00", "player": "Nate Eaton", "player_id": 681987, "team": "OAK", "transaction_id": 947273}
