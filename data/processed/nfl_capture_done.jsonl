@@ -453,3 +453,4 @@
 {"game_id": "2026_08_CLE_PIT", "observed_utc": "2026-10-29T18:08:20.881821Z", "phase": "t72h"}
 {"game_id": "2026_08_ATL_TB", "observed_utc": "2026-10-29T18:08:20.881821Z", "phase": "t72h"}
 {"game_id": "2026_08_CAR_GB", "observed_utc": "2026-10-29T18:44:06.855498Z", "phase": "t6h"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-10-29T19:10:56.675318Z", "phase": "refresh"}

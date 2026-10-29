@@ -9678,3 +9678,6 @@
 {"commence_utc": "2026-10-30T19:00:00Z", "event_id": "8bed50cc2a485a98f2f2d3831136107d", "kind": "phase", "observed_utc": "2026-10-29T19:00:31.605160Z", "phase": "t24h", "rows": 11, "sport_key": "soccer_france_ligue_two"}
 {"commence_utc": "2026-10-30T19:00:00Z", "event_id": "e136cba02f5655265d5b3837271341ea", "kind": "phase", "observed_utc": "2026-10-29T19:00:31.605160Z", "phase": "t24h", "rows": 11, "sport_key": "soccer_france_ligue_two"}
 {"call_kind": "pregame", "credits": 2, "events": 10, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-29T19:00:31.605160Z", "regions": ["us"], "rows": 100, "sport_key": "soccer_france_ligue_two", "stored": 55}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-30T01:11:01.307310Z", "observed_utc": "2026-10-29T19:11:01.307310Z", "sport_key": "basketball_wnba"}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-10-30T01:11:01.307310Z", "observed_utc": "2026-10-29T19:11:01.307310Z", "sport_key": "soccer_finland_veikkausliiga"}
+{"events": 0, "kind": "peek", "next_check_utc": "2026-10-30T01:11:01.307310Z", "observed_utc": "2026-10-29T19:11:01.307310Z", "sport_key": "soccer_germany_bundesliga_women"}
