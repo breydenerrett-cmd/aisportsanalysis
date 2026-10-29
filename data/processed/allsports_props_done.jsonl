@@ -1284,3 +1284,25 @@
 {"books": 8, "credits": 5, "event_id": "6e8a41f3aeff105b0e10766515517d5e", "family": "NBA", "kind": "call", "markets": ["player_points", "player_rebounds", "player_assists", "player_threes", "player_points_rebounds_assists"], "observed_utc": "2026-10-29T00:45:35.965025Z", "phase": "t2h", "regions": ["us"], "remaining": 84715, "sport_key": "basketball_nba", "stored": 1007}
 {"commence_utc": "2026-10-29T01:40:00Z", "event_id": "1e3ca91e27ded6e4b4bb35aabb67b505", "kind": "phase", "observed_utc": "2026-10-29T01:17:36.359317Z", "phase": "t30m", "rows": 852, "sport_key": "basketball_nba", "status": "done"}
 {"books": 8, "credits": 5, "event_id": "1e3ca91e27ded6e4b4bb35aabb67b505", "family": "NBA", "kind": "call", "markets": ["player_points", "player_rebounds", "player_assists", "player_threes", "player_points_rebounds_assists"], "observed_utc": "2026-10-29T01:17:36.359317Z", "phase": "t30m", "regions": ["us"], "remaining": 84692, "sport_key": "basketball_nba", "stored": 852}
+{"commence_utc": "2026-10-29T02:10:00Z", "event_id": "f7510932dec00855b611e3685080819c", "kind": "phase", "observed_utc": "2026-10-29T01:44:40.954224Z", "phase": "t30m", "rows": 546, "sport_key": "icehockey_nhl", "status": "done"}
+{"books": 8, "credits": 5, "event_id": "f7510932dec00855b611e3685080819c", "family": "NHL", "kind": "call", "markets": ["player_points", "player_assists", "player_shots_on_goal", "player_goal_scorer_anytime", "player_total_saves"], "observed_utc": "2026-10-29T01:44:40.954224Z", "phase": "t30m", "regions": ["us"], "remaining": 84677, "sport_key": "icehockey_nhl", "stored": 546}
+{"events": 15, "kind": "peek", "next_check_utc": "2026-10-29T05:15:17.628933Z", "observed_utc": "2026-10-29T02:15:17.628933Z", "sport_key": "icehockey_nhl"}
+{"commence_utc": "2026-10-29T02:40:00Z", "event_id": "6e8a41f3aeff105b0e10766515517d5e", "kind": "phase", "observed_utc": "2026-10-29T02:15:17.628933Z", "phase": "t30m", "rows": 1013, "sport_key": "basketball_nba", "status": "done"}
+{"books": 8, "credits": 5, "event_id": "6e8a41f3aeff105b0e10766515517d5e", "family": "NBA", "kind": "call", "markets": ["player_points", "player_rebounds", "player_assists", "player_threes", "player_points_rebounds_assists"], "observed_utc": "2026-10-29T02:15:17.628933Z", "phase": "t30m", "regions": ["us"], "remaining": 84642, "sport_key": "basketball_nba", "stored": 1013}
+{"events": 13, "kind": "peek", "next_check_utc": "2026-10-29T05:46:22.020270Z", "observed_utc": "2026-10-29T02:46:22.020270Z", "sport_key": "basketball_nba"}
+{"events": 29, "kind": "peek", "next_check_utc": "2026-10-29T06:10:36.230408Z", "observed_utc": "2026-10-29T03:10:36.230408Z", "sport_key": "americanfootball_nfl"}
+{"events": 66, "kind": "peek", "next_check_utc": "2026-10-29T06:10:36.230408Z", "observed_utc": "2026-10-29T03:10:36.230408Z", "sport_key": "americanfootball_ncaaf"}
+{"events": 11, "kind": "peek", "next_check_utc": "2026-10-29T08:20:46.135501Z", "observed_utc": "2026-10-29T05:20:46.135501Z", "sport_key": "icehockey_nhl"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-29T08:46:29.335988Z", "observed_utc": "2026-10-29T05:46:29.335988Z", "sport_key": "basketball_nba"}
+{"events": 29, "kind": "peek", "next_check_utc": "2026-10-29T09:14:26.048904Z", "observed_utc": "2026-10-29T06:14:26.048904Z", "sport_key": "americanfootball_nfl"}
+{"events": 65, "kind": "peek", "next_check_utc": "2026-10-29T09:14:26.048904Z", "observed_utc": "2026-10-29T06:14:26.048904Z", "sport_key": "americanfootball_ncaaf"}
+{"events": 11, "kind": "peek", "next_check_utc": "2026-10-29T11:22:52.345902Z", "observed_utc": "2026-10-29T08:22:52.345902Z", "sport_key": "icehockey_nhl"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-29T11:48:41.309969Z", "observed_utc": "2026-10-29T08:48:41.309969Z", "sport_key": "basketball_nba"}
+{"events": 29, "kind": "peek", "next_check_utc": "2026-10-29T12:16:49.910025Z", "observed_utc": "2026-10-29T09:16:49.910025Z", "sport_key": "americanfootball_nfl"}
+{"events": 65, "kind": "peek", "next_check_utc": "2026-10-29T12:16:49.910025Z", "observed_utc": "2026-10-29T09:16:49.910025Z", "sport_key": "americanfootball_ncaaf"}
+{"events": 11, "kind": "peek", "next_check_utc": "2026-10-29T14:26:42.526353Z", "observed_utc": "2026-10-29T11:26:42.526353Z", "sport_key": "icehockey_nhl"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-29T14:52:35.723652Z", "observed_utc": "2026-10-29T11:52:35.723652Z", "sport_key": "basketball_nba"}
+{"events": 29, "kind": "peek", "next_check_utc": "2026-10-29T15:18:36.849612Z", "observed_utc": "2026-10-29T12:18:36.849612Z", "sport_key": "americanfootball_nfl"}
+{"events": 65, "kind": "peek", "next_check_utc": "2026-10-29T15:18:36.849612Z", "observed_utc": "2026-10-29T12:18:36.849612Z", "sport_key": "americanfootball_ncaaf"}
+{"events": 11, "kind": "peek", "next_check_utc": "2026-10-29T16:10:00Z", "observed_utc": "2026-10-29T14:38:20.136274Z", "sport_key": "icehockey_nhl"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-29T17:10:00Z", "observed_utc": "2026-10-29T14:52:50.039208Z", "sport_key": "basketball_nba"}
