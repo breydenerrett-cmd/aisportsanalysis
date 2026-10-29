@@ -6309,3 +6309,9 @@
 {"fetched_utc": "2026-10-29T20:10:58.766607+00:00", "game_date": "2026-10-29", "poll": true}
 {"category": "il_activation", "date": "2026-10-29", "first_seen_utc": "2026-10-29T20:10:58.766607+00:00", "player": "Brooks Baldwin", "player_id": 681460, "team": "CWS", "transaction_id": 947284}
 {"category": "il_activation", "date": "2026-10-29", "first_seen_utc": "2026-10-29T20:10:58.766607+00:00", "player": "Prelander Berroa", "player_id": 672860, "team": "CWS", "transaction_id": 947285}
+{"fetched_utc": "2026-10-29T20:31:55.730272+00:00", "game_date": "2026-10-29", "poll": true}
+{"category": "il_activation", "date": "2026-10-29", "first_seen_utc": "2026-10-29T20:31:55.730272+00:00", "player": "Ky Bush", "player_id": 681066, "team": "CWS", "transaction_id": 947286}
+{"category": "il_activation", "date": "2026-10-29", "first_seen_utc": "2026-10-29T20:31:55.730272+00:00", "player": "Jordan Leasure", "player_id": 673929, "team": "CWS", "transaction_id": 947287}
+{"category": "il_activation", "date": "2026-10-29", "first_seen_utc": "2026-10-29T20:31:55.730272+00:00", "player": "Tanner Murray", "player_id": 695020, "team": "CWS", "transaction_id": 947288}
+{"category": "il_activation", "date": "2026-10-29", "first_seen_utc": "2026-10-29T20:31:55.730272+00:00", "player": "Mike Vasil", "player_id": 678024, "team": "CWS", "transaction_id": 947289}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T20:31:55.730272+00:00", "player": "Bryan Abreu", "player_id": 650556, "team": "HOU", "transaction_id": 947291}
