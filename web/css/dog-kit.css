@@ -206,6 +206,10 @@
 .rt-sheet__body > * { margin-top: 0; }
 .rt-warn { margin: 0 0 8px; font-size: 17px; line-height: 1.45; color: #fff; padding-left: 12px; border-left: 3px solid var(--hd-bad); }
 .rt-note { margin: 0 0 8px; font-size: 16px; line-height: 1.45; color: var(--hd-text-2); }
+/* the top of the training review: "Why it lost", a few short lines from the server (dog-review.js lossesBlock) */
+.rt-lost { margin: 0 0 12px; padding: 10px 12px; border: 1px solid rgba(255, 255, 255, .16); border-radius: 4px; text-align: left; }
+.rt-lost__lines { margin: 4px 0 0; padding-left: 18px; }
+.rt-lost__lines li { margin: 0 0 4px; overflow-wrap: anywhere; }
 .rt-refused { margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--hd-bad); border-left-width: 4px; border-radius: 4px; background: rgba(255, 107, 122, .07); color: #fff; }
 .rt-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
 .rt-actions .btn { flex: 1 1 140px; white-space: normal; text-align: center; }

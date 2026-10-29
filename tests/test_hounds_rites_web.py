@@ -31,8 +31,9 @@ HID, Payloads, dog_routes, hook, page, q = (interact_web.HID, interact_web.Paylo
 SIGNED, dog, mine, public = kennel_tests.SIGNED, kennel_tests.dog, kennel_tests.mine, kennel_tests.public
 NoFireNowLeftInTheWords = copy_tests.NoFireNowLeftInTheWords
 
-MIXED = [(7, dict(result="LOSS", side="away", price=180)), (2, dict(result="WIN", side="away", price=180)),
-         (6, dict(result="WIN", side="home", price=110, sport="NFL")), (3, dict(result="LOSS", side="home", price=110, sport="NFL"))]
+# (twice the size it was until 2026-10-29: a segment now has to hold 10 bets and a real signal to be a weak spot, training.MIN_SEGMENT_BETS)
+MIXED = [(14, dict(result="LOSS", side="away", price=180)), (4, dict(result="WIN", side="away", price=180)),
+         (12, dict(result="WIN", side="home", price=110, sport="NFL")), (6, dict(result="LOSS", side="home", price=110, sport="NFL"))]
 WARNING = "This is permanent. Your hound is buried and its record is frozen."
 
 
@@ -335,9 +336,9 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
         self.assertEqual(got["changes"], len(data["changes"]))
         self.assertIn("Sports", got["change"])
         self.assertIn("MLB and NFL", got["change"])
-        self.assertIn("9 MLB bets went 2-7", got["change"])
+        self.assertIn("18 MLB bets went 4-14", got["change"])
         self.assertEqual(got["guidance"], data["guidance"]["text"])
-        self.assertEqual((got["old"], got["new"]), ("8-10", "0-0"))
+        self.assertEqual((got["old"], got["new"]), ("16-20", "0-0"))
         self.assertEqual(got["badge"], "Trained ×1")
         self.assertEqual(got["open"], data["new"]["page_href"])
         self.assertIn("5 new settled bets", got["next"])

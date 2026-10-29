@@ -30,8 +30,9 @@ from tests._hounds_rites_fixtures import NOW, RitesCase, rows_for
 
 KEY = "sk-ant-test-SECRETVALUE123456"
 ENV = {"ANTHROPIC_API_KEY": KEY}
-MIXED = [(7, dict(result="LOSS", side="away", price=180)), (2, dict(result="WIN", side="away", price=180)),
-         (6, dict(result="WIN", side="home", price=110, sport="NFL")), (3, dict(result="LOSS", side="home", price=110, sport="NFL"))]
+# (twice the size it was until 2026-10-29: a segment now has to hold 10 bets and a real signal to be a weak spot, training.MIN_SEGMENT_BETS)
+MIXED = [(14, dict(result="LOSS", side="away", price=180)), (4, dict(result="WIN", side="away", price=180)),
+         (12, dict(result="WIN", side="home", price=110, sport="NFL")), (6, dict(result="LOSS", side="home", price=110, sport="NFL"))]
 
 
 def summary(graded, units, wins=None, days=30):

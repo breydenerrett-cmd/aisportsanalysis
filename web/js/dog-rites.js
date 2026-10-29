@@ -376,6 +376,7 @@ function trainingFlow(dog, { opener = null, onTrained = null, backHref = null, r
       const decision = await reviewProposal({ body: sheet.body, sheet, first, propose,
         veto: () => post(`${base}/veto`, {}, SLOW), coachBlock });
       if (decision.action === "veto") { showVeto(layer); return; }
+      if (decision.action === "close") { sheet.close(); return; }       // "Keep going: no change": nothing was proposed, nothing was written
       // APPLY: the only call that writes. The evolution is the show, not the work: the request is started here, runs beside it, and
       // nothing is drawn as an upgrade until the server has answered. A refusal ends the show at once (no charge, no new hound).
       await applyThenReveal(layer, titleEl, () => post(base, Object.assign({ confirm: true, picks: decision.picks }, decision.basis ? { basis: decision.basis } : {}, origin ? { origin } : {}), SLOW));
