@@ -6456,3 +6456,4 @@
 {"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T21:01:33.462281+00:00", "player": "Randy Arozarena", "player_id": 668227, "team": "SEA", "transaction_id": 947429}
 {"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T21:01:33.462281+00:00", "player": "Tyler Alexander", "player_id": 641302, "team": "TEX", "transaction_id": 947430}
 {"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-29T21:01:33.462281+00:00", "player": "Luis Arraez", "player_id": 650333, "team": "PHI", "transaction_id": 947431}
+{"fetched_utc": "2026-10-29T21:08:21.601512+00:00", "game_date": "2026-10-29", "poll": true}
