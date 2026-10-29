@@ -230,6 +230,8 @@ class _Handler(BaseHTTPRequestHandler):
         if path in ("/admin/testers", "/admin/testers/extend", "/admin/comps", "/admin/users/reissue"):
             kind = "comp" if path == "/admin/comps" else "tester"
             self._json(200, issued(body.get("email") or f"user{body.get('user_id')}@example.test", kind=kind))
+        elif path == "/admin/comps/direct":
+            self._json(200, {"email": body.get("email"), "user_id": None, "pending": True})
         elif path == "/admin/comps/revoke" or path.startswith("/admin/support/"):
             self._json(200, {"ok": True})
         else:

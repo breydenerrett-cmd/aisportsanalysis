@@ -522,11 +522,19 @@ class RowActionsSendTheRightRequest(unittest.TestCase):
         self.assertEqual([(p["url"], p["body"]) for p in tester["posts"]],
                          [("/admin/testers", {"email": "new.person@example.test"})])
 
-        free = run(routes=routes(**{"POST /admin/comps": [200, F.issued("new.person@example.test", kind="comp")]}),
+        free = run(routes=routes(**{"POST /admin/comps/direct": [200, {"email": "new.person@example.test", "user_id": None, "pending": True}]}),
                    actions=add + [dict(do="set", sel="[data-hook='admin-field-reason']", value="press contact"),
-                                  dict(do="click", sel="[data-hook='admin-add-free']")])
+                                  dict(do="click", sel="[data-hook='admin-add-free']")],
+                   queries=[q("dialog", "[data-hook='admin-token-dialog']", "exists")])
         self.assertEqual([(p["url"], p["body"]) for p in free["posts"]],
-                         [("/admin/comps", {"email": "new.person@example.test", "reason": "press contact"})])
+                         [("/admin/comps/direct", {"email": "new.person@example.test", "reason": "press contact"})])
+        self.assertFalse(free["final"]["dialog"])  # no login code shown
+        self.assertIn("get free access automatically", free["text"])
+
+        code = run(routes=routes(**{"POST /admin/comps": [200, F.issued("new.person@example.test", kind="comp")]}),
+                   actions=add + [dict(do="set", sel="[data-hook='admin-field-reason']", value="press contact"),
+                                  dict(do="click", sel="[data-hook='admin-add-free-code']")])
+        self.assertEqual([p["url"] for p in code["posts"]], ["/admin/comps"])
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")

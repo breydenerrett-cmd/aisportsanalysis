@@ -475,11 +475,20 @@ function boot() {
           run: async (v) => ({ result: await adminPost("/admin/testers", { email: v.email }),
                                plan: { verb: "Tester access granted", forever: false } }) },
         { label: "Give free access", variant: "primary", hook: "admin-add-free", requires: ["email", "reason"],
+          run: async (v) => {
+            const result = await adminPost("/admin/comps/direct", { email: v.email, reason: v.reason });
+            return { message: result.pending
+              ? "When they sign up with this email they get free access automatically."
+              : `Free access added to ${result.email} — they keep signing in as usual.` };
+          } },
+        // The old path: mints a login code (shown once). Kept small and secondary.
+        { label: "Make a login code instead", variant: "link", hook: "admin-add-free-code", requires: ["email", "reason"],
           run: async (v) => ({ result: await adminPost("/admin/comps", { email: v.email, reason: v.reason }),
                                plan: { verb: "Free access given", forever: true } }) },
       ],
       onDone: async (out) => {
-        showToken(out.result, out.plan);
+        if (out.plan) showToken(out.result, out.plan);
+        else toast(hosts.toasts, out.message, "ok");
         await loadAll({ quiet: true });
       },
     });

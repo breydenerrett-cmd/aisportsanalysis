@@ -762,6 +762,28 @@ def grant_comp_access(body: CompGrantRequest,
             "revoked_tokens": grant.revoked_tokens}
 
 
+@router.post("/admin/comps/direct")
+def grant_comp_direct(body: CompGrantRequest,
+                      _admin: None = Depends(_require_admin)) -> dict:
+    """Free access by email with NO login code. An existing account is flagged
+    free in place (`pending: false`); an email with no account yet is recorded
+    and the comp attaches when that person signs up (`pending: true`). Same
+    reason rule and refusals as POST /admin/comps; never returns a token."""
+    if body.email is None or body.user_id is not None:
+        raise HTTPException(status_code=400, detail="send an email (and no user_id)")
+    try:
+        grant = comps.grant_comp_direct(email=body.email, reason=body.reason)
+    except comps.CompRefused as exc:
+        raise _comp_refusal(exc)
+    except Exception as exc:  # noqa: BLE001 -- fail closed
+        print(f"admin: direct comp failed, nothing changed: {exc!r}",
+              file=sys.stderr, flush=True)
+        raise HTTPException(status_code=503, detail={
+            "error": "comp_grant_failed",
+            "message": "the grant could not be written; nothing was changed"})
+    return {"email": grant.email, "user_id": grant.user_id, "pending": grant.pending}
+
+
 @router.post("/admin/comps/revoke")
 def revoke_comp_access(body: CompRevokeRequest,
                        _admin: None = Depends(_require_admin)) -> dict:

@@ -302,6 +302,76 @@ def grant_comp(*, email: Optional[str] = None, user_id: Optional[int] = None,
                      kind=kind, revoked_tokens=revoked)
 
 
+@dataclass(frozen=True)
+class DirectCompGrant:
+    """A comp with no token. `pending` is True when the email has no account yet
+    (the comp waits for that signup); `user_id` is None then."""
+    email: str
+    user_id: Optional[int]
+    pending: bool
+
+
+def grant_comp_direct(*, email: str, reason: Optional[str] = None,
+                      now: Optional[datetime] = None,
+                      db: Optional[Path] = None) -> DirectCompGrant:
+    """Free access with NO login code (owner ask 2026-10-28: nobody saves them).
+
+    An email that already has an account gets the comps row on that account; its
+    tokens, password and sign-in are left alone ("they keep signing in as usual"),
+    and a waitlisted signup becomes active. An email with no account gets a
+    pending_comps row, claimed on that person's first entitlement check after they
+    sign up (customers._claim_pending_comp). Same refusals as grant_comp for an
+    existing account. Entitlement is the one check (customers.has_paid_access),
+    so every paid gate honours it."""
+    why = check_reason(reason)
+    when = _utc(now)
+    try:
+        address = testers.normalise_email(email)
+    except testers.TesterRefused as exc:
+        raise CompRefused(exc.code, exc.message, status=exc.status) from None
+    with _connect(db) as conn:
+        testers._begin_exclusive(conn)
+        row = _find_user(conn, address=address, user_id=None)
+        if row is None:
+            conn.execute(
+                "INSERT INTO pending_comps (email, reason, granted_by, created_at) "
+                "VALUES (?, ?, ?, ?) ON CONFLICT(email) DO UPDATE SET "
+                "reason = excluded.reason, created_at = excluded.created_at, "
+                "claimed_user_id = NULL, claimed_at = NULL",
+                (address, why, COMP_GRANTED_BY, when.isoformat()))
+            return DirectCompGrant(email=address, user_id=None, pending=True)
+        if row["status"] == "suspended":
+            raise CompRefused("user_suspended", "this account is suspended")
+        if row["status"] == "pending_payment":
+            raise CompRefused(
+                "checkout_open",
+                "a checkout is open for this person (status pending_payment); "
+                "free access was not granted")
+        if customers.subscription_is_live(customers._read_record(conn, row["id"]), when):
+            raise CompRefused(
+                "has_subscription",
+                "this person has a live paid subscription; free access was not granted")
+        existing = conn.execute("SELECT revoked_at FROM comps WHERE user_id = ?",
+                                (row["id"],)).fetchone()
+        if existing is not None and existing["revoked_at"] is None:
+            raise CompRefused("already_comp", "this person is already a free member")
+        if row["status"] != "active":
+            conn.execute("UPDATE users SET status = 'active' WHERE id = ?", (row["id"],))
+        if existing is None:
+            conn.execute(
+                "INSERT INTO comps (user_id, granted_at, reason, granted_by) "
+                "VALUES (?, ?, ?, ?)", (row["id"], when.isoformat(), why, COMP_GRANTED_BY))
+        else:
+            conn.execute(
+                "UPDATE comps SET granted_at = ?, reason = ?, granted_by = ?, "
+                "revoked_at = NULL, revoked_reason = NULL WHERE user_id = ?",
+                (when.isoformat(), why, COMP_GRANTED_BY, row["id"]))
+        _audit(conn, row["id"], events.COMP_ACCESS_GRANTED,
+               {"action": "grant", "kind": "existing", "revoked_tokens": 0,
+                "had_password": False, "direct": True}, when)
+        return DirectCompGrant(email=row["email"], user_id=row["id"], pending=False)
+
+
 def revoke_comp(user_id: Optional[int], reason: Optional[str], *,
                 now: Optional[datetime] = None, db: Optional[Path] = None) -> dict:
     """Take a free member's access away: stamp the row revoked and revoke every

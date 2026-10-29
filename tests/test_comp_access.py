@@ -880,3 +880,70 @@ class AnExpiredTesterWhoBecomesAFreeMemberIsNotOfferedACheckout(_Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DirectCompNoLoginCode(_Base):
+    """Owner ask 2026-10-28: comping an email must not mint a code nobody saves."""
+
+    def direct(self, email="friend@example.com", reason="friend of the project"):
+        return comps.grant_comp_direct(email=email, reason=reason, now=NOW, db=self.db)
+
+    def test_existing_account_is_comped_in_place_and_keeps_its_token(self):
+        user = users_store.create_user("musicbybrey@gmail.com", status="active", db=self.db)
+        with closing(sqlite3.connect(str(self.db))) as conn:
+            users_store.insert_token(conn, user.id, ttl=timedelta(days=30), now=NOW)
+            conn.commit()
+        before = self.tokens_of(user.id)
+        out = self.direct("musicbybrey@gmail.com")
+        self.assertEqual((out.user_id, out.pending), (user.id, False))
+        self.assertTrue(customers.has_paid_access(user.id, NOW, db=self.db))
+        self.assertEqual(self.tokens_of(user.id), before)  # nothing minted or revoked
+        self.assertEqual(self.counts()["comps"], 1)
+
+    def test_no_account_records_a_pending_comp_that_a_later_signup_claims(self):
+        out = self.direct("  Later@Example.com ")
+        self.assertEqual((out.user_id, out.pending, out.email), (None, True, "later@example.com"))
+        self.assertEqual(self.counts()["users"], 0)
+        self.assertEqual(self.counts()["tokens"], 0)
+        user = users_store.create_user("later@example.com", status="active", db=self.db)
+        self.assertEqual(self.counts()["comps"], 0)
+        self.assertTrue(customers.has_paid_access(user.id, NOW, db=self.db))
+        self.assertEqual(self.counts()["comps"], 1)
+
+    def test_a_pending_comp_does_not_leak_to_another_email(self):
+        self.direct("a@example.com")
+        other = users_store.create_user("b@example.com", status="active", db=self.db)
+        self.assertFalse(customers.has_active_comp(other.id, db=self.db))
+
+    def test_revoked_direct_comp_is_not_resurrected_by_the_pending_row(self):
+        self.direct("a@example.com")
+        user = users_store.create_user("a@example.com", status="active", db=self.db)
+        self.assertTrue(customers.has_active_comp(user.id, db=self.db))
+        comps.revoke_comp(user.id, "no longer", now=NOW, db=self.db)
+        self.assertFalse(customers.has_active_comp(user.id, db=self.db))
+
+    def test_refusals_match_the_token_grant(self):
+        sus = users_store.create_user("s@example.com", status="suspended", db=self.db)
+        with self.assertRaises(comps.CompRefused) as ctx:
+            self.direct("s@example.com")
+        self.assertEqual(ctx.exception.code, "user_suspended")
+        self.direct("c@example.com")
+        c = users_store.create_user("c@example.com", status="active", db=self.db)
+        customers.has_active_comp(c.id, db=self.db)
+        with self.assertRaises(comps.CompRefused) as ctx:
+            self.direct("c@example.com")
+        self.assertEqual(ctx.exception.code, "already_comp")
+        with self.assertRaises(comps.CompRefused) as ctx:
+            self.direct("x@example.com", reason="")
+        self.assertEqual(ctx.exception.code, "reason_required")
+
+
+@unittest.skipUnless(HAS_FASTAPI, "FastAPI not installed")
+class DirectCompRoute(_Base):
+    def test_route_returns_no_token(self):
+        from api import admin as admin_api
+        with mock.patch.object(users_store, "db_path", return_value=self.db):
+            out = admin_api.grant_comp_direct(
+                admin_api.CompGrantRequest(email="r@example.com", reason="press"), None)
+        self.assertEqual(out, {"email": "r@example.com", "user_id": None, "pending": True})
+        self.assertNotIn("token", out)

@@ -298,6 +298,19 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
             revoked_reason TEXT
         )
     """)
+    # A comp promised to an email that has no account yet (src/appstate/comps.py
+    # grant_comp_direct). Claimed the first time that email's account is asked
+    # about (get_active_comp), whichever door created the account.
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS pending_comps (
+            email TEXT PRIMARY KEY,
+            reason TEXT NOT NULL,
+            granted_by TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            claimed_user_id INTEGER,
+            claimed_at TEXT
+        )
+    """)
 
 
 def upsert_customer(user_id: int, stripe_customer_id: str, *, db: Optional[Path] = None) -> None:
@@ -509,12 +522,39 @@ def entitled_through(status: Optional[str], cancel_at: Optional[str],
     return end
 
 
+def _claim_pending_comp(conn: sqlite3.Connection, user_id: int) -> None:
+    """If this user's email has an unclaimed pending comp, turn it into their comp
+    row now. WHY HERE: every door asks get_active_comp before it lets anyone into
+    the paid surface, so one claim point covers every way an account can come to
+    exist (free signup, tester grant, checkout) with no hook in each creator. A
+    suspended account claims nothing, and an existing comp row (revoked included)
+    is never overwritten by a stale pending row."""
+    try:
+        row = conn.execute(
+            "SELECT p.email, p.reason, p.granted_by FROM pending_comps p "
+            "JOIN users u ON u.email = p.email "
+            "WHERE u.id = ? AND p.claimed_at IS NULL AND u.status != 'suspended'",
+            (user_id,)).fetchone()
+    except sqlite3.OperationalError:
+        return  # no users table yet: nothing to claim
+    if row is None:
+        return
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT OR IGNORE INTO comps (user_id, granted_at, reason, granted_by) "
+        "VALUES (?, ?, ?, ?)", (user_id, now, row["reason"], row["granted_by"]))
+    conn.execute(
+        "UPDATE pending_comps SET claimed_user_id = ?, claimed_at = ? WHERE email = ?",
+        (user_id, now, row["email"]))
+
+
 def get_active_comp(user_id: int, *, db: Optional[Path] = None) -> Optional[dict]:
     """The user's comp row (granted_at, reason, granted_by) while it is in force,
     else None: no row, a revoked row, or an account that is suspended. A
     suspended account is not served whatever it holds, the same rule
     api/auth.py's get_current_user already applies to every token."""
     with _connect(db) as conn:
+        _claim_pending_comp(conn, user_id)
         row = conn.execute(
             "SELECT granted_at, reason, granted_by FROM comps "
             " WHERE user_id = ? AND revoked_at IS NULL", (user_id,)).fetchone()
