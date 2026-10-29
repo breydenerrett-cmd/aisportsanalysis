@@ -47,7 +47,7 @@ class Steps(RouteCase):
 class TheReadOnlySteps(Steps):
     def test_diagnose_returns_the_table_and_writes_nothing(self):
         out = self.diagnose()
-        self.assertEqual((out["stage"], out["paper_only"], out["diagnosis"]["settled"]), ("diagnose", True, 18))
+        self.assertEqual((out["stage"], out["paper_only"], out["diagnosis"]["settled"]), ("diagnose", True, 36))
         self.assertTrue(out["diagnosis"]["rows"] and out["diagnosis"]["ranked"])
         self.assertNotIn("coach", out)
         self.assertEqual(self.adapter.calls, [], "the diagnosis step asks no model")

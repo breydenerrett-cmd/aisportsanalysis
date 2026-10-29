@@ -31,11 +31,13 @@ def _profit(result: str, price: int) -> float:
 
 def ticket(hound_id: str, *, day: int = 0, result: Optional[str] = "WIN", sport: str = "MLB", market: str = "moneyline",
            side: str = "home", price: int = -120, line: Optional[float] = None, rule_index: Optional[int] = None,
-           start_hours_ago: Optional[float] = None, now: Optional[datetime] = None) -> list:
+           start_hours_ago: Optional[float] = None, now: Optional[datetime] = None,
+           away_score: Optional[float] = None, home_score: Optional[float] = None, clv_pts: Optional[float] = None) -> list:
     """The rows for ONE ticket: its bet row and, when ``result`` is given (WIN/LOSS/PUSH/VOID), its graded row.
 
     ``day`` places it ``day`` days after 2026-10-01. ``start_hours_ago`` (with ``now``) pins the game's start so a test
-    can make a ticket "open" (recent) or "ungraded" (more than 36 hours past)."""
+    can make a ticket "open" (recent) or "ungraded" (more than 36 hours past). ``away_score``, ``home_score`` and ``clv_pts`` are
+    what the grader stores on the graded row (None when it had none), for the "why it lost" breakdown."""
     n = next(_ids)
     moment = BASE_DAY + timedelta(days=day, hours=18)
     start = (now - timedelta(hours=start_hours_ago)) if (now is not None and start_hours_ago is not None) else moment + timedelta(hours=2)
@@ -60,6 +62,8 @@ def ticket(hound_id: str, *, day: int = 0, result: Optional[str] = "WIN", sport:
                      "units": profit, "units_best_price": profit, "units_average_price": profit,
                      "date": bet["slate_date"], "slate_date": bet["slate_date"], "segment": "forward",
                      "graded_utc": _iso(moment + timedelta(hours=8))})
+        if away_score is not None or home_score is not None or clv_pts is not None:
+            rows[-1].update({"away_score": away_score, "home_score": home_score, "clv_pts": clv_pts})
     return rows
 
 

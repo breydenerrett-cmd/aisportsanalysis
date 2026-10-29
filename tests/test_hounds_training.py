@@ -18,8 +18,9 @@ from tests._hounds_rites_fixtures import NOW, RitesCase, rows_for, ticket
 from tests._hounds_user_fixtures import spec_dict
 
 # A dog that loses on the road in MLB and does fine at home in NFL.
-MIXED = [(7, dict(result="LOSS", side="away", price=180)), (2, dict(result="WIN", side="away", price=180)),
-         (6, dict(result="WIN", side="home", price=110, sport="NFL")), (3, dict(result="LOSS", side="home", price=110, sport="NFL"))]
+# (twice the size it was until 2026-10-29: a segment now has to hold 10 bets and a real signal to be a weak spot, training.MIN_SEGMENT_BETS)
+MIXED = [(14, dict(result="LOSS", side="away", price=180)), (4, dict(result="WIN", side="away", price=180)),
+         (12, dict(result="WIN", side="home", price=110, sport="NFL")), (6, dict(result="LOSS", side="home", price=110, sport="NFL"))]
 NO_HOOK = {}                       # an environment with no Zapier hook configured
 
 
@@ -120,11 +121,17 @@ class TheLimits(Train):
         self.assertEqual(err.code, "nothing_to_change")
         self.assertEqual(user_store.get_hound(dog["id"])["spec"]["max_bets_per_day"], 3)
 
-    def test_five_settled_bets_is_enough_for_an_analysis(self):
+    def test_five_settled_bets_is_enough_for_an_analysis_and_a_thin_one_says_keep_going(self):
+        """Five settled bets leave the labelled light adjustment behind. They are also too few to cut anything from, so the analysis
+        says so (2026-10-29: "keep going"), where it used to fall back to a nudge nobody had evidence for."""
         hound = self.two_sport_dog()
-        out = self.train(hound, rows_for(hound["id"], [(5, dict(result="LOSS", side="away"))]))
-        self.assertFalse(out["light_adjustment"] and out["analysis"]["settled"] >= 5 and out["mode"] == "analysed")
-        self.assertEqual(out["analysis"]["settled"], 5)
+        rows = rows_for(hound["id"], [(5, dict(result="LOSS", side="away"))])
+        card = training.review(self.resolve(hound["id"]), self.owner.id, now=NOW, rows=rows)
+        self.assertEqual((card["settled"], card["light"], card["mode"], card["nothing"], card["changes"]), (5, False, "keep", True, []))
+        self.assertIn("0-5", card["message"])
+        err = refusal(self, self.train, hound, rows)
+        self.assertEqual((err.code, err.status), ("nothing_to_change", 409))
+        self.assertEqual(len(user_store.lineage(hound["id"])), 1, "nothing was written")
 
     def test_once_per_version_it_needs_five_new_settled_bets_before_it_can_train_again(self):
         hound = self.two_sport_dog()
@@ -138,7 +145,7 @@ class TheLimits(Train):
         rows = rows_for(hound["id"], MIXED) + rows_for(v2["id"], [(4, dict(result="LOSS"))])
         self.assertEqual(refusal(self, self.train, v2, rows).extra["needs"], 1)
         rows += rows_for(v2["id"], [(1, dict(result="LOSS", side="away"))])
-        again = self.train(v2, rows)
+        again = self.train(v2, rows, picks=["fewer_bets"])          # five bets open the gate; they are too few to analyse, so the owner chooses
         self.assertEqual(again["new"]["version_no"], 3)
         self.assertEqual(again["new"]["trained_times"], 2)
 
@@ -175,10 +182,10 @@ class TheNewVersion(Train):
         self.assertEqual(old["status"], "retired")
         self.assertTrue(old["retire_reason"].startswith("superseded by"))
         self.assertEqual(old["spec"], hound["spec"])                                   # the old rule is untouched
-        # the new version starts with no ticket at all; the old one keeps all 18
+        # the new version starts with no ticket at all; the old one keeps all 36
         self.assertEqual(rites.forward_bets(new["id"], rows), [])
-        self.assertEqual(len(rites.forward_bets(hound["id"], rows)), 18)
-        self.assertEqual(out["old"]["record"]["wins"] + out["old"]["record"]["losses"], 18)
+        self.assertEqual(len(rites.forward_bets(hound["id"], rows)), 36)
+        self.assertEqual(out["old"]["record"]["wins"] + out["old"]["record"]["losses"], 36)
         self.assertEqual(out["new"]["record"], {"wins": 0, "losses": 0, "pushes": 0, "bets": 0})
 
     def test_the_badge_counts_trainings_and_the_kit_and_kennel_show_it(self):
@@ -204,7 +211,7 @@ class TheNewVersion(Train):
         self.assertEqual(len(events), 1)
         payload = events[0]["payload"]
         self.assertEqual((payload["from_hound_id"], payload["new_hound_id"], payload["to_version"]), (hound["id"], out["new"]["id"], 2))
-        self.assertEqual(payload["record"], {"wins": 8, "losses": 10, "pushes": 0})
+        self.assertEqual(payload["record"], {"wins": 16, "losses": 20, "pushes": 0})
         self.assertEqual(payload["changes"][0]["id"], out["changes"][0]["id"])
 
     def test_a_failed_training_leaves_no_event_behind(self):
@@ -228,10 +235,10 @@ class TheAnalysis(unittest.TestCase):
 
     def test_the_bets_are_cut_every_way(self):
         _spec, a = self.analyse()
-        self.assertEqual(a["overall"], {"n": 18, "wins": 8, "losses": 10, "pushes": 0, "units": a["overall"]["units"]})
+        self.assertEqual(a["overall"], {"n": 36, "wins": 16, "losses": 20, "pushes": 0, "units": a["overall"]["units"]})
         dims = a["segments"]
-        self.assertEqual({s["key"]: (s["wins"], s["losses"]) for s in dims["sport"]}, {"MLB": (2, 7), "NFL": (6, 3)})
-        self.assertEqual({s["key"]: (s["wins"], s["losses"]) for s in dims["venue"]}, {"away": (2, 7), "home": (6, 3)})
+        self.assertEqual({s["key"]: (s["wins"], s["losses"]) for s in dims["sport"]}, {"MLB": (4, 14), "NFL": (12, 6)})
+        self.assertEqual({s["key"]: (s["wins"], s["losses"]) for s in dims["venue"]}, {"away": (4, 14), "home": (12, 6)})
         self.assertEqual({s["key"] for s in dims["market"]}, {"moneyline"})
         self.assertEqual({s["key"] for s in dims["role"]}, {"underdog"})       # +180 and +110 are both underdog prices
         self.assertEqual({s["key"] for s in dims["band"]}, {"underdogs"})
@@ -242,9 +249,26 @@ class TheAnalysis(unittest.TestCase):
         self.assertTrue(all(s["units"] < 0 and s["n"] >= training.MIN_SEGMENT_BETS for s in a["weak"]))
         self.assertNotIn("market", {s["dimension"] for s in a["weak"]})
 
-    def test_a_segment_under_three_bets_is_noise_not_a_weak_spot(self):
-        _spec, a = self.analyse(plan=[(2, dict(result="LOSS", sport="NFL")), (8, dict(result="WIN"))])
+    def test_a_segment_under_ten_bets_is_noise_not_a_weak_spot(self):
+        _spec, a = self.analyse(plan=[(9, dict(result="LOSS", sport="NFL")), (20, dict(result="WIN"))])
         self.assertEqual(a["weak"], [])
+        self.assertEqual([(h["key"], h["reason"]) for h in a["held"] if h["dimension"] == "sport"], [("NFL", "thin")])
+
+    def test_ten_bets_that_are_still_inside_what_luck_does_are_held_back_too(self):
+        """The slice is big enough but its units per bet are not a full standard error below the rest: no signal, so no cut."""
+        plan = [(5, dict(result="LOSS", sport="NFL", price=-110)), (5, dict(result="WIN", sport="NFL", price=-110)),
+                (6, dict(result="LOSS", price=-110)), (6, dict(result="WIN", price=-110)), (2, dict(result="WIN", price=-130))]
+        _spec, a = self.analyse(plan=plan)
+        nfl = next(s for s in a["segments"]["sport"] if s["key"] == "NFL")
+        self.assertEqual((nfl["n"], nfl["units"] < 0), (10, True))
+        self.assertNotIn("NFL", [s["key"] for s in a["weak"] if s["dimension"] == "sport"])
+        self.assertEqual([h["reason"] for h in a["held"] if h["key"] == "NFL"], ["noise"])
+
+    def test_a_segment_that_is_only_losing_because_the_rest_loses_more_is_not_weak(self):
+        plan = [(12, dict(result="LOSS", sport="NFL", price=110)), (4, dict(result="WIN", sport="NFL", price=110)),
+                (16, dict(result="LOSS")), (2, dict(result="WIN"))]
+        _spec, a = self.analyse(plan=plan)
+        self.assertNotIn("NFL", [s["key"] for s in a["weak"] if s["dimension"] == "sport"], "NFL is the better of the two sports")
 
     def test_the_price_bands_cover_every_price_once(self):
         keys = {training.band_of(p): p for p in (-199, -151, -150, -111, -110, -101, 100, 109, 110, 199, 200, 1000)}
@@ -267,10 +291,11 @@ class TheAnalysis(unittest.TestCase):
         spec = user_spec.validate_spec({"version": 2, "name": "Two Rules", "rules": [
             {"sports": ["MLB"], "markets": ["moneyline"], "side": "either"},
             {"sports": ["MLB"], "markets": ["moneyline"], "side": "either", "price_min": 100, "price_max": 300}]})
-        rows = (rows_for("u-x", [(5, dict(result="LOSS", rule_index=0))]) + rows_for("u-x", [(5, dict(result="WIN", rule_index=1))]))
+        rows = (rows_for("u-x", [(12, dict(result="LOSS", rule_index=0))])
+                + rows_for("u-x", [(6, dict(result="WIN", rule_index=1, price=130)), (6, dict(result="WIN", rule_index=1, price=170))]))
         a = training.analyse(rites.forward_bets("u-x", rows), spec, training.rule_index_of(rows, "u-x"))
-        self.assertEqual([(s["key"], s["wins"], s["losses"]) for s in a["segments"]["rule"]], [(0, 0, 5), (1, 5, 0)])
-        self.assertEqual(a["weak"][0]["label"], "rule 1")
+        self.assertEqual([(s["key"], s["wins"], s["losses"]) for s in a["segments"]["rule"]], [(0, 0, 12), (1, 12, 0)])
+        self.assertIn("rule 1", [s["label"] for s in a["weak"] if s["dimension"] == "rule"])
 
 
 class TheChanges(unittest.TestCase):
@@ -284,46 +309,50 @@ class TheChanges(unittest.TestCase):
         (new, changes, mode, _note), _a = self.propose(spec, MIXED)
         self.assertEqual((mode, new["sports"], [c["id"] for c in changes]), ("analysed", ["NFL"], ["drop_sport"]))
         self.assertEqual((changes[0]["old_text"], changes[0]["new_text"]), ("MLB and NFL", "NFL"))
-        self.assertEqual(changes[0]["hindsight"], {"n": 9, "wins": 2, "losses": 7, "pushes": 0, "units": changes[0]["hindsight"]["units"]})
-        self.assertIn("9 MLB bets went 2-7", changes[0]["why"])
+        self.assertEqual(changes[0]["hindsight"], {"n": 18, "wins": 4, "losses": 14, "pushes": 0, "units": changes[0]["hindsight"]["units"]})
+        self.assertIn("18 MLB bets went 4-14", changes[0]["why"])
 
     def test_the_worst_market_is_dropped(self):
         spec = user_spec.validate_spec(spec_dict(markets=["moneyline", "total"], side_rule="market_moved_toward"))
-        plan = [(5, dict(result="LOSS", market="total", side="over", price=-105)), (6, dict(result="WIN", market="moneyline", price=130))]
+        plan = [(12, dict(result="LOSS", market="total", side="over", price=-105)), (6, dict(result="WIN", market="moneyline", price=130)),
+                (6, dict(result="WIN", market="moneyline", price=150))]
         (new, changes, _mode, _n), _a = self.propose(spec, plan)
         self.assertEqual((new["markets"], changes[0]["id"]), (["moneyline"], "drop_market"))
 
     def test_a_price_band_on_the_edge_of_the_range_is_cut_off(self):
         spec = user_spec.validate_spec(spec_dict(price_min=100, price_max=400))
-        plan = [(5, dict(result="LOSS", price=300)), (6, dict(result="WIN", price=130))]
+        plan = [(12, dict(result="LOSS", price=300)), (6, dict(result="WIN", price=130)), (6, dict(result="WIN", price=150))]
         (new, changes, _mode, _n), _a = self.propose(spec, plan)
         self.assertEqual((new["price_min"], new["price_max"], changes[0]["id"]), (100, 199, "tighten_band"))
         self.assertEqual(changes[0]["new_text"], "+100 to +199")
 
     def test_a_band_in_the_middle_of_a_range_cannot_be_cut_out(self):
         spec = user_spec.validate_spec(spec_dict(price_min=100, price_max=400))
-        plan = [(5, dict(result="LOSS", price=150)), (3, dict(result="WIN", price=300)), (3, dict(result="WIN", price=105))]
-        (new, changes, mode, note), _a = self.propose(spec, plan)
-        self.assertEqual(mode, "light")                      # nothing it could cut, so it fell back to a nudge
-        self.assertEqual(note, "no_weak_spot")
-        self.assertEqual(changes[0]["id"] in ("more_books", "fewer_bets"), True)
+        plan = [(12, dict(result="LOSS", price=150)), (6, dict(result="WIN", price=300)), (6, dict(result="WIN", price=105))]
+        (new, changes, mode, note), analysis = self.propose(spec, plan)
+        self.assertTrue(any(s["dimension"] == "band" and s["key"] == "underdogs" for s in analysis["weak"]), "it is a real weak spot")
+        # ...that no allowed change reaches, so the honest proposal is no change (it used to fall back to a nudge nobody had evidence for)
+        self.assertEqual((new, changes, mode, note), (None, [], "keep", "no_change_fits"))
 
     def test_a_custom_rule_that_takes_either_side_learns_the_other_one(self):
         spec = user_spec.validate_spec({"version": 2, "name": "Either Dog", "rules": [{"sports": ["MLB"], "markets": ["moneyline"], "side": "either"}]})
-        plan = [(6, dict(result="LOSS", side="away", price=-120, rule_index=0)), (6, dict(result="WIN", side="home", price=-120, rule_index=0))]
+        plan = [(12, dict(result="LOSS", side="away", price=-120, rule_index=0)),
+                (6, dict(result="WIN", side="home", price=-120, rule_index=0)), (6, dict(result="WIN", side="home", price=-130, rule_index=0))]
         (new, changes, _mode, _n), _a = self.propose(spec, plan)
         self.assertEqual((new["rules"][0]["side"], changes[0]["id"]), ("home", "drop_venue"))
 
     def test_a_classic_dog_never_has_its_side_rule_rewritten(self):
         spec = user_spec.validate_spec(spec_dict(side_rule="away"))
-        plan = [(6, dict(result="LOSS", side="away", price=130)), (6, dict(result="WIN", side="home", price=130))]
+        plan = [(12, dict(result="LOSS", side="away", price=130)), (6, dict(result="WIN", side="home", price=130)),
+                (6, dict(result="WIN", side="home", price=150))]
         (new, changes, mode, _n), _a = self.propose(spec, plan)
-        self.assertEqual(new["side_rule"], "away")
-        self.assertEqual(mode, "light")
+        self.assertIsNone(new, "the side is the rule, so a losing away side has no change to point at")
+        self.assertEqual((changes, mode), ([], "keep"))
 
     def test_a_favourites_leak_adds_the_underdog_condition_to_a_custom_rule(self):
         spec = user_spec.validate_spec({"version": 2, "name": "Chalk Dog", "rules": [{"sports": ["MLB"], "markets": ["moneyline"], "side": "either", "price_min": -190, "price_max": 150}]})
-        plan = [(6, dict(result="LOSS", price=-140, rule_index=0)), (6, dict(result="WIN", price=130, rule_index=0))]
+        plan = [(12, dict(result="LOSS", price=-140, rule_index=0)), (6, dict(result="WIN", price=130, rule_index=0)),
+                (6, dict(result="WIN", price=150, rule_index=0))]
         (new, changes, _mode, _n), _a = self.propose(spec, plan)
         ids = [c["id"] for c in changes]
         self.assertIn("require_role", ids)
@@ -333,10 +362,11 @@ class TheChanges(unittest.TestCase):
         spec = user_spec.validate_spec({"version": 2, "name": "Big Dog", "rules": [
             {"sports": ["MLB", "NFL"], "markets": ["moneyline"], "side": "either", "price_min": -190, "price_max": 400},
             {"sports": ["MLB", "NFL"], "markets": ["total"], "side": "either", "price_min": -190, "price_max": 400}]})
-        plan = ([(5, dict(result="LOSS", sport="MLB", side="away", price=300, market="moneyline", rule_index=0))]
-                + [(5, dict(result="LOSS", sport="NFL", side="home", price=-150, market="moneyline", rule_index=0))]
-                + [(5, dict(result="LOSS", sport="MLB", side="over", price=-105, market="total", rule_index=1))]
-                + [(8, dict(result="WIN", sport="NFL", side="away", price=120, market="moneyline", rule_index=0))])
+        plan = ([(12, dict(result="LOSS", sport="MLB", side="away", price=300, market="moneyline", rule_index=0))]
+                + [(12, dict(result="LOSS", sport="NFL", side="home", price=-150, market="moneyline", rule_index=0))]
+                + [(12, dict(result="LOSS", sport="MLB", side="over", price=-105, market="total", rule_index=1))]
+                + [(8, dict(result="WIN", sport="NFL", side="away", price=120, market="moneyline", rule_index=0)),
+                   (8, dict(result="WIN", sport="NFL", side="away", price=140, market="moneyline", rule_index=0))])
         (new, changes, _mode, _n), _a = self.propose(spec, plan)
         self.assertTrue(1 <= len(changes) <= training.MAX_CHANGES)
         self.assertNotEqual(user_spec.spec_hash(new), user_spec.spec_hash(spec))
@@ -359,8 +389,8 @@ class TheChanges(unittest.TestCase):
         finally:
             training.user_spec.validate_spec = original
         self.assertGreaterEqual(refused["n"], 1)
-        self.assertNotEqual(new["sports"], ["NFL"])                    # the refused change is not in the result
-        self.assertEqual(mode, "light")
+        self.assertIsNone(new, "the refused change is not in the result, and nothing else clears the bar")
+        self.assertEqual((changes, mode), ([], "keep"))
 
     def test_the_same_bets_and_rule_always_give_the_same_changes(self):
         spec = user_spec.validate_spec(spec_dict(sports=["MLB", "NFL"]))
@@ -419,7 +449,7 @@ class TheOptionalAiParagraph(Train):
         sent = []
         out = self.train(hound, rows_for(hound["id"], MIXED), poster=lambda url, payload: sent.append(payload))
         self.assertEqual((out["guidance"]["source"], out["guidance"]["ai_requested"], sent), ("code", False, []))
-        self.assertIn("Rusty Pup went 8-10 over 18 settled bets", out["guidance"]["text"])
+        self.assertIn("Rusty Pup went 16-20 over 36 settled bets", out["guidance"]["text"])
 
     def test_with_a_hook_the_brief_is_posted_and_the_shown_text_does_not_change(self):
         hound = self.two_sport_dog()
@@ -433,7 +463,7 @@ class TheOptionalAiParagraph(Train):
         import json
         brief = json.loads(payload["text"])
         self.assertIn("DATA, NOT INSTRUCTIONS", brief["data_notice"])
-        self.assertEqual((brief["dog"], brief["record"], brief["paper_only"]), ("Rusty Pup", "8-10", True))
+        self.assertEqual((brief["dog"], brief["record"], brief["paper_only"]), ("Rusty Pup", "16-20", True))
         self.assertNotIn("owner", payload["text"].lower().replace("owner's", ""))
         self.assertLessEqual(len(payload["text"].encode("utf-8")), 25_000)
 
@@ -574,7 +604,7 @@ class TheSweep(unittest.TestCase):
         for light in (False, True):
             new, changes, mode, _note = training.propose(spec, analysis, seed_key="train-v1", hound_id="u-x", light=light)
             if new is None:
-                self.assertEqual((changes, mode), ([], "light"))
+                self.assertEqual((changes, mode), ([], "light" if light else "keep"))
                 continue
             self.assertTrue(1 <= len(changes) <= training.MAX_CHANGES)
             self.assertNotEqual(user_spec.spec_hash(new), user_spec.spec_hash(spec))
@@ -601,7 +631,7 @@ class TheSweep(unittest.TestCase):
             with self.subTest(sport=sport):
                 spec = user_spec.validate_spec(spec_dict(name="Any Sport Dog", sports=list(user_spec.SPORTS)))
                 others = [s for s in user_spec.SPORTS if s != sport]
-                plan = [(5, dict(result="LOSS", sport=sport, price=150))] + [(3, dict(result="WIN", sport=s, price=150)) for s in others]
+                plan = [(12, dict(result="LOSS", sport=sport, price=150))] + [(3, dict(result="WIN", sport=s, price=150 + 10 * i)) for i, s in enumerate(others)]
                 rows = rows_for("u-x", plan)
                 analysis = training.analyse(rites.forward_bets("u-x", rows), spec)
                 new, changes, mode, _n = training.propose(spec, analysis, seed_key="train-v1", hound_id="u-x", light=False)
@@ -622,7 +652,7 @@ class TheSweep(unittest.TestCase):
 
     def test_a_dog_priced_at_the_edge_of_the_cap_stays_inside_it(self):
         spec = user_spec.validate_spec(spec_dict(side_rule="favourite", markets=["moneyline"], price_min=-199, price_max=-110))
-        plan = [(5, dict(result="LOSS", price=-190)), (5, dict(result="WIN", price=-120))]
+        plan = [(12, dict(result="LOSS", price=-190)), (6, dict(result="WIN", price=-120)), (6, dict(result="WIN", price=-130))]
         rows = rows_for("u-x", plan)
         analysis = training.analyse(rites.forward_bets("u-x", rows), spec)
         new, _changes, _mode, _n = training.propose(spec, analysis, seed_key="train-v1", hound_id="u-x", light=False)
@@ -646,8 +676,9 @@ class TheTrainingRunsOnARealStore(Train):
         for raw in shapes:
             with self.subTest(name=raw["name"]):
                 hound = user_store.create_hound(self.owner.id, raw)
-                plan = [(6, dict(result="LOSS", side="away", price=150, rule_index=0 if user_spec.is_v2(hound["spec"]) else None)),
-                        (6, dict(result="WIN", side="home", price=150, sport="NFL", rule_index=0 if user_spec.is_v2(hound["spec"]) else None))]
+                plan = [(12, dict(result="LOSS", side="away", price=150, rule_index=0 if user_spec.is_v2(hound["spec"]) else None)),
+                        (6, dict(result="WIN", side="home", price=150, sport="NFL", rule_index=0 if user_spec.is_v2(hound["spec"]) else None)),
+                        (6, dict(result="WIN", side="home", price=170, sport="NFL", rule_index=0 if user_spec.is_v2(hound["spec"]) else None))]
                 out = self.train(hound, rows_for(hound["id"], plan))
                 assert_narrower(self, hound["spec"], user_store.get_hound(out["new"]["id"])["spec"])
 

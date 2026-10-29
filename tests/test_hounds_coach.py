@@ -23,8 +23,9 @@ from tests._hounds_rites_fixtures import NOW, RitesCase, rows_for
 from tests._hounds_user_fixtures import spec_dict
 from tests.test_hounds_training import MIXED, Train, assert_narrower, synthetic_plan, v1_specs, v2_specs
 
-PLAN = [(7, dict(result="LOSS", side="away", price=180)), (2, dict(result="WIN", side="away", price=180)),
-        (6, dict(result="WIN", side="home", price=-125, sport="NFL")), (3, dict(result="LOSS", side="home", price=-125, sport="NFL"))]
+# (twice the size it was until 2026-10-29: a segment now has to hold 10 bets and a real signal to be a weak spot)
+PLAN = [(14, dict(result="LOSS", side="away", price=180)), (4, dict(result="WIN", side="away", price=180)),
+        (12, dict(result="WIN", side="home", price=-125, sport="NFL")), (6, dict(result="LOSS", side="home", price=-125, sport="NFL"))]
 KEY = "test-key-not-a-real-secret-0001"
 
 
@@ -106,7 +107,7 @@ class TheModelOnlyEverReadsTheTable(Setup):
         for bet in self.bets:
             self.assertNotIn(bet.bet_id, text)
         sent = json.loads(call["user"])
-        self.assertEqual(sent["settled"], 18)
+        self.assertEqual(sent["settled"], 36)
         self.assertEqual({c["cid"] for c in sent["candidates"]}, {e["cid"] for e in self.entries})
         self.assertEqual(sent["ranked"], self.table["ranked"])
 
@@ -207,6 +208,11 @@ class ACitationThatIsNotRealIsDropped(Setup):
         self.assertEqual((read["source"], read["reasons"][0]["text"]), ("ai", text))
 
     def test_confidence_never_exceeds_what_the_cited_cuts_can_support(self):
+        # three lost totals: a cut far too small to read, beside the two big ones
+        self.rows = self.rows + rows_for(self.hound["id"], [(3, dict(result="LOSS", side="over", market="total", price=-105, sport="NFL"))])
+        self.bets = rites.forward_bets(self.hound["id"], self.rows)
+        self.table = D.diagnose(self.bets, self.spec, rows=self.rows)
+        self.entries = training.menu(self.spec, training.analyse(self.bets, self.spec), self.table)
         small = next(f for f in self.table["rows"] if f["kind"] == "segment" and f["direction"] == "against" and f["level"] == "too_few")
         read, _a, _r = self.ask(self.reply(lambda p: [{"factors": [small["id"]], "text": "Only a handful of bets here.", "confidence": "high"}]))
         self.assertEqual((read["reasons"][0]["confidence"], read["reasons"][0]["thin"]), ("low", True))
@@ -311,9 +317,9 @@ class TheFinalChangesComeOnlyFromTheMenu(Setup):
         from tests._hounds_rites_fixtures import ticket
         spec = user_spec.validate_spec(spec_dict(name="Books Pup", sports=["MLB"], min_books=3))
         rows = []
-        for i in range(12):
-            few = i < 6
-            pair = ticket("h-bk", day=i, result="LOSS" if few else "WIN", side="home", price=120)
+        for i in range(24):
+            few = i < 12
+            pair = ticket("h-bk", day=i, result="LOSS" if few else "WIN", side="home", price=120 + 10 * (i % 2))
             pair[0].update(book_count=3 if few else 8, n_books=3 if few else 8)
             rows += pair
         bets = rites.forward_bets("h-bk", rows)
@@ -326,17 +332,18 @@ class TheFinalChangesComeOnlyFromTheMenu(Setup):
                                                 preferred=["more_books:all"], entries=entries)
         self.assertEqual((changes[0]["id"], changes[0]["pick"], new["min_books"], spec["min_books"]), ("more_books", "coach", 4, 3))
         self.assertEqual(changes[0]["factors"], ["books:few"])
-        self.assertIn("0-6", changes[0]["why"])
+        self.assertIn("0-12", changes[0]["why"])
         assert_narrower(self, spec, new)
 
     def test_a_menu_entry_for_books_or_the_daily_limit_exists_only_when_the_table_lost_there(self):
         # three bets on one day with a limit of 2, all lost: "the daily limit" cut lost, so fewer_bets is on the menu
         spec = user_spec.validate_spec(spec_dict(name="Cap Pup", sports=["MLB"], max_bets_per_day=3))
         rows = []
-        plan = [(0, "LOSS"), (0, "LOSS"), (0, "LOSS"), (1, "WIN"), (2, "WIN"), (3, "WIN"), (4, "WIN")]
+        # four days of three lost bets (the limit hit each day) against eight single-bet winning days: a cut of 12 bets, far below the rest
+        plan = [(d, "LOSS") for d in range(4) for _ in range(3)] + [(4 + k, "WIN") for k in range(8)]
         from tests._hounds_rites_fixtures import ticket
         for day, res in plan:
-            rows += ticket("h-cap", day=day, result=res, side="home", price=110)
+            rows += ticket("h-cap", day=day, result=res, side="home", price=110 + 5 * day)
         bets = rites.forward_bets("h-cap", rows)
         analysis = training.analyse(bets, spec)
         table = D.diagnose(bets, spec, rows=rows)
@@ -501,7 +508,7 @@ class ReadStepRoutesWriteNothing(Setup):
         shown = coach.Coach(router=real_router(self.tmp.name, FakeAdapter(good_reply)))
         a = training.read_step(self.resolve(self.hound["id"]), self.owner.id, shown, stage="diagnose", now=NOW, rows=self.rows)
         self.assertNotIn("coach", a)
-        self.assertEqual((a["diagnosis"]["settled"], a["stage"]), (18, "diagnose"))
+        self.assertEqual((a["diagnosis"]["settled"], a["stage"]), (36, "diagnose"))
         b = training.read_step(self.resolve(self.hound["id"]), self.owner.id, shown, stage="assess", now=NOW, rows=self.rows)
         self.assertEqual(b["coach"]["label"], "AI read")
         self.assertEqual(len(user_store.lineage(self.hound["id"])), 1, "nothing was trained")

@@ -86,7 +86,7 @@ from src.appstate import ratelimit
 from src.appstate import users as users_store
 from src.hounds import unit_size, user_spec
 from src.hounds.contract import envelope
-from src.hounds.interact import ask, ask_eval, camp, coach, common, drill, fire, fire_event, gematria_analysis, look, manual, outback, rebuild_budget, retune, revert, right_now, rites, store, training, training_plans, unleash
+from src.hounds.interact import ask, ask_eval, camp, coach, common, drill, fire, fire_event, gematria_analysis, look, loss_why, manual, outback, rebuild_budget, retune, revert, right_now, rites, store, training, training_plans, unleash
 
 from api import auth as auth_mod
 from api import entitlements
@@ -438,7 +438,8 @@ def training_proposal(hound_id: str, response: Response, body: Optional[ProposeR
     try:
         dog = common.resolve(hound_id)
         out = training.review(dog, current_user.id, coach.live(), origin=body.origin, chat=body.chat, tweak=body.tweak,
-                              round_no=body.round, board_fn=retune.live_board_fn(dog) if dog is not None else None)
+                              round_no=body.round, board_fn=retune.live_board_fn(dog) if dog is not None else None,
+                              hindsight_fn=loss_why.live_hindsight)
     except rites.RiteError as exc:
         raise _rite_error(exc)
     return envelope(out)

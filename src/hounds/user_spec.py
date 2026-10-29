@@ -361,7 +361,7 @@ def validate_spec(raw: Mapping, *, taken_names: Iterable[str] = (),
         raise SpecError({"spec": "must be an object"})
     if raw.get("version") == SPEC_VERSION_V2 or "rules" in raw or "style" in raw:
         return _validate_v2(raw, taken_names=taken_names, extra_real_names=extra_real_names)
-    allowed = set(SPEC_FIELDS) | {"version"}
+    allowed = set(SPEC_FIELDS) | {"version", CORE_FIELD}
     for key in raw:
         if key not in allowed:
             errors[str(key)] = "is not a field on the menu"
@@ -419,13 +419,17 @@ def validate_spec(raw: Mapping, *, taken_names: Iterable[str] = (),
         errors["lock_minutes"] = f"must be one of {', '.join(map(str, LOCK_CHOICES))}"
         lock = None
 
+    core = normalize_core(raw.get(CORE_FIELD), errors)
     if errors:
         raise SpecError(errors)
-    return {
+    out = {
         "version": SPEC_VERSION, "name": name, "tagline": tagline, "sports": sports,
         "markets": markets, "side_rule": side, "price_min": pmin, "price_max": pmax,
         "min_books": min_books, "max_bets_per_day": max_bets, "lock_minutes": lock,
     }
+    if core:
+        out[CORE_FIELD] = core
+    return out
 
 
 RULE_FIELDS_V2 = ("rules", "lock_minutes", "max_bets_per_day", "stake_units", "rank_by")
@@ -439,6 +443,25 @@ IN_PLAY_LABEL = "Also bet games in play"
 IN_PLAY_NOTE = ("In-play prices move fast. When this is on, the hound may also bet a game that has already started, at the "
                 "price on the live board at the moment it checks, and only if that price is under a few minutes old. "
                 "Bet at your own risk. Paper only.")
+
+
+# A hound's CORE (2026-10-29): the sports it is FOR. Optional, absent on every hound built before it, and stored only when
+# the owner (or a client of the API) wrote one. It is IDENTITY, not rule: it changes nothing a hound bets, so it is not in
+# ``RULE_FIELDS`` / ``RULE_FIELDS_V2`` and never in ``spec_hash`` (a hound's hash, and so its record, is the same with or
+# without it). Send to training reads it (``interact/identity.py``) and never proposes cutting a core sport.
+CORE_FIELD = "core"
+
+
+def normalize_core(value: Any, errors: dict) -> Optional[list]:
+    """The canonically ordered core-sport list for a raw ``core``, or None when it is absent or empty. A value that is not a
+    list of known sport codes (``SPORTS``) is a field error, never repaired."""
+    if value is None:
+        return None
+    items = _as_list(value)
+    if items is None or any(not isinstance(s, str) for s in items) or any(s not in SPORTS for s in items)             or len(set(items)) != len(items):
+        errors[CORE_FIELD] = f"choose from {', '.join(SPORTS)}"
+        return None
+    return [s for s in SPORTS if s in items] or None
 
 
 def bets_in_play(spec: Mapping) -> bool:
@@ -629,6 +652,10 @@ V2_RULE_KEYS = ("label", "sports", "markets", "side", "price_min", "price_max", 
 V2_DERIVED_KEYS = ("sports", "markets", "side_rule")
 V2_TOP_KEYS = ("version", "name", "tagline", "color", "badge", "lock_minutes", "max_bets_per_day",
                "stake_units", "rank_by", "rules", "bet_in_play") + V2_DERIVED_KEYS
+# Identity keys: accepted on input and kept, but not rule fields and not on the builder page's list of keys (the page rebuilds a
+# spec from the keys it names, so an owner's edit in the builder does not carry an explicit ``core`` over; the name and words still
+# say what the hound is for, ``interact/identity.py``).
+V2_IDENTITY_KEYS = ("core",)
 # The base style (src/hounds/user_gematria.py): "rules" is every ordinary hound (the key is simply absent), "gematria" is the
 # member Gematria style, whose pick logic is the house Gematria Hound's. `gematria` is its creation stamp (rules version + hash).
 STYLE_RULES, STYLE_GEMATRIA = "rules", "gematria"
@@ -765,7 +792,7 @@ def _validate_v2(raw: Mapping, *, taken_names: Iterable[str], extra_real_names) 
     from src.hounds import user_rules as R
     errors: dict = {}
     for key in raw:
-        if key not in V2_TOP_KEYS and key not in V2_STYLE_KEYS:
+        if key not in V2_TOP_KEYS and key not in V2_STYLE_KEYS and key not in V2_IDENTITY_KEYS:
             errors[str(key)[:30]] = "is not a field on the menu"
     style = raw.get("style", STYLE_RULES)
     if style not in STYLES:
@@ -810,6 +837,7 @@ def _validate_v2(raw: Mapping, *, taken_names: Iterable[str], extra_real_names) 
     elif in_play and style == STYLE_GEMATRIA:
         errors[IN_PLAY_FIELD] = "the Gematria style bets before the start only"
 
+    core = normalize_core(raw.get(CORE_FIELD), errors)
     rules_raw = raw.get("rules") if fixed is None else fixed["rules"]
     rules: list = []
     if style == STYLE_GEMATRIA and fixed is None:
@@ -850,6 +878,8 @@ def _validate_v2(raw: Mapping, *, taken_names: Iterable[str], extra_real_names) 
         out["style"] = STYLE_APPRENTICE
     if in_play is True:
         out[IN_PLAY_FIELD] = True
+    if core:
+        out[CORE_FIELD] = core
     return out
 
 

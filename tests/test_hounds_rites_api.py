@@ -20,8 +20,9 @@ from src.appstate import users as users_store
 from src.hounds import user_store
 from tests._hounds_rites_fixtures import NOW, RitesCase, rows_for, ticket, write_ledger
 
-MIXED = [(7, dict(result="LOSS", side="away", price=180)), (2, dict(result="WIN", side="away", price=180)),
-         (6, dict(result="WIN", side="home", price=110, sport="NFL")), (3, dict(result="LOSS", side="home", price=110, sport="NFL"))]
+# (twice the size it was until 2026-10-29: a segment now has to hold 10 bets and a real signal to be a weak spot, training.MIN_SEGMENT_BETS)
+MIXED = [(14, dict(result="LOSS", side="away", price=180)), (4, dict(result="WIN", side="away", price=180)),
+         (12, dict(result="WIN", side="home", price=110, sport="NFL")), (6, dict(result="LOSS", side="home", price=110, sport="NFL"))]
 
 
 @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
@@ -67,7 +68,7 @@ class OutBackRoute(RouteCase):
         write_ledger(self.ledger, rows_for(hound["id"], MIXED))
         out = self.out_back(hound["id"], self.owner)
         self.assertIs(out["paper_only"], True)
-        self.assertEqual((out["headstone"]["name"], out["headstone"]["record"]["losses"], out["freed_slot"]), ("Rusty Pup", 10, True))
+        self.assertEqual((out["headstone"]["name"], out["headstone"]["record"]["losses"], out["freed_slot"]), ("Rusty Pup", 20, True))
         self.assertEqual(user_store.get_hound(hound["id"])["status"], "buried")
 
     def test_someone_elses_dog_is_a_404_and_a_house_dog_a_422(self):

@@ -18,6 +18,10 @@ WHAT IT IS, IN FOUR PIECES
      carry, allow one more bet a day (never past 5), relax one numeric condition one step. NARROWING: everything
      ``training.menu`` already offers, plus the same changes available without a weak spot to point at (the owner asked
      for them). Nothing outside this list can be proposed, by anyone.
+     The menu also holds two items about the hound's CORE (``identity.py``; the owner's tweak of 2026-10-29, "THE ONLY TWEAKS YOU
+     HAVE ARE CHANGING THE SPORTS IT BETTING ON. NO THANKS"): ``keep_sports`` (leave the sports exactly as they are: any sport
+     change is taken out of the proposal) and ``focus_sports`` (narrow to the core sport, a narrowing like the rest). A core sport
+     or market is never offered for removal unless the owner's own words ask for that one.
   3. THE MAPPING (``map_chat``). Claude Haiku (router, the $5 cap, ``rules_map`` as the fallback) reads the OWNER'S lines
      and the menu and returns at most three menu ids, each citing the owner's line it answers with a quote that must
      really be in that line. A pick with no citation, a quote that is not in the line, or an id that is not on the menu
@@ -42,7 +46,7 @@ from datetime import datetime
 from typing import Any, Callable, Mapping, Optional, Sequence
 
 from src.hounds import user_rules, user_spec
-from src.hounds.interact import common, training
+from src.hounds.interact import common, identity, training
 
 logger = logging.getLogger("linehound.hounds.retune")
 
@@ -69,6 +73,9 @@ HONESTY = ("This changes how many and which games it looks at. It makes no promi
            "The new version starts a new record. Paper only.")
 TODAY_NOTE = ("Counts come from today's board only, not from results, so a change is never judged on how games turned out.")
 
+KEEP_CID, FOCUS_CID = "keep_sports", "focus_sports"        # the two identity items on the menu
+KEEP_FAMILY = "keep"
+SPORT_CHANGE_IDS = ("drop_sport", "add_sport", "focus_sports")   # the changes a "keep the sports" takes out of a proposal
 BETS_FAMILY, BAND_FAMILY, BOOKS_FAMILY = "bets", "band", "books"
 SPORT_FAMILY, MARKET_FAMILY, RELAX_FAMILY = "sport", "market", "relax"
 FAMILY_ORDER = (BAND_FAMILY, BOOKS_FAMILY, MARKET_FAMILY, SPORT_FAMILY, RELAX_FAMILY, BETS_FAMILY)
@@ -435,9 +442,50 @@ def owner_narrowing_menu(spec: Mapping) -> list:
     return out
 
 
-def full_menu(spec: Mapping, analysis: Optional[Mapping] = None, diagnosis: Optional[Mapping] = None) -> list:
+def identity_menu(spec: Mapping, core: Optional[Mapping]) -> list:
+    """The two items about the hound's sports, or [] for a caller that does not pass a ``core`` (the fine-tune and rebuild paths).
+
+    ``keep_sports`` is on the menu of every hound: it changes nothing by itself, it is the owner saying "leave the sports as they
+    are", and the proposal drops any sport change because of it (``training.review``). ``focus_sports`` narrows the rule to the
+    hound's core sports (``identity.identity_of``) and is offered only when it has one and bets something besides it. Both are
+    plain menu entries, so a model may pick them and the rules mapper may cite them like any other, and a picked ``focus_sports``
+    is validated like every change."""
+    if core is None or not spec.get("sports"):
+        return []
+    out = [{"cid": KEEP_CID, "id": KEEP_CID, "direction": "keep", "family": KEEP_FAMILY, "addresses": [],
+            "text": "Sports: keep them as they are", "segment": None,
+            "why": f"Keeps the sports exactly as they are: {user_spec.sports_phrase(spec['sports'])}.", "if_text": "",
+            "build": lambda s: None}]
+    sports = [s for s in core.get("sports") or () if s in spec["sports"]]
+    change = training.change_focus_sports(copy.deepcopy(dict(spec)), sports) if sports else None
+    if _kept(spec, change):
+        out.append(dict(_entry(FOCUS_CID, "focus_sports", "narrow", "narrow", change,
+                               f"Narrows to the sport it was built for: {change['new_text']}.", "",
+                               lambda s, _k=tuple(sports): training.change_focus_sports(s, list(_k))), sports=list(sports)))
+    return out
+
+
+def _core_locked(entry: Mapping, core: Optional[Mapping], lines: Sequence[str]) -> bool:
+    """True when ``entry`` would remove a core sport or market that none of the owner's lines asks to drop."""
+    if not core:
+        return False
+    cid = entry["cid"]
+    for prefix, dimension in (("drop_sport:", "sport"), ("drop_market:", "market")):
+        if cid.startswith(prefix):
+            thing = cid[len(prefix):]
+            return identity.blocks(core, dimension, thing) and not identity.asks_to_drop(lines, thing)
+    return False
+
+
+def full_menu(spec: Mapping, analysis: Optional[Mapping] = None, diagnosis: Optional[Mapping] = None, *,
+              core: Optional[Mapping] = None, lines: Sequence[str] = (), enforce: bool = True) -> list:
     """The whole closed set a retune or a tweak may choose from: the coach's evidence-based narrowing changes first
-    (``training.menu``), then the owner's narrowing and loosening changes. A cid appears once."""
+    (``training.menu``), then the owner's narrowing and loosening changes, then the two core items (``identity_menu``). A cid
+    appears once.
+
+    ``core`` is the hound's identity. With ``enforce`` (the proposal) a change that removes a core sport or market is left off
+    the menu unless one of the owner's ``lines`` asks to drop that very sport or market. Without it (Apply, which re-checks a
+    card the owner has already read and ticked) the menu is the full set, so an owner's own explicit ask can still be applied."""
     out: list = []
     seen: set = set()
     for e in training.menu(spec, analysis or {"weak": []}, diagnosis):
@@ -445,6 +493,12 @@ def full_menu(spec: Mapping, analysis: Optional[Mapping] = None, diagnosis: Opti
         seen.add(e["cid"])
         out.append(e)
     for e in owner_narrowing_menu(spec) + loosening_menu(spec):
+        if e["cid"] not in seen:
+            seen.add(e["cid"])
+            out.append(e)
+    if enforce:
+        out = [e for e in out if not _core_locked(e, core, lines)]
+    for e in identity_menu(spec, core):
         if e["cid"] not in seen:
             seen.add(e["cid"])
             out.append(e)
@@ -636,7 +690,8 @@ RULES
 3. Choose only cids that are in menu. A cid that is not in menu is discarded. You cannot name a new change, a new number or a new threshold.
 4. Match the owner's intent: wanting more bets, a hound that takes nothing, or more sports points at loosen changes; wanting fewer, pickier, only favourites or only underdogs points at narrow changes. Prefer a change whose today numbers show it adds candidates when the owner wants more bets. Do not pick a change that makes the opposite of what the owner asked.
 5. If the owner asked for something the menu does not contain (for example avoiding back-to-backs), return no item for it.
-6. You write no sentence that is shown to anyone. Return only the object above."""
+6. You write no sentence that is shown to anyone. Return only the object above.
+7. Two menu items are about the hound's core sport. keep_sports means leave the sports exactly as they are: pick it when the owner complains about changes to the sports, or says to stop changing them or to keep them. focus_sports means narrow the hound to its core sport: pick it when the owner says only that sport or focus on it. Both need a citation like any other item."""
 
 MAP_SCHEMA = {
     "type": "object", "required": ["items"], "additionalProperties": False,
@@ -746,7 +801,28 @@ def rules_map(lines: Sequence[str], entries: Sequence[Mapping], counted: Mapping
         cite("require_role:underdog", "favourites")          # the change that DROPS underdogs keeps the favourites
     if "underdogs" in where:
         cite("require_role:favourite", "underdogs")
+    _identity_picks(lines, by_cid, picks)
     return picks[:MAX_ITEMS]
+
+
+def _identity_picks(lines: Sequence[str], by_cid: Mapping, picks: list) -> None:
+    """The two core items, from the owner's newest line that speaks to the sports. "only hockey" / "focus on NHL" cites
+    ``focus_sports`` when every sport named is a core sport (a line that says "only tennis" on a hockey hound cites nothing:
+    that is a request to drop the core, and only ``identity.asks_to_drop`` may lift the lock). "stop changing the sports" / "keep
+    the sports" / the complaint that the only tweaks change them cites ``keep_sports``. Focus wins over keep."""
+    focus_at = keep_at = None
+    for i, text in enumerate(lines):
+        said = identity.intents_in(text)
+        if said["focus"]:
+            focus_at = (i, said["focus"])
+        if said["keep"]:
+            keep_at = i
+    entry = by_cid.get(FOCUS_CID)
+    if focus_at is not None and entry is not None and set(focus_at[1]) <= set(entry.get("sports") or ()):
+        picks.insert(0, {"cid": FOCUS_CID, "line": focus_at[0], "quote": lines[focus_at[0]][:200], "text": lines[focus_at[0]]})
+        return
+    if keep_at is not None and KEEP_CID in by_cid:
+        picks.insert(0, {"cid": KEEP_CID, "line": keep_at, "quote": lines[keep_at][:200], "text": lines[keep_at]})
 
 
 def _router_for(router, env: Optional[Mapping]):

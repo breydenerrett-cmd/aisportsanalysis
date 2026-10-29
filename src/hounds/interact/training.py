@@ -11,8 +11,14 @@ WHAT HAPPENS, IN ORDER
      have ``MIN_NEW_SETTLED`` NEW settled bets of its own before it can train again (a record that has not had time to
      say anything is not something to coach on).
   3. ``analyse``: the dog's own settled bets cut by sport, market, price band, home or away (over or under), favourite
-     or underdog, and the rule that made them. Segments with at least ``MIN_SEGMENT_BETS`` bets and units below zero
-     are the weak spots, worst first.
+     or underdog, and the rule that made them. A segment is a weak spot only when it clears THE EVIDENCE BAR: at least
+     ``MIN_SEGMENT_BETS`` bets, units below zero, and a sample-size level of ``MIN_SEGMENT_LEVEL`` or better from the same
+     ``diagnosis.level_of`` the coach's table uses (a cut can be big and still sit inside what luck does). Worst first.
+     A hound's CORE (``identity.py``: the sports and markets it is for, read from its name, its words or its spec) is never a
+     weak spot, so it is never proposed for removal. 2026-10-29: HOCKEYCHIEF's card cut NHL, its whole point, off 5 bets that
+     went 2-3 while the coach's own read said the run turns up in 78% of random orders. When no segment clears the bar the
+     default proposal is "Keep going: no change" (mode ``keep``): nothing is changed, nothing is written, and the card says
+     so in numbers (``keep_message``). A first training under ``MIN_NEW_SETTLED`` bets is still the labelled light adjustment.
   3b. THE COACH (owner request 2026-10-21, "matrix-level"): before anything is proposed the coach reads a wider table than step
      3's, ``diagnosis.diagnose`` (price band, side, sport, market, day of the week, slate time, rest, line movement, books
      quoting, betting days, the daily limit, rules, losing runs, pairs that went wrong together, each with its own sample-size
@@ -64,6 +70,7 @@ from __future__ import annotations
 
 import copy
 import json
+import logging
 import os
 import re
 import threading
@@ -72,11 +79,19 @@ from typing import Callable, Mapping, Optional, Sequence
 
 from src.hounds import coach_card, stats, user_rules, user_spec, user_store
 from src.hounds.breeding import cross
-from src.hounds.interact import common, revert, rites, store
+from src.hounds.interact import common, identity, loss_why, revert, rites, store
 from src.hounds.interact.rites import RiteError
 
+logger = logging.getLogger("linehound.hounds.training")
+
 MIN_NEW_SETTLED = 5          # settled bets a version needs before it can train again (and for a non-light first training)
-MIN_SEGMENT_BETS = 3         # a segment this small is not a weak spot, only noise
+# THE EVIDENCE BAR (2026-10-29). Three bets was the old floor and a 2-3 record on five was enough to cut a sport. Ten is the least
+# a cut can hold before units per bet mean anything; and ten bets can still be a coin flip, so the slice must also reach the
+# sample-size level the coach's own table calls "some signal" (``diagnosis.level_of``: at least 10 bets and its units per bet
+# a full standard error below the rest of the hound's bets; "weak signal" and under is within what luck does).
+MIN_SEGMENT_BETS = 10
+MIN_SEGMENT_LEVEL = "medium"
+_LEVEL_RANK = {"too_few": 0, "low": 1, "medium": 2, "high": 3}
 MAX_CHANGES = 3
 HOOK_TIMEOUT_S = 4           # the optional AI brief never holds a training for longer than this (it is a background post)
 
@@ -208,17 +223,38 @@ def _tally(rows: Sequence) -> dict:
             "units": round(sum(r["units"] for r in rows), 2)}
 
 
-def analyse(bets: Sequence, spec: Mapping, rule_index: Optional[Mapping] = None) -> dict:
+def _clears_the_bar(group: Sequence[Mapping], rows: Sequence[Mapping]) -> bool:
+    """True when a segment is big enough AND its units per bet sit far enough below the rest of the hound's bets to be a signal
+    (``MIN_SEGMENT_BETS`` and ``MIN_SEGMENT_LEVEL``, by the coach table's own ``diagnosis.level_of`` and z). A segment that is
+    only losing because the rest is losing more (z at or above zero) is not a weak spot of its own."""
+    n = len(group)
+    if n < MIN_SEGMENT_BETS:
+        return False
+    from src.hounds.interact import diagnosis        # at call time: diagnosis imports this module
+    ids = {id(r) for r in group}
+    z = diagnosis._z([r["units"] for r in group], [r["units"] for r in rows if id(r) not in ids])      # noqa: SLF001
+    if z is None or z >= 0:
+        return False
+    return _LEVEL_RANK[diagnosis.level_of(n, z)] >= _LEVEL_RANK[MIN_SEGMENT_LEVEL]
+
+
+def analyse(bets: Sequence, spec: Mapping, rule_index: Optional[Mapping] = None, *, core: Optional[Mapping] = None) -> dict:
     """The dog's settled bets cut every way, and the weak spots.
 
-    ``{"settled", "overall", "segments": {dimension: [segment]}, "weak": [segment]}`` where a segment is
-    ``{dimension, key, label, n, wins, losses, pushes, units}``. ``weak`` holds the segments with at least
-    ``MIN_SEGMENT_BETS`` bets and units below zero, from a dimension that splits the bets at least two ways (a
-    dimension with one value cannot be narrowed), worst units first, then the larger sample, then the dimension order
-    and the key, so the order never depends on how the bets were read."""
+    ``{"settled", "overall", "segments": {dimension: [segment]}, "weak": [segment], "held": [segment], "core"}`` where a
+    segment is ``{dimension, key, label, n, wins, losses, pushes, units}``. ``weak`` holds the segments that clear the evidence
+    bar (``_clears_the_bar``) and lost units, from a dimension that splits the bets at least two ways (a dimension with one value
+    cannot be narrowed), worst units first, then the larger sample, then the dimension order and the key, so the order never
+    depends on how the bets were read.
+
+    ``core`` (``identity.identity_of``: the sports and markets the hound is for) is never weak: a core segment that did clear the bar
+    is held back, not cut. ``held`` is every losing segment that is NOT weak, worst units first, each with the ``reason`` it was
+    left alone (``thin``: under ``MIN_SEGMENT_BETS`` bets; ``noise``: enough bets but inside what luck does; ``core``: it cleared the
+    bar but the hound is for it). It is what the "keep going" message quotes."""
     rows = facts(bets, spec, rule_index)
     segments: dict = {}
     weak: list = []
+    held: list = []
     for dim in DIMENSIONS:
         groups: dict = {}
         for r in rows:
@@ -230,10 +266,21 @@ def analyse(bets: Sequence, spec: Mapping, rule_index: Optional[Mapping] = None)
             seg = {"dimension": dim, "key": key, "label": label, "phrase": phrase, **_tally(groups[key])}
             entries.append(seg)
         segments[dim] = entries
-        if len(entries) >= 2:
-            weak.extend(s for s in entries if s["n"] >= MIN_SEGMENT_BETS and s["units"] < 0)
-    weak.sort(key=lambda s: (s["units"], -s["n"], DIMENSIONS.index(s["dimension"]), str(s["key"])))
-    return {"settled": len(rows), "overall": _tally(rows), "segments": segments, "weak": weak}
+        if len(entries) < 2:
+            continue
+        for seg in entries:
+            if seg["units"] >= 0:
+                continue
+            clears = _clears_the_bar(groups[seg["key"]], rows)
+            if clears and not identity.blocks(core, dim, seg["key"]):
+                weak.append(seg)
+            else:
+                held.append(dict(seg, reason="core" if clears else "thin" if seg["n"] < MIN_SEGMENT_BETS else "noise"))
+    order = lambda s: (s["units"], -s["n"], DIMENSIONS.index(s["dimension"]), str(s["key"]))     # noqa: E731
+    weak.sort(key=order)
+    held.sort(key=order)
+    return {"settled": len(rows), "overall": _tally(rows), "segments": segments, "weak": weak, "held": held,
+            "core": dict(core) if core else None}
 
 
 # ---------------------------------------------------------------------------
@@ -307,6 +354,33 @@ def change_drop_market(spec: dict, market: str) -> Optional[dict]:
     out = _drop_from_list(spec, "markets", market)
     return None if out is None else {"spec": out[0], "id": "drop_market", "field": "markets", "label": "Markets",
                                      "old_text": out[1], "new_text": out[2]}
+
+
+def change_focus_sports(spec: dict, keep: Sequence[str]) -> Optional[dict]:
+    """Narrow every rule to the sports in ``keep`` (the hound's core). A custom rule left with none of them is dropped, and a
+    hound that would be left with no rule at all is not changed (None). Only ever narrows; the same gate as every change."""
+    keep = list(keep)
+    new = copy.deepcopy(spec)
+    before = _join_all(spec, "sports")
+    if user_spec.is_v2(new):
+        kept = []
+        for rule in new["rules"]:
+            rest = [s for s in rule["sports"] if s in keep]
+            if rest:
+                rule["sports"] = rest
+                kept.append(rule)
+        if not kept:
+            return None
+        new["rules"] = kept
+    else:
+        rest = [s for s in new["sports"] if s in keep]
+        if not rest:
+            return None
+        new["sports"] = rest
+    after = _join_all(new, "sports")
+    if after == before:
+        return None
+    return {"spec": new, "id": "focus_sports", "field": "sports", "label": "Sports", "old_text": before, "new_text": after}
 
 
 def change_tighten_band(spec: dict, band_key: str) -> Optional[dict]:
@@ -493,13 +567,18 @@ def menu(spec: Mapping, analysis: Mapping, diagnosis: Optional[Mapping] = None) 
     add a change that is not here, and every pick is run through ``user_spec.validate_spec`` again when it is applied."""
     out: list = []
     seen: set = set()
+    core = analysis.get("core")
     for seg in analysis.get("weak", ()):
+        if identity.blocks(core, seg["dimension"], seg["key"]):         # belt and braces: ``analyse`` already holds a core segment back
+            continue
         entry = _entry_for_segment(spec, seg)
         if entry and entry["cid"] not in seen:
             seen.add(entry["cid"])
             out.append(entry)
     for f in (diagnosis or {}).get("rows", ()):
         if f.get("kind") != "segment" or f.get("direction") != "against" or f.get("n", 0) < MIN_SEGMENT_BETS:
+            continue
+        if _LEVEL_RANK.get(f.get("level"), 0) < _LEVEL_RANK[MIN_SEGMENT_LEVEL]:        # the same evidence bar as a weak spot
             continue
         rec = f"{f['wins']}-{f['losses']}" + (f"-{f['pushes']}" if f["pushes"] else "")
         if f["id"] in ("books:few", "books:mid") and "more_books:all" not in seen:
@@ -546,8 +625,9 @@ def propose(spec: Mapping, analysis: Mapping, *, seed_key: str, hound_id: str, l
             preferred: Sequence[str] = (), entries: Sequence[Mapping] = ()) -> tuple:
     """``(new spec, [change], mode, note)`` or ``(None, [], mode, note)`` when no valid change exists.
 
-    ``mode`` is ``analysed`` (changes aimed at weak spots) or ``light`` (a small careful nudge: the dog has fewer than
-    ``MIN_NEW_SETTLED`` settled bets, or nothing stood out). Deterministic: no clock, no unseeded draw."""
+    ``mode`` is ``analysed`` (changes aimed at weak spots), ``light`` (a small careful nudge: the dog has fewer than
+    ``MIN_NEW_SETTLED`` settled bets) or ``keep`` (a dog with enough bets in which nothing cleared the evidence bar: no change).
+    Deterministic: no clock, no unseeded draw."""
     current = copy.deepcopy(dict(spec))
     changes: list = []
     if not light:
@@ -572,6 +652,8 @@ def propose(spec: Mapping, analysis: Mapping, *, seed_key: str, hound_id: str, l
         for seg in analysis.get("weak", []):
             if len(changes) >= MAX_CHANGES:
                 break
+            if identity.blocks(analysis.get("core"), seg["dimension"], seg["key"]):
+                continue
             cand = _candidate_for(current, seg)
             if cand is None:
                 continue
@@ -587,6 +669,9 @@ def propose(spec: Mapping, analysis: Mapping, *, seed_key: str, hound_id: str, l
             changes.append(change)
         if changes:
             return current, changes, "analysed", ""
+        # Nothing cleared the evidence bar, or nothing the menu allows addresses what did: the honest proposal is no change.
+        # (A first training under MIN_NEW_SETTLED bets is the labelled light adjustment below.)
+        return None, [], "keep", "no_change_fits" if analysis.get("weak") else "no_weak_spot"
     # a light adjustment: one careful nudge, the knob chosen by the seeded stream (so two dogs do not all nudge the same one)
     rng = cross.rng_for(seed_key, hound_id)
     options = [lambda s: change_more_books(s), lambda s: change_fewer_bets(s)]
@@ -757,7 +842,7 @@ def read_step(dog: Optional[common.Dog], user_id: int, coach, *, stage: str, now
     dog, _moment, rows, bets, hound, gate = _ready(dog, user_id, confirmed_required=False, confirmed=False, now=now, rows=rows,
                                                     ledger_path=ledger_path, db=db)
     spec = hound["spec"]
-    analysis = analyse(bets, spec, rule_index_of(rows, dog.id))
+    analysis = analyse(bets, spec, rule_index_of(rows, dog.id), core=identity.identity_of(hound))
     inp = _coach_input(dog, hound, bets, rows, analysis, spec)
     table = coach.diagnosis(inp)
     out = {"stage": stage, "light": gate["light"], "version_no": hound["version_no"], "diagnosis": coach_mod.public_view(table),
@@ -817,13 +902,15 @@ def _tweaks_clear(hound_id: str) -> None:
             del _tweaks[key]
 
 
-def _propose_loosening(spec: Mapping, board_fn: Optional[Callable]) -> tuple:
+def _propose_loosening(spec: Mapping, board_fn: Optional[Callable], *, pin_sports: bool = False) -> tuple:
     """``(new spec or None, [change], "loosen", note)``: the default for a hound that is not betting. It never narrows. With
     today's board it offers only changes that would add a candidate there (most added first, one per kind of change); without a
     board it offers the first of each kind in the menu's own order. A change to the daily limit is never offered: a hound that
-    places nothing is not stopped by its limit."""
+    places nothing is not stopped by its limit. ``pin_sports`` (the owner said "keep the sports as they are") leaves out the
+    sports family too."""
     from src.hounds.interact import retune
-    pool = [e for e in retune.loosening_menu(spec) if e["family"] != retune.BETS_FAMILY]
+    pool = [e for e in retune.loosening_menu(spec) if e["family"] != retune.BETS_FAMILY
+            and not (pin_sports and e["family"] == retune.SPORT_FAMILY)]
     counted = retune.whatif(spec, pool, board_fn)
     if counted["base"] is not None:
         scored = []
@@ -852,11 +939,20 @@ def _propose_loosening(spec: Mapping, board_fn: Optional[Callable]) -> tuple:
     return current, changes, "loosen", note
 
 
-def _default_plan(dog, hound, bets, rows, analysis, gate, coach, board_fn) -> dict:
+def _pin_sports(analysis: Mapping) -> dict:
+    """The analysis as the coach reads it when the owner has said to keep the sports as they are: no weak spot is a sport."""
+    return dict(analysis, weak=[s for s in analysis["weak"] if s["dimension"] != "sport"])
+
+
+def _default_plan(dog, hound, bets, rows, analysis, gate, coach, board_fn, *, pin_sports: bool = False) -> dict:
     """The proposal Send to training makes by itself: the coach's read and the narrowing menu as always, EXCEPT for a hound that
-    is not betting (no settled bet on this version), which is offered loosening instead, never narrowing."""
+    is not betting (no settled bet on this version), which is offered loosening instead, never narrowing. ``analysis`` already
+    holds the hound's core back (``analyse(core=...)``), so the default plan never cuts what the hound is for; ``pin_sports`` is the
+    owner's own "keep the sports as they are" and takes every sport out of it."""
     from src.hounds.interact import coach as coach_mod, retune
     spec = hound["spec"]
+    if pin_sports:
+        analysis = _pin_sports(analysis)
     the_coach = coach or coach_mod.Coach(rules_only=True)
     inp = _coach_input(dog, hound, bets, rows, analysis, spec)
     table = the_coach.diagnosis(inp)
@@ -868,7 +964,7 @@ def _default_plan(dog, hound, bets, rows, analysis, gate, coach, board_fn) -> di
     today = retune.whatif(spec, [], board_fn)["base"]
     idle_today = today is not None and today["candidates"] == 0
     if analysis["settled"] <= NOT_BETTING_SETTLED or idle_today:
-        new_spec, changes, mode, note = _propose_loosening(spec, board_fn)
+        new_spec, changes, mode, note = _propose_loosening(spec, board_fn, pin_sports=pin_sports)
     else:
         new_spec, changes, mode, note = propose(spec, analysis, seed_key=f"train-v{hound['version_no']}", hound_id=dog.id,
                                                 light=gate["light"], preferred=read["picks"] if read["source"] == "ai" else (),
@@ -876,10 +972,12 @@ def _default_plan(dog, hound, bets, rows, analysis, gate, coach, board_fn) -> di
     return {"spec": new_spec, "changes": changes, "mode": mode, "note": note, "read": read, "table": table}
 
 
-def _menu_for(spec, analysis, table, origin) -> list:
-    """The closed set a pick or a tweak may use. The diagnosis table feeds it only for the training path (the chat path has none)."""
+def _menu_for(spec, analysis, table, origin, *, core=None, lines=(), enforce=True) -> list:
+    """The closed set a pick or a tweak may use. The diagnosis table feeds it only for the training path (the chat path has none).
+    ``core`` is the hound's identity: with ``enforce`` (the proposal) the set leaves out any change that removes a core sport or
+    market unless one of the owner's ``lines`` asks for that one; Apply passes ``enforce=False`` because the owner has read the card."""
     from src.hounds.interact import retune
-    return retune.full_menu(spec, analysis, table if origin is None else None)
+    return retune.full_menu(spec, analysis, table if origin is None else None, core=core, lines=lines, enforce=enforce)
 
 
 def _apply_items(spec: Mapping, items: Sequence[Mapping], entries: Sequence[Mapping]) -> tuple:
@@ -1008,32 +1106,78 @@ def _clip(text, limit: int) -> str:
     return " ".join(re.sub(r"[\x00-\x1f\x7f]", " ", raw).split())[:limit]
 
 
-def _nothing_message(dog, mode: str) -> str:
+def keep_message(name: str, analysis: Mapping, *, pinned: bool = False) -> str:
+    """"Keep going: no change", in numbers: the weakest part of the record that was left alone and why, and that the hound keeps
+    its rule. Never a promise and never a forecast. ``pinned`` adds that the owner asked to keep the sports as they are."""
+    held = analysis.get("held") or []
+    overall = analysis["overall"]
+    if held:
+        seg = held[0]
+        spot = f"{_record_text(seg)} on {seg['n']} {seg['phrase']}"
+        if seg.get("reason") == "core":
+            body = (f"{spot} is its weakest part, but {seg['label']} is what {name} is for, so the coach does not cut it. "
+                    f"Nothing else stood out, so {name} keeps its rule.")
+        elif seg.get("reason") == "noise":
+            body = (f"{spot} is inside what luck does at these prices. Nothing here is a pattern, so {name} keeps its rule.")
+        else:
+            body = (f"{spot} is too few to tell from luck at these prices. Nothing here is a pattern yet, so {name} keeps its rule.")
+    elif overall["n"]:
+        body = (f"{name} went {_record_text(overall)} over {overall['n']} settled bets, and no part of that record stood out, "
+                f"so it keeps its rule.")
+    else:
+        body = f"{name} has no settled bets on this version yet, so there is nothing to read and it keeps its rule."
+    if pinned:
+        body += " You asked to keep the sports as they are, so no sport change is proposed."
+    return body
+
+
+def _nothing_message(dog, mode: str, analysis: Optional[Mapping] = None, *, pinned: bool = False) -> str:
+    if mode == "keep" and analysis is not None:
+        return keep_message(dog.name, analysis, pinned=pinned)
     if mode == "loosen":
         return (f"{dog.name} has not bet yet, and none of the changes it is allowed to make would add a game to today's board, "
                 "so there is nothing sensible to change. Tell it what you would like instead, or say no.")
     return f"{dog.name} is already as careful as its rule can be, so there is nothing left to train."
 
 
+def _losses_block(bets: Sequence, rows: Sequence, hound_id: str, hindsight_fn: Optional[Callable]) -> Optional[dict]:
+    """The "Why it lost" block of the card (``loss_why.loss_breakdown``), or None if it could not be built: a card is better
+    without the block than not drawn at all. ``hindsight_fn(hound_id, bets)`` -> ``{bet_id: review}`` is the caller's way to hand
+    in the hindsight reviews (a file read, never a model); with none, the breakdown runs on closing price and score alone."""
+    try:
+        reviews = hindsight_fn(hound_id, bets) if hindsight_fn is not None else None
+        return loss_why.loss_breakdown(loss_why.settled_rows(bets, rows), reviews)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("training review: the loss breakdown failed (%s)", type(exc).__name__)
+        return None
+
+
 def review(dog: Optional[common.Dog], user_id: int, coach=None, *, origin=None, chat: Sequence = (), tweak: Optional[str] = None,
            round_no: int = 0, board_fn: Optional[Callable] = None, router=None, env: Optional[Mapping] = None,
-           now: Optional[datetime] = None, rows: Optional[Sequence] = None, ledger_path: Optional[str] = None, db=None) -> dict:
+           now: Optional[datetime] = None, rows: Optional[Sequence] = None, ledger_path: Optional[str] = None, db=None,
+           hindsight_fn: Optional[Callable] = None) -> dict:
     """The proposal card for a training: what the hound would change, each change with its reason, what today's board would have
     said, and the owner's choices. WRITES NOTHING. Same refusals as ``train`` minus the confirm (an open ticket, too soon).
 
     ``origin`` ``"chat"`` is a Retune from the Ask chat (``chat`` holds the owner's lines): the proposal is mapped from those
     lines. A ``tweak`` (the owner's reason or what they want instead) re-maps the proposal from the chat lines plus that line,
-    at most ``retune.TWEAK_ROUNDS`` times per hound and rule."""
+    at most ``retune.TWEAK_ROUNDS`` times per hound and rule.
+
+    The card also carries ``core`` (the sports and markets the hound is for, which the coach never proposes to cut: ``identity.py``)
+    and ``losses`` (why it lost: ``loss_why.py``). When nothing clears the evidence bar the default proposal is "Keep going: no
+    change" (``mode`` ``keep``, ``nothing`` true). A tweak that says to keep the sports as they are (``retune.KEEP_CID``) takes every
+    sport change out of the proposal (``kept_sports``): the default proposal is then rebuilt without them."""
     from src.hounds.interact import coach as coach_mod, retune
     origin = _clean_origin(origin)
     dog, _moment, rows, bets, hound, gate = _ready(dog, user_id, confirmed_required=False, confirmed=False, now=now, rows=rows,
                                                     ledger_path=ledger_path, db=db)
     spec = hound["spec"]
-    analysis = analyse(bets, spec, rule_index_of(rows, dog.id))
+    core = identity.identity_of(hound)
+    analysis = analyse(bets, spec, rule_index_of(rows, dog.id), core=core)
     the_coach = coach or coach_mod.Coach(rules_only=True)
     lines = retune.clean_lines(chat)
     used = tweaks_used(dog.id, spec)
-    mapper, read, table, message = None, None, None, ""
+    mapper, read, table, message, pinned = None, None, None, "", False
     if tweak is not None:
         line = _clip(tweak, retune.LINE_MAX)
         if not line:
@@ -1046,27 +1190,42 @@ def review(dog: Optional[common.Dog], user_id: int, coach=None, *, origin=None, 
     if tweak is None and origin is None:
         plan = _default_plan(dog, hound, bets, rows, analysis, gate, coach, board_fn)
         new_spec, changes, mode, note, read, table = plan["spec"], plan["changes"], plan["mode"], plan["note"], plan["read"], plan["table"]
-        entries = _menu_for(spec, analysis, table, origin)
+        entries = _menu_for(spec, analysis, table, origin, core=core, lines=lines)
         if not changes:
-            message = _nothing_message(dog, mode)
+            message = _nothing_message(dog, mode, analysis)
     else:
         table = the_coach.diagnosis(_coach_input(dog, hound, bets, rows, analysis, spec)) if origin is None else None
-        entries = _menu_for(spec, analysis, table, origin)
+        entries = _menu_for(spec, analysis, table, origin, core=core, lines=lines)
         counted = retune.whatif(spec, entries, board_fn)
         mapper = retune.map_chat(lines, entries, counted, router=router, env=env)
-        new_spec, changes = _apply_items(spec, mapper["items"], entries)
+        # "keep the sports as they are" is a directive, not a change: it takes every sport change out of what the owner's other
+        # words mapped to, and leaves the rest of the training to the default proposal (built without the sports)
+        by_cid = {e["cid"]: e for e in entries}
+        pinned = any(i["cid"] == retune.KEEP_CID for i in mapper["items"])
+        items = [i for i in mapper["items"] if i["cid"] != retune.KEEP_CID
+                 and not (pinned and by_cid[i["cid"]]["id"] in retune.SPORT_CHANGE_IDS)]
+        new_spec, changes = _apply_items(spec, items, entries)
         if tweak is not None:
             used = _tweak_bump(dog.id, spec, at_least=used)
         mode, note = ("retune" if origin else "owner"), ""
+        if pinned and not changes and origin is None:
+            plan = _default_plan(dog, hound, bets, rows, analysis, gate, coach, board_fn, pin_sports=True)
+            new_spec, changes, mode, note, read, table = plan["spec"], plan["changes"], plan["mode"], plan["note"], plan["read"], plan["table"]
         if not changes:
             new_spec = None
-            message = ("I could not turn that into a change I am allowed to make. Say it another way." if tweak is not None else
-                       "I could not turn what you said into a change I am allowed to make, so I would leave my rule as it is.")
+            if pinned:
+                mode = "keep"
+                message = _nothing_message(dog, "keep", analysis, pinned=True)
+            else:
+                message = ("I could not turn that into a change I am allowed to make. Say it another way." if tweak is not None else
+                           "I could not turn what you said into a change I am allowed to make, so I would leave my rule as it is.")
     framing = f"{dog.name} has not bet yet. Want it to look at more games?" if analysis["settled"] <= NOT_BETTING_SETTLED else None
     today = _today_block(spec, new_spec, changes, entries, board_fn)
     return {
         "origin": origin or "training", "mode": mode, "note": note, "light": gate["light"], "settled": analysis["settled"],
         "version_no": hound["version_no"], "name": dog.name, "framing": framing, "message": message,
+        "core": identity.core_view(core), "losses": _losses_block(bets, rows, dog.id, hindsight_fn), "kept_sports": pinned,
+        "kept_note": "Sports kept as they are, as you asked." if pinned else None,
         "basis": proposal_basis(dog.id, spec),
         "changes": [dict(c) for c in changes], "picks": [c["cid"] for c in changes], "nothing": not changes,
         "today": today, "owner_feedback": owner_feedback(dog, user_id, db=db),
@@ -1158,12 +1317,15 @@ def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, n
         raise RiteError(REVIEW_REQUIRED, f"Look at {dog.name}'s proposal first: open Send to training again, check the changes, "
                                          "then tap Apply. Nothing was changed.", 409)
     spec = hound["spec"]
-    analysis = analyse(bets, spec, rule_index_of(rows, dog.id))
+    core = identity.identity_of(hound)
+    analysis = analyse(bets, spec, rule_index_of(rows, dog.id), core=core)
     the_coach = coach or coach_mod.Coach(rules_only=True)
     inp = _coach_input(dog, hound, bets, rows, analysis, spec)
     if picks is not None:
         table = the_coach.diagnosis(inp) if origin is None else None
-        entries = _menu_for(spec, analysis, table, origin)
+        # Apply re-checks a card the owner has read and ticked, so the lock is not applied again here: a core sport can only be on
+        # that card because the owner's own words asked for it (``review`` enforced the lock when the card was drawn)
+        entries = _menu_for(spec, analysis, table, origin, core=core, enforce=False)
         new_spec, changes = _picked_plan(spec, picks, entries)
         read = the_coach.read(inp, menu(spec, analysis, table), table) if origin is None else None
         mode, note = _mode_of(changes, gate, origin, analysis["settled"])
@@ -1175,7 +1337,7 @@ def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, n
         if origin and changes:
             mode = "retune"
     if new_spec is None:
-        raise RiteError("nothing_to_change", _nothing_message(dog, mode), 409)
+        raise RiteError("nothing_to_change", _nothing_message(dog, mode, analysis), 409)
     if mode in ("retune", "loosen", "owner"):
         text = guidance_owner(dog.name, analysis, changes, mode, hound["version_no"])
     else:
@@ -1211,8 +1373,7 @@ def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, n
         status = {"not_found": 404, "buried": 409}.get(exc.code, 400)
         raise RiteError(exc.code, str(exc), status)
     _tweaks_clear(dog.id)
-    import logging
-    logging.getLogger("linehound.hounds.training").info(
+    logger.info(
         "training done hound=%s from_v=%s to_v=%s mode=%s origin=%s coach=%s status=%s cost_usd=%.6f picks_applied=%d", dog.id,
         hound["version_no"], new["version_no"], mode, origin or "training", coach_event["source"], coach_event["status"],
         coach_event["cost_usd"], len(applied))

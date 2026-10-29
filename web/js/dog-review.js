@@ -16,6 +16,11 @@
  *     Tweak   opens a short box ("why, or what instead"); the hound looks again through the same menu, within the same caps, and a
  *             revised card replaces the list. Up to three rounds; the card says how many are left.
  *
+ * THE TOP OF THE CARD (owner's HOCKEYCHIEF report, 2026-10-29): "Why it lost", three to five short lines from the server (bad luck, bad
+ * price, bad read, the longest losing run: src/hounds/interact/loss_why.py), then one line naming the hound's core ("Core: NHL (kept)":
+ * the sports it is for, which a training never proposes to cut). When nothing clears the evidence bar the card says "Keep going: no
+ * change", gives the numbers, and offers Close (and Tweak) instead of an Apply that has nothing to apply.
+ *
  * NOTHING HERE IS INVENTED OR EVALUATED. Every word of a change, its reason, its count of candidates on today's board and the
  * honesty line is the server's. The owner's own line is drawn as text (never as markup), so what they typed cannot do anything
  * but read. The page never says the new version will win more: the card says it changes how many and which games the hound looks at.
@@ -39,6 +44,15 @@ export function todayWords(t) {
     : `On today's board: ${t.before} -> ${t.after} ${word(t.after)}`;
 }
 
+/** "Why it lost": the server's three to five short lines about the losses, under a heading. Null when there is nothing to say. */
+export function lossesBlock(losses) {
+  const lines = losses && Array.isArray(losses.lines) ? losses.lines.filter((x) => typeof x === "string" && x) : [];
+  if (!lines.length) return null;
+  return h("div", { class: "rt-lost", "data-hook": "review-losses" }, [
+    h("h3", { class: "hd-h3", text: "Why it lost" }),
+    h("ul", { class: "rt-lost__lines" }, lines.slice(0, 5).map((t) => h("li", { class: "hd-fine", "data-hook": "review-loss-line", text: t })))]);
+}
+
 /** One proposed change as a list item with a tick the owner can clear. `onTick` runs when it changes. */
 export function reviewChange(c, i, onTick) {
   const tick = h("input", { type: "checkbox", "data-hook": "review-tick", "aria-label": `Apply this change: ${c.label}` });
@@ -59,6 +73,7 @@ export function reviewChange(c, i, onTick) {
  * Draw the proposal in `body` and resolve with what the owner decided:
  *   { action: "apply", picks: [cid...], basis }   the ids still ticked (at least one) and the card's basis (what rule it was drawn for)
  *   { action: "veto" }                     the owner said no (the server was told; if it could not be reached nothing had changed anyway)
+ *   { action: "close" }                    the owner closed a card that proposed nothing ("Keep going: no change"); nothing is sent
  *
  * `first` is the server's proposal card. `propose(extra)` asks for a revised one (`extra` is { tweak, round }); `veto()` tells the
  * server no. `coachBlock` (optional) draws the coach's read above the changes. Every request is the caller's, so tests can fake it.
@@ -77,6 +92,10 @@ export function reviewProposal({ body, sheet, first, propose, veto, coachBlock =
       const changes = Array.isArray(card.changes) ? card.changes : [];
       const left = card.tweak && Number.isInteger(card.tweak.left) ? card.tweak.left : 0;
       const root = h("div", { class: "rt-review", "data-hook": "training-review", "data-origin": card.origin || "", "data-mode": card.mode || "" });
+      const lost = lossesBlock(card.losses);
+      if (lost) root.appendChild(lost);
+      if (card.core && card.core.text) root.appendChild(h("p", { class: "rt-note", "data-hook": "review-core", text: card.core.text }));
+      if (card.kept_note) root.appendChild(h("p", { class: "rt-note", "data-hook": "review-kept-sports", text: card.kept_note }));
       if (card.framing) root.appendChild(h("p", { class: "rt-note", "data-hook": "review-framing", text: card.framing }));
       if (coachBlock && card.coach && Array.isArray(card.coach.reasons) && card.coach.reasons.length) {
         const block = coachBlock(card.coach);
@@ -87,7 +106,8 @@ export function reviewProposal({ body, sheet, first, propose, veto, coachBlock =
           h("strong", { text: `${card.owner_feedback.label || "Your votes"}: ` }), card.owner_feedback.text,
           h("span", { class: "hd-fine", text: ` ${card.owner_feedback.note || ""}` })]));
       }
-      root.appendChild(h("h3", { class: "hd-h3", text: changes.length ? "What it would change" : "Nothing to change" }));
+      root.appendChild(h("h3", { class: "hd-h3", "data-hook": "review-heading",
+        text: changes.length ? "What it would change" : card.mode === "keep" ? "Keep going: no change" : "Nothing to change" }));
       const list = h("ul", { class: "rt-changes", "data-hook": "review-changes" });
       const items = changes.map((c, i) => reviewChange(c, i, refresh));
       items.forEach((li) => list.appendChild(li));
@@ -112,7 +132,10 @@ export function reviewProposal({ body, sheet, first, propose, veto, coachBlock =
       const noButton = button("Veto", "review-veto", "quiet", onVeto);
       const tweak = button("Tweak", "review-tweak", "quiet", () => { tweakOpen = !tweakOpen; render(); });
       if (left <= 0) tweak.setAttribute("disabled", "");
-      root.appendChild(h("div", { class: "rt-actions", "data-hook": "rites-actions" }, [noButton, tweak, apply]));
+      // a card that proposes nothing offers Close (nothing to apply, nothing was written); "Keep going" has no Apply or Veto at all
+      const close = button("Close", "review-close", "quiet", () => resolve({ action: "close" }));
+      const buttons = !card.nothing ? [noButton, tweak, apply] : card.mode === "keep" ? [close, tweak] : [close, noButton, tweak, apply];
+      root.appendChild(h("div", { class: "rt-actions", "data-hook": "rites-actions" }, buttons));
       body.appendChild(root);
 
       function refresh() {
@@ -147,7 +170,7 @@ export function reviewProposal({ body, sheet, first, propose, veto, coachBlock =
         send.setAttribute("disabled", "");
         try {
           const fresh = await propose({ tweak: text, round: card.tweak ? card.tweak.used : 0 });
-          if (fresh && fresh.nothing && changes.length) {
+          if (fresh && fresh.nothing && changes.length && !fresh.kept_sports) {
             note = fresh.message || "That did not map to a change it is allowed to make.";
             card = Object.assign({}, card, { tweak: fresh.tweak || card.tweak });
           } else {
