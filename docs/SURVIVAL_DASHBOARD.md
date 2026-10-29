@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-10-28 20:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-29 15:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **3** |
+| Days until 2026-10-31 | **2** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-28 (1:30 pm PT run): World Series Game 5 (Brewers at Rays, 5:00 pm PT) brief published at 1:47 pm PT; all three markets passed, first answer clean.
-- Public sample stays on graded Game 4 until Game 5 is graded Thursday morning.
-- Working-branch tests: two runs in progress, newest finished run green; scheduled daily loop on the default branch: newest run failed (16:18Z).
-- Production /health ok; memory peak 851 of 850 MB (over the limit). Public MLB value picks remain paused.
+- 2026-10-29 (8:30 am PT run): the Brewers won the World Series 4-1 last night; the MLB postseason is over, so no more MLB briefs this season.
+- Game 5 brief (all three markets passed) is graded; the public sample now shows it.
+- Tonight's Thursday NFL game goes to the 1:30 pm PT run.
+- Production /health ok; memory peak 817 of 850 MB. Scheduled daily loop on the default branch failed (pre-slate guard: no captures at 10:10Z). Public MLB value picks remain paused.
 - Sends 0, replies 0, testers 0, paid 0.
 
