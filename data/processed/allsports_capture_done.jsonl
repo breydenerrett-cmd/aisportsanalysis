@@ -9825,3 +9825,7 @@
 {"call_kind": "pregame", "credits": 3, "events": 14, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-29T21:42:12.924423Z", "regions": ["us"], "rows": 430, "sport_key": "icehockey_nhl", "stored": 430}
 {"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T21:42:12.924423Z", "regions": ["us"], "rows": 6, "sport_key": "soccer_england_efl_cup", "stored": 0}
 {"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T21:42:12.924423Z", "regions": ["us"], "rows": 105, "sport_key": "soccer_italy_serie_a", "stored": 6}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-30T03:57:39.594637Z", "observed_utc": "2026-10-29T21:57:39.594637Z", "sport_key": "aussierules_afl"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-10-30T03:57:39.594637Z", "observed_utc": "2026-10-29T21:57:39.594637Z", "sport_key": "soccer_england_efl_cup"}
+{"commence_utc": "2026-10-29T23:40:00Z", "event_id": "35f166bc5dbb833315fe376ae27e63a3", "kind": "phase", "observed_utc": "2026-10-29T21:57:39.594637Z", "phase": "lock60", "rows": 32, "sport_key": "icehockey_nhl"}
+{"call_kind": "pregame", "credits": 3, "events": 14, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-29T21:57:39.594637Z", "regions": ["us"], "rows": 430, "sport_key": "icehockey_nhl", "stored": 430}
