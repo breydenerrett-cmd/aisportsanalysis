@@ -39,9 +39,12 @@ def add_parser(sub) -> None:
         "tennis-live-cal", help="in-play calibration of tennis favourites from historical odds snapshots "
                                 "(the paid pull is gated by TENNIS_CAL_PULL=on)")
     tl_sub = tl.add_subparsers(dest="tennis_live_cal_command", required=True)
-    tl_sub.add_parser("plan", help="print the snapshot schedule and credit cost; no requests")
-    tl_sub.add_parser("pull", help="fetch and cache the planned snapshots (needs TENNIS_CAL_PULL=on; resumable)")
-    tl_sub.add_parser("build", help="build the evidence JSON and doc from cached snapshots (no requests)")
+    for name, text in (("plan", "print the snapshot schedule and credit cost; no requests"),
+                       ("pull", "fetch and cache the planned snapshots (needs TENNIS_CAL_PULL=on; resumable)"),
+                       ("build", "build the evidence JSON and doc from cached snapshots (no requests)")):
+        tlp = tl_sub.add_parser(name, help=text)
+        tlp.add_argument("--plan", dest="cal_plan", choices=("v1", "v2"), default="v1",
+                         help="v1 (default, frozen) or v2 (early rounds, 15-minute cadence, separate cache)")
 
     capture = live_sub.add_parser("capture", help="one capture tick (or --loop); spends credits only when the switch is on")
     capture.add_argument("--loop", action="store_true", help="keep ticking until --max-minutes or the stop date")
@@ -104,7 +107,7 @@ def main(args) -> int:
     if getattr(args, "research_command", None) == "tennis-live-cal":
         from src.research import live_tennis_calibration as cal
 
-        return cal.main(args.tennis_live_cal_command)
+        return cal.main(args.tennis_live_cal_command, plan=getattr(args, "cal_plan", "v1"))
     command = args.live_tennis_command
     if command == "capture":
         from src.research.live_tennis import config

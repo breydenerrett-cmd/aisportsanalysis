@@ -140,7 +140,8 @@ def _load_env():
 
 
 def run_pull(fetch=None, cache_dir=CACHE_DIR, credit_store=CREDIT_STORE, env=None, out=print,
-             snapshots=None, log=None) -> int:
+             snapshots=None, log=None, *, hard_cap=HARD_CREDIT_CAP, floor=REMAINING_FLOOR,
+             already_spent=ALREADY_SPENT, caller=CALLER, empty_block_after=None) -> int:
     """Pull planned snapshots not already cached. Returns a process exit code."""
     source = os.environ if env is None else env
     if (source.get(ENV_SWITCH) or "").strip().lower() != "on":
@@ -161,19 +162,23 @@ def run_pull(fetch=None, cache_dir=CACHE_DIR, credit_store=CREDIT_STORE, env=Non
     snaps = plan_snapshots() if snapshots is None else snapshots
     cache_dir = Path(cache_dir)
     cache_dir.mkdir(parents=True, exist_ok=True)
-    spent = ALREADY_SPENT + cached_cost(cache_dir)
+    spent = already_spent + cached_cost(cache_dir)
     pulled = skipped = errors = consecutive = 0
     remaining = None
+    block_pulled, block_events, dead_blocks = {}, {}, set()
     for snap in snaps:
+        block = snap.get("block")
+        if block in dead_blocks:
+            continue
         path = cache_path(snap["sport"], snap["utc"], cache_dir)
         if path.exists():
             skipped += 1
             continue
-        if spent + CREDITS_PER_SNAPSHOT > HARD_CREDIT_CAP:
-            out(f"stop: next request would take total spend {spent + CREDITS_PER_SNAPSHOT} past the {HARD_CREDIT_CAP} cap")
+        if spent + CREDITS_PER_SNAPSHOT > hard_cap:
+            out(f"stop: next request would take total spend {spent + CREDITS_PER_SNAPSHOT} past the {hard_cap} cap")
             break
-        if remaining is not None and remaining < REMAINING_FLOOR:
-            out(f"stop: x-requests-remaining {remaining} is below {REMAINING_FLOOR}")
+        if remaining is not None and remaining < floor:
+            out(f"stop: x-requests-remaining {remaining} is below {floor}")
             break
         try:
             payload, usage = fetch(snap["utc"], snap["sport"])
@@ -187,7 +192,7 @@ def run_pull(fetch=None, cache_dir=CACHE_DIR, credit_store=CREDIT_STORE, env=Non
             continue
         consecutive = 0
         cost = usage.get("last")
-        log(usage.get("remaining"), cost, CALLER, store=credit_store, budget_band=BUDGET_BAND)
+        log(usage.get("remaining"), cost, caller, store=credit_store, budget_band=BUDGET_BAND)
         record = {"sport": snap["sport"], "requested": snap["utc"], "usage": usage, "payload": payload}
         tmp = path.with_suffix(".tmp")
         tmp.write_text(json.dumps(record), encoding="utf-8")
@@ -197,7 +202,13 @@ def run_pull(fetch=None, cache_dir=CACHE_DIR, credit_store=CREDIT_STORE, env=Non
         remaining = usage.get("remaining")
         events = len((payload or {}).get("data") or [])
         out(f"pulled {snap['sport']} {snap['utc']}: {events} events, cost {cost}, remaining {remaining}, spend total {spent}")
-    out(f"pull done: pulled {pulled}, already cached {skipped}, errors {errors}, spend total {spent} of {HARD_CREDIT_CAP}")
+        if empty_block_after and block is not None:
+            block_pulled[block] = block_pulled.get(block, 0) + 1
+            block_events[block] = block_events.get(block, 0) + events
+            if block_pulled[block] >= empty_block_after and block_events[block] == 0:
+                dead_blocks.add(block)
+                out(f"skip rest of block {block}: first {empty_block_after} snapshots returned no events")
+    out(f"pull done: pulled {pulled}, already cached {skipped}, errors {errors}, spend total {spent} of {hard_cap}")
     return 0 if errors == 0 else 2
 
 
@@ -400,6 +411,7 @@ CAVEATS = [
 
 
 def run_build(cache_dir=CACHE_DIR, evidence_path=EVIDENCE_PATH, doc_path=DOC_PATH, out=print) -> int:
+    """v1 build. Its inputs, outputs and behaviour are frozen; v2 has its own `run_build_v2`."""
     snaps = load_snapshots(cache_dir)
     if not snaps:
         out("build: no cached snapshots; run pull first")
@@ -495,9 +507,261 @@ def render_doc(res) -> str:
     return "\n".join(lines) + "\n"
 
 
+# ------------------------------------------------------------------ v2 plan
+#
+# v1 (above) is frozen: its cache, evidence file and doc are never written by anything below.
+# v2 chases the v1 failure (60 events: 31 no in-play snapshot, 16 unsettled, 4 banded) with
+# early-round days (many simultaneous matches) and a 15-minute cadence (a match is seen
+# live ~8 times, not ~2, and the last stretch before the -1500 settle price is more likely
+# to land in a snapshot).
+
+V2_CACHE_DIR = ROOT / "data" / "research" / "tennis_live_cal" / "v2" / "snapshots"
+V2_EVIDENCE_PATH = ROOT / "evidence" / "tennis_live_calibration_v2.json"
+V2_DOC_PATH = ROOT / "docs" / "research" / "TENNIS_LIVE_CALIBRATION_V2.md"
+V2_CALLER = "live_tennis_calibration.pull_v2"
+V2_MAX_SNAPSHOTS = 145             # 145 x 20 = 2900 credits
+V2_HARD_CREDIT_CAP = 3000          # this run's cap (v1's 2840 are not counted)
+V2_REMAINING_FLOOR = 75000
+V2_STEP_MINUTES = 15
+V2_FIRST_LOCAL = (10, 45)          # one slot before the 11:00 first wave, so it has a pre-match snapshot
+V2_SNAPSHOTS_PER_BLOCK = 36        # 10:45 .. 19:30 local; the best block gets the odd 145th (19:45)
+V2_BLOCKS = 4
+V2_EMPTY_BLOCK_AFTER = 4           # a block whose first 4 snapshots hold no events is dropped
+V2_DEFAULT_DAY_ORDER = (2, 3, 1, 4)
+
+# Slam main draws: both tours play ~32 singles matches a day on days 1-4 (R1 on 1-2, R2 on 3-4).
+# (key suffix, venue, UTC offset, {year: day-1 local date}, weather factor). Dates are written from
+# memory of the draw calendars; a one-day miss still lands on an early-round day.
+V2_SLAMS = (
+    ("aus_open_singles", "Australian Open", 11, {2024: "2024-01-14", 2025: "2025-01-12"}, 0.95),
+    ("french_open", "Roland Garros", 2, {2024: "2024-05-26", 2025: "2025-05-25"}, 0.85),
+    ("wimbledon", "Wimbledon", 1, {2024: "2024-07-01", 2025: "2025-06-30"}, 0.90),
+    ("us_open", "US Open", -4, {2024: "2024-08-26", 2025: "2025-08-25"}, 0.95),
+)
+# Masters 1000, ATP only (the WTA Masters keys were never proven valid): 96-draw, ~16 matches a day
+# on the R1 and R2 days. Indian Wells days sit before the US clock change, hence -8.
+# (key, venue, UTC offset, [(local date, round)], weather factor)
+V2_MASTERS = (
+    ("tennis_atp_indian_wells", "Indian Wells Masters 1000", -8,
+     (("2024-03-06", "R1"), ("2024-03-07", "R1"), ("2024-03-08", "R2"), ("2024-03-09", "R2"),
+      ("2025-03-05", "R1"), ("2025-03-06", "R1"), ("2025-03-07", "R2"), ("2025-03-08", "R2")), 1.0),
+    ("tennis_atp_madrid_open", "Madrid Masters 1000", 2,
+     (("2024-04-24", "R1"), ("2024-04-25", "R1"), ("2024-04-26", "R2"), ("2024-04-27", "R2"),
+      ("2025-04-23", "R1"), ("2025-04-24", "R1"), ("2025-04-25", "R2"), ("2025-04-26", "R2")), 0.90),
+)
+SLAM_MATCHES_PER_DAY, MASTERS_MATCHES_PER_DAY = 32, 16
+# Share of a day's matches that START early enough to finish inside the 10:45-19:30 window.
+V2_WINDOW_SHARE = {"slam": 0.85, "indian_wells": 0.80, "madrid_open": 0.65}
+# Tour yield relative to ATP, from the v1 cache: settled / scheduled matches on the planned days was
+# ATP 11/28 = 0.39 and WTA 1/14 = 0.07, so WTA = 0.18. (Small, late-round sample; flip this constant to
+# put WTA blocks back in play.)
+V2_TOUR_FACTOR = {"atp": 1.0, "wta": 0.18}
+# Funnel assumptions for the expected-match count: (low, central, high). listed = scheduled matches the
+# feed shows; settled = of listed, reaches a -1500 snapshot (v1 hourly: 11/21 = 0.52); banded = of
+# settled, favourite touches a price band (v1 late rounds: 4/13 = 0.31, lowered for lopsided R1/R2).
+V2_FUNNEL = {"listed": (0.50, 0.65, 0.75), "settled": (0.52, 0.60, 0.75), "banded": (0.15, 0.20, 0.30)}
+
+
+def _v2_candidates():
+    out = []
+    for suffix, venue, offset, dates, weather in V2_SLAMS:
+        for year, day1 in dates.items():
+            for day in (1, 2, 3, 4):
+                date = (datetime.strptime(day1, "%Y-%m-%d") + timedelta(days=day - 1)).strftime("%Y-%m-%d")
+                for tour in ("atp", "wta"):
+                    out.append({"sport": f"tennis_{tour}_{suffix}", "tour": tour, "tournament": suffix,
+                                "year": year, "day": day, "date": date, "offset": offset, "venue": venue,
+                                "round": "R1" if day <= 2 else "R2", "matches": SLAM_MATCHES_PER_DAY,
+                                "window_share": V2_WINDOW_SHARE["slam"], "weather": weather, "kind": "slam"})
+    for key, venue, offset, days, weather in V2_MASTERS:
+        suffix = key.replace("tennis_atp_", "")
+        for i, (date, rnd) in enumerate(days):
+            out.append({"sport": key, "tour": "atp", "tournament": suffix, "year": int(date[:4]),
+                        "day": 1 + (i % 4), "date": date, "offset": offset, "venue": venue,
+                        "round": rnd, "matches": MASTERS_MATCHES_PER_DAY,
+                        "window_share": V2_WINDOW_SHARE[suffix], "weather": weather, "kind": "masters"})
+    for c in out:
+        c["score"] = c["matches"] * V2_TOUR_FACTOR[c["tour"]] * c["window_share"] * c["weather"]
+    return out
+
+
+def choose_v2_blocks(blocks=V2_BLOCKS):
+    """Greedy pick of tour-days maximising expected matches x in-play coverage.
+
+    score = matches that day x tour yield x share of matches that start early enough to finish in the
+    window x weather. A second block at the same tournament is worth half (matches cluster by
+    tournament-day, so it adds less independent information). Ties go to the year picked less often
+    (2024 coverage of these keys is unproven, so the picks are hedged across 2024 and 2025), then to
+    the preferred day (2, 3, 1, 4), then alphabetical."""
+    cands = _v2_candidates()
+    picked, per_year, per_tournament = [], {}, {}
+    for _ in range(blocks):
+        def key(c):
+            adj = c["score"] * (0.5 ** per_tournament.get(c["tournament"], 0))
+            day_pref = V2_DEFAULT_DAY_ORDER.index(c["day"]) if c["day"] in V2_DEFAULT_DAY_ORDER else 9
+            return (-round(adj, 9), per_year.get(c["year"], 0), day_pref, c["year"], c["sport"], c["date"])
+        best = min((c for c in cands if c not in picked), key=key)
+        picked.append(best)
+        per_year[best["year"]] = per_year.get(best["year"], 0) + 1
+        per_tournament[best["tournament"]] = per_tournament.get(best["tournament"], 0) + 1
+    return picked
+
+
+def plan_snapshots_v2(cap=V2_MAX_SNAPSHOTS, blocks=None):
+    """15-minute snapshots for each chosen tour-day, local 10:45 onward; `cap` total."""
+    chosen = choose_v2_blocks() if blocks is None else blocks
+    spare = cap - V2_SNAPSHOTS_PER_BLOCK * len(chosen)
+    out = []
+    for i, c in enumerate(chosen):
+        if c["year"] not in (2024, 2025):
+            raise ValueError(f"{c['date']}: only 2024-2025 tournament days are allowed")
+        n = V2_SNAPSHOTS_PER_BLOCK + (max(spare, 0) if i == 0 else 0)
+        day = datetime.strptime(c["date"], "%Y-%m-%d").replace(hour=V2_FIRST_LOCAL[0], minute=V2_FIRST_LOCAL[1])
+        block_id = f"{c['sport']}@{c['date']}"
+        for k in range(n):
+            if len(out) >= cap:
+                break
+            local = day + timedelta(minutes=V2_STEP_MINUTES * k)
+            utc = (local - timedelta(hours=c["offset"])).replace(tzinfo=timezone.utc)
+            out.append({"sport": c["sport"], "utc": utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        "local": local.strftime("%Y-%m-%d %H:%M"), "venue": c["venue"],
+                        "note": f"{c['tour'].upper()} {c['round']} day {c['day']}", "block": block_id})
+    return out
+
+
+def expected_v2(blocks=None):
+    """Expected-match funnel for the chosen blocks: low/central/high x listed, settled, banded."""
+    chosen = choose_v2_blocks() if blocks is None else blocks
+    scheduled = sum(c["score"] for c in chosen)
+    res = {"scheduled_in_window": scheduled}
+    for i, name in enumerate(("low", "central", "high")):
+        listed = scheduled * V2_FUNNEL["listed"][i]
+        settled = listed * V2_FUNNEL["settled"][i]
+        res[name] = {"listed": listed, "settled": settled, "banded": settled * V2_FUNNEL["banded"][i]}
+    return res
+
+
+def cmd_plan_v2(cache_dir=V2_CACHE_DIR, out=print) -> int:
+    snaps = plan_snapshots_v2()
+    done = sum(1 for s in snaps if cache_path(s["sport"], s["utc"], cache_dir).exists())
+    out(f"tennis-live-cal plan v2: {len(snaps)} snapshots, {len(snaps) * CREDITS_PER_SNAPSHOT} credits "
+        f"({CREDITS_PER_SNAPSHOT} each, every {V2_STEP_MINUTES} min, regions {REGIONS}, markets {','.join(MARKETS)})")
+    out(f"cap: {V2_MAX_SNAPSHOTS} snapshots = {V2_MAX_SNAPSHOTS * CREDITS_PER_SNAPSHOT} credits; run cap "
+        f"{V2_HARD_CREDIT_CAP}; stop below {V2_REMAINING_FLOOR} remaining; cache {cache_dir}")
+    out(f"already cached: {done}; still to pull: {len(snaps) - done}")
+    for block in dict.fromkeys(s["block"] for s in snaps):
+        mine = [s for s in snaps if s["block"] == block]
+        out(f"  {block} {mine[0]['venue']} ({mine[0]['note']}): {len(mine)} snapshots, "
+            f"local {mine[0]['local']} to {mine[-1]['local']}")
+    e = expected_v2()
+    out(f"expected: {e['scheduled_in_window']:.0f} scheduled matches in window -> "
+        f"settled {e['low']['settled']:.0f}/{e['central']['settled']:.0f}/{e['high']['settled']:.0f}, "
+        f"banded {e['low']['banded']:.0f}/{e['central']['banded']:.0f}/{e['high']['banded']:.0f} (low/central/high)")
+    return 0
+
+
+def run_pull_v2(**kw) -> int:
+    kw.setdefault("cache_dir", V2_CACHE_DIR)
+    kw.setdefault("snapshots", plan_snapshots_v2())
+    return run_pull(hard_cap=V2_HARD_CREDIT_CAP, floor=V2_REMAINING_FLOOR, already_spent=0,
+                    caller=V2_CALLER, empty_block_after=V2_EMPTY_BLOCK_AFTER, **kw)
+
+
+def combine_records(v1_records, v2_records):
+    """Union of per-event records, one per event id. A duplicate keeps the record with the better
+    outcome (settled first, then more in-play snapshots); a full tie keeps the v1 record."""
+    def rank(r):
+        return (r.get("status") == "settled", r.get("inplay_snapshots") or 0)
+    best = {}
+    for r in list(v1_records) + list(v2_records):
+        eid = r.get("event_id")
+        if eid not in best or rank(r) > rank(best[eid]):
+            best[eid] = r
+    return sorted(best.values(), key=lambda r: (r["commence"], str(r.get("event_id"))))
+
+
+def band_table_lines(rows):
+    lines = [f"{'band':<16}{'n':>4}{'wins':>6}{'win rate':>10}{'implied':>9}{'gap':>12}"]
+    for b in rows:
+        gap = "n/a" if b["calibration_gap"] is None else f"{b['calibration_gap'] * 100:+.1f} pts"
+        lines.append(f"{b['band']:<16}{b['n']:>4}{b['wins']:>6}{_pct(b['win_rate']):>10}"
+                     f"{_pct(b['mean_implied_prob']):>9}{gap:>12}")
+    return lines
+
+
+CAVEATS_V2 = [c.replace("hourly", "15-minute") for c in CAVEATS] + [
+    "v2 days were chosen from v1's yield and an assumed match schedule; dates are from memory of the draw calendars.",
+    "The combined table merges v1 (hourly, late rounds) and v2 (15-minute, early rounds) events by event id; the two "
+    "plans differ in cadence and round mix, so the pooled bands mix populations.",
+]
+
+
+def run_build_v2(cache_dir=V2_CACHE_DIR, v1_cache_dir=CACHE_DIR, evidence_path=V2_EVIDENCE_PATH,
+                 doc_path=V2_DOC_PATH, out=print) -> int:
+    snaps = load_snapshots(cache_dir) if Path(cache_dir).exists() else []
+    if not snaps:
+        out("build v2: no cached v2 snapshots; run pull --plan v2 first")
+        return 2
+    records = build_events(snaps)
+    v1_snaps = load_snapshots(v1_cache_dir) if Path(v1_cache_dir).exists() else []
+    v1_records = build_events(v1_snaps) if v1_snaps else []
+    combined = combine_records(v1_records, records)
+    counts = {}
+    for r in records:
+        counts[r["status"]] = counts.get(r["status"], 0) + 1
+    ccounts = {}
+    for r in combined:
+        ccounts[r["status"]] = ccounts.get(r["status"], 0) + 1
+    result = {
+        "version": "tennis_live_calibration_v2",
+        "built_utc": _stamp(datetime.now(timezone.utc)),
+        "snapshots": len(snaps), "events": len(records), "status_counts": counts,
+        "tournament_days": [list(x) for x in sorted({(r["sport"], r["commence"][:10]) for r in records})],
+        "bands": band_table(records), "events_detail": records, "caveats": CAVEATS_V2,
+        "combined": {"v1_snapshots": len(v1_snaps), "v1_events": len(v1_records), "events": len(combined),
+                     "status_counts": ccounts, "bands": band_table(combined)},
+    }
+    evidence_path = Path(evidence_path)
+    evidence_path.parent.mkdir(parents=True, exist_ok=True)
+    evidence_path.write_text(json.dumps(result, indent=1, sort_keys=True), encoding="utf-8")
+    doc_path = Path(doc_path)
+    doc_path.parent.mkdir(parents=True, exist_ok=True)
+    doc_path.write_text(render_doc_v2(result), encoding="utf-8")
+    out(f"build v2: {len(snaps)} snapshots, {len(records)} events, {counts}; wrote {evidence_path} and {doc_path}")
+    out(f"combined v1+v2 (deduplicated by event id): {len(combined)} events from {len(v1_records)} v1 + "
+        f"{len(records)} v2, {ccounts}")
+    for line in band_table_lines(result["combined"]["bands"]):
+        out(line)
+    return 0
+
+
+def render_doc_v2(res) -> str:
+    text = render_doc(res).replace("# Tennis in-play calibration (history, exploratory)",
+                                   "# Tennis in-play calibration, v2 (early rounds, 15-minute snapshots)", 1)
+    text = text.replace("hourly snapshots", "15-minute snapshots")
+    comb = res["combined"]
+    extra = ["", "## Combined with v1", "",
+             f"v1 (hourly, late rounds) gave {comb['v1_events']} events; v2 gave {res['events']}; after removing "
+             f"duplicate event ids there are {comb['events']}. Outcomes: "
+             f"{', '.join(f'{k} {v}' for k, v in sorted(comb['status_counts'].items())) or 'none'}.", "",
+             "```", *band_table_lines(comb["bands"]), "```", "",
+             "The two plans differ in cadence and round mix, so treat the pooled rows as a rough look, not a finding.", ""]
+    return text.rstrip("\n") + "\n" + "\n".join(extra) + "\n"
+
+
 # ------------------------------------------------------------------ cli
 
-def main(command, out=print) -> int:
+def main(command, out=print, plan="v1") -> int:
+    if plan == "v2":
+        if command == "plan":
+            return cmd_plan_v2(out=out)
+        if command == "pull":
+            return run_pull_v2(out=out)
+        if command == "build":
+            return run_build_v2(out=out)
+    elif plan != "v1":
+        print(f"unknown plan {plan}", file=sys.stderr)
+        return 2
     if command == "plan":
         return cmd_plan(out=out)
     if command == "pull":
