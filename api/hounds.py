@@ -58,7 +58,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Response
 
-from src.hounds import desk_view, digest as digest_mod, seasons, stats, track_record, user_view
+from src.hounds import desk_view, digest as digest_mod, pick_grades_feed, seasons, stats, track_record, user_view
 from src.hounds.gematria import view as gematria_view
 from src.hounds.interact import outback
 from src.hounds.contract import (
@@ -243,7 +243,13 @@ def hound_bets(hound_id: str, response: Response, page: int = Query(1, ge=1),
     view = data.view(sid)
     rows = view.bets if segment is None else [b for b in view.bets if b.segment == segment]
     rows = refine_bets(filter_by_status(rows, status), outcome, sort)
-    return bets_payload(hound_id, paginate(rows, page, page_size), book.as_of, seasons.meta(sid))
+    page_rows = paginate(rows, page, page_size)
+    payload = bets_payload(hound_id, page_rows, book.as_of, seasons.meta(sid))
+    # Each ticket also carries its two ratings (confidence, value), worked out on read from the hound's own lineage record
+    # settled before the ticket was placed (src/hounds/pick_grades.py). Additive; nothing is written.
+    return pick_grades_feed.attach_grades(
+        payload, page_rows["items"], hound_id, data,
+        lambda vid: book.hounds.get(vid) or user_view.hound_data(vid, kick_build=False))
 
 
 @router.get("/hounds/{hound_id}/record")

@@ -4,12 +4,18 @@
  * WON, LOST, PUSH, VOID) with the units it moved. The feed on the leaderboard page, a model's drawer, the
  * model page's two tables and the landing page's latest five all build their rows here, so a number reads the
  * same wherever it appears. Only what the server sent is shown; a missing field is "n/a", never a guess.
+ *
+ * RATINGS (2026-10-29). A ticket from GET /hounds/{id}/bets also carries a `grades` block (confidence, value, closing line;
+ * src/hounds/pick_grades.py). On a phone's card the two dials sit under the result line and the sentences behind them are in
+ * the "Why this bet" fold; in the wide table and list row the same ratings are one chip ("C 72 · V 61") that opens the dials. A
+ * ticket from a feed that sends no `grades` shows none of it: the dials are never drawn from nothing.
  */
 
 import { h, isNum, signed, fmtPrice, shortDate, houndHref, NOT_REPORTED } from "./hounds-core.js";
 import { formatStamp } from "./local-time.js";
 import { signedMoney } from "./hound-money.js";
 import { liveSpan, liveAttrs, watchTickets } from "./ticket-live.js";
+import { renderPickMeters, gradeFold } from "./pick-meters.js";
 import {
   ticketStatus, ticketState, RESULT_WORDS, recordedText, ticketPrice, pickOf, marketLabel, booksText, NA,
   isOldRule, OLD_RULE_TAG, OLD_RULE_TITLE,
@@ -52,6 +58,11 @@ export function ticketUnits(ticket) {
 function clvText(ticket) {
   const v = ticket && ticket.clv_pts;
   return isNum(v) ? `${v > 0 ? "+" : v < 0 ? "-" : ""}${Math.abs(v).toFixed(1)}` : NA;
+}
+
+/** True for a ticket whose server sent a ratings block (an object). A replay ticket sends null and a feed without ratings sends nothing. */
+function hasGrades(t) {
+  return !!t && t.grades !== null && typeof t.grades === "object";
 }
 
 /**
@@ -106,9 +117,12 @@ export function ticketCard(ticket, { showModel = false, name = "", flip = false 
       h("span", { class: "hd-num", "data-hook": "card-clv", text: `CLV ${clvText(t)}${isNum(t.clv_pts) ? " pts" : ""}` }),
     ]));
   }
-  if (t.reason) {
+  const rated = hasGrades(t);
+  if (rated) lines.push(h("div", { class: "hd-card__meters", "data-hook": "card-meters" }, [renderPickMeters(t.grades, { compact: true })]));
+  if (t.reason || rated) {
     lines.push(h("details", { class: "hd-card__why", "data-hook": "card-why" }, [
-      h("summary", { text: "Why this bet" }), h("p", { text: t.reason })]));
+      h("summary", { text: "Why this bet" }), t.reason ? h("p", { text: t.reason }) : null,
+      rated ? renderPickMeters(t.grades, { compact: false, dials: false, note: false }) : null]));
   }
   return h("div", Object.assign({ class: "hd-card", "data-hook": "ticket-card", "data-status": state,
     "data-segment": String(t.segment || "") }, liveAttrs(t)), lines);
@@ -166,6 +180,7 @@ export function ticketItem(ticket, { showModel = true, name = "" } = {}) {
         h("span", { class: "hd-ticket__mkt", text: marketLabel(t.market) }),
         liveTag(t),
       ]),
+      hasGrades(t) ? gradeFold(t.grades) : null,
     ]),
     h("div", { class: "hd-ticket__price" }, [priceCell(t)]),
     h("div", { class: "hd-ticket__rec" }, [recordedCell(t)]),
@@ -212,7 +227,8 @@ export function ticketTable(tickets, { graded = false, hook = "tickets-table", c
     const cells = [
       h("td", { class: "hd-num hd-nowrap", text: shortDate(t.date) || NA }),
       h("td", { text: t.game || NOT_REPORTED }),
-      h("td", {}, [h("strong", { text: pickOf(t) }), h("small", { class: "hd-aux", text: marketLabel(t.market) }), liveTag(t)]),
+      h("td", {}, [h("strong", { text: pickOf(t) }), h("small", { class: "hd-aux", text: marketLabel(t.market) }), liveTag(t),
+        hasGrades(t) ? gradeFold(t.grades) : null]),
       h("td", { class: "hd-num" }, [priceCell(t)]),
     ];
     if (graded) cells.push(h("td", { class: "hd-num", "data-hook": "ticket-clv", text: clv }));
