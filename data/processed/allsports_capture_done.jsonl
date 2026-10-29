@@ -9037,3 +9037,5 @@
 {"commence_utc": "2026-10-29T09:30:00Z", "event_id": "16b55265442558267fb4b43d29e4950c", "kind": "phase", "observed_utc": "2026-10-29T03:37:21.692413Z", "phase": "t6h", "rows": 24, "sport_key": "baseball_kbo"}
 {"call_kind": "pregame", "credits": 3, "events": 1, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-29T03:37:21.692413Z", "regions": ["us"], "rows": 24, "sport_key": "baseball_kbo", "stored": 24}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T03:37:21.692413Z", "regions": ["au"], "rows": 16, "sport_key": "cricket_test_match", "stored": 14}
+{"commence_utc": "2026-10-29T09:45:00Z", "event_id": "e07a0c44571a3f1c7d61184d90fc2e8c", "kind": "phase", "observed_utc": "2026-10-29T03:48:17.640182Z", "phase": "t6h", "rows": 1, "sport_key": "boxing_boxing"}
+{"call_kind": "pregame", "credits": 1, "events": 31, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T03:48:17.640182Z", "regions": ["us"], "rows": 82, "sport_key": "boxing_boxing", "stored": 12}
