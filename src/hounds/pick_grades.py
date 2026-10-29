@@ -80,8 +80,10 @@ VALUE_POINTS_PER_PP = 5.0
 #: Fewer past bets than this in a spot and the sentence says "thin"; a more specific spot needs this many to be chosen.
 MIN_SLICE_BETS = 8
 
-#: The confidence "sample" part: a slice of this many bets is half data, half prior. Kept at the ruling's 20.
-SAMPLE_PSEUDO_BETS = 20
+#: The confidence "sample" part: a slice of this many bets is half data, half prior. Set to VALUE_SHRINK_BETS (owner review
+#: 2026-10-29): at 20, a 16-7 run over 23 bets read "High", which claims more than 23 bets can bear; the referee itself waits
+#: for 150 measurable bets before it calls anything. High now needs a few hundred bets in that kind of spot.
+SAMPLE_PSEUDO_BETS = VALUE_SHRINK_BETS
 
 #: The confidence weights. They sum to 1.
 WEIGHT_SAMPLE, WEIGHT_CONSISTENCY, WEIGHT_MARKET = 0.5, 0.3, 0.2

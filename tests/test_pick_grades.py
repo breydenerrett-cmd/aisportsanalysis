@@ -250,7 +250,8 @@ class Confidence(unittest.TestCase):
     def test_the_parts_and_weights(self):
         rows = record(16, 7)
         conf = pg.grade_bets(rows + [pick_after(rows, books=6)])["pick"]["confidence"]
-        self.assertEqual(conf["parts"]["sample"], round(100 * 23 / 43))
+        self.assertEqual(conf["parts"]["sample"], round(100 * 23 / (23 + pg.VALUE_SHRINK_BETS)))
+        self.assertNotEqual(conf["label"], "High", "23 bets can never read High")   # owner review 2026-10-29
         self.assertEqual(conf["parts"]["market"], 50)                 # 6 books: halfway between 3 and 9
         implied = 1 / (1 + 100 / 110)
         z = (16 - 23 * implied) / (23 * implied * (1 - implied)) ** 0.5
