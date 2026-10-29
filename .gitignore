@@ -327,3 +327,6 @@ data/datasvc/mlb/
 
 # member bet history pulled by scripts/research_pull.py (holds member data)
 data/research/bets_pull/
+
+# Third-party tennis history downloads (untrusted, reproducible)
+data/research/tennis_history/raw/*

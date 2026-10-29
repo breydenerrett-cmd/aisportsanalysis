@@ -29,6 +29,11 @@ def add_parser(sub) -> None:
         "live-tennis", help="LIVE_TENNIS_V1 paper test: a Markov model vs the live tennis match-winner board "
                             "(docs/PREREG_LIVE_TENNIS.md); OFF unless LIVE_TENNIS_TEST=on")
     live_sub = live.add_subparsers(dest="live_tennis_command", required=True)
+    tc = research_sub.add_parser(
+        "tennis-comeback", help="history table: how often a favourite who loses set 1 still wins (tennis-data.co.uk files)")
+    tc_sub = tc.add_subparsers(dest="tennis_comeback_command", required=True)
+    tcb = tc_sub.add_parser("build", help="read data/research/tennis_history/raw/ and write the evidence JSON + doc")
+    tcb.add_argument("--raw-dir", dest="raw_dir", default=None, help="override the raw files folder")
 
     capture = live_sub.add_parser("capture", help="one capture tick (or --loop); spends credits only when the switch is on")
     capture.add_argument("--loop", action="store_true", help="keep ticking until --max-minutes or the stop date")
@@ -79,6 +84,15 @@ def _plan() -> int:
 
 
 def main(args) -> int:
+    if getattr(args, "research_command", None) == "tennis-comeback":
+        from pathlib import Path
+
+        from src.research import tennis_comeback as tc
+
+        res = tc.build(raw_dir=Path(args.raw_dir) if args.raw_dir else tc.RAW_DIR)
+        print(f"tennis-comeback: status {res['status']}, matches kept {res['matches_kept']}, "
+              f"cells {len(res['cells'])}, problems {len(res['data_problems'])}")
+        return EXIT_OK if res["status"] == "ok" else EXIT_ERROR
     command = args.live_tennis_command
     if command == "capture":
         from src.research.live_tennis import config
