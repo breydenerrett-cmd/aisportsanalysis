@@ -9210,3 +9210,13 @@
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T09:59:29.273610Z", "regions": ["au"], "rows": 10, "sport_key": "cricket_test_match", "stored": 8}
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T09:59:29.273610Z", "regions": ["us"], "rows": 2, "sport_key": "basketball_nbl", "stored": 2}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T09:59:29.273610Z", "regions": ["us"], "rows": 2, "sport_key": "cricket_odi", "stored": 2}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-29T16:06:02.247623Z", "observed_utc": "2026-10-29T10:06:02.247623Z", "sport_key": "soccer_belgium_first_div"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-29T16:06:02.247623Z", "observed_utc": "2026-10-29T10:06:02.247623Z", "sport_key": "soccer_germany_bundesliga2"}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-10-29T16:06:02.247623Z", "observed_utc": "2026-10-29T10:06:02.247623Z", "sport_key": "soccer_germany_liga3"}
+{"events": 14, "kind": "peek", "next_check_utc": "2026-10-29T16:06:02.247623Z", "observed_utc": "2026-10-29T10:06:02.247623Z", "sport_key": "soccer_greece_super_league"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-10-29T16:06:02.247623Z", "observed_utc": "2026-10-29T10:06:02.247623Z", "sport_key": "soccer_norway_eliteserien"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-29T16:06:02.247623Z", "observed_utc": "2026-10-29T10:06:02.247623Z", "sport_key": "soccer_portugal_primeira_liga"}
+{"commence_utc": "2026-10-29T16:00:00Z", "event_id": "65d56b4b19134aef30a377b4647724e2", "kind": "phase", "observed_utc": "2026-10-29T10:06:02.247623Z", "phase": "t6h", "rows": 14, "sport_key": "soccer_finland_veikkausliiga"}
+{"call_kind": "pregame", "credits": 2, "events": 5, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-29T10:06:02.247623Z", "regions": ["us"], "rows": 34, "sport_key": "soccer_finland_veikkausliiga", "stored": 28}
+{"commence_utc": "2026-10-29T16:00:00Z", "event_id": "704555fd36bea990169b89857cf51075", "kind": "phase", "observed_utc": "2026-10-29T10:06:02.247623Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_vienna_open"}
+{"call_kind": "pregame", "credits": 1, "events": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-29T10:06:02.247623Z", "regions": ["us"], "rows": 48, "sport_key": "tennis_atp_vienna_open", "stored": 48}
