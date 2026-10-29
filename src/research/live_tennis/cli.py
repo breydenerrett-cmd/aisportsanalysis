@@ -35,6 +35,14 @@ def add_parser(sub) -> None:
     tcb = tc_sub.add_parser("build", help="read data/research/tennis_history/raw/ and write the evidence JSON + doc")
     tcb.add_argument("--raw-dir", dest="raw_dir", default=None, help="override the raw files folder")
 
+    tl = research_sub.add_parser(
+        "tennis-live-cal", help="in-play calibration of tennis favourites from historical odds snapshots "
+                                "(the paid pull is gated by TENNIS_CAL_PULL=on)")
+    tl_sub = tl.add_subparsers(dest="tennis_live_cal_command", required=True)
+    tl_sub.add_parser("plan", help="print the snapshot schedule and credit cost; no requests")
+    tl_sub.add_parser("pull", help="fetch and cache the planned snapshots (needs TENNIS_CAL_PULL=on; resumable)")
+    tl_sub.add_parser("build", help="build the evidence JSON and doc from cached snapshots (no requests)")
+
     capture = live_sub.add_parser("capture", help="one capture tick (or --loop); spends credits only when the switch is on")
     capture.add_argument("--loop", action="store_true", help="keep ticking until --max-minutes or the stop date")
     capture.add_argument("--max-minutes", dest="max_minutes", type=float, default=None,
@@ -93,6 +101,10 @@ def main(args) -> int:
         print(f"tennis-comeback: status {res['status']}, matches kept {res['matches_kept']}, "
               f"cells {len(res['cells'])}, problems {len(res['data_problems'])}")
         return EXIT_OK if res["status"] == "ok" else EXIT_ERROR
+    if getattr(args, "research_command", None) == "tennis-live-cal":
+        from src.research import live_tennis_calibration as cal
+
+        return cal.main(args.tennis_live_cal_command)
     command = args.live_tennis_command
     if command == "capture":
         from src.research.live_tennis import config
