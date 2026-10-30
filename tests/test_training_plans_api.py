@@ -33,7 +33,9 @@ class Routes(RouteCase):
         self._d = tempfile.TemporaryDirectory()
         self.addCleanup(self._d.cleanup)
         env = {budget.LEDGER_ENV: os.path.join(self._d.name, "rebuild_usage.jsonl"), "ANTHROPIC_API_KEY": ENV["ANTHROPIC_API_KEY"]}
+        # production rehearses a rebuild's candidates in one batch (``default_replay_many``) beside the single drill (``default_replay``): both are faked
         for p in (mock.patch.dict(os.environ, env), mock.patch.object(plans, "default_replay", fake_replay),
+                  mock.patch.object(plans, "default_replay_many", lambda specs, days, now: [fake_replay(sp, days, now) for sp in specs]),
                   mock.patch.object(rebuild_ai, "_default_client", lambda key: FakeClient(standard_responder())),
                   mock.patch.object(budget, "router_headroom", lambda *a, **k: None),
                   mock.patch.object(budget, "log_usage_to_router", lambda *a, **k: None),

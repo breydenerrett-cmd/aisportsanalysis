@@ -655,7 +655,7 @@ def read_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True, sport
 
 def iter_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True,
                    *, market=None, keep=None, sport=DEFAULT_SPORT,
-                   since=None, until=None):
+                   since=None, until=None, event_ids=None):
     """Multi-book observations one at a time, filtered while reading.
 
     WHY THIS EXISTS RATHER THAN `read_multibook(...)` PLUS A LIST
@@ -691,6 +691,12 @@ def iter_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True,
     default to None -- unchanged behaviour for every existing caller.
     `since` also skips whole archive segments via `store_archive.iter_lines`.
 
+    `event_ids` (added 2026-10-29, Send to training speed): a set of event ids; only rows whose
+    `event_id` is in it are returned. A TEXT pre-check (`_line_probably_other_event`) drops a line
+    whose event id is provably not in the set before `json.loads`, which is most of the cost of a
+    scan that wants a few dozen games out of 600,000 lines; the parsed row is then checked exactly.
+    The pre-check may only over-match (see that function). `None` (the default) is every row, as before.
+
     Reads the LOGICAL store at `path` (src.pipeline.store_archive) -- still
     one line at a time, still no materialised list, so a rotation
     (2026-09-21 incident) does not reintroduce the 2026-09-10 memory
@@ -702,12 +708,16 @@ def iter_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True,
     """
     if not store_archive.exists(path):
         return
+    if event_ids is not None and not event_ids:
+        return                              # asked for no event at all: nothing to read (the archive is not even opened)
     needle = f'"{market}"' if market else None
     for number, line in enumerate(store_archive.iter_lines(path, since=since), start=1):
         line = line.strip()
         if not line:
             continue
         if needle is not None and needle not in line:
+            continue
+        if event_ids is not None and _line_probably_other_event(line, event_ids):
             continue
         if _line_probably_out_of_window(line, since, until):
             continue
@@ -727,9 +737,36 @@ def iter_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True,
             continue
         if not _is_sport(row, sport):
             continue
+        if event_ids is not None and row.get("event_id") not in event_ids:
+            continue
         if keep is not None and not keep(row):
             continue
         yield row
+
+
+_EVENT_MARKER = '"event_id":"'
+
+
+def _line_probably_other_event(line, event_ids) -> bool:
+    """A cheap, TEXT-ONLY pre-check: True only when this raw line can be PROVEN to name an event that is not in `event_ids`,
+    without calling `json.loads` (Send to training speed, 2026-10-29: the closing-odds scan parsed 664,180 lines to keep ~7,000).
+
+    THE SAME DISCIPLINE AS `_line_probably_wrong_sport`: IT MAY ONLY EVER OVER-MATCH. A plain substring and a set lookup, no regex (a
+    25-way regex alternation measured SLOWER than parsing). The writer's compact separators put the id at `"event_id":"<id>"`; a line
+    that does not look like that (spaced JSON from a fixture writer, a null or missing id, an unterminated value) cannot be judged from
+    its text and returns False, and an id containing a backslash is not read as text (its escapes decode to a different id), so it also
+    returns False. Every such line falls through to the parsed, exact test that actually decides."""
+    idx = line.find(_EVENT_MARKER)
+    if idx == -1:
+        return False
+    start = idx + len(_EVENT_MARKER)
+    end = line.find('"', start)
+    if end == -1:
+        return False
+    value = line[start:end]
+    if "\\" in value:
+        return False
+    return value not in event_ids
 
 
 def _text_sport(line):

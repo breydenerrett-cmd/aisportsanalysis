@@ -149,10 +149,10 @@ def scan(bets: list, multibook_path, since: Optional[str] = None):
     newest = {}                             # event -> (moment, trimmed row)
     teams = {}
 
-    def keep(row):
-        return row.get("event_id") in wanted_events
-
-    for row in snapshots.iter_multibook(path=multibook_path, sport=None, keep=keep,
+    # ``event_ids`` tests the id as TEXT before ``json.loads`` (a plain substring and a set lookup, never a regex: it measured slower)
+    # and again on the parsed row, so the rows kept are exactly the rows ``row.get("event_id") in wanted_events`` kept.
+    # Send to training's diagnose parsed 664,180 lines to keep ~7,000 of them (docs/audit/2026-10-29/TRAINING_SPEED.md).
+    for row in snapshots.iter_multibook(path=multibook_path, sport=None, event_ids=wanted_events,
                                         since=since):
         event = row["event_id"]
         store_mk = row.get("market")
