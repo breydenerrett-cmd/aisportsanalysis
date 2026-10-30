@@ -209,7 +209,7 @@ class _Row:
     """One ledger bet, reduced to what grading reads. ``outcome`` is 1 (win), 0 (loss) or None (anything else)."""
 
     __slots__ = ("bet_id", "price", "implied", "band", "role", "sport", "market", "placed", "graded", "outcome",
-                 "settled_any", "n_books", "clv_pts", "history_ok")
+                 "settled_any", "n_books", "clv_pts", "history_ok", "version")
 
     def __init__(self, raw: Mapping, fallback_id: str):
         self.bet_id = str(raw.get("bet_id") if raw.get("bet_id") is not None else fallback_id)
@@ -230,6 +230,8 @@ class _Row:
         books = _num(raw.get("n_books", raw.get("book_count")))
         self.n_books = None if books is None else int(books)
         self.clv_pts = _num(raw.get("clv_pts"))
+        # the version that placed it (a member hound's id), so a reason can say when an earlier version's bets are counted
+        self.version = str(raw["hound_id"]) if raw.get("hound_id") is not None else None
         # History needs a price, a win or a loss, a settle time, and (when the placement is known) a settle AFTER it.
         self.history_ok = (self.implied is not None and self.outcome is not None and self.graded is not None
                            and (self.placed is None or self.graded > self.placed))
@@ -257,16 +259,19 @@ def _levels(row: _Row) -> list:
 class _Acc:
     """Running sums for one spot: bets, wins, the wins the prices owed, and the variance of that count."""
 
-    __slots__ = ("n", "w", "e", "v")
+    __slots__ = ("n", "w", "e", "v", "versions")
 
     def __init__(self):
         self.n = 0
         self.w = 0
         self.e = 0.0
         self.v = 0.0
+        self.versions = set()            # the versions whose bets are counted here (empty when rows carry none)
 
     def add(self, row: _Row) -> None:
         self.n += 1
+        if row.version is not None:
+            self.versions.add(row.version)
         self.w += row.outcome
         self.e += row.implied
         self.v += row.implied * (1.0 - row.implied)
@@ -343,11 +348,15 @@ def _graded(row: _Row, name: str, level: int, a: _Acc) -> dict:
     shrunk = _clamp(row.implied + excess, 0.0, 1.0)
     score = _round_half_up(_clamp(50.0 + excess * 100.0 * VALUE_POINTS_PER_PP, 0.0, 100.0))
     thin_word = " (thin)" if thin else ""
+    # A new version's own record restarts (the public line reads 19-8) while its picks are graded on the whole lineage, so a
+    # count that takes in an earlier version's bets says so: "bets so far: 9-11" beside a 19-8 headline read as a broken number.
+    earlier = row.version is not None and bool(a.versions - {row.version})
+    across = ", counting earlier versions" if earlier else ""
     value = {
         "score": score, "label": _value_label(score),
-        "slice": {"name": name, "n": n, "w": w, "l": n - w, "expected_w": round(a.e, 1)},
+        "slice": {"name": name, "n": n, "w": w, "l": n - w, "expected_w": round(a.e, 1), "earlier_versions": earlier},
         "shrunk_rate": round(shrunk, 4), "implied": round(row.implied, 4),
-        "reason": (f"Its {name}: {w}-{n - w}{thin_word}. {_price_text(row.price)} implies "
+        "reason": (f"Its {name}{across}: {w}-{n - w}{thin_word}. {_price_text(row.price)} implies "
                    f"{_round_half_up(row.implied * 100)}%; its record shrinks to {_round_half_up(shrunk * 100)}%."),
     }
     sd = math.sqrt(a.v) if a.v > 1e-12 else None
@@ -369,7 +378,7 @@ def _graded(row: _Row, name: str, level: int, a: _Acc) -> dict:
              else f"{row.n_books} book{'s' if row.n_books != 1 else ''} quoted it")
     confidence = {
         "score": cscore, "label": _confidence_label(cscore), "parts": parts,
-        "reason": f"Built on {n} {kind}{thin_word}; its record in them is {ahead}; {books}. Not a win chance.",
+        "reason": f"Built on {n} {kind}{' (earlier versions too)' if earlier else ''}{thin_word}; its record in them is {ahead}; {books}. Not a win chance.",
     }
     return {"value": value, "confidence": confidence}
 
@@ -411,7 +420,8 @@ def row_from_bet(bet, bet_id: str) -> dict:
     ``lock_utc``; a row from before that stamp existed falls back to the instant it was written (``recorded_utc``), which is
     never later than the first pitch and so still cannot see a result it could not have known."""
     return {
-        "bet_id": bet_id, "price_average": getattr(bet, "price_average", None), "sport": getattr(bet, "sport", None),
+        "bet_id": bet_id, "hound_id": getattr(bet, "hound_id", None), "price_average": getattr(bet, "price_average", None),
+        "sport": getattr(bet, "sport", None),
         "market": getattr(bet, "market", None), "result": getattr(bet, "result", None),
         "lock_utc": getattr(bet, "lock_utc", None) or getattr(bet, "recorded_utc", None),
         "graded_utc": getattr(bet, "graded_utc", None), "n_books": getattr(bet, "book_count", None),

@@ -144,7 +144,7 @@ class Shrinkage(unittest.TestCase):
         self.assertAlmostEqual(value["shrunk_rate"], implied + excess, places=4)
         self.assertEqual(value["score"], int(50 + excess * 100 * 5 + 0.5))
         self.assertEqual(value["slice"], {"name": "NHL totals, near even, favourite", "n": 23, "w": 16, "l": 7,
-                                          "expected_w": round(expected, 1)})
+                                          "expected_w": round(expected, 1), "earlier_versions": False})
         self.assertEqual(value["reason"], "Its NHL totals, near even, favourite: 16-7. -110 implies 52%; its record shrinks to 55%.")
 
 
@@ -358,6 +358,29 @@ class TheWordsStayHonest(unittest.TestCase):
         self.assertGreater(len(seen), 5)
         for sentence in seen:
             self.assertIsNone(self.BANNED.search(sentence), sentence)
+
+
+class EarlierVersionsAreNamed(unittest.TestCase):
+    """Live 2026-10-29: DRAKEO's headline read 19-8 while its first pick's meter said "bets so far: 9-11", because the meters count
+    the whole lineage (earlier versions included) and the headline counts this version only. The words now say which."""
+
+    def test_a_count_that_takes_in_an_earlier_version_says_so_on_both_meters(self):
+        rows = [dict(r, hound_id="u-v1") for r in record(5, 5)]
+        g = pg.grade_bets(rows + [dict(pick_after(rows), hound_id="u-v2")])["pick"]
+        self.assertIn("counting earlier versions", g["value"]["reason"])
+        self.assertTrue(g["value"]["slice"]["earlier_versions"])
+        self.assertIn("(earlier versions too)", g["confidence"]["reason"])
+
+    def test_a_count_of_its_own_bets_only_says_nothing_about_versions(self):
+        rows = [dict(r, hound_id="u-v2") for r in record(5, 5)]
+        g = pg.grade_bets(rows + [dict(pick_after(rows), hound_id="u-v2")])["pick"]
+        self.assertNotIn("versions", g["value"]["reason"] + g["confidence"]["reason"])
+        self.assertFalse(g["value"]["slice"]["earlier_versions"])
+
+    def test_rows_without_a_version_read_as_before(self):
+        rows = record(5, 5)
+        g = pg.grade_bets(rows + [pick_after(rows)])["pick"]
+        self.assertNotIn("versions", g["value"]["reason"])
 
 
 class FromBetRows(unittest.TestCase):
