@@ -6509,3 +6509,16 @@
 {"fetched_utc": "2026-10-30T20:25:54.869664+00:00", "game_date": "2026-10-30", "poll": true}
 {"fetched_utc": "2026-10-30T21:28:49.257713+00:00", "game_date": "2026-10-30", "poll": true}
 {"category": "other", "date": "2026-10-30", "first_seen_utc": "2026-10-30T21:28:49.257713+00:00", "player": "Andrew Knizner", "player_id": 668800, "team": "SF", "transaction_id": 947497}
+{"fetched_utc": "2026-10-30T22:22:31.624687+00:00", "game_date": "2026-10-30", "poll": true}
+{"category": "other", "date": "2026-10-30", "first_seen_utc": "2026-10-30T22:22:31.624687+00:00", "player": "Shawn Armstrong", "player_id": 542888, "team": "CLE", "transaction_id": 947498}
+{"category": "other", "date": "2026-10-30", "first_seen_utc": "2026-10-30T22:22:31.624687+00:00", "player": "Milan Tolentino", "player_id": 675455, "team": "CLE", "transaction_id": 947500}
+{"category": "other", "date": "2026-10-30", "first_seen_utc": "2026-10-30T22:22:31.624687+00:00", "player": "Sonny Gray", "player_id": 543243, "team": "BOS", "transaction_id": 947502}
+{"category": "il_activation", "date": "2026-10-30", "first_seen_utc": "2026-10-30T22:22:31.624687+00:00", "player": "Jack Kochanowicz", "player_id": 686799, "team": "LAA", "transaction_id": 947504}
+{"category": "other", "date": "2026-10-30", "first_seen_utc": "2026-10-30T22:22:31.624687+00:00", "player": "Nicolo Pinazzi", "player_id": 695950, "team": "LAA", "transaction_id": 947505}
+{"category": "other", "date": "2026-10-30", "first_seen_utc": "2026-10-30T22:22:31.624687+00:00", "player": "Carlos Est\u00e9vez", "player_id": 608032, "team": "KC", "transaction_id": 947506}
+{"category": "other", "date": "2026-10-30", "first_seen_utc": "2026-10-30T22:22:31.624687+00:00", "player": "Robert Stephenson", "player_id": 596112, "team": "LAA", "transaction_id": 947507}
+{"category": "other", "date": "2026-10-30", "first_seen_utc": "2026-10-30T22:22:31.624687+00:00", "player": "Josh Bell", "player_id": 605137, "team": "MIN", "transaction_id": 947508}
+{"category": "other", "date": "2026-10-30", "first_seen_utc": "2026-10-30T22:22:31.624687+00:00", "player": "Matthew Boyd", "player_id": 571510, "team": "CHC", "transaction_id": 947509}
+{"category": "other", "date": "2026-10-30", "first_seen_utc": "2026-10-30T22:22:31.624687+00:00", "player": "Carson Kelly", "player_id": 608348, "team": "CHC", "transaction_id": 947510}
+{"category": "other", "date": "2026-10-30", "first_seen_utc": "2026-10-30T22:22:31.624687+00:00", "player": "Dustin May", "player_id": 669160, "team": "MIL", "transaction_id": 947511}
+{"category": "other", "date": "2026-10-30", "first_seen_utc": "2026-10-30T22:22:31.624687+00:00", "player": "Michael King", "player_id": 650633, "team": "SD", "transaction_id": 947512}
