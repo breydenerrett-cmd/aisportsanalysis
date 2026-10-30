@@ -557,24 +557,34 @@ function setRuleSports(rule, set) {
   return dropped;
 }
 
-/** "on" when every rule bets the sport, "mixed" when only some do, "off" when none does. */
+/** A rule that bets the sport or could: a props rule cannot bet tennis, so it never makes the tennis chip read half-on. */
+function canCarry(rule, value) {
+  return ruleSportSet(rule).has(value) || allowedSports(rule).includes(value);
+}
+
+/** "on" when every rule that can bet the sport does, "mixed" when only some of them do, "off" when none does. */
 function houndSportState(value) {
-  const rules = S.spec.rules;
-  const n = rules.filter((r) => ruleSportSet(r).has(value)).length;
-  return n === 0 ? "off" : n === rules.length ? "on" : "mixed";
+  const able = S.spec.rules.filter((r) => canCarry(r, value));
+  const n = able.filter((r) => ruleSportSet(r).has(value)).length;
+  return n === 0 ? "off" : n === able.length ? "on" : "mixed";
 }
 
 const sportLabelOf = (value) => { const sp = S.menu.sports.find((x) => x.value === value); return sp ? sp.label : value; };
 
-/** Turning a sport OFF must leave every rule at least one sport; the chip is disabled while that would not hold (the last one). */
+/** Turning a sport OFF removes a rule that bet nothing else, so it is blocked only when that would leave the hound no rule at all. */
 function isLastSport(value) {
-  return S.spec.rules.some((r) => { const set = ruleSportSet(r); return set.size === 1 && set.has(value); });
+  return S.spec.rules.every((r) => { const set = ruleSportSet(r); return set.size === 1 && set.has(value); });
 }
 
 /**
- * One tap on a sport in the hound-level row. OFF everywhere when it was on in every rule; otherwise ON in every rule that can bet it
- * (a rule whose markets are not offered in that sport is left alone, and the line under the row says so). The per-rule grids stay the
- * way to give two rules different sports.
+ * One tap on a sport in the hound-level row. A lit chip (on, or on in only some rules) goes OFF in every rule, and a rule that bet nothing
+ * else is removed (the line under the row names it); an unlit one goes ON in every rule that can bet it (a rule whose markets are not
+ * offered in that sport is left alone, and the line says so). The per-rule grids stay the way to give two rules different sports.
+ *
+ * Live 2026-10-29: HOCKEYCHIEF's third rule is MLB props. NHL and tennis read "mixed" because that rule had neither, and a tap on a
+ * mixed chip ADDED the sport to the rules lacking it, which the props rule cannot take: nothing changed, so tennis could never be
+ * unticked ("it lets me add sports but not untick the current ones"). Now the props rule does not count toward the state, and a
+ * lit chip always unticks.
  */
 function toggleHoundSport(value) {
   if (!S.menu || !S.spec) return;
@@ -583,14 +593,18 @@ function toggleHoundSport(value) {
   const state = houndSportState(value);
   const notes = [];
   let dropped = 0;
-  if (state === "on") {
+  if (state !== "off") {
     if (isLastSport(value)) return;
-    for (const rule of rules) {
+    const emptied = [];
+    rules.forEach((rule, i) => {
       const set = ruleSportSet(rule);
-      set.delete(value);
+      if (!set.delete(value)) return;
+      if (set.size === 0) { emptied.push(i + 1); return; }
       dropped += setRuleSports(rule, set);
-    }
+    });
+    if (emptied.length) S.spec.rules = rules.filter((_r, i) => !emptied.includes(i + 1));
     notes.push(`${label} is off for every rule.`);
+    if (emptied.length) notes.push(`${emptied.length === 1 ? `Rule ${emptied[0]} bet` : `Rules ${emptied.join(", ")} bet`} only ${label}, so ${emptied.length === 1 ? "it was" : "they were"} removed.`);
   } else {
     const skipped = [];
     rules.forEach((rule, i) => {
@@ -647,7 +661,7 @@ function renderHoundSports() {
       if (dim) { attrs["data-dim"] = e.in_season ? "no_games" : "out_of_season"; attrs.class = "bd-chip bd-chip--dim"; attrs.title = e.reason || "Nothing scheduled this week."; }
       if (state !== "on" && !canAdd) { attrs.disabled = true; attrs.title = "Not offered for the markets chosen"; }
       if (last) { attrs.disabled = true; attrs.title = "At least one sport has to stay on."; }
-      if (state === "mixed") attrs.title = "Some of this hound's rules bet it and some do not. Tap to add it to all of them.";
+      if (state === "mixed") attrs.title = "Some of this hound's rules bet it and some do not. Tap to turn it off; a rule card adds it to one rule.";
       const chip = chipButton(e ? e.chip : sp.label, false, () => toggleHoundSport(sp.value), attrs);
       chip.removeAttribute("aria-pressed");                       // a checkbox, not a toggle button: aria-checked carries the state, "mixed" included
       grid.appendChild(chip);
@@ -667,7 +681,7 @@ function renderHoundSports() {
   host.appendChild(none);
   const many = S.spec.rules.length > 1;
   host.appendChild(h("p", { class: "hd-fine bd-houndsports__hint", text: many
-    ? "Tap a sport to turn it on or off for every rule at once. A half-filled chip means only some rules bet it."
+    ? "Tap a sport to turn it on or off for every rule at once. A half-filled chip means only some rules bet it; a tap turns it off."
     : "Tap a sport to turn it on or off. At least one has to stay on." }));
   const note = S.houndNote && S.houndNote.spec === S.spec ? S.houndNote.text : "";
   host.appendChild(h("p", { class: "hd-fine bd-note", "data-hook": "hound-sports-note", role: "status", hidden: !note, text: note }));

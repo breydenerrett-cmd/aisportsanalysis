@@ -3,8 +3,9 @@
   TABS         exactly Overview, Rules and Coach; every old tab name (look, fire, backtest, ask, record, versions, lessons) still lands on the
                right one, from the address and from the builder's "linehound:studio-tab" event.
   HEADER       the hound's picture opens the Look editor; Unleash, Train and a ... menu (Versions, Take them out back, Remove).
-  SPORTS ROW   one chip per sport, on / mixed / off; unticking Tennis removes it from EVERY rule; the last sport cannot be unticked; a rule whose
-               markets are not offered in a sport is left alone and the row says so. It is on the public builder page too.
+  SPORTS ROW   one chip per sport, on / mixed / off (counting only the rules that can bet it); a tap on a lit chip unticks it from EVERY rule
+               and removes a rule that bet nothing else; the last sport cannot be unticked; a rule whose markets are not offered in a sport
+               is left alone and the row says so. It is on the public builder page too.
   LIVE TEST    "Past 14 days with these rules: N bets, W-L, +x.xxu" re-runs the builder's 14 day hindsight (POST /hounds/drill with the SPEC) after
                an edit, shows a loading state, an honest "not enough games" line, and says it is a rehearsal and not a forecast.
   HOOKS        the builder keeps one hook set in both of its homes.
@@ -327,15 +328,32 @@ class TheSportsRow(StudioHelpers, unittest.TestCase):
         self.assertIn("NHL", sports)
         self.assertGreater(len(sports), 10)
 
-    def test_a_sport_only_some_rules_bet_is_mixed_and_a_tap_adds_it_to_all_of_them(self):
+    def test_a_sport_only_some_rules_bet_is_mixed_and_a_tap_turns_it_off(self):
         out = self.hound(two_rules(["NHL", "TENNIS"], ["NHL"]), actions=[
             EDIT, dict(do="wait", label="seen", wait=100, capture=[self.CHECKED, self.MIXED, state_of("TENNIS"), state_of("NHL")]),
-            dict(do="click", sel="[data-hound-sport='TENNIS']", label="all", wait=500, capture=[self.CHECKED, self.MIXED, state_of("TENNIS")])])
-        seen, after = out["captures"]["seen"], out["captures"]["all"]
+            dict(do="click", sel="[data-hound-sport='TENNIS']", label="off", wait=500, capture=[self.CHECKED, self.MIXED, state_of("TENNIS")])])
+        seen, after = out["captures"]["seen"], out["captures"]["off"]
         self.assertEqual((seen["TENNIS"], seen["NHL"]), ("mixed", "true"))
         self.assertEqual(seen["mixed"], ["TENNIS"])
-        self.assertEqual((after["TENNIS"], after["mixed"]), ("true", []))
-        self.assertEqual([r["sports"] for r in self.previews(out)[-1]["rules"]], [["NHL", "TENNIS"], ["NHL", "TENNIS"]])
+        self.assertEqual((after["TENNIS"], after["mixed"]), ("false", []))
+        self.assertEqual([r["sports"] for r in self.previews(out)[-1]["rules"]], [["NHL"], ["NHL"]])
+
+    def test_hockeychief_a_props_rule_does_not_make_hockey_half_on_and_tennis_unticks(self):
+        # live 2026-10-29 ("it lets me add sports but not untick the current ones"): rule 3 is MLB props, which NHL and tennis cannot carry,
+        # so both chips read "mixed" and a tap tried to ADD them to the props rule: nothing changed and tennis could never come off
+        rules = [RF.rule(sports=["NHL", "TENNIS"], markets=["moneyline", "spread"]), RF.rule(sports=["NHL", "TENNIS"], markets=["total"]),
+                 RF.rule(sports=["MLB"], markets=["batter_hits"])]
+        out = self.hound(rules, actions=[
+            EDIT, dict(do="wait", label="seen", wait=100, capture=[state_of("NHL"), state_of("TENNIS"), self.MIXED]),
+            dict(do="click", sel="[data-hound-sport='TENNIS']", label="tennis", wait=500, capture=[state_of("TENNIS"), state_of("NHL")]),
+            dict(do="click", sel="[data-hound-sport='MLB']", label="mlb", wait=500, capture=[state_of("MLB"), self.NOTE])])
+        c = out["captures"]
+        # MLB is half-on and that is right: rules 1 and 2 could bet MLB games and do not
+        self.assertEqual((c["seen"]["NHL"], c["seen"]["TENNIS"], c["seen"]["mixed"]), ("true", "true", ["MLB"]))
+        self.assertEqual((c["tennis"]["TENNIS"], c["tennis"]["NHL"]), ("false", "true"))
+        self.assertEqual(c["mlb"]["MLB"], "false")
+        self.assertIn("Rule 3 bet only MLB, so it was removed.", c["mlb"]["note"])
+        self.assertEqual([r["sports"] for r in self.previews(out)[-1]["rules"]], [["NHL"], ["NHL"]])
 
     def test_the_last_sport_cannot_be_unticked(self):
         out = self.hound([RF.rule(sports=["NHL"], markets=["moneyline"])], actions=[
@@ -349,18 +367,22 @@ class TheSportsRow(StudioHelpers, unittest.TestCase):
         for spec in self.previews(out):
             self.assertEqual([r["sports"] for r in spec["rules"]], [["NHL"]], "no preview ever went out with an empty sport list")
 
-    def test_a_rule_that_would_be_left_with_no_sport_keeps_the_chip_disabled_even_when_other_rules_have_more(self):
+    def test_a_rule_that_would_be_left_with_no_sport_is_removed_and_the_row_says_so(self):
         out = self.hound(two_rules(["NHL", "TENNIS"], ["NHL"]), actions=[
-            EDIT, dict(do="wait", label="seen", wait=100, capture=[q("disabled", "[data-hound-sport='NHL']", "disabled"), q("tennis_disabled", "[data-hound-sport='TENNIS']", "disabled")])])
-        self.assertTrue(out["captures"]["seen"]["disabled"], "rule 2 has only NHL")
-        self.assertFalse(out["captures"]["seen"]["tennis_disabled"])
+            EDIT, dict(do="wait", label="seen", wait=100, capture=[q("disabled", "[data-hound-sport='NHL']", "disabled")]),
+            dict(do="click", sel="[data-hound-sport='NHL']", label="off", wait=500, capture=[state_of("NHL"), state_of("TENNIS"), self.NOTE])])
+        self.assertFalse(out["captures"]["seen"]["disabled"], "another rule keeps a sport, so NHL can come off")
+        c = out["captures"]["off"]
+        self.assertEqual((c["NHL"], c["TENNIS"]), ("false", "true"))
+        self.assertIn("Rule 2 bet only NHL, so it was removed.", c["note"])
+        self.assertEqual([r["sports"] for r in self.previews(out)[-1]["rules"]], [["TENNIS"]])
 
     def test_a_rule_whose_markets_are_not_offered_in_the_sport_is_left_alone_and_the_row_says_so(self):
         rules = [RF.rule(sports=["MLB"], markets=["moneyline"]), RF.rule(sports=["MLB"], markets=["batter_hits"])]
         out = self.hound(rules, actions=[EDIT, dict(do="click", sel="[data-hound-sport='TENNIS']", label="on", wait=500, capture=[
             state_of("TENNIS"), self.NOTE, q("mlb", "[data-hound-sport='MLB']", "attr", attr="aria-checked")])])
         c = out["captures"]["on"]
-        self.assertEqual(c["TENNIS"], "mixed")
+        self.assertEqual(c["TENNIS"], "true", "rule 2 cannot carry tennis, so it does not make the chip half-on")
         self.assertIn("Rule 2", c["note"])
         self.assertIn("not offered", c["note"])
         self.assertEqual([r["sports"] for r in self.previews(out)[-1]["rules"]], [["MLB", "TENNIS"], ["MLB"]])
