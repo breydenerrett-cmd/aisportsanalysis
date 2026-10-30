@@ -11,8 +11,10 @@ network-facing wiring on top of this.
 from __future__ import annotations
 
 import unittest
+from datetime import datetime, timezone
+from unittest import mock
 
-from src.analysis import betcheck
+from src.analysis import betcheck, priceverdict
 from src.analysis import contracts as c
 from src.detect import base
 
@@ -404,9 +406,20 @@ class DeterminismTests(unittest.TestCase):
             finding(detector="a", claim="one", side=base.HOME),
             finding(detector="b", claim="two", side=base.AWAY),
         ]
-        results = [betcheck.build_contract(
-            "2026-08-31", "BOS", "NYY", "home", -125, board=board(),
-            findings=list(findings)) for _ in range(5)]
+        # The price verdict's data age reads the real clock when no `now` is injected, so five builds that straddle a second
+        # boundary on a slow runner serialise different ages (CI 2026-10-30, the no-network rerun). Hold the clock still: the
+        # claim is that the same inputs AT THE SAME INSTANT give the same contract.
+        fixed = datetime(2026, 8, 31, 20, 0, tzinfo=timezone.utc)
+
+        class _Still(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return fixed
+
+        with mock.patch.object(priceverdict, "datetime", _Still):
+            results = [betcheck.build_contract(
+                "2026-08-31", "BOS", "NYY", "home", -125, board=board(),
+                findings=list(findings)) for _ in range(5)]
         blobs = [r.to_json() for r in results]
         self.assertTrue(all(b == blobs[0] for b in blobs))
 
