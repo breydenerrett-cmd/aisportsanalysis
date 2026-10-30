@@ -83,6 +83,9 @@ GEMATRIA_MAX_REPLAYS = 6         # a Gematria hound's candidates share ONE pass 
 MINOR_BUDGET_S = 60.0
 REBUILD_MAX_REPLAYS = 8          # survivors replayed per rebuild (the analyst's result is replayed on top of these)
 REBUILD_REPLAY_BUDGET_S = 100.0
+REBUILD_BATCH_MAX_SPORTS = 8     # most sports ONE batched pass may read. The rows a pass holds grow with the SPORTS in the batch, not with the number of
+                                 # rule sets (7 rule sets over 3 sports peaked at 138 MB, the same as one drill; one drill over all 17 sports peaked at
+                                 # 479 MB, about 25 MB a sport: docs/audit/2026-10-29/TRAINING_SPEED.md). Eight sports is about 250 MB on the 1 GB box.
 RUNNERS_UP = 2
 PLAN_TTL_S = 24 * 3600
 JOB_TTL_S = 2 * 3600
@@ -146,6 +149,27 @@ def _replay_batch(replay_fn: Callable, replay_many_fn: Optional[Callable], specs
     if replay_many_fn is not None:
         return [numbers_of(summary) for summary in replay_many_fn(list(specs), days_for(specs[0]), now)]
     return [numbers_of(replay_fn(sp, days_for(sp), now)) for sp in specs]
+
+
+def sport_groups(items: Sequence, spec_of: Callable = lambda item: item, cap: Optional[int] = None) -> list:
+    """``items`` (rule sets, or anything ``spec_of`` reads a rule set from) cut into consecutive runs whose sports together stay within ``cap``
+    (``REBUILD_BATCH_MAX_SPORTS``), order kept, so a batched pass never holds more than a hound over ``cap`` sports would. Rule sets that bet the same few sports (the usual rebuild) are one run, so one
+    pass over the store; a run is cut only when the next rule set would take it past the cap, and a rule set that is over the cap alone is a run of
+    its own (a drill of it alone is what exists today)."""
+    cap = REBUILD_BATCH_MAX_SPORTS if cap is None else cap
+    groups: list = []
+    current: list = []
+    union: set = set()
+    for item in items:
+        sports = set(spec_of(item).get("sports") or ())
+        if current and len(union | sports) > cap:
+            groups.append(current)
+            current, union = [], set()
+        current.append(item)
+        union |= sports
+    if current:
+        groups.append(current)
+    return groups
 
 
 def _replay_numbers(replay_fn: Callable, spec: Mapping, now: datetime) -> Optional[dict]:
@@ -663,13 +687,22 @@ def full_rebuild(dog, user_id: int, *, paid: bool = False, now: Optional[datetim
             survivors.append(dict(r, id=f"c{len(survivors) + 1}", hash=h))
         started = time.monotonic()
         replayed = []
-        if gem and survivors:
+        if (gem or replay_many is not None) and survivors:
+            # ONE pass over the boards for every survivor (a Gematria hound always; an ordinary hound whenever the batch rehearsal is there,
+            # which is production). The store was read once per sport and 8-day chunk PER candidate: 12 s each, 7 candidates in series
+            # (docs/audit/2026-10-29/TRAINING_SPEED.md). Each spec still gets the numbers a drill of it alone gets (its own bets, its own
+            # daily limit: ``drill.run_user_many``). With only a single-spec rehearsal (a test's fake) the else branch below runs as it did.
             batch = survivors[:REBUILD_MAX_REPLAYS]
             progress(f"Rehearsing {len(batch)} candidate{'s' if len(batch) != 1 else ''} together")
-            for c, numbers in zip(batch, _replay_batch(replay, replay_many, [c["spec"] for c in batch], moment)):
-                c["replay"] = numbers
-                c["rule_text"] = _rule_after(c["spec"])
-                replayed.append(c)
+            # an ordinary hound's candidates go in runs that stay within REBUILD_BATCH_MAX_SPORTS (memory; usually one run), a Gematria hound's as before
+            runs = [batch] if gem else sport_groups(batch, lambda c: c["spec"])
+            for run in runs:
+                if replayed and time.monotonic() - started > REBUILD_REPLAY_BUDGET_S:
+                    break                                              # the same stop the one-at-a-time loop has, between passes
+                for c, numbers in zip(run, _replay_batch(replay, replay_many, [c["spec"] for c in run], moment)):
+                    c["replay"] = numbers
+                    c["rule_text"] = _rule_after(c["spec"])
+                    replayed.append(c)
         else:
             for c in survivors[:REBUILD_MAX_REPLAYS]:
                 if time.monotonic() - started > REBUILD_REPLAY_BUDGET_S:

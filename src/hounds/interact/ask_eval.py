@@ -37,6 +37,7 @@ from src.hounds import user_rules, user_spec
 from src.hounds.interact import common, drill, fire
 
 SLATE_TTL_S = 60.0
+SLATE_CACHE_MAX = 8                # slates remembered at once: one per (date, props, sport set), so the sport sets in play cannot pile up
 MAX_TICKETS_SHOWN = 5
 
 # The v2 engine tallies WHY a game produced no candidate under these names; the Fire now payload and the page speak
@@ -81,15 +82,53 @@ def _with_props(spec: dict) -> bool:
     return any(user_rules.market_kind(m) == "prop" for r in spec["rules"] for m in r["markets"])
 
 
-def default_slate(date: str, with_props: bool):
+def _sport_key(sports) -> Optional[tuple]:
+    """The cache key of a sport set: upper-case, sorted, de-duplicated; ``None`` for "every sport" (nothing named, or all of them named)."""
+    names = tuple(sorted({str(s).upper() for s in (sports or ())}))
+    return None if not names or set(names) >= set(user_spec.SPORTS) else names
+
+
+def _wanted_sports(spec: dict) -> set:
+    """The sports a hound's rules bet: the games ``fire_v2`` and ``earlier_user`` keep from a slate (every other game is dropped unread)."""
+    return {s for r in spec["rules"] for s in r["sports"]} if user_spec.is_v2(spec) else set(spec["sports"])
+
+
+def _covering(date: str, with_props: bool, wanted: Optional[tuple]):
+    """The freshest-enough remembered slate of ``date`` that holds every sport in ``wanted`` (``None`` is every sport), the narrowest such,
+    or None. Caller holds ``_slates_lock``."""
+    now = time.monotonic()
+    best = None
+    for (d, wp, held), (stamp, slate) in _slates.items():
+        if d != date or wp != with_props or now - stamp >= SLATE_TTL_S:
+            continue
+        if held is not None and (wanted is None or not set(wanted) <= set(held)):
+            continue
+        width = len(held) if held is not None else len(user_spec.SPORTS) + 1
+        if best is None or width < best[0]:
+            best = (width, slate)
+    return None if best is None else best[1]
+
+
+def default_slate(date: str, with_props: bool, sports=None):
     """One slate date's boards and facts, remembered for a minute and built under the process-wide build gate with a
-    double check (the same herd guard as ``fire.cached_games``: twenty simultaneous questions read the store once)."""
-    key = (date, bool(with_props))
+    double check (the same herd guard as ``fire.cached_games``: twenty simultaneous questions read the store once).
+
+    ``sports`` is the sport set the slate is needed FOR. A hound only ever reads the games of its own sports, and the all-sports build is the
+    biggest cost of Send to training's propose (2.8 s for all 17 sports, 0.6 s for three of them: docs/audit/2026-10-29/TRAINING_SPEED.md), so a
+    hound's caller names its sports. ``None`` is every sport, as it always was, for the callers that read other sports' games too (the
+    Apprentice board).
+
+    THE CACHE IS KEYED ON THE SPORT SET AND ANSWERS FROM ANY REMEMBERED SLATE THAT HOLDS THE SET (the games of the hound's sports are the same
+    in a wider slate; ``tests/test_training_speed.py`` pins it). The first request for a date builds just its own sports. A request that no
+    remembered slate covers while one is remembered (a second hound with other sports, or a variant of the rule that adds a sport) builds the
+    ALL-sports slate once instead, which every later request of that minute then reads: at most two builds a minute per date, never one per sport
+    set (a narrow build per variant measured slower than the single all-sports build it replaced)."""
+    wanted = _sport_key(sports)
+    props = bool(with_props)
 
     def fresh():
         with _slates_lock:
-            hit = _slates.get(key)
-            return hit[1] if hit and time.monotonic() - hit[0] < SLATE_TTL_S else None
+            return _covering(date, props, wanted)
     hit = fresh()
     if hit is not None:
         return hit
@@ -97,10 +136,37 @@ def default_slate(date: str, with_props: bool):
         hit = fresh()
         if hit is not None:
             return hit
-        slate = V2.build_slate(date, user_spec.SPORTS, with_props=with_props)
         with _slates_lock:
-            _slates[key] = (time.monotonic(), slate)
+            now = time.monotonic()
+            widen = any(d == date and wp == props and now - stamp < SLATE_TTL_S for (d, wp, _held), (stamp, _s) in _slates.items())
+            # (a narrower slate is remembered and does not cover this request: go wide, once)
+        held = None if widen else wanted
+        slate = V2.build_slate(date, held or user_spec.SPORTS, with_props=with_props)
+        with _slates_lock:
+            now = time.monotonic()
+            for stale in [k for k, (stamp, _s) in _slates.items() if now - stamp >= SLATE_TTL_S]:
+                del _slates[stale]                                    # an expired slate is dead weight, not a cache entry
+            for k in [k for k in _slates if k[0] == date and k[1] == props and (held is None or (k[2] is not None and set(k[2]) <= set(held)))]:
+                del _slates[k]                                        # the new slate holds everything these narrower ones did
+            while len(_slates) >= SLATE_CACHE_MAX:
+                del _slates[min(_slates, key=lambda k: _slates[k][0])]
+            _slates[(date, props, held)] = (now, slate)
     return slate
+
+
+_PRODUCTION_SLATE = default_slate
+
+
+def _slate_source(slate_for: Optional[Callable], spec: dict) -> Callable:
+    """The ``(date, with_props) -> slate`` callable this hound's evaluation reads. A seam a caller injects is used exactly as given. The
+    production reader is asked for the hound's own sports only. A stand-in someone has put in place of ``default_slate`` (the tests do)
+    still takes two arguments, so it is called with two."""
+    if slate_for is not None:
+        return slate_for
+    if default_slate is not _PRODUCTION_SLATE:
+        return default_slate
+    sports = tuple(sorted(_wanted_sports(spec)))
+    return lambda date, with_props: _PRODUCTION_SLATE(date, with_props, sports)
 
 
 def clear_cache() -> None:
@@ -284,7 +350,7 @@ def fire_v2(dog: common.Dog, *, now: Optional[datetime] = None, ledger: Optional
     spec = dog.spec
     if other_live is None and slate_for is None:
         other_live = fire.default_other_live()          # the production path only; a test injects its own
-    slate_for = slate_for or default_slate
+    slate_for = _slate_source(slate_for, spec)
     rows = _ledger_rows(dog.id, ledger)
     seen = {r["bet_id"] for r in rows}
     used: Counter = Counter(r["slate_date"] for r in rows)
@@ -357,7 +423,7 @@ def earlier_user(dog: common.Dog, *, now: Optional[datetime] = None, slate_for: 
     """What a member dog's rule would have taken on TODAY's slate, each game judged at its own decision time."""
     now = now or common.now_utc()
     spec = dog.spec
-    slate_for = slate_for or default_slate
+    slate_for = _slate_source(slate_for, spec)
     date = common.eastern_date(now)
     slate = slate_for(date, _with_props(spec))
     wanted = {s for r in spec["rules"] for s in r["sports"]} if user_spec.is_v2(spec) else set(spec["sports"])

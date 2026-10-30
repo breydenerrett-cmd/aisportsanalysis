@@ -1,7 +1,7 @@
 # Send to training: where the time goes (measured 2026-10-29)
 
 Harness: `scripts/train_timing.py` (stdlib only, no network, no model, no key read). Re-run: `python3 scripts/train_timing.py`
-(`--list`, `--only a,b`, `--fixture even|weak`, `--runs N`, `--json out`). Nothing was optimized; this is measurement only.
+(`--list`, `--only a,b`, `--fixture even|weak`, `--runs N`, `--json out`). This doc first recorded the measurement only; the fixes that followed (A, C, D) and their before/after numbers are in "Fixes landed" below.
 
 ## Method and limits (read before trusting a number)
 
@@ -63,7 +63,7 @@ slate once**, then the 60 s cache (`ask_eval.py:39`) makes every variant nearly 
    The batch entry point already exists (`drill.drill_many`, `drill.py:488`; `default_replay_many`, `training_plans.py:134`) but `full_rebuild` uses it only for Gematria hounds (`training_plans.py:667-672`).
 4. Everything else is noise at this scale: the diagnosis maths 0.02 s, assess with a cached table 0.01 s, the rebuild's own Python 0.05 s. Propose with a warm slate is 0.30 s, mostly menu validation (`retune.py:365 loosening_menu` -> `user_spec.validate_spec`, 167 calls).
 
-## Fix candidates, ranked by expected seconds saved (not implemented)
+## Fix candidates, ranked by expected seconds saved (A, C and D implemented the same day: see "Fixes landed")
 
 | # | Change | Where | Evidence | Expected saving |
 |---|---|---|---|---|
@@ -79,3 +79,62 @@ B and C overlap; A is a different request (the async rebuild job) from B-D (the 
 
 - Time `propose` on the production machine under a real background build (the gate wait) before saying the 3 s here is the owner's wait.
 - Re-run with a hound whose bets carry real event ids from the current store.
+
+## Fixes landed (2026-10-29, branch `feat/train-speed-fix`)
+
+Re-run of the same harness on the same machine and checkout, 3 un-profiled runs per stage, median reported, model time excluded
+(`python3 scripts/train_timing.py --only diagnose,propose,propose_slate_warm,tweak,rebuild_real --runs 3 --no-profile`). The harness's
+`rebuild_real` stage now passes the batch rehearsal as production does (`replay_many_fn`), counted per call.
+
+| Stage | Before (s) | After (s) | Fix |
+|---|---|---|---|
+| diagnose (`train/diagnose`) | 3.00 | **0.63** | D |
+| propose, slate cold (`train/propose`) | 3.14 | **0.84** | C |
+| propose, 2nd click inside 60 s (slate warm) | 0.29 | 0.29 | unchanged |
+| propose with a Tweak (round 1) | 3.60 | 4.17 | C, **0.6 s slower** (see below) |
+| rebuild, real rehearsals (`train/rebuild`) | 97.74 | **40.99** | A |
+
+Rebuild detail (median of 3): before 8 single drills of 12.0-12.8 s each. After: 3 rehearsals, the rules it has now 12.1 s, ONE batch of the 6
+surviving candidates 16.8 s, the analyst's merge 12.2 s. Model time (floor 3 s a call, depth 3) comes on top of both columns as before.
+
+**What each fix does**
+- **A** `full_rebuild` rehearses an ordinary hound's survivors through `default_replay_many` (`drill.drill_many`) when the batch rehearsal is passed (production
+  always passes it; a test's single-spec fake keeps the old one-at-a-time loop). Same candidates (`survivors[:REBUILD_MAX_REPLAYS]`), same order, same numbers.
+  **Not done, and why:** the doc's "start the base rehearsal beside the angle calls" does not work: the angles' prompt is built from the base's rehearsal
+  (`rebuild_ai._replay_lines(baseline)` reads its `days`, record and picks), so the base must finish first. The analyst's merge also still needs its own pass.
+  That is the floor of 12 + 17 + 12 s. The 30-minute drill cache no longer helps the candidates (the batch is not cached), which only mattered if two
+  rebuilds in half an hour produced an identical candidate.
+- **C** `ask_eval.default_slate(date, with_props, sports=None)`; `earlier_user` and `fire_v2` (Send to training's propose, Fire now, Unleash) pass the hound's own
+  sports (`{s for r in rules for s in r["sports"]}`). The cache is keyed on the sport set and answers from any remembered slate that holds the set. **A
+  per-sport-set build alone was slower, not faster:** a variant of the rule that drops a sport is a new set, and a 2-sport build (0.72 s, two passes over the
+  file) costs more than the 3-sport one (0.57 s, one pass). So the first read builds the hound's sports, a request no remembered slate covers goes wide ONCE
+  (all sports, 2.8 s) and every later request that minute reads that, and the cache is bounded (`SLATE_CACHE_MAX` = 8, expired entries dropped). At most two builds
+  per date per minute. Callers that read other sports' games too (Apprentice board, Fire now facts, manual-pick naming) still ask for every sport.
+  **The Tweak path is 0.6 s slower** (3.60 to 4.17): its 25 variants include ones that add sports, so it pays the 0.6 s narrow build and then the 2.8 s wide one.
+  Passing an all-sports reader to `retune.live_board_fn` on the Tweak route (`api/hounds_interact.py:441`) would remove that; not done (route change). A propose
+  whose "new rule" adds a sport has the same shape: about 3.4 s against 3.1 before.
+- **D** `snapshots.iter_multibook(..., event_ids=...)` tests the id as text (`"event_id":"<id>"`, a substring and a set lookup, no regex) before `json.loads`, then
+  exactly on the parsed row; `boards.scan` passes its wanted events instead of the `keep` predicate. A line the text cannot decide (spaced JSON, null or missing id,
+  an escaped id, an unterminated value) is still parsed. Rows kept are the same. An empty event set reads nothing.
+
+**Memory (the 1 GB box).** Peak working set, measured in a fresh process each, real store, 30-day window, Windows:
+
+| Run | Peak MB | Seconds |
+|---|---|---|
+| 1 drill, 3 sports | 138 | 11.7 |
+| 1 batch of 7 rule sets, same 3 sports | 138 | 15.8 |
+| 1 drill, all 17 sports | 479 | 72 |
+| 1 batch of 8 rule sets, together covering all 17 sports | 479 | 73 |
+
+The rows a pass holds grow with the SPORTS in it (about 25 MB a sport), not with the number of rule sets. So the cap is on sports, not specs:
+`REBUILD_BATCH_MAX_SPORTS` = 8 (about 250 MB). `training_plans.sport_groups` cuts the survivors, in order, into runs whose sports together stay within it; the usual rebuild
+(the candidates bet the hound's own few sports) is one run, one pass. A rule set over the cap alone is a run of its own, which is a single drill, today's exposure.
+`REBUILD_MAX_REPLAYS` = 8 candidates per rebuild is unchanged.
+
+**Equality, on the real stores** (harness fixture, 7 rule sets of the rebuild): every field of every summary of `drill_many` equals the summary of that rule set's own
+`drill.drill` (7 of 7; 38 to 56 graded bets each, units -3.16 to +4.06); the closing-odds scan with 25 REAL event ids gives the same index, teams and bet facts before and
+after; the propose and tweak payloads equal the all-sports-slate payloads (`today` 27 / 27 / 22). Pinned in `tests/test_training_speed.py` (41 tests, fixtures only, no store).
+
+**Still open:** B (pre-warm the slate on a background thread when diagnose starts) was not done: after C the cold propose is 0.84 s, of which 0.57 s is the build, so B
+would save about 0.5 s of the click. The production machine's factor is still unmeasured.
+

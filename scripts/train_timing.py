@@ -461,7 +461,7 @@ def stage_rebuild(replay):
 
 
 def run_rebuild(fx, st):
-    counter = st["replays"]
+    counter, batches = st["replays"], []
     base_replay = st["replay"] or plans.default_replay
 
     def counting_replay(spec, days, now):
@@ -470,11 +470,22 @@ def run_rebuild(fx, st):
             return base_replay(spec, days, now)
         finally:
             counter.append(time.perf_counter() - t)
-    card = plans.full_rebuild(fx.dog, fx.owner.id, paid=True, now=NOW, rows=fx.rows, db=fx.db, replay_fn=counting_replay, env=ENV,
-                              client=st["client"], ledger=st["ledger"], store=st["store"], router_spend=lambda: (0.0, 5.0))
+
+    def counting_many(specs, days, now):
+        t = time.perf_counter()
+        try:
+            return plans.default_replay_many(specs, days, now)
+        finally:
+            counter.append(time.perf_counter() - t)
+            batches.append(len(specs))
+    # the REAL stage is production's wiring: the single drill for the rules it has now and for the analyst's merge, and the batch drill for the
+    # surviving candidates (``full_rebuild`` falls back to one drill each only when no batch rehearsal is passed, as the fake stage does)
+    many = counting_many if st["replay"] is None else None
+    card = plans.full_rebuild(fx.dog, fx.owner.id, paid=True, now=NOW, rows=fx.rows, db=fx.db, replay_fn=counting_replay, replay_many_fn=many,
+                              env=ENV, client=st["client"], ledger=st["ledger"], store=st["store"], router_spend=lambda: (0.0, 5.0))
     stages = [s for s, _t in st["client"].log]
     return {"model_calls": len(stages), "calls_by_stage": {s: stages.count(s) for s in sorted(set(stages))},
-            "rehearsals": len(counter), "rehearsal_seconds": [round(x, 2) for x in counter], "found": card.get("found")}
+            "rehearsals": len(counter), "batch_sizes": batches, "rehearsal_seconds": [round(x, 2) for x in counter], "found": card.get("found")}
 
 
 STAGES = {
