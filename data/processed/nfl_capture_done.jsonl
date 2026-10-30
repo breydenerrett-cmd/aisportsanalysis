@@ -465,3 +465,4 @@
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-29T22:49:46.674318Z", "phase": "refresh"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-29T23:20:11.686939Z", "phase": "refresh"}
 {"game_id": "2026_08_CAR_GB", "observed_utc": "2026-10-29T23:47:45.787972Z", "phase": "t30m"}
+{"game_id": "2026_08_PHI_WAS", "observed_utc": "2026-10-30T01:20:24.171950Z", "phase": "t72h"}
