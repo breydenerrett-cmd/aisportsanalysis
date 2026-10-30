@@ -1,0 +1,595 @@
+{
+ "awayTeam": {
+  "abbrev": "BUF",
+  "commonName": {
+   "default": "Sabres"
+  },
+  "id": 7,
+  "placeName": {
+   "default": "Buffalo"
+  },
+  "score": 3,
+  "sog": 9
+ },
+ "clock": {
+  "inIntermission": true,
+  "running": false,
+  "secondsRemaining": 176,
+  "timeRemaining": "02:56"
+ },
+ "easternUTCOffset": "-04:00",
+ "gameDate": "2026-10-29",
+ "gameScheduleState": "OK",
+ "gameState": "LIVE",
+ "gameType": 2,
+ "homeTeam": {
+  "abbrev": "ANA",
+  "commonName": {
+   "default": "Ducks"
+  },
+  "id": 24,
+  "placeName": {
+   "default": "Anaheim"
+  },
+  "score": 3,
+  "sog": 12
+ },
+ "id": 2026020211,
+ "limitedScoring": false,
+ "periodDescriptor": {
+  "maxRegulationPeriods": 3,
+  "number": 1,
+  "periodType": "REG"
+ },
+ "playerByGameStats": {
+  "awayTeam": {
+   "defense": [
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "O. Zellweger"
+     },
+     "playerId": 8482803,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "08:04"
+    },
+    {
+     "assists": 1,
+     "goals": 0,
+     "name": {
+      "default": "M. Samuelsson"
+     },
+     "playerId": 8480807,
+     "points": 1,
+     "position": "D",
+     "sog": 0,
+     "toi": "09:09"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "O. Power"
+     },
+     "playerId": 8482671,
+     "points": 0,
+     "position": "D",
+     "sog": 1,
+     "toi": "08:41"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "R. Dahlin"
+     },
+     "playerId": 8480839,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "06:40"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "D. Gilbert"
+     },
+     "playerId": 8478502,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "03:12"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "L. Crevier"
+     },
+     "playerId": 8481806,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "04:00"
+    }
+   ],
+   "forwards": [
+    {
+     "assists": 2,
+     "goals": 0,
+     "name": {
+      "default": "Z. Benson"
+     },
+     "playerId": 8484145,
+     "points": 2,
+     "position": "L",
+     "sog": 0,
+     "toi": "06:16"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 0.166667,
+     "goals": 0,
+     "name": {
+      "default": "J. Norris"
+     },
+     "playerId": 8480064,
+     "points": 0,
+     "position": "C",
+     "sog": 0,
+     "toi": "04:40"
+    },
+    {
+     "assists": 1,
+     "faceoffWinningPctg": 1.0,
+     "goals": 0,
+     "name": {
+      "default": "S. Carrick"
+     },
+     "playerId": 8475842,
+     "points": 1,
+     "position": "C",
+     "sog": 0,
+     "toi": "02:45"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "J. Zucker"
+     },
+     "playerId": 8475722,
+     "points": 0,
+     "position": "L",
+     "sog": 0,
+     "toi": "03:09"
+    },
+    {
+     "assists": 1,
+     "faceoffWinningPctg": 0.5,
+     "goals": 0,
+     "name": {
+      "default": "P. Krebs"
+     },
+     "playerId": 8481522,
+     "points": 1,
+     "position": "C",
+     "sog": 1,
+     "toi": "04:12"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "J. Quinn"
+     },
+     "playerId": 8482097,
+     "points": 0,
+     "position": "R",
+     "sog": 0,
+     "toi": "05:35"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 0.5,
+     "goals": 0,
+     "name": {
+      "default": "B. Malenstyn"
+     },
+     "playerId": 8479359,
+     "points": 0,
+     "position": "L",
+     "sog": 0,
+     "toi": "05:21"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 0.2,
+     "goals": 1,
+     "name": {
+      "default": "T. Kozak"
+     },
+     "playerId": 8482896,
+     "points": 1,
+     "position": "C",
+     "sog": 1,
+     "toi": "03:54"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 0.25,
+     "goals": 0,
+     "name": {
+      "default": "R. McLeod"
+     },
+     "playerId": 8480802,
+     "points": 0,
+     "position": "C",
+     "sog": 0,
+     "toi": "05:15"
+    },
+    {
+     "assists": 1,
+     "faceoffWinningPctg": 0.0,
+     "goals": 1,
+     "name": {
+      "default": "T. Thompson"
+     },
+     "playerId": 8479420,
+     "points": 2,
+     "position": "C",
+     "sog": 1,
+     "toi": "04:02"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 0.0,
+     "goals": 1,
+     "name": {
+      "default": "N. Ostlund"
+     },
+     "playerId": 8483500,
+     "points": 1,
+     "position": "C",
+     "sog": 4,
+     "toi": "05:34"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 1.0,
+     "goals": 0,
+     "name": {
+      "default": "J. Doan"
+     },
+     "playerId": 8482659,
+     "points": 0,
+     "position": "R",
+     "sog": 1,
+     "toi": "04:52"
+    }
+   ],
+   "goalies": [
+    {
+     "evenStrengthGoalsAgainst": 0,
+     "evenStrengthShotsAgainst": "0/0",
+     "goalsAgainst": 0,
+     "name": {
+      "default": "U. Luukkonen"
+     },
+     "playerId": 8480045,
+     "position": "G",
+     "powerPlayGoalsAgainst": 0,
+     "powerPlayShotsAgainst": "0/0",
+     "savePctg": 0.0,
+     "saveShotsAgainst": "0/0",
+     "saves": 0,
+     "shorthandedGoalsAgainst": 0,
+     "shorthandedShotsAgainst": "0/0",
+     "shotsAgainst": 0,
+     "toi": "00:00"
+    },
+    {
+     "evenStrengthGoalsAgainst": 1,
+     "evenStrengthShotsAgainst": "6/7",
+     "goalsAgainst": 3,
+     "name": {
+      "default": "C. Ellis"
+     },
+     "playerId": 8481551,
+     "position": "G",
+     "powerPlayGoalsAgainst": 2,
+     "powerPlayShotsAgainst": "3/5",
+     "savePctg": 0.75,
+     "saveShotsAgainst": "9/12",
+     "saves": 9,
+     "shorthandedGoalsAgainst": 0,
+     "shorthandedShotsAgainst": "0/0",
+     "shotsAgainst": 12,
+     "toi": "20:00"
+    }
+   ]
+  },
+  "homeTeam": {
+   "defense": [
+    {
+     "assists": 1,
+     "goals": 0,
+     "name": {
+      "default": "J. LaCombe"
+     },
+     "playerId": 8481605,
+     "points": 1,
+     "position": "D",
+     "sog": 0,
+     "toi": "09:42"
+    },
+    {
+     "assists": 1,
+     "goals": 0,
+     "name": {
+      "default": "N. Jensen"
+     },
+     "playerId": 8475324,
+     "points": 1,
+     "position": "D",
+     "sog": 0,
+     "toi": "04:13"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "T. Mitchell"
+     },
+     "playerId": 8484262,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "04:34"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "N. Warren"
+     },
+     "playerId": 8483521,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "05:33"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "T. Hinds"
+     },
+     "playerId": 8482731,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "04:48"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "T. Luneau"
+     },
+     "playerId": 8483482,
+     "points": 0,
+     "position": "D",
+     "sog": 2,
+     "toi": "06:43"
+    }
+   ],
+   "forwards": [
+    {
+     "assists": 1,
+     "faceoffWinningPctg": 1.0,
+     "goals": 0,
+     "name": {
+      "default": "S. Colangelo"
+     },
+     "playerId": 8482118,
+     "points": 1,
+     "position": "R",
+     "sog": 0,
+     "toi": "04:12"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "A. Killorn"
+     },
+     "playerId": 8473986,
+     "points": 0,
+     "position": "L",
+     "sog": 0,
+     "toi": "04:44"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 1.0,
+     "goals": 0,
+     "name": {
+      "default": "A. Greer"
+     },
+     "playerId": 8478421,
+     "points": 0,
+     "position": "L",
+     "sog": 0,
+     "toi": "04:18"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "J. Caulfield"
+     },
+     "playerId": 8481538,
+     "points": 0,
+     "position": "R",
+     "sog": 0,
+     "toi": "04:43"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "J. Malott"
+     },
+     "playerId": 8482408,
+     "points": 0,
+     "position": "L",
+     "sog": 2,
+     "toi": "03:59"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 0.6,
+     "goals": 0,
+     "name": {
+      "default": "T. Washe"
+     },
+     "playerId": 8485512,
+     "points": 0,
+     "position": "C",
+     "sog": 0,
+     "toi": "05:19"
+    },
+    {
+     "assists": 1,
+     "goals": 0,
+     "name": {
+      "default": "B. Sennecke"
+     },
+     "playerId": 8484762,
+     "points": 1,
+     "position": "R",
+     "sog": 0,
+     "toi": "07:38"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 1.0,
+     "goals": 1,
+     "name": {
+      "default": "C. Gauthier"
+     },
+     "playerId": 8483445,
+     "points": 1,
+     "position": "L",
+     "sog": 4,
+     "toi": "06:45"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 0.555556,
+     "goals": 1,
+     "name": {
+      "default": "M. Granlund"
+     },
+     "playerId": 8475798,
+     "points": 1,
+     "position": "C",
+     "sog": 1,
+     "toi": "06:47"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "F. Vatrano"
+     },
+     "playerId": 8478366,
+     "points": 0,
+     "position": "R",
+     "sog": 0,
+     "toi": "04:18"
+    },
+    {
+     "assists": 2,
+     "faceoffWinningPctg": 0.6,
+     "goals": 0,
+     "name": {
+      "default": "L. Carlsson"
+     },
+     "playerId": 8484153,
+     "points": 2,
+     "position": "C",
+     "sog": 2,
+     "toi": "06:56"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 1.0,
+     "goals": 1,
+     "name": {
+      "default": "R. McQueen"
+     },
+     "playerId": 8485400,
+     "points": 1,
+     "position": "C",
+     "sog": 1,
+     "toi": "04:26"
+    }
+   ],
+   "goalies": [
+    {
+     "evenStrengthGoalsAgainst": 0,
+     "evenStrengthShotsAgainst": "0/0",
+     "goalsAgainst": 0,
+     "name": {
+      "cs": "L. Dostál",
+      "default": "L. Dostal",
+      "sk": "L. Dostál"
+     },
+     "playerId": 8480843,
+     "position": "G",
+     "powerPlayGoalsAgainst": 0,
+     "powerPlayShotsAgainst": "0/0",
+     "savePctg": 0.0,
+     "saveShotsAgainst": "0/0",
+     "saves": 0,
+     "shorthandedGoalsAgainst": 0,
+     "shorthandedShotsAgainst": "0/0",
+     "shotsAgainst": 0,
+     "toi": "00:00"
+    },
+    {
+     "evenStrengthGoalsAgainst": 2,
+     "evenStrengthShotsAgainst": "6/8",
+     "goalsAgainst": 3,
+     "name": {
+      "default": "V. Husso"
+     },
+     "playerId": 8478024,
+     "position": "G",
+     "powerPlayGoalsAgainst": 1,
+     "powerPlayShotsAgainst": "0/1",
+     "savePctg": 0.666667,
+     "saveShotsAgainst": "6/9",
+     "saves": 6,
+     "shorthandedGoalsAgainst": 0,
+     "shorthandedShotsAgainst": "0/0",
+     "shotsAgainst": 9,
+     "toi": "20:00"
+    }
+   ]
+  }
+ },
+ "regPeriods": 3,
+ "season": 20262027,
+ "startTimeUTC": "2026-10-30T02:00:00Z",
+ "venue": {
+  "default": "Honda Center"
+ },
+ "venueUTCOffset": "-07:00"
+}

@@ -1,0 +1,491 @@
+{
+ "day": {
+  "date": "2026-10-29"
+ },
+ "events": [
+  {
+   "groupings": [
+    {
+     "competitions": [
+      {
+       "competitors": [
+        {
+         "athlete": {
+          "displayName": "Aliaksandra Sasnovich",
+          "fullName": "Aliaksandra Sasnovich",
+          "shortName": "A. Sasnovich"
+         },
+         "homeAway": "away",
+         "id": "1809",
+         "linescores": [
+          {
+           "value": 6.0,
+           "winner": true
+          },
+          {
+           "value": 7.0,
+           "winner": true
+          }
+         ],
+         "order": 2,
+         "statistics": [],
+         "type": "athlete",
+         "winner": true
+        },
+        {
+         "athlete": {
+          "displayName": "Yuliia Starodubtseva",
+          "fullName": "Yuliia Starodubtseva",
+          "shortName": "Y. Starodubtseva"
+         },
+         "homeAway": "home",
+         "id": "13478",
+         "linescores": [
+          {
+           "value": 4.0,
+           "winner": false
+          },
+          {
+           "value": 5.0,
+           "winner": false
+          }
+         ],
+         "order": 1,
+         "statistics": [],
+         "type": "athlete",
+         "winner": false
+        }
+       ],
+       "date": "2026-10-24T01:35Z",
+       "format": {
+        "regulation": {
+         "periods": 3
+        }
+       },
+       "id": "187120",
+       "notes": [
+        {
+         "text": "Aliaksandra Sasnovich (BLR) bt Yuliia Starodubtseva (UKR) 6-4 7-5",
+         "type": "event"
+        }
+       ],
+       "round": {
+        "displayName": "Qualifying 1st Round",
+        "id": "11"
+       },
+       "startDate": "2026-10-24T01:35Z",
+       "status": {
+        "period": 2,
+        "type": {
+         "completed": true,
+         "description": "Final",
+         "detail": "Final",
+         "name": "STATUS_FINAL",
+         "shortDetail": "Final",
+         "state": "post"
+        }
+       },
+       "type": {
+        "id": "2",
+        "slug": "womens-singles",
+        "text": "Women's Singles"
+       }
+      },
+      {
+       "competitors": [
+        {
+         "athlete": {
+          "displayName": "Maya Joint",
+          "fullName": "Maya Joint",
+          "shortName": "M. Joint"
+         },
+         "homeAway": "away",
+         "id": "14146",
+         "linescores": [
+          {
+           "value": 5.0,
+           "winner": false
+          },
+          {
+           "value": 4.0
+          }
+         ],
+         "order": 2,
+         "possession": false,
+         "statistics": [],
+         "type": "athlete"
+        },
+        {
+         "athlete": {
+          "displayName": "Kamilla Rakhimova",
+          "fullName": "Kamilla Rakhimova",
+          "shortName": "K. Rakhimova"
+         },
+         "homeAway": "home",
+         "id": "3908",
+         "linescores": [
+          {
+           "value": 7.0,
+           "winner": true
+          },
+          {
+           "value": 3.0
+          }
+         ],
+         "order": 1,
+         "possession": true,
+         "statistics": [],
+         "type": "athlete"
+        }
+       ],
+       "date": "2026-10-30T01:35Z",
+       "format": {
+        "regulation": {
+         "periods": 3
+        }
+       },
+       "id": "185684",
+       "notes": [
+        {
+         "text": "Maya Joint (AUS) is tied with Kamilla Rakhimova (UZB) 5-7 4-3",
+         "type": "event"
+        }
+       ],
+       "round": {
+        "displayName": "Quarterfinal",
+        "id": "5"
+       },
+       "situation": {
+        "onFirst": false,
+        "onSecond": false,
+        "onThird": false
+       },
+       "startDate": "2026-10-30T01:35Z",
+       "status": {
+        "period": 2,
+        "type": {
+         "completed": false,
+         "description": "In Progress",
+         "detail": "2nd Set",
+         "name": "STATUS_IN_PROGRESS",
+         "shortDetail": "2nd",
+         "state": "in"
+        }
+       },
+       "type": {
+        "id": "2",
+        "slug": "womens-singles",
+        "text": "Women's Singles"
+       }
+      },
+      {
+       "competitors": [
+        {
+         "athlete": {
+          "displayName": "Alycia Parks",
+          "fullName": "Alycia Parks",
+          "shortName": "A. Parks"
+         },
+         "homeAway": "away",
+         "id": "5309",
+         "order": 2,
+         "statistics": [],
+         "type": "athlete"
+        },
+        {
+         "athlete": {
+          "displayName": "Mia Pohankova",
+          "fullName": "Mia Pohankova",
+          "shortName": "M. Pohankova"
+         },
+         "homeAway": "home",
+         "id": "16296",
+         "order": 1,
+         "statistics": [],
+         "type": "athlete"
+        }
+       ],
+       "date": "2026-10-30T03:20Z",
+       "format": {
+        "regulation": {
+         "periods": 3
+        }
+       },
+       "id": "185686",
+       "notes": [],
+       "round": {
+        "displayName": "Quarterfinal",
+        "id": "5"
+       },
+       "startDate": "2026-10-30T03:20Z",
+       "status": {
+        "period": 1,
+        "type": {
+         "completed": false,
+         "description": "Scheduled",
+         "detail": "Thu, October 29th at 11:20 PM EDT",
+         "name": "STATUS_SCHEDULED",
+         "shortDetail": "10/29 - 11:20 PM EDT",
+         "state": "pre"
+        }
+       },
+       "type": {
+        "id": "2",
+        "slug": "womens-singles",
+        "text": "Women's Singles"
+       }
+      }
+     ],
+     "grouping": {
+      "displayName": "Women's Singles"
+     }
+    }
+   ],
+   "id": "264-2026",
+   "name": "Toray Pan Pacific Open Tennis"
+  },
+  {
+   "groupings": [
+    {
+     "competitions": [
+      {
+       "competitors": [
+        {
+         "athlete": {
+          "displayName": "Abril Cardenas Olivares",
+          "fullName": "Abril Cardenas Olivares",
+          "shortName": "A. Cardenas Olivares"
+         },
+         "homeAway": "away",
+         "id": "17000",
+         "linescores": [
+          {
+           "value": 2.0,
+           "winner": false
+          },
+          {
+           "value": 3.0,
+           "winner": false
+          }
+         ],
+         "order": 2,
+         "statistics": [],
+         "type": "athlete",
+         "winner": false
+        },
+        {
+         "athlete": {
+          "displayName": "Carmen Andreea Herea",
+          "fullName": "Carmen Andreea Herea",
+          "shortName": "C. Herea"
+         },
+         "homeAway": "home",
+         "id": "17423",
+         "linescores": [
+          {
+           "value": 6.0,
+           "winner": true
+          },
+          {
+           "value": 6.0,
+           "winner": true
+          }
+         ],
+         "order": 1,
+         "statistics": [],
+         "type": "athlete",
+         "winner": true
+        }
+       ],
+       "date": "2026-10-26T15:35Z",
+       "format": {
+        "regulation": {
+         "periods": 3
+        }
+       },
+       "id": "187284",
+       "notes": [
+        {
+         "text": "Carmen Andreea Herea (ROM) bt Abril Cardenas Olivares (MEX) 6-2 6-3",
+         "type": "event"
+        }
+       ],
+       "round": {
+        "displayName": "Qualifying 1st Round",
+        "id": "11"
+       },
+       "startDate": "2026-10-26T15:35Z",
+       "status": {
+        "period": 2,
+        "type": {
+         "completed": true,
+         "description": "Final",
+         "detail": "Final",
+         "name": "STATUS_FINAL",
+         "shortDetail": "Final",
+         "state": "post"
+        }
+       },
+       "type": {
+        "id": "2",
+        "slug": "womens-singles",
+        "text": "Women's Singles"
+       }
+      },
+      {
+       "competitors": [
+        {
+         "athlete": {
+          "displayName": "Alicia Herrero Linana",
+          "fullName": "Alicia Herrero Linana",
+          "shortName": "A. Herrero Linana"
+         },
+         "homeAway": "away",
+         "id": "4629",
+         "linescores": [
+          {
+           "tiebreak": 3,
+           "value": 6.0,
+           "winner": false
+          },
+          {
+           "value": 0.0
+          }
+         ],
+         "order": 2,
+         "possession": false,
+         "statistics": [],
+         "type": "athlete"
+        },
+        {
+         "athlete": {
+          "displayName": "Tamara Zidansek",
+          "fullName": "Tamara Zidansek",
+          "shortName": "T. Zidansek"
+         },
+         "homeAway": "home",
+         "id": "3034",
+         "linescores": [
+          {
+           "tiebreak": 7,
+           "value": 7.0,
+           "winner": true
+          },
+          {
+           "value": 0.0
+          }
+         ],
+         "order": 1,
+         "possession": true,
+         "statistics": [],
+         "type": "athlete"
+        }
+       ],
+       "date": "2026-10-30T01:50Z",
+       "format": {
+        "regulation": {
+         "periods": 3
+        }
+       },
+       "id": "185810",
+       "notes": [
+        {
+         "text": "(5) Tamara Zidansek (SLO) is tied with Alicia Herrero Linana (ESP) 7-6 (7-3) 0-0",
+         "type": "event"
+        }
+       ],
+       "round": {
+        "displayName": "Round 2",
+        "id": "2"
+       },
+       "situation": {
+        "onFirst": false,
+        "onSecond": false,
+        "onThird": false
+       },
+       "startDate": "2026-10-30T01:50Z",
+       "status": {
+        "period": 2,
+        "type": {
+         "completed": false,
+         "description": "In Progress",
+         "detail": "2nd Set",
+         "name": "STATUS_IN_PROGRESS",
+         "shortDetail": "2nd",
+         "state": "in"
+        }
+       },
+       "type": {
+        "id": "2",
+        "slug": "womens-singles",
+        "text": "Women's Singles"
+       }
+      },
+      {
+       "competitors": [
+        {
+         "athlete": {
+          "displayName": "Valeriya Strakhova",
+          "fullName": "Valeriya Strakhova",
+          "shortName": "V. Strakhova"
+         },
+         "homeAway": "away",
+         "id": "3042",
+         "order": 2,
+         "statistics": [],
+         "type": "athlete"
+        },
+        {
+         "athlete": {
+          "displayName": "Tatjana Maria",
+          "fullName": "Tatjana Maria",
+          "shortName": "T. Maria"
+         },
+         "homeAway": "home",
+         "id": "2346",
+         "order": 1,
+         "statistics": [],
+         "type": "athlete"
+        }
+       ],
+       "date": "2026-10-30T20:00Z",
+       "format": {
+        "regulation": {
+         "periods": 3
+        }
+       },
+       "id": "185816",
+       "notes": [],
+       "round": {
+        "displayName": "Quarterfinal",
+        "id": "5"
+       },
+       "startDate": "2026-10-30T20:00Z",
+       "status": {
+        "period": 1,
+        "type": {
+         "completed": false,
+         "description": "Scheduled",
+         "detail": "Fri, October 30th at 4:00 PM EDT",
+         "name": "STATUS_SCHEDULED",
+         "shortDetail": "10/30 - 4:00 PM EDT",
+         "state": "pre"
+        }
+       },
+       "type": {
+        "id": "2",
+        "slug": "womens-singles",
+        "text": "Women's Singles"
+       }
+      }
+     ],
+     "grouping": {
+      "displayName": "Women's Singles"
+     }
+    }
+   ],
+   "id": "1034-2026",
+   "name": "Queretaro Open"
+  }
+ ]
+}

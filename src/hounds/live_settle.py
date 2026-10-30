@@ -915,6 +915,25 @@ def _public(row, now: datetime) -> dict:
             "updated_utc": row["updated_utc"], "supported": bool(row["supported"])}
 
 
+def _with_live_state(entry: dict, row, now: datetime) -> dict:
+    """Add `live_state` ({line, sport, as_of}: src/sports/live_state) to the answer for an NHL or tennis game that is in play.
+
+    Only for a game that is not already final, postponed or cancelled, and only when the live-state cache holds a FRESH read of
+    exactly this game (both names, the start window, one fit). Tennis matters most here: the grader's cache has no live state
+    for a tennis match until it is final, and the in-play line is how an open tennis ticket shows where its match stands. A
+    failure or a miss leaves the entry exactly as it was."""
+    if entry["state"] in (ls.FINAL, ls.POSTPONED, ls.CANCELLED) or str(row["sport"] or "").upper() not in ("NHL", "TENNIS"):
+        return entry
+    try:
+        from src.sports import live_state
+        view = live_state.public_view(live_state.state_for(row["sport"], row["home_team"], row["away_team"], row["start_utc"], now=now))
+    except Exception:  # noqa: BLE001 -- decoration only
+        return entry
+    if view:
+        entry["live_state"] = view
+    return entry
+
+
 def game_states(keys: Sequence[str], *, now: Optional[datetime] = None, conn: Optional[sqlite3.Connection] = None) -> dict:
     """{event id: public state} for the asked games the cache holds. Unknown ids are absent."""
     moment = now or ls.utcnow()
@@ -928,7 +947,7 @@ def game_states(keys: Sequence[str], *, now: Optional[datetime] = None, conn: Op
         for key in list(dict.fromkeys(str(k) for k in keys))[:80]:
             row = _row(conn, key)
             if row is not None:
-                out[key] = _public(row, moment)
+                out[key] = _with_live_state(_public(row, moment), row, moment)
         return out
     finally:
         if own:

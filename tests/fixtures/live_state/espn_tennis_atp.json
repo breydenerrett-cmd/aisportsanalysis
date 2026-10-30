@@ -1,0 +1,169 @@
+{
+ "day": {
+  "date": "2026-10-29"
+ },
+ "events": [
+  {
+   "groupings": [
+    {
+     "competitions": [
+      {
+       "competitors": [
+        {
+         "athlete": {
+          "displayName": "Yannick Hanfmann",
+          "fullName": "Yannick Hanfmann",
+          "shortName": "Y. Hanfmann"
+         },
+         "homeAway": "away",
+         "id": "3322",
+         "linescores": [
+          {
+           "value": 6.0,
+           "winner": true
+          },
+          {
+           "value": 5.0,
+           "winner": false
+          },
+          {
+           "value": 6.0,
+           "winner": true
+          }
+         ],
+         "order": 2,
+         "statistics": [],
+         "type": "athlete",
+         "winner": true
+        },
+        {
+         "athlete": {
+          "displayName": "Marcos Giron",
+          "fullName": "Marcos Giron",
+          "shortName": "M. Giron"
+         },
+         "homeAway": "home",
+         "id": "1993",
+         "linescores": [
+          {
+           "value": 2.0,
+           "winner": false
+          },
+          {
+           "value": 7.0,
+           "winner": true
+          },
+          {
+           "value": 4.0,
+           "winner": false
+          }
+         ],
+         "order": 1,
+         "statistics": [],
+         "type": "athlete",
+         "winner": false
+        }
+       ],
+       "date": "2026-10-24T09:00Z",
+       "format": {
+        "regulation": {
+         "periods": 5
+        }
+       },
+       "id": "187216",
+       "notes": [
+        {
+         "text": "Yannick Hanfmann (GER) bt Marcos Giron (USA) 6-2 5-7 6-4",
+         "type": "event"
+        }
+       ],
+       "round": {
+        "displayName": "Qualifying 1st Round",
+        "id": "11"
+       },
+       "startDate": "2026-10-24T09:00Z",
+       "status": {
+        "period": 3,
+        "type": {
+         "completed": true,
+         "description": "Final",
+         "detail": "Final",
+         "name": "STATUS_FINAL",
+         "shortDetail": "Final",
+         "state": "post"
+        }
+       },
+       "type": {
+        "id": "1",
+        "slug": "mens-singles",
+        "text": "Men's Singles"
+       }
+      },
+      {
+       "competitors": [
+        {
+         "athlete": {
+          "displayName": "Valentin Vacherot",
+          "fullName": "Valentin Vacherot",
+          "shortName": "V. Vacherot"
+         },
+         "homeAway": "away",
+         "id": "9376",
+         "order": 2,
+         "statistics": [],
+         "type": "athlete"
+        },
+        {
+         "athlete": {
+          "displayName": "Holger Rune",
+          "fullName": "Holger Rune",
+          "shortName": "H. Rune"
+         },
+         "homeAway": "home",
+         "id": "3659",
+         "order": 1,
+         "statistics": [],
+         "type": "athlete"
+        }
+       ],
+       "date": "2026-10-30T13:00Z",
+       "format": {
+        "regulation": {
+         "periods": 5
+        }
+       },
+       "id": "185153",
+       "notes": [],
+       "round": {
+        "displayName": "Quarterfinal",
+        "id": "5"
+       },
+       "startDate": "2026-10-30T13:00Z",
+       "status": {
+        "period": 1,
+        "type": {
+         "completed": false,
+         "description": "Scheduled",
+         "detail": "Fri, October 30th at 9:00 AM EDT",
+         "name": "STATUS_SCHEDULED",
+         "shortDetail": "10/30 - 9:00 AM EDT",
+         "state": "pre"
+        }
+       },
+       "type": {
+        "id": "1",
+        "slug": "mens-singles",
+        "text": "Men's Singles"
+       }
+      }
+     ],
+     "grouping": {
+      "displayName": "Men's Singles"
+     }
+    }
+   ],
+   "id": "23-2026",
+   "name": "Swiss Indoors Basel"
+  }
+ ]
+}
