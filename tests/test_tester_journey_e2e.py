@@ -137,6 +137,11 @@ class _Journey(unittest.TestCase):
         # another asks for a brief that does not exist.
         self.away = (self.designated or {}).get("away", AWAY)
         self.home = (self.designated or {}).get("home", HOME)
+        # An NFL sample (config "sport": "nfl", first used 2026-10-30 for CAR@GB) is served by the
+        # NFL analyst route; the MLB route answers available=false for it.
+        sport = (self.designated or {}).get("sport", "mlb")
+        self.analyst_path = (f"/analyst/nfl/{self.date}/{self.away}/{self.home}" if sport == "nfl"
+                             else f"/analyst/{self.date}/{self.away}/{self.home}")
 
         def schedule(date):
             return [{"game_pk": 990777, "date": date, "away_team": self.away, "home_team": self.home,
@@ -380,7 +385,7 @@ class TesterSignedIn(_Journey):
         from src.analyst import PILOT_LABEL
         token = self.grant("a@example.test")["token"]
         paths = [f"/games/{self.date}", f"/game/{self.date}/{self.away}/{self.home}",
-                 f"/analyst/{self.date}/{self.away}/{self.home}"]
+                 self.analyst_path]
         for path in paths:
             self.assertEqual(self.call("GET", path, token=token)[0], 200, path)
             status, body = self.call("GET", path)
@@ -444,7 +449,7 @@ class DayEight(_Journey):
         token = grant["token"]
         past = self.expire(grant["user_id"])
         for path in (f"/games/{self.date}", f"/game/{self.date}/{self.away}/{self.home}",
-                     f"/analyst/{self.date}/{self.away}/{self.home}"):
+                     self.analyst_path):
             status, body = self.call("GET", path, token=token)
             self.assertEqual(status, 401, path)
             self.assertEqual(body["detail"]["error"], "tester_access_expired")
