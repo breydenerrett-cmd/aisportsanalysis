@@ -13,7 +13,7 @@ def health(**over):
             "runtime": {"started_utc": STARTED, "uptime_s": 10000, "rss_mb": 390.0,
                         "peak_rss_mb": 588.9, "builds": {"max_running": 1}},
             "odds": {"odds_multibook": {"newest_row_age_seconds": 1800.0}},
-            "checkout": {"status": "off"}}
+            "checkout": {"status": "ok"}}
     base.update(over)
     return base
 
@@ -61,7 +61,7 @@ class Evaluate(unittest.TestCase):
                                                           "builds": {"max_running": 3}})),
             "odds": dict(health=health(odds={"odds_multibook": {"newest_row_age_seconds": 4 * 3600}})),
             "/card": dict(card_status=200),
-            "billing": dict(health=health(checkout={"status": "ok"})),
+            "billing": dict(health=health(checkout={"status": "off"})),
             "CI": dict(runs=runs(**{"tests.yml": [{"status": "completed", "conclusion": "failure"}]})),
             "capture": dict(runs=runs(**{"forward-capture.yml": [
                 {"conclusion": "success", "updatedAt": "2026-10-01T23:00:00Z"}]})),
