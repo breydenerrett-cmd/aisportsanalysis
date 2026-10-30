@@ -6,12 +6,16 @@ proposed dropping NHL, while the coach's own read on the same card said the losi
 the same results". Five bets are a coin flip, and the one sport the owner built the hound for was the one on the cut list. The
 owner's reply in the tweak box: "THE ONLY TWEAKS YOU HAVE ARE CHANGING THE SPORTS IT BETTING ON. NO THANKS".
 
-THE LOCK, IN THREE PARTS
+THE LOCK, IN FOUR PARTS
   * A hound's CORE is the sports (and markets) it is for. ``core_of`` infers the sports from its NAME and its English
     description (tagline, and the labels on a custom rule) with a small word map: "hockeychief" is hockey is NHL. An explicit
     ``core`` list on the spec (``user_spec.CORE_FIELD``, optional, validated against the sport menu) wins and is added to.
   * The coach never proposes removing a core sport or market: ``training.analyse`` leaves it out of the weak spots,
     ``training.menu`` and ``training.propose`` skip it, and the tweak menu (``retune.full_menu``) does not offer it.
+  * Fine-tune and Full rebuild (``training_plans.py``) have no tweak box, so nothing can lift the lock there: they are given the
+    same core-protected analysis and menu, and every spec they would offer is checked with ``dropped_by`` (a core sport or market
+    the hound bets today that the new rule set no longer bets) and set aside if it fails. This is the check, not the menu, that
+    covers a rebuild, because a model writes the whole rule set and no menu stands between it and the spec.
   * Only the owner's own WORDS lift the lock, and only for the thing they name: ``asks_to_drop`` reads a tweak line for a drop
     verb beside the sport ("drop hockey", "stop betting NHL") and says no to a negated one ("don't drop hockey", "stop dropping
     the sports"). "Change the sports" is not an ask to drop hockey.
@@ -132,6 +136,38 @@ def blocks(core: Optional[Mapping], dimension: str, key: Any) -> bool:
     if dimension == "market":
         return key in (core.get("markets") or ())
     return False
+
+
+def _bets_in(spec: Any, key: str, rule_key: str) -> list:
+    """The sports (``key`` "sports") or markets ("markets") a spec bets: its own list, else what its rules name."""
+    spec = spec if isinstance(spec, Mapping) else {}
+    listed = spec.get(key)
+    if isinstance(listed, (list, tuple)) and listed:
+        return list(listed)
+    found: list = []
+    for rule in spec.get("rules") or ():
+        if isinstance(rule, Mapping):
+            found.extend(x for x in (rule.get(rule_key) or ()) if x not in found)
+    return found
+
+
+def dropped_by(core: Optional[Mapping], old_spec: Any, new_spec: Any) -> dict:
+    """``{sports, markets}``: the core sports and markets ``old_spec`` bets that ``new_spec`` no longer does ([] and [] when it keeps
+    them all, or when there is no core or no new spec). A sport still named by any one rule counts as kept. Nothing here reads the
+    owner's words: Fine-tune and Full rebuild have none to read, so for them a drop is always a refusal."""
+    out: dict = {"sports": [], "markets": []}
+    if not core or not isinstance(new_spec, Mapping):
+        return out
+    old_s, new_s = _bets_in(old_spec, "sports", "sports"), _bets_in(new_spec, "sports", "sports")
+    old_m, new_m = _bets_in(old_spec, "markets", "markets"), _bets_in(new_spec, "markets", "markets")
+    out["sports"] = [s for s in core.get("sports") or () if s in old_s and s not in new_s]
+    out["markets"] = [m for m in core.get("markets") or () if m in old_m and m not in new_m]
+    return out
+
+
+def dropped_names(dropped: Mapping) -> list:
+    """The reader's words for what ``dropped_by`` found ("NHL", "moneyline"), sports first."""
+    return [user_spec.SPORT_LABELS.get(s, s) for s in dropped.get("sports") or ()] + list(dropped.get("markets") or ())
 
 
 def core_view(core: Optional[Mapping]) -> dict:
