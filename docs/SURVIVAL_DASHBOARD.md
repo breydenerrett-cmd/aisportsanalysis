@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-10-29 20:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-30 15:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **2** |
+| Days until 2026-10-31 | **1** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-29 (1:30 pm PT run): Thursday NFL brief published for Carolina at Green Bay (kickoff 5:15 pm PT): all three markets passed (moneyline, spread, total).
-- The brief cleared the checker on its second attempt; the first was rejected for citing grouped figures.
-- The MLB postseason is over (Brewers won the World Series); the public sample still shows Game 5 until tonight's game is graded.
-- Production /health ok; memory peak 848 of 850 MB. Scheduled daily loop failed again (pre-slate guard, no MLB slate). Public MLB value picks remain paused.
+- 2026-10-30 (8:30 am PT run): Thursday's Carolina at Green Bay brief is graded: Green Bay won 27-19; all three calls were passes (moneyline, spread, total). The ledger's would-have results are win, win, loss.
+- The public sample brief now points at that game, the first NFL sample. The MLB postseason is over and no MLB game is scheduled.
+- No brief this run: no MLB games remain and the next NFL game is Sunday.
+- Production /health ok; one restart at 12:29Z with no deploy finished near it; memory peak 857 MB against the 850 MB watch limit. Scheduled daily loop failed again (pre-slate guard, no MLB slate). Public MLB value picks remain paused.
 - Sends 0, replies 0, testers 0, paid 0.
 
