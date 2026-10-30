@@ -51,6 +51,8 @@ PAGES = {
     "graveyard": ("graveyard.html", "graveyard.js"),
     # the kennel room (tests/test_kennel_room.py): the public house room; the member's fold runs on the "kennel" page
     "room": ("room.html", "room-page.js"),
+    # Account -> Alerts (tests/test_alerts_panel_web.py): alertsPanel() has no auto-run, so a two-line boot file mounts it on the shell page
+    "alerts": ("index.html", "alerts_boot.js"),
 }
 
 _tmp = None
@@ -79,6 +81,8 @@ def _workdir() -> Path:
             'import "./hounds-learning.js";\nimport "./dog-camp.js";\n', encoding="utf-8")
         Path(_tmp.name, "home_boot.js").write_text(
             'import { mountHome } from "./landing-home.js";\nmountHome();\n', encoding="utf-8")
+        Path(_tmp.name, "alerts_boot.js").write_text(
+            'import { alertsPanel } from "./alerts.js";\ndocument.body.appendChild(alertsPanel());\n', encoding="utf-8")
         Path(_tmp.name, "board_boot.js").write_text(
             'import { fillBoard } from "./landing-board.js";\nawait fillBoard();\n', encoding="utf-8")
     return Path(_tmp.name)

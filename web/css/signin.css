@@ -115,3 +115,85 @@
 .signin__age { display: flex; align-items: center; gap: 10px; min-height: 44px; }
 .signin__age input { flex: none; width: 22px; height: 22px; margin: 0; }
 .signin__age label { font-weight: 600; }
+
+/* ---- Account -> Alerts (web/js/alerts.js) -------------------------------------------------------------------------
+   Until 2026-10-29 none of the alerts__* classes had a rule, so the panel drew as raw inline text on a phone. One idiom
+   throughout: a row is a label on the left and a real switch on the right (a checkbox with role="switch"), one muted note under
+   them, and any button for that row below that. Rows sit in a list with hairline dividers. Phone first: 16px fields (so iOS does
+   not zoom), 44px targets, nothing wider than the column. The panel lives inside the Account card, so --si-* applies. */
+.signin .alerts { display: block; min-width: 0; }
+.signin .alerts > .signin__body { margin: 6px 0 4px; }
+.signin .alerts__body { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+.signin .alerts__list { display: flex; flex-direction: column; min-width: 0; }
+.signin .alerts__row { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; border-top: 1px solid var(--si-line); min-width: 0; }
+.signin .alerts__list > .alerts__row:first-child { border-top: 0; padding-top: 0; }
+.signin .alerts__list > .alerts__row:last-child { padding-bottom: 0; }
+
+.signin .alerts__line { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; }
+.signin .alerts__label { flex: 1 1 auto; min-width: 0; margin: 0; font-family: var(--font-body); font-size: 16px; font-weight: 600; line-height: 1.3; letter-spacing: 0; text-transform: none; color: var(--si-text); cursor: pointer; }
+.signin .alerts__row > p.alerts__label { cursor: default; }
+.signin .alerts__note { margin: 0; font-family: var(--font-body); font-size: 13.5px; line-height: 1.45; letter-spacing: 0; color: var(--si-mute); overflow-wrap: anywhere; }
+.signin .alerts__line + .alerts__note { margin-top: -4px; }
+.signin .alerts__heading { margin: 0; font-size: 14px; font-weight: 700; line-height: 1.3; color: var(--si-text-2); }
+.signin .alerts__events { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+
+/* the switch: the real checkbox, drawn by us. 52 x 32, the knob is a gradient so it needs no pseudo-element (iOS draws those unevenly) */
+.signin .alerts__switch {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: none;
+  width: 52px; height: 32px; margin: 0; padding: 0;
+  border: 0; border-radius: 16px;
+  background-color: var(--si-line-hi);
+  background-image: radial-gradient(circle closest-side, #F2F4F8 96%, transparent 100%);
+  background-repeat: no-repeat;
+  background-size: 26px 26px;
+  background-position: 3px 50%;
+  cursor: pointer;
+  transition: background-color .15s ease, background-position .15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.signin .alerts__switch:checked { background-color: var(--si-accent); background-position: 23px 50%; }
+.signin .alerts__switch:focus-visible { outline: 2px solid var(--si-focus); outline-offset: 3px; }
+.signin .alerts__switch:disabled { opacity: .4; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) { .signin .alerts__switch { transition: none; } }
+
+/* the buttons under a row: the test button on its own, Copy and Reset side by side on one line */
+.signin .alerts__actions { display: flex; flex-wrap: nowrap; gap: 10px; margin-top: 6px; min-width: 0; }
+.signin .alerts__actions:empty { display: none; }
+.signin .alerts__actions .btn { flex: 1 1 0; min-width: 0; padding: 0 12px; font-size: 15px; white-space: nowrap; }
+.signin .alerts__actions .alerts__test { flex: 0 0 auto; padding: 0 18px; }
+
+/* text alerts: the number, the code, the verified number */
+.signin .alerts__form { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; min-width: 0; }
+.signin .alerts__form .btn { width: 100%; }
+.signin .alerts__field, .signin .alerts__link, .signin .alerts__select {
+  box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px; padding: 10px 14px;
+  background: var(--si-bg); border: 1px solid var(--si-line-hi); border-radius: 8px; box-shadow: none;
+  font-family: var(--font-body); font-size: 16px;               /* 16px stops iOS zooming the field on focus */
+  color: var(--si-text);
+}
+.signin .alerts__field:focus, .signin .alerts__link:focus, .signin .alerts__select:focus { outline: 2px solid var(--si-focus); outline-offset: 1px; border-color: transparent; }
+.signin .alerts__link { font-family: var(--font-mono); font-size: 16px; text-overflow: ellipsis; margin-top: 4px; }
+.signin .alerts__consent { display: flex; align-items: flex-start; gap: 12px; }
+.signin .alerts__consent label { flex: 1 1 auto; min-width: 0; padding: 8px 0; font-size: 14px; line-height: 1.45; color: var(--si-text-2); cursor: pointer; }
+.signin .alerts__check { flex: none; width: 24px; height: 24px; margin: 10px 0 0; accent-color: var(--si-accent); }
+
+/* quiet hours: start, "and", end on one line */
+.signin .alerts__quiet { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px; margin-top: 4px; }
+
+/* "Saved." and the rest: a line floating over the bottom of the screen, above the phone's tab bar. position: fixed, because a sticky line
+   does not stick here (html and body both clip overflow-x, which makes body the sticky container). It takes no room in the layout, so
+   it appearing or going never moves a row; alerts.js clears it after a few seconds (or on a tap), a refusal a little later. */
+.signin .alerts__status {
+  position: fixed; z-index: 80;
+  left: 16px; right: 16px; bottom: calc(var(--tabbar-height, 60px) + env(safe-area-inset-bottom, 0px) + 12px);
+  max-width: 440px; margin: 0 auto;
+  padding: 12px 14px; background: var(--si-bg); border: 1px solid var(--si-line-hi); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .55);
+  font-size: 14.5px; line-height: 1.4; color: var(--si-text);
+}
+@media (min-width: 900px) { .signin .alerts__status { bottom: 24px; } }
+.signin .alerts__status:empty { display: none; }
+.signin .alerts__status[data-bad="true"] { color: var(--si-bad); border-color: var(--si-bad); }

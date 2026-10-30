@@ -224,6 +224,8 @@ if (scenario.storageThrows === "accessor") {
 
 const clipboard = [];
 Object.defineProperty(globalThis, "navigator", { configurable: true, value: {
+  // `userAgent` / `standalone` (2026-10-29): a phone browser's identity, for the pages that word things differently on an iPhone
+  userAgent: scenario.userAgent, standalone: scenario.standalone,
   share: scenario.share ? async (d) => {
     if (scenario.shareFails) throw Object.assign(new Error("share failed"), { name: scenario.shareFails });
     shares.push(d);
@@ -297,6 +299,8 @@ function evaluate(q) {
     case "hidden": return list[0] ? list[0].hidden : null;
     case "disabled": return list[0] ? list[0].disabled : null;
     case "value": return list[0] ? list[0].value : null;
+    case "checked": return list[0] ? !!list[0].checked : null;
+    case "checks": return list.map((n) => !!n.checked);
     default: return list[0] ? flat(text(list[0])) : null;
   }
 }
@@ -321,6 +325,10 @@ try {
       const el = find(a.sel, a.index || 0);
       el.checked = a.checked !== false;
       el.dispatchEvent({ type: "change", target: el });
+    } else if (a.do === "mark") {
+      // stamps every match with an attribute (default data-mark="m"), so a later query can tell whether the SAME node is still on the
+      // page or a rebuild put a new one in its place (tests/test_alerts_panel_web.py)
+      for (const n of body.querySelectorAll(a.sel)) n.attrs[a.attr || "data-mark"] = a.value || "m";
     } else if (a.do === "submit") {
       const el = find(a.sel, a.index || 0);
       el.dispatchEvent({ type: "submit", target: el, preventDefault() {} });
