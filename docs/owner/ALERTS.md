@@ -11,7 +11,7 @@ A member opens **Account -> Alerts** (https://linehound.app/web/#/signin when si
 | Text (SMS) | paid members, incl. you and Jacob (comped) | Twilio + 10DLC (step 2) | see memo |
 | Native app (APNs/FCM) | later | the Capacitor app | stub only |
 
-Test any of them from the page: **Send me a test alert**.
+Test any of them from the page: once a channel is switched on, its row shows **Send a test email**, **Send a test notification** or **Send a test text**. A channel the server cannot run (no text keys, the unreleased mobile app) is not drawn at all.
 
 ## 1. Turn on phone/browser notifications (5 minutes, free)
 
