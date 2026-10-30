@@ -633,7 +633,7 @@ def full_rebuild(dog, user_id: int, *, paid: bool = False, now: Optional[datetim
     if gem:
         context = gematria_training.build_context(name=dog.name, version_no=hound["version_no"], spec=spec, plain_rule=user_spec.rule_text(spec),
                                                   bets=_bet_rows(bets, spec, training.rule_index_of(rows, dog.id)), analysis=analysis,
-                                                  baseline=base_summary, chalk=chalk)
+                                                  baseline=base_summary, chalk=chalk, core=core)
     else:
         context = rebuild_ai.build_context(name=dog.name, version_no=hound["version_no"], spec_v2=current, plain_rule=user_spec.rule_text(spec),
                                            bets=_bet_rows(bets, spec, training.rule_index_of(rows, dog.id)), analysis=analysis,

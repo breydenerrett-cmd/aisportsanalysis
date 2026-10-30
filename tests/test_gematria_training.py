@@ -404,6 +404,18 @@ class GematriaRebuild(GemBase):
         self.assertEqual(card["explanation"]["source"], "ai")
         self.assertEqual(card["rehearsal"]["days"], plans.REPLAY_DAYS_GEMATRIA)
 
+    def test_a_hockey_named_gematria_hound_is_told_its_core(self):
+        """The rule-set rebuild has told the model the core since 2026-10-29; the Gematria designer gets the same line (rebuild_ai.core_lines)."""
+        self.hound_row = user_store.create_hound(self.owner.id, {"version": 2, "style": "gematria", "name": "Hockey Numbers",
+                                                                 "sports": ["NBA", "NHL"], "max_bets_per_day": 3, "stake_units": 1.0})
+        self.rows = rows_for(self.hound_row["id"], self.ledger_rows)
+        _card, client = self.gem_rebuild()
+        self.assertIn("CORE (HARD LIMIT): this hound is built around NHL", client.calls[0]["messages"][0]["content"])
+
+    def test_a_gematria_hound_with_no_core_is_told_nothing_about_one(self):
+        _card, client = self.gem_rebuild()
+        self.assertNotIn("CORE (HARD LIMIT)", client.calls[0]["messages"][0]["content"])
+
     def test_the_rebuild_applies_as_a_gematria_version(self):
         card, _client = self.gem_rebuild()
         out = plans.apply_plan(self.dog_obj(), self.owner.id, card["plan_id"], now=NOW, rows=self.rows, db=self.db, store=self.store)

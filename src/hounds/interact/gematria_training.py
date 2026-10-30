@@ -321,14 +321,16 @@ def analyst_text() -> str:
 
 
 def build_context(*, name: str, version_no: int, spec: Mapping, plain_rule: str, bets: Sequence[Mapping], analysis: Mapping,
-                  baseline: Optional[Mapping], chalk: Mapping) -> str:
+                  baseline: Optional[Mapping], chalk: Mapping, core: Optional[Mapping] = None) -> str:
     """Everything the designer is shown: the current settings, the whole forward record and its cuts, the chalk read, the rehearsal and
-    the knob catalog. The same for every angle (only the brief that follows differs)."""
+    the knob catalog. The same for every angle (only the brief that follows differs). ``core`` is told as a hard limit, as in
+    ``rebuild_ai.build_context``."""
     shown = list(bets)[-rebuild_ai.MAX_BETS_IN_PROMPT:]
     losers = sorted((b for b in bets if b.get("result") == "loss"), key=lambda b: b.get("units") or 0.0)[:rebuild_ai.LOSERS_SHOWN]
     overall = analysis.get("overall") or {}
     parts = [rebuild_ai.DATA_NOTICE, "",
              f"HOUND: {name}, version {version_no}. A Gematria hound.",
+             *rebuild_ai.core_lines(core),
              "CURRENT SETTINGS IN PLAIN ENGLISH:", plain_rule, "",
              "CURRENT SETTINGS (JSON):", json.dumps(knobs_json(spec), separators=(",", ":"), sort_keys=True), "",
              "CHALK READ (facts about its own bets):", "  " + chalk["text"], "",
