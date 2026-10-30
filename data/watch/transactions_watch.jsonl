@@ -6477,3 +6477,14 @@
 {"fetched_utc": "2026-10-30T00:28:56.857365+00:00", "game_date": "2026-10-29", "poll": true}
 {"fetched_utc": "2026-10-30T01:19:50.410693+00:00", "game_date": "2026-10-29", "poll": true}
 {"fetched_utc": "2026-10-30T02:25:46.292696+00:00", "game_date": "2026-10-29", "poll": true}
+{"fetched_utc": "2026-10-30T03:26:10.249507+00:00", "game_date": "2026-10-29", "poll": true}
+{"category": "traded", "date": "2026-10-29", "first_seen_utc": "2026-10-30T03:26:10.249507+00:00", "player": null, "player_id": null, "team": "BOS", "transaction_id": 947461}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-30T03:26:10.249507+00:00", "player": "Sebasti\u00e1n Rivero", "player_id": 665861, "team": "LAA", "transaction_id": 947462}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-30T03:26:10.249507+00:00", "player": "Sammy Peralta", "player_id": 671111, "team": "LAA", "transaction_id": 947463}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-30T03:26:10.249507+00:00", "player": "Aaron Sabato", "player_id": 693306, "team": "MIN", "transaction_id": 947464}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-30T03:26:10.249507+00:00", "player": "Tristan Gray", "player_id": 656484, "team": "MIN", "transaction_id": 947465}
+{"category": "il_activation", "date": "2026-10-29", "first_seen_utc": "2026-10-30T03:26:10.249507+00:00", "player": "Anthony Banda", "player_id": 607455, "team": "MIN", "transaction_id": 947466}
+{"category": "other", "date": "2026-10-29", "first_seen_utc": "2026-10-30T03:26:10.249507+00:00", "player": "Rudy Martin Jr.", "player_id": 657675, "team": "TOR", "transaction_id": 947467}
+{"category": "il_activation", "date": "2026-10-29", "first_seen_utc": "2026-10-30T03:26:10.249507+00:00", "player": "Hurston Waldrep", "player_id": 694462, "team": "ATL", "transaction_id": 947468}
+{"category": "il_activation", "date": "2026-10-29", "first_seen_utc": "2026-10-30T03:26:10.249507+00:00", "player": "Joey Wentz", "player_id": 666214, "team": "ATL", "transaction_id": 947469}
+{"category": "il_activation", "date": "2026-10-29", "first_seen_utc": "2026-10-30T03:26:10.249507+00:00", "player": "Spencer Schwellenbach", "player_id": 680885, "team": "ATL", "transaction_id": 947470}
