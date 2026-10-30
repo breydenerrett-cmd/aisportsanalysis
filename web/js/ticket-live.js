@@ -54,6 +54,15 @@ function score(info) {
 export function liveView(info, startIso, nowMs) {
   if (!info || typeof info !== "object" || info.supported === false) return null;
   const startMs = Date.parse(String(info.start_utc || startIso || ""));
+  // An NHL or tennis game in play carries the server's one line (src/sports/live_state: period, clock, shots, power play; set, games,
+  // server, breaks). It is read from a fresh feed of its own, so it can say "live" before the grader's cache does (tennis has no score
+  // there until the match is final); a game the grader already has final, postponed or cancelled keeps that word.
+  const ls = info.live_state && typeof info.live_state.line === "string" ? info.live_state.line.trim() : "";
+  if (ls && !["final", "postponed", "cancelled"].includes(info.state)) {
+    const sc = score(info);
+    return { key: "live", chip: STATUS_WORDS.live, text: `Live${sc ? ` ${sc}` : ""} · ${ls}`,
+      title: "Current score, away then home, and where the game stands." };
+  }
   switch (info.state) {
     case "final": {
       const sc = score(info);

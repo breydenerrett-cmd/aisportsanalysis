@@ -166,6 +166,20 @@ export function renderPregameLabel(game, observedUtc, { hook = "pregame-label" }
 const BARE_DETAIL = /^(live|final)$/i;
 
 /**
+ * The one line of live game state the server sent for a game in play (src/sports/live_state/lines.py: "2nd · 8:14 · SOG 18-11 · PP WSH",
+ * "Set 2 · 3-2 · Joint serving · up a break"), or "" when there is none to show. The line is the server's wording, printed verbatim,
+ * so the card, the strip and a ticket never word one game two ways. It is left out of a game that is final, and out of a game whose
+ * score the board has marked delayed (a line next to "Score delayed" would be the fresher half of a contradiction).
+ */
+export function liveStateLine(ev) {
+  const info = ev && typeof ev === "object" ? ev.live_state : null;
+  if (!info || typeof info.line !== "string" || !info.line.trim()) return "";
+  const own = ev.score;
+  if (own && typeof own === "object" && (own.delayed === true || own.completed === true)) return "";
+  return info.line.trim();
+}
+
+/**
  * One in-play game for the Live page's strip, as plain data (testable without a DOM). `ev` is a GET /sports/now row; `state` is the
  * state GET /hounds/live holds for the same event id (the grader's cache: {state, home_score, away_score, detail}), or null.
  * The cache's own score wins while it is fresh (its `state` is "unknown" once the feed goes quiet, and then it says nothing); the
@@ -205,5 +219,7 @@ export function eventLiveModel(ev, state) {
     detail = own;
   }
   if (BARE_DETAIL.test(detail.trim())) detail = "";
+  const line = kind === "live" ? liveStateLine(ev) : "";
+  if (line) detail = line;           // the period, the clock and the situation in one line: it replaces the feed's "6:42 - 2nd"
   return { kind, label, away: { name: ev.away || "TBD", score: away }, home: { name: ev.home || "TBD", score: home }, detail };
 }

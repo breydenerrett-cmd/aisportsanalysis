@@ -437,6 +437,25 @@ def _start_live_feed() -> None:
     live_feed.start_loop(allsports_view.current_events, ready=_warm_up_done)
 
 
+# -- live NHL and tennis game state (src/sports/live_state) -----------------------------------------------------
+#
+# Live hounds, phase L1 (2026-10-29). One daemon thread keeps a FREE, fresh state per live game: for the NHL the league's own
+# Stats API (power play, empty net, goalie in net and his save percentage tonight, skaters, goals by period; the day's score
+# read every 30 s, each live game's box score and play-by-play at most every 60 s), for tennis ESPN's ATP/WTA scoreboards (sets,
+# games, the server, net breaks in the set). It logs every change to live_state/YYYY-MM-DD.jsonl beside the hounds ledger on
+# the volume, and /sports/now and /hounds/live carry one line of it per game in play. No bet, no rule, no Odds API call or
+# credit. ON by default in code; LIVE_STATE=off stops it; never starts under pytest. Reported on /health as `live_state`.
+@app.on_event("startup")
+def _start_live_state() -> None:
+    from src.sports import allsports_view, live_state
+
+    def _warm_up_done() -> bool:
+        status = warmup.status()
+        return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
+
+    live_state.start_loop(allsports_view.current_events, ready=_warm_up_done)
+
+
 # -- transactional email (src/notify/email_jobs.py) ----------------------------------------------------------
 #
 # The nightly result (about 09:00 Eastern, once the overnight settlement has run) and the Sunday pack (10:00

@@ -1,0 +1,591 @@
+{
+ "awayTeam": {
+  "abbrev": "VAN",
+  "commonName": {
+   "default": "Canucks"
+  },
+  "id": 23,
+  "placeName": {
+   "default": "Vancouver"
+  },
+  "score": 1,
+  "sog": 12
+ },
+ "clock": {
+  "inIntermission": false,
+  "running": true,
+  "secondsRemaining": 979,
+  "timeRemaining": "16:19"
+ },
+ "easternUTCOffset": "-04:00",
+ "gameDate": "2026-10-29",
+ "gameScheduleState": "OK",
+ "gameState": "LIVE",
+ "gameType": 2,
+ "homeTeam": {
+  "abbrev": "SJS",
+  "commonName": {
+   "default": "Sharks"
+  },
+  "id": 28,
+  "placeName": {
+   "default": "San Jose"
+  },
+  "score": 0,
+  "sog": 8
+ },
+ "id": 2026020213,
+ "limitedScoring": false,
+ "periodDescriptor": {
+  "maxRegulationPeriods": 3,
+  "number": 2,
+  "periodType": "REG"
+ },
+ "playerByGameStats": {
+  "awayTeam": {
+   "defense": [
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "J. Oleksiak"
+     },
+     "playerId": 8476467,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "07:56"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "T. Willander"
+     },
+     "playerId": 8484240,
+     "points": 0,
+     "position": "D",
+     "sog": 1,
+     "toi": "06:46"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "Z. Buium"
+     },
+     "playerId": 8484798,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "05:23"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "F. Hronek"
+     },
+     "playerId": 8479425,
+     "points": 0,
+     "position": "D",
+     "sog": 2,
+     "toi": "10:28"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "E. Pettersson"
+     },
+     "playerId": 8483678,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "07:11"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "V. Mancini"
+     },
+     "playerId": 8483768,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "04:16"
+    }
+   ],
+   "forwards": [
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "B. Boeser"
+     },
+     "playerId": 8478444,
+     "points": 0,
+     "position": "R",
+     "sog": 1,
+     "toi": "03:00"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "A. Bains"
+     },
+     "playerId": 8483395,
+     "points": 0,
+     "position": "L",
+     "sog": 0,
+     "toi": "04:31"
+    },
+    {
+     "assists": 0,
+     "goals": 1,
+     "name": {
+      "default": "D. O'Connor"
+     },
+     "playerId": 8482055,
+     "points": 1,
+     "position": "L",
+     "sog": 4,
+     "toi": "07:01"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 1.0,
+     "goals": 0,
+     "name": {
+      "default": "M. Rossi"
+     },
+     "playerId": 8482079,
+     "points": 0,
+     "position": "C",
+     "sog": 0,
+     "toi": "04:48"
+    },
+    {
+     "assists": 1,
+     "faceoffWinningPctg": 0.416667,
+     "goals": 0,
+     "name": {
+      "default": "E. Pettersson"
+     },
+     "playerId": 8480012,
+     "points": 1,
+     "position": "C",
+     "sog": 1,
+     "toi": "08:43"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "P. Cotter"
+     },
+     "playerId": 8481032,
+     "points": 0,
+     "position": "L",
+     "sog": 0,
+     "toi": "05:01"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 0.5,
+     "goals": 0,
+     "name": {
+      "default": "M. Sasson"
+     },
+     "playerId": 8484136,
+     "points": 0,
+     "position": "C",
+     "sog": 0,
+     "toi": "04:26"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "J. DeBrusk"
+     },
+     "playerId": 8478498,
+     "points": 0,
+     "position": "L",
+     "sog": 0,
+     "toi": "06:26"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 0.5,
+     "goals": 0,
+     "name": {
+      "default": "F. Chytil"
+     },
+     "playerId": 8480078,
+     "points": 0,
+     "position": "C",
+     "sog": 2,
+     "toi": "07:24"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "J. Lekkerimäki"
+     },
+     "playerId": 8483476,
+     "points": 0,
+     "position": "R",
+     "sog": 0,
+     "toi": "05:19"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "cs": "L. Öhgren",
+      "default": "L. Ohgren",
+      "fi": "L. Öhgren",
+      "sk": "L. Öhgren",
+      "sv": "L. Öhgren"
+     },
+     "playerId": 8483499,
+     "points": 0,
+     "position": "L",
+     "sog": 1,
+     "toi": "04:44"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "L. Karlsson"
+     },
+     "playerId": 8481024,
+     "points": 0,
+     "position": "C",
+     "sog": 0,
+     "toi": "06:57"
+    }
+   ],
+   "goalies": [
+    {
+     "evenStrengthGoalsAgainst": 0,
+     "evenStrengthShotsAgainst": "4/4",
+     "goalsAgainst": 0,
+     "name": {
+      "default": "L. Meriläinen"
+     },
+     "playerId": 8482447,
+     "position": "G",
+     "powerPlayGoalsAgainst": 0,
+     "powerPlayShotsAgainst": "2/2",
+     "savePctg": 1.0,
+     "saveShotsAgainst": "8/8",
+     "saves": 8,
+     "shorthandedGoalsAgainst": 0,
+     "shorthandedShotsAgainst": "2/2",
+     "shotsAgainst": 8,
+     "toi": "22:52"
+    },
+    {
+     "evenStrengthGoalsAgainst": 0,
+     "evenStrengthShotsAgainst": "0/0",
+     "goalsAgainst": 0,
+     "name": {
+      "default": "K. Lankinen"
+     },
+     "playerId": 8480947,
+     "position": "G",
+     "powerPlayGoalsAgainst": 0,
+     "powerPlayShotsAgainst": "0/0",
+     "savePctg": 0.0,
+     "saveShotsAgainst": "0/0",
+     "saves": 0,
+     "shorthandedGoalsAgainst": 0,
+     "shorthandedShotsAgainst": "0/0",
+     "shotsAgainst": 0,
+     "toi": "00:00"
+    }
+   ]
+  },
+  "homeTeam": {
+   "defense": [
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "N. Allan"
+     },
+     "playerId": 8482700,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "05:53"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "S. Dickinson"
+     },
+     "playerId": 8484806,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "04:37"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "M. Kesselring"
+     },
+     "playerId": 8480891,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "06:53"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "D. Orlov"
+     },
+     "playerId": 8475200,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "07:01"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "D. Nurse"
+     },
+     "playerId": 8477498,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "08:22"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "J. Trouba"
+     },
+     "playerId": 8476885,
+     "points": 0,
+     "position": "D",
+     "sog": 0,
+     "toi": "09:19"
+    }
+   ],
+   "forwards": [
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "W. Smith"
+     },
+     "playerId": 8484227,
+     "points": 0,
+     "position": "C",
+     "sog": 0,
+     "toi": "06:39"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 0.666667,
+     "goals": 0,
+     "name": {
+      "default": "T. Dellandrea"
+     },
+     "playerId": 8480848,
+     "points": 0,
+     "position": "C",
+     "sog": 0,
+     "toi": "04:42"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 0.5,
+     "goals": 0,
+     "name": {
+      "default": "F. Bystedt"
+     },
+     "playerId": 8483428,
+     "points": 0,
+     "position": "C",
+     "sog": 1,
+     "toi": "02:51"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "B. Goodrow"
+     },
+     "playerId": 8476624,
+     "points": 0,
+     "position": "C",
+     "sog": 0,
+     "toi": "03:25"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "M. Marchment"
+     },
+     "playerId": 8478975,
+     "points": 0,
+     "position": "L",
+     "sog": 0,
+     "toi": "06:42"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "I. Stenberg"
+     },
+     "playerId": 8486103,
+     "points": 0,
+     "position": "L",
+     "sog": 1,
+     "toi": "07:52"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "K. Sherwood"
+     },
+     "playerId": 8480748,
+     "points": 0,
+     "position": "L",
+     "sog": 2,
+     "toi": "05:45"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 0.0,
+     "goals": 0,
+     "name": {
+      "default": "C. Graf"
+     },
+     "playerId": 8484911,
+     "points": 0,
+     "position": "R",
+     "sog": 1,
+     "toi": "08:45"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 0.333333,
+     "goals": 0,
+     "name": {
+      "default": "M. Celebrini"
+     },
+     "playerId": 8484801,
+     "points": 0,
+     "position": "C",
+     "sog": 1,
+     "toi": "09:02"
+    },
+    {
+     "assists": 0,
+     "goals": 0,
+     "name": {
+      "default": "T. Toffoli"
+     },
+     "playerId": 8475726,
+     "points": 0,
+     "position": "C",
+     "sog": 0,
+     "toi": "04:31"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 0.75,
+     "goals": 0,
+     "name": {
+      "default": "M. Misa"
+     },
+     "playerId": 8485402,
+     "points": 0,
+     "position": "C",
+     "sog": 1,
+     "toi": "05:18"
+    },
+    {
+     "assists": 0,
+     "faceoffWinningPctg": 1.0,
+     "goals": 0,
+     "name": {
+      "default": "A. Gaudette"
+     },
+     "playerId": 8478874,
+     "points": 0,
+     "position": "R",
+     "sog": 1,
+     "toi": "02:59"
+    }
+   ],
+   "goalies": [
+    {
+     "evenStrengthGoalsAgainst": 1,
+     "evenStrengthShotsAgainst": "8/9",
+     "goalsAgainst": 1,
+     "name": {
+      "default": "Y. Askarov"
+     },
+     "playerId": 8482137,
+     "position": "G",
+     "powerPlayGoalsAgainst": 0,
+     "powerPlayShotsAgainst": "3/3",
+     "savePctg": 0.916667,
+     "saveShotsAgainst": "11/12",
+     "saves": 11,
+     "shorthandedGoalsAgainst": 0,
+     "shorthandedShotsAgainst": "0/0",
+     "shotsAgainst": 12,
+     "toi": "22:35"
+    },
+    {
+     "evenStrengthGoalsAgainst": 0,
+     "evenStrengthShotsAgainst": "0/0",
+     "goalsAgainst": 0,
+     "name": {
+      "default": "A. Nedeljkovic"
+     },
+     "playerId": 8477968,
+     "position": "G",
+     "powerPlayGoalsAgainst": 0,
+     "powerPlayShotsAgainst": "0/0",
+     "savePctg": 0.0,
+     "saveShotsAgainst": "0/0",
+     "saves": 0,
+     "shorthandedGoalsAgainst": 0,
+     "shorthandedShotsAgainst": "0/0",
+     "shotsAgainst": 0,
+     "toi": "00:00"
+    }
+   ]
+  }
+ },
+ "regPeriods": 3,
+ "season": 20262027,
+ "startTimeUTC": "2026-10-30T02:00:00Z",
+ "venue": {
+  "default": "SAP Center at San Jose"
+ },
+ "venueUTCOffset": "-07:00"
+}

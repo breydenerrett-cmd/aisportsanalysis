@@ -109,6 +109,12 @@ def get_health(response: Response) -> dict:
     # The live settlement loop (src/hounds/live_settle.py), on by default; informational like the two above.
     from src.hounds import live_settle
     data["live_settle"] = dict(live_settle.STATUS)
+    # The live NHL / tennis game-state loop (src/sports/live_state), on by default; informational like the ones above.
+    try:
+        from src.sports import live_state
+        data["live_state"] = live_state.status()
+    except Exception:  # noqa: BLE001 -- informational; never the reason /health fails
+        data["live_state"] = None
     try:
         data["runtime"] = runtime()
     except Exception:  # noqa: BLE001 -- informational; never the reason /health fails

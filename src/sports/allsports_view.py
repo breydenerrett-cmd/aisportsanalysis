@@ -27,7 +27,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Callable, Iterable, Mapping, Optional
 
 from src.core import odds as odds_math
-from src.sports import catalog, live_feed
+from src.sports import catalog, live_feed, live_state
 
 TTL_SECONDS = 30.0
 LIVE_FRESH_MINUTES = 90
@@ -174,13 +174,34 @@ def _apply_feed(events: Mapping, now: datetime, answers: Optional[Mapping] = Non
             event["in_play"] = False                 # priced after its listed start but the scoreboard says not started
 
 
+def _apply_live_state(events: Mapping, now: datetime, states: Optional[Mapping] = None) -> None:
+    """Put the one-line live state (src/sports/live_state: "2nd · 8:14 · SOG 18-11 · PP WSH", "Set 2 · 3-2 · Joint serving · up
+    a break") on each NHL or tennis game that is in play, as `event["live_state"] = {line, sport, as_of}`.
+
+    The lookup is the later phases' own (`live_state.state_for`): both names in the odds feed's orientation, exactly one game, the
+    180 second stale guard. A game it cannot place gets NO key, and a failure here never touches the rest of the board; the page
+    prints the line when it is there and nothing when it is not. `states` is the injection point (tests): {event_id: state dict}."""
+    for event_id, event in events.items():
+        if event.get("family") not in live_state.SPORTS or not event.get("in_play") or event.get("_off"):
+            continue
+        try:
+            found = states.get(event_id) if states is not None else live_state.state_for(
+                event["family"], event.get("home"), event.get("away"), event["_start"], now=now)
+            view = live_state.public_view(found)
+        except Exception:  # noqa: BLE001 -- the line is a nicety; the board stands without it
+            continue
+        if view:
+            event["live_state"] = view
+
+
 def _public(event: dict) -> dict:
     return {k: v for k, v in event.items() if not k.startswith("_") and k != "family"
             and not (k == "best_price_draw" and v is None)}
 
 
 def sports_now(now: Optional[datetime] = None, *, rows: Optional[Iterable[Mapping]] = None,
-               scores_index: Optional[Mapping] = None, path=None, feed_answers: Optional[Mapping] = None) -> dict:
+               scores_index: Optional[Mapping] = None, path=None, feed_answers: Optional[Mapping] = None,
+               live_states: Optional[Mapping] = None) -> dict:
     """GET /sports/now: {generated_utc, families: [{code, label, live, upcoming_24h, next_start_utc}]}.
 
     Families with nothing live and nothing upcoming are left out; the rest follow the catalog order, so MLB
@@ -200,6 +221,7 @@ def sports_now(now: Optional[datetime] = None, *, rows: Optional[Iterable[Mappin
     if from_store:
         _remember_events(events, now)
     _apply_feed(events, now, feed_answers)
+    _apply_live_state(events, now, live_states)
     horizon = now + timedelta(hours=UPCOMING_HOURS)
     families = []
     for code in catalog.family_codes():

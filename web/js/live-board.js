@@ -31,7 +31,7 @@ import { get, errorText, errorCode, signInPrompt, spanText, PAPER_NOTE } from ".
 import { renderFireResult, unleash } from "./dog-fire.js";
 import { showUpgrade } from "./upgrade.js";
 import { formatStamp } from "./local-time.js";
-import { eventLiveModel } from "./livestate.js";
+import { eventLiveModel, liveStateLine } from "./livestate.js";
 
 export const REFRESH_MS = 60000;
 const ROW_CAP = 20;          // one sport chosen
@@ -230,11 +230,12 @@ function houndsOnGame(ev) {
 
 function scoreParts(ev) {
   const s = ev.score;
+  const line = liveStateLine(ev);       // NHL / tennis: the server's one line (period, clock, shots, power play; set, games, server, breaks)
   if (s && typeof s === "object") {
-    return { home: isNum(s.home) ? String(s.home) : "", away: isNum(s.away) ? String(s.away) : "", detail: s.detail ? String(s.detail) : "",
-      completed: s.completed === true, delayed: s.delayed === true };
+    return { home: isNum(s.home) ? String(s.home) : "", away: isNum(s.away) ? String(s.away) : "", detail: line || (s.detail ? String(s.detail) : ""),
+      completed: s.completed === true, delayed: s.delayed === true, line: !!line };
   }
-  return { home: "", away: "", detail: typeof s === "string" ? s : "", completed: false, delayed: false };
+  return { home: "", away: "", detail: line || (typeof s === "string" ? s : ""), completed: false, delayed: false, line: !!line };
 }
 
 function priceCell(price, name) {
@@ -263,7 +264,7 @@ function rowFor(ev, live) {
   const timing = live ? (when ? `Started ${when}` : "") : [when, until !== null && until > 0 ? `in ${spanText(until)}` : ""].filter(Boolean).join(" · ");
   if (timing) meta.push(h("span", { class: "lv-when", "data-hook": "live-when", text: timing }));
   if (sc.detail && !(sc.completed && /^final$/i.test(sc.detail))) {
-    meta.push(h("span", { class: `lv-detail${sc.delayed ? " lv-detail--delayed" : ""}`, "data-hook": sc.delayed ? "live-score-delayed" : "live-period", text: sc.detail }));
+    meta.push(h("span", { class: `lv-detail${sc.delayed ? " lv-detail--delayed" : ""}`, "data-hook": sc.delayed ? "live-score-delayed" : sc.line ? "live-state-line" : "live-period", text: sc.detail }));
   }
   // an in-play price is the last one a book showed, not a quote to bet at: say when it was read, per game
   if (live && !sc.completed && toDate(ev.observed_utc)) {
