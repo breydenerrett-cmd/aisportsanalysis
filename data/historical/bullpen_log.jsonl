@@ -62680,3 +62680,4 @@
 {"batters_faced": 4, "date": "2026-10-28", "earned_runs": 0, "game_pk": 849799, "hits": 1, "innings": 1.333, "name": "Steven Matz", "person_id": 571927, "pitches": 18, "started": false, "strikeouts": 0, "team": "TB", "walks": 0}
 {"batters_faced": 3, "date": "2026-10-28", "earned_runs": 0, "game_pk": 849799, "hits": 0, "innings": 1.0, "name": "Bryan Baker", "person_id": 641329, "pitches": 7, "started": false, "strikeouts": 1, "team": "TB", "walks": 0}
 {"batters_faced": 3, "date": "2026-10-28", "earned_runs": 0, "game_pk": 849799, "hits": 0, "innings": 1.0, "name": "Ian Seymour", "person_id": 693855, "pitches": 8, "started": false, "strikeouts": 2, "team": "TB", "walks": 0}
+{"date": "2026-10-29", "empty": true}
