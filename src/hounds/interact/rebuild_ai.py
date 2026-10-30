@@ -11,7 +11,9 @@ THE PIPELINE (``training_plans.full_rebuild`` runs it; this module holds the par
      price floor and the rule count by hand, pins the name, look, base style and in-play flag to the current hound, and
      measures ``spec_distance`` from the current rule. A candidate too close to the current one is sent back ONCE with the
      measured gap ("make a bigger change") and dropped if it is still too close. Nothing is ever repaired: a candidate is
-     accepted whole or refused whole.
+     accepted whole or refused whole. A hound's CORE (``identity.py``: the sports and markets it is built around, 2026-10-29) is told
+     to the model as a hard limit (``core_lines``) and enforced by ``training_plans`` on every candidate and on the analyst's merge,
+     which sets aside any rule set that no longer bets it; ``vet_spec`` pins the spec's own ``core`` list so a rebuild cannot shed it.
   3. REHEARSAL. The survivors are replayed on the captured boards (``training_plans``, the same drill the Backtest tab runs).
   4. ANALYST. One more Haiku call sees every survivor with its replay numbers and the record, compares them and names the
      strongest rebuild (or a merge of two), with reasons tied to the numbers. Whatever it returns goes through step 2 again and is
@@ -38,7 +40,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Mapping, Optional, Sequence
 
 from src.hounds import user_rules, user_spec
-from src.hounds.interact import rebuild_budget as budget
+from src.hounds.interact import identity, rebuild_budget as budget
 
 logger = logging.getLogger("linehound.hounds.rebuild")
 
@@ -107,6 +109,7 @@ HARD LIMITS (a program checks every one of them after you answer; anything that 
 - A rule is about game bets (moneyline, spread), OR game totals, OR player props: never mixed in one rule.
 - Only conditions from the catalog, with parameters inside their stated choices and ranges, for sports they support.
 - A "when" tree is {{"op": "all"|"any", "items": [ ...conditions or nested trees... ]}}; a condition is {{"id": <catalog id>, <its parameters>}}. At most {depth} levels deep and {conds} conditions per rule.
+- If the data names a CORE (the sports or markets the hound was built around), your rule set must still bet every one of them. A rule set that drops one is thrown away whole, whatever the record says about it.
 
 Answer ONLY in the requested JSON: "summary" (what you changed and why, in plain words, tied to numbers in the record, at most {summary} characters) and "spec_json" (the complete rule set as one JSON string)."""
 
@@ -116,7 +119,7 @@ You get the hound's current rule and record, every surviving candidate with its 
 
 Flag weak spots: thin samples, a rule that only works because of one sport or price band, rules that rely on rarely-available data. Tie every reason to a figure you were given; never invent a figure.
 
-The same hard limits apply to your merged rule set as to the candidates (version 2, at most {max_rules} rules, no price at {cap} or worse, catalog conditions only); a program re-checks and re-replays whatever you return. Answer ONLY in the requested JSON."""
+The same hard limits apply to your merged rule set as to the candidates (version 2, at most {max_rules} rules, no price at {cap} or worse, catalog conditions only, and every sport or market in the CORE if the data names one); a program re-checks and re-replays whatever you return. Answer ONLY in the requested JSON."""
 
 EXPLAINER_PROMPT = """You write the short plain-talk summary of a rebuilt betting hound for an everyday sports bettor reading a phone screen. Paper money only.
 
@@ -231,14 +234,28 @@ def _replay_lines(replay: Optional[Mapping]) -> list:
     return out
 
 
+def core_lines(core: Optional[Mapping]) -> list:
+    """The hard limit the designer is told when the hound is built around something (``identity.identity_of``), else [].
+    It comes before the record so no angle's brief ("cut the sports that lost") reads as leave to cut it; the program
+    enforces it anyway (``training_plans.full_rebuild`` sets aside a candidate that drops it)."""
+    names = identity.dropped_names(core or {})
+    if not names:
+        return []
+    return [f"CORE (HARD LIMIT): this hound is built around {', '.join(names)}. Every rule set you write MUST still bet "
+            f"{'it' if len(names) == 1 else 'all of them'}, in at least one rule, whatever the record shows. A rule set that drops "
+            "one is thrown away whole, and the owner is never offered it. You may cut or change everything else.", ""]
+
+
 def build_context(*, name: str, version_no: int, spec_v2: Mapping, plain_rule: str, bets: Sequence[Mapping], analysis: Mapping,
-                  baseline: Optional[Mapping], catalog: Optional[Sequence] = None) -> str:
-    """Everything the designer is shown, as one text block: the same for every angle (only the brief that follows differs)."""
+                  baseline: Optional[Mapping], catalog: Optional[Sequence] = None, core: Optional[Mapping] = None) -> str:
+    """Everything the designer is shown, as one text block: the same for every angle (only the brief that follows differs).
+    ``core`` (``identity.identity_of``) is the sports and markets the hound is built around: told to the model as a hard limit."""
     shown = list(bets)[-MAX_BETS_IN_PROMPT:]
     losers = sorted((b for b in bets if b.get("result") == "loss"), key=lambda b: b.get("units") or 0.0)[:LOSERS_SHOWN]
     overall = analysis.get("overall") or {}
     parts = [DATA_NOTICE, "",
              f"HOUND: {name}, version {version_no}.",
+             *core_lines(core),
              "CURRENT RULE IN PLAIN ENGLISH:", plain_rule, "",
              "CURRENT RULE SET (JSON):", json.dumps({k: v for k, v in spec_v2.items() if k not in ("name", "tagline", "color", "badge")},
                                                     separators=(",", ":"), sort_keys=True), "",
@@ -349,7 +366,7 @@ def _safe_label(label: Any) -> str:
 
 def vet_spec(raw: Any, current: Mapping) -> tuple:
     """``(spec, None)`` for a candidate that passes every check, else ``(None, reason)``. ``raw`` is the model's ``spec_json`` (text
-    or an object). The name, tagline, look, base style and in-play flag are pinned to the current hound; the rest must validate."""
+    or an object). The name, tagline, look, base style, in-play flag and core list are pinned to the current hound; the rest must validate."""
     cur = v2_of(current)
     if isinstance(raw, str):
         try:
@@ -363,6 +380,9 @@ def vet_spec(raw: Any, current: Mapping) -> tuple:
                 badge=cur.get("badge", "bone"))
     if cur.get(user_spec.IN_PLAY_FIELD):
         cand[user_spec.IN_PLAY_FIELD] = True
+    cand.pop(user_spec.CORE_FIELD, None)             # the core is the owner's identity for the hound: the model neither sets nor sheds it
+    if cur.get(user_spec.CORE_FIELD):
+        cand[user_spec.CORE_FIELD] = cur[user_spec.CORE_FIELD]
     rules = cand.get("rules")
     if isinstance(rules, list):
         # a rule's label is a cosmetic name; one the menu's own text checks would refuse (a league name, a banned word) is blanked

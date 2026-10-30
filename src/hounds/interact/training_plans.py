@@ -29,6 +29,14 @@ A REBUILD THAT COMES BACK WITH NOTHING (owner, 2026-10-29) is not one of the mem
 block (``rebuild_why``: how many versions it tried, how many broke a rule check, were too close, could not be read, were rehearsed, and the plain
 lines that say so) and writes its ledger row as ``no_candidate``, so the real spend still counts against the month and the day's allowance does not.
 
+A HOUND'S CORE IS NEVER DROPPED HERE EITHER (owner, 2026-10-29: HOCKEYCHIEF, a hound built for hockey, was offered a training that cut NHL). Send to
+training got the identity lock first (``identity.py``); Fine-tune and Full rebuild take it from the same place: the analysis is read with the
+hound's core (``training.analyse(core=...)``, so a core sport is never a weak spot and the evidence bar is the same) and the menu is the
+core-protected ``retune.full_menu``. Nothing the owner types can lift the lock here (there is no tweak box on these two), so ``_dropped_core``
+checks every spec a Fine-tune would try and every rebuilt candidate, the analyst's merge included, BEFORE any rehearsal or ranking: one that no
+longer bets a core sport or market the hound bets today is set aside and counted in the no-candidate ``why`` ("1 version dropped NHL, which this
+hound is built around, so it was set aside."). ``apply_plan`` re-checks the saved plan, so one made before the lock existed cannot be applied.
+
 THE REHEARSAL IS HINDSIGHT, NEVER COUNTED. It is ``drill.drill`` over the last ``REPLAY_DAYS`` completed days of captured boards,
 written to a throwaway ledger. The hound's record, the leaderboard and the learning loop never see it, and every card says so.
 
@@ -53,7 +61,7 @@ from pathlib import Path
 from typing import Callable, Mapping, Optional, Sequence
 
 from src.hounds import user_rules, user_spec, user_store
-from src.hounds.interact import common, gematria_training, rebuild_ai, rebuild_budget as budget, revert, rites, training
+from src.hounds.interact import common, gematria_training, identity, rebuild_ai, rebuild_budget as budget, revert, rites, training
 from src.hounds.interact.rites import RiteError
 
 logger = logging.getLogger("linehound.hounds.training_plans")
@@ -163,6 +171,9 @@ def _count(n: int, one: str, many: str) -> str:
     return f"{n} {one if n == 1 else many}"
 
 
+CORE_REFUSAL = "core_dropped"      # the ``refused`` code of an angle's answer that was set aside for dropping the hound's core
+
+
 def refusal_kind(refused: Optional[str]) -> str:
     """Which plain-words bucket an angle's ``refused`` code (``rebuild_ai.run_angle``) belongs in."""
     text = str(refused or "")
@@ -170,25 +181,41 @@ def refusal_kind(refused: Optional[str]) -> str:
         return "broke_checks"                     # the rules checks (limits, -200, a knob that does not exist) threw it away
     if text == "too_similar":
         return "too_close"                        # passed the checks but was a tweak, not a rebuild, even after one send-back
+    if text == CORE_REFUSAL:
+        return "core_dropped"                     # a valid rule set that no longer bets what the hound is built around (``_set_aside_core``)
     if text == "over_budget":
         return "stopped_early"                    # the rebuild's own spending ceiling stopped the call
     return "unreadable"                           # the call failed, the answer was cut off, refused or was not JSON
 
 
-def rebuild_why(results: Sequence[Mapping], survivors: Sequence[Mapping], replayed: Sequence[Mapping], *, days: int) -> dict:
+def _and(names: Sequence[str]) -> str:
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def rebuild_why(results: Sequence[Mapping], survivors: Sequence[Mapping], replayed: Sequence[Mapping], *, days: int,
+                analyst_core: Sequence[str] = ()) -> dict:
     """Why a rebuild came back with nothing to offer, in numbers and as 2 to 4 short plain lines (owner, 2026-10-29: "this doesn't feel
     very helpful"). Everything here is counted from what the rebuild really did: ``results`` are the angles' answers, ``survivors`` the ones
     that passed the checks and were not repeats, ``replayed`` the ones that were rehearsed. Nothing is guessed, so a count that is zero says
-    zero. The lines promise nothing and say nothing about how any rule set would have done."""
-    kinds = {"broke_checks": 0, "too_close": 0, "stopped_early": 0, "unreadable": 0}
+    zero. The lines promise nothing and say nothing about how any rule set would have done.
+
+    ``core_dropped`` counts the versions set aside for no longer betting what the hound is built around (``_set_aside_core``: an angle's answer
+    carries ``core_dropped``, the names; ``analyst_core`` is the same for the analyst's merge, which is not one of ``results``), and
+    ``core_names`` says which. They get a line of their own, since the owner reads them as a rule of the house, not as a failed check."""
+    kinds = {"broke_checks": 0, "too_close": 0, "stopped_early": 0, "unreadable": 0, "core_dropped": 0}
+    core_names: list = []
     for r in results:
         if r.get("spec") is None:
             kinds[refusal_kind(r.get("refused"))] += 1
+            core_names.extend(n for n in (r.get("core_dropped") or ()) if n not in core_names)
+    if analyst_core:
+        kinds["core_dropped"] += 1
+        core_names.extend(n for n in analyst_core if n not in core_names)
     built = sum(1 for r in results if r.get("spec") is not None)
     repeats = max(0, built - len(survivors))
     graded = sorted(int(c["replay"]["graded"]) for c in replayed if c.get("replay"))
-    why = {"tried": len(results), "built": built, "repeats": repeats, **kinds, "rehearsed": len(graded), "graded": graded,
-           "min_bets": MIN_REPLAY_BETS, "days": days}
+    why = {"tried": len(results), "built": built, "repeats": repeats, **kinds, "core_names": core_names, "rehearsed": len(graded),
+           "graded": graded, "min_bets": MIN_REPLAY_BETS, "days": days}
     lines = [f"It tried {_count(why['tried'], 'version', 'versions')} of the rules."]
     problems = []
     if kinds["broke_checks"]:
@@ -203,6 +230,10 @@ def rebuild_why(results: Sequence[Mapping], survivors: Sequence[Mapping], replay
         problems.append(f"{kinds['stopped_early']} {'was' if kinds['stopped_early'] == 1 else 'were'} not asked for, to stay inside the spending limit")
     if problems:
         lines.append(", ".join(problems) + ".")
+    if kinds["core_dropped"] and core_names:
+        n = kinds["core_dropped"]
+        lines.append(f"{_count(n, 'version', 'versions')} dropped {_and(core_names)}, which this hound is built around, "
+                     f"so {'it was' if n == 1 else 'they were'} set aside.")
     if not graded:
         lines.append(f"None got as far as a rehearsal on the last {days} days.")
     else:
@@ -391,6 +422,30 @@ def _hindsight_text(dog, db=None) -> str:
         return ""
 
 
+def _read(dog, hound: Mapping, bets: Sequence, rows: Sequence) -> tuple:
+    """``(core, analysis)`` exactly as Send to training reads them (``training.review``): the hound's identity and its record cut every way
+    with the core held back from the weak spots, so Fine-tune, Full rebuild and Apply all see the same evidence bar and the same lock."""
+    core = identity.identity_of(hound)
+    return core, training.analyse(bets, hound["spec"], training.rule_index_of(rows, dog.id), core=core)
+
+
+def _dropped_core(core: Optional[Mapping], current: Mapping, candidate: Optional[Mapping]) -> list:
+    """The names of the core sports and markets ``current`` bets that ``candidate`` no longer does ([] when it keeps them all or the hound has
+    no core). Fine-tune and Full rebuild have no owner words to lift the lock (``identity.asks_to_drop`` reads a tweak line), so a drop here
+    is always a refusal."""
+    return identity.dropped_names(identity.dropped_by(core, current, candidate))
+
+
+def _set_aside_core(core: Optional[Mapping], current: Mapping, results: Sequence[Mapping]) -> list:
+    """``results`` (the angles' answers) with every valid rule set that drops a core sport or market turned into a refusal
+    (``CORE_REFUSAL``, ``core_dropped``: the names), so it is neither rehearsed nor ranked and ``rebuild_why`` can count it."""
+    out = []
+    for r in results:
+        gone = _dropped_core(core, current, r["spec"]) if r.get("spec") is not None else []
+        out.append(dict(r, spec=None, refused=CORE_REFUSAL, core_dropped=gone) if gone else r)
+    return out
+
+
 def _gate(dog, user_id, now, rows, ledger_path, db) -> tuple:
     return training._ready(dog, user_id, confirmed_required=False, confirmed=False, now=now, rows=rows,  # noqa: SLF001
                            ledger_path=ledger_path, db=db)
@@ -402,9 +457,13 @@ def _gate(dog, user_id, now, rows, ledger_path, db) -> tuple:
 
 def _minor_candidates(spec: Mapping, analysis: Mapping) -> list:
     """The single changes worth replaying, best-supported first: the evidence-based narrowing changes (worst weak spot first), then the
-    owner-style narrowing and widening changes in menu order. At most ``MINOR_MAX_REPLAYS``."""
+    owner-style narrowing and widening changes in menu order. At most ``MINOR_MAX_REPLAYS``.
+
+    The menu is the one Send to training uses (``retune.full_menu`` with the hound's core, which ``analyse`` carried into ``analysis``): a
+    change that drops a core sport or market is not on it. ``keep_sports`` is left off, it changes nothing by itself (the owner saying "leave
+    the sports"), so it could only waste one of the few rehearsals."""
     from src.hounds.interact import retune
-    entries = retune.full_menu(spec, analysis, None)
+    entries = [e for e in retune.full_menu(spec, analysis, None, core=analysis.get("core")) if e["cid"] != retune.KEEP_CID]
     evidence = sorted((e for e in entries if e.get("segment")), key=lambda e: e["segment"]["units"])
     rest = [e for e in entries if not e.get("segment")]
     return (evidence + rest)[:MINOR_MAX_REPLAYS]
@@ -419,11 +478,12 @@ def _minor_trials(spec: Mapping, analysis: Mapping, bets: Sequence, moment: date
     (its own menu, ``gematria_training.menu``) all share ONE pass with the current rule: its signals are computed once per game."""
     started = time.monotonic()
     winners: list = []
+    core = analysis.get("core")
     if user_spec.is_gematria(spec):
         trials = []
         for entry in gematria_training.menu(spec, analysis, bets)[:GEMATRIA_MAX_REPLAYS]:
             applied = training._apply_entry(copy.deepcopy(dict(spec)), entry, "minor")      # noqa: SLF001
-            if applied is not None:
+            if applied is not None and not _dropped_core(core, spec, applied[0]):
                 trials.append((entry, applied))
         progress(f"Rehearsing the settings it has now and {len(trials)} small change{'s' if len(trials) != 1 else ''}")
         got = _replay_batch(replay, replay_many, [spec] + [applied[0] for _entry, applied in trials], moment)
@@ -439,7 +499,7 @@ def _minor_trials(spec: Mapping, analysis: Mapping, bets: Sequence, moment: date
         if time.monotonic() - started > MINOR_BUDGET_S:
             break
         applied = training._apply_entry(copy.deepcopy(dict(spec)), entry, "minor")          # noqa: SLF001
-        if applied is None:
+        if applied is None or _dropped_core(core, spec, applied[0]):
             continue
         progress(f"Rehearsing a small change ({tried + 1})")
         new_spec, change = applied
@@ -465,7 +525,7 @@ def fine_tune(dog, user_id: int, *, now: Optional[datetime] = None, rows=None, l
     days = days_for(spec)
     replay = replay_fn or default_replay
     replay_many = replay_many_fn or (default_replay_many if replay_fn is None else None)
-    analysis = training.analyse(bets, spec, training.rule_index_of(rows, dog.id))
+    core, analysis = _read(dog, hound, bets, rows)
     chalk = gematria_training.chalk_report(bets) if gem else None
     ledger = ledger or budget.RebuildLedger()
     base, tried, winners, in_budget = _minor_trials(spec, analysis, bets, moment, replay, replay_many, progress)
@@ -473,7 +533,7 @@ def fine_tune(dog, user_id: int, *, now: Optional[datetime] = None, rows=None, l
         top = sorted(winners, key=lambda w: -(w["after"]["units"]))[:2]
         first = training._apply_entry(copy.deepcopy(dict(spec)), top[0]["entry"], "minor")  # noqa: SLF001
         second = training._apply_entry(first[0], top[1]["entry"], "minor") if first else None  # noqa: SLF001
-        if first and second:
+        if first and second and not _dropped_core(core, spec, second[0]):
             both = _replay_numbers(replay, second[0], moment)
             if beats(base, both):
                 winners.append({"spec": second[0], "after": both, "changes": [first[1], second[1]], "entry": None})
@@ -568,7 +628,7 @@ def full_rebuild(dog, user_id: int, *, paid: bool = False, now: Optional[datetim
     base_summary = replay(spec, days, moment)
     base = numbers_of(base_summary)
     current = rebuild_ai.v2_of(spec)
-    analysis = training.analyse(bets, spec, training.rule_index_of(rows, dog.id))
+    core, analysis = _read(dog, hound, bets, rows)
     chalk = gematria_training.chalk_report(bets) if gem else None
     if gem:
         context = gematria_training.build_context(name=dog.name, version_no=hound["version_no"], spec=spec, plain_rule=user_spec.rule_text(spec),
@@ -577,7 +637,7 @@ def full_rebuild(dog, user_id: int, *, paid: bool = False, now: Optional[datetim
     else:
         context = rebuild_ai.build_context(name=dog.name, version_no=hound["version_no"], spec_v2=current, plain_rule=user_spec.rule_text(spec),
                                            bets=_bet_rows(bets, spec, training.rule_index_of(rows, dog.id)), analysis=analysis,
-                                           baseline=base_summary)
+                                           baseline=base_summary, core=core)
     hindsight = _hindsight_text(dog, db)             # reviews of every past version too; left out when there are none
     if hindsight:
         context = context + "\n\n" + hindsight
@@ -591,7 +651,7 @@ def full_rebuild(dog, user_id: int, *, paid: bool = False, now: Optional[datetim
     status = "ok"
     try:
         progress(f"{count} angles are rebuilding it at the same time")
-        results = rebuild_ai.run_angles(caller, context, current, count, profile)
+        results = _set_aside_core(core, spec, rebuild_ai.run_angles(caller, context, current, count, profile))
         survivors, seen = [], {user_spec.spec_hash(current)}
         for r in results:
             if r["spec"] is None:
@@ -618,10 +678,14 @@ def full_rebuild(dog, user_id: int, *, paid: bool = False, now: Optional[datetim
                 c["replay"] = _replay_numbers(replay, c["spec"], moment)
                 c["rule_text"] = _rule_after(c["spec"])
                 replayed.append(c)
-        analyst_result = None
+        analyst_result, analyst_core = None, []
         if replayed:
             progress("The analyst is comparing them")
             analyst_result = rebuild_ai.run_analyst(caller, context, replayed, current, profile)
+            if analyst_result is not None:
+                analyst_core = _dropped_core(core, spec, analyst_result["spec"])      # the merge is a candidate too: same lock, before its rehearsal
+                if analyst_core:
+                    analyst_result = None
             if analyst_result is not None:
                 h = user_spec.spec_hash(analyst_result["spec"])
                 existing = next((c for c in replayed if c["hash"] == h), None)
@@ -637,7 +701,7 @@ def full_rebuild(dog, user_id: int, *, paid: bool = False, now: Optional[datetim
         ranked = rank(base, replayed)
         if not ranked:
             status = budget.NO_CANDIDATE_STATUS               # real money was spent (the ledger row below), but it is not one of the day's rebuilds
-            why = rebuild_why(results, survivors, replayed, days=days)
+            why = rebuild_why(results, survivors, replayed, days=days, analyst_core=analyst_core)
             logger.warning("rebuild found no candidate hound=%s %s", dog.id, json.dumps({k: v for k, v in why.items() if k != "lines"}, sort_keys=True))
             for r in results:
                 if r.get("spec") is None:
@@ -724,7 +788,11 @@ def apply_plan(dog, user_id: int, plan_id: str, *, choice: Optional[str] = None,
         origin, mode, reason, label = user_store.ORIGIN_FINE_TUNE, MODE_MINOR, "fine-tune", "Fine-tune"
     if user_spec.is_gematria(new_spec) != gem:       # a training never changes what KIND of hound this is, whatever a saved plan says
         raise RiteError("spec_invalid", "A training cannot change what kind of hound this is, so nothing was changed.", 422)
-    analysis = training.analyse(bets, spec, training.rule_index_of(rows, dog.id))
+    core, analysis = _read(dog, hound, bets, rows)
+    gone = _dropped_core(core, spec, new_spec)       # a plan saved before the lock existed (it lives a day) can still be waiting here
+    if gone:
+        raise RiteError("core_dropped", f"That proposal drops {_and(gone)}, which {dog.name} is built around, so nothing was changed. "
+                                        "Start the step again for one that keeps it.", 422)
     frozen = dict(analysis["overall"])
     diff = _diff(spec, new_spec)
     changes = [{"id": f"d{i}", "label": d["what"], "old_text": str(d["before"])[:240], "new_text": str(d["after"])[:240]} for i, d in enumerate(diff[:6])]
