@@ -60,6 +60,11 @@ for (const width of widths) {
     await ev(`try { localStorage.setItem(${JSON.stringify(KEY)}, "tok"); localStorage.setItem("linehound.unit_size", JSON.stringify({ mode: "fixed", unit_usd: 25, pct: null, start_usd: 2500 })); } catch (e) {}`);
     await send("Page.navigate", { url: `${base}/web/kennel.html?dog=${dog}&tab=${tab === "rules-edit" ? "rules" : tab}` });
     await sleep(tab === "backtest" || tab === "fire" ? 3200 : 2400);
+    // a cold first load can take longer than the fixed wait: give the studio up to 6s more to open before measuring
+    for (let i = 0; i < 24; i++) {
+      if (await ev(`(() => { const s = document.querySelector("[data-hook='studio']"); return !!s && !s.hidden; })()`)) break;
+      await sleep(250);
+    }
     if (tab === "rules-edit") await ev(`(document.querySelector("[data-hook='studio-edit-rules']") || {click(){}}).click()`);
     out.push(Object.assign({ path: job, width }, await ev(MEASURE)));
     if (shotsDir && shotsDir !== "-") {

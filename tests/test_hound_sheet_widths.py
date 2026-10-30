@@ -165,8 +165,9 @@ class TheSheetFitsEveryWidth(unittest.TestCase):
         for r in self.results:
             self.assertEqual(r["tabsPos"], "sticky", r)
             self.assertTrue(r["activeVisible"], r)
+        # studio revamp 2026-10-29: three tabs (Overview, Rules, Coach) fit a phone, so the bar no longer scrolls inside itself
         narrow = [r for r in self.results if r["width"] < 700]
-        self.assertTrue(all(r["tabsSw"] > r["tabsCw"] for r in narrow), "on a phone the bar scrolls sideways inside itself")
+        self.assertTrue(narrow and all(r["tabsSw"] <= r["tabsCw"] + 1 for r in narrow), "on a phone all three tabs fit without scrolling")
 
 
 if __name__ == "__main__":      # pragma: no cover
