@@ -518,6 +518,8 @@
 .kn-card__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lh-s2); margin-top: var(--lh-s1); }
 .kn-act { justify-content: center; height: 44px; padding: 0 var(--lh-s3); border-radius: var(--lh-r-md); font-size: var(--lh-fs-base); font-weight: 600; white-space: nowrap; }
 .kn-act--edit { background: rgba(255, 255, 255, .07); }
+/* "Analyze" is the card's fifth button, not a rite: it sits on a row of its own under the four, full width, so the 2 x 2 grid above it stays intact at 400px */
+.kn-act--wide { grid-column: 1 / -1; }
 /* the burial is a different kind of act: a quiet red word, no fill and no border until it is hovered or focused */
 .kn-act--danger { background: transparent; box-shadow: none; color: var(--lh-loss); }
 .kn-act--danger:hover, .kn-act--danger:focus-visible { background: var(--lh-loss-soft); color: #FFD7DB; }

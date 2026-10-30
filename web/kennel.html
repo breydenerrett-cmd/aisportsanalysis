@@ -12,7 +12,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
 <!-- KENNEL (web/js/kennel.js). KENNEL-FIRST (owner ruling 2026-10-20, docs/design/KENNEL_FIRST_BRIEF.md): this is the signed-in HOME.
        kennel.html           MY KENNEL, for a signed-in member: each hound as a big card (art, record, bankroll, today's status) with
-                             Unleash / Send to training / Take them out back (the burial) and Edit; a "Tonight" strip with the open tickets and the next
+                             Unleash / Send to training / Take them out back (the burial), Edit and Analyze; a "Tonight" strip with the open tickets and the next
                              locks; the Training camp, the Graveyard and (only when earned) the member plan. Tapping a card's art opens the STUDIO, an
                              in-place drawer: a header (Unleash, Train, a ... menu) and three tabs (Overview, Rules, Coach). With no hound the page is one button,
                              "Create your first hound". A signed-out visitor is asked to sign in or to see the leaderboard.
@@ -107,6 +107,7 @@
       <div class="kn-studio__menuwrap">
         <button type="button" class="kn-studio__more" data-hook="studio-more" aria-haspopup="menu" aria-expanded="false" aria-label="More for this hound">&#8943;</button>
         <div class="kn-studio__menu" data-hook="studio-menu" role="menu" aria-label="More for this hound" hidden>
+          <button type="button" role="menuitem" class="kn-studio__menuitem kn-studio__menuitem--plain" data-hook="studio-analyze-open">Analyze</button>
           <button type="button" role="menuitem" class="kn-studio__menuitem kn-studio__menuitem--plain" data-hook="studio-versions-open" hidden>Versions</button>
           <button type="button" role="menuitem" class="kn-studio__menuitem" data-hook="studio-outback">Take them out back</button>
           <button type="button" role="menuitem" class="kn-studio__menuitem" data-hook="studio-remove" hidden>Remove from my kennel</button>

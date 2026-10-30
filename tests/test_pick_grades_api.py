@@ -189,6 +189,27 @@ class MemberHoundOutsideTheBook(unittest.TestCase):
         self.assertEqual(item["grades"]["value"]["label"], "Fair")
 
 
+class GradesByKey(unittest.TestCase):
+    """The Analyze report's way to the same grades: keyed by ticket, from the same history, and nothing for a replay ticket."""
+
+    def test_every_forward_ticket_is_graded_as_the_list_grades_it_and_a_replay_ticket_is_left_out(self):
+        results = ["win", "loss", "win", "win", "loss", "win", "loss", "win", "loss", "win"]
+        own = data_of(hound_rows("alpha", results) + [row("alpha", 10, None), row("alpha", 11, "win", segment="replay")])
+        with mock.patch.object(pick_grades_feed, "lineage_ids", lambda hid: [hid]):
+            keyed = pick_grades_feed.grades_by_key("alpha", own, lambda vid: None, lambda bet: bet.event_id)
+            forward = [b for b in own.bets if b.segment == "forward"]
+            listed = pick_grades_feed.pick_grades.grades_for_page(pick_grades_feed.history_for("alpha", own, lambda vid: None), forward)
+        self.assertEqual(set(keyed), {f"alpha-e{i}" for i in range(11)})
+        self.assertEqual(keyed, {b.event_id: g for b, g in zip(forward, listed)})
+        self.assertEqual(keyed["alpha-e10"]["value"]["slice"]["n"], 10)
+
+    def test_a_broken_grader_raises_so_the_caller_decides_what_it_costs(self):
+        own = data_of(hound_rows("alpha", ["win"]))
+        with mock.patch.object(pick_grades_feed, "lineage_ids", lambda hid: [hid]),                 mock.patch.object(pick_grades_feed.pick_grades, "grades_for_page", side_effect=RuntimeError("boom")):
+            with self.assertRaises(RuntimeError):
+                pick_grades_feed.grades_by_key("alpha", own, lambda vid: None, lambda bet: bet.event_id)
+
+
 class TheLineageLookup(unittest.TestCase):
     """Every version of a member hound's lineage is history for the newest; anything odd falls back to the hound's own version."""
 

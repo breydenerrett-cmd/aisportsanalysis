@@ -526,7 +526,7 @@ class TheStudio(unittest.TestCase):
         self.assertEqual((cap["head_avatar"], cap["avatar_tag"]), (1, "Look"))
         self.assertEqual(cap["open_link"], "hound.html?id=u-1")
         self.assertEqual((cap["overview_panel"], cap["rules_panel"], cap["coach_panel"]), (False, True, True))
-        self.assertEqual((cap["analyze_n"], cap["analyze"]), (1, True), "an empty slot for the Analyze report, hidden until it has something")
+        self.assertEqual((cap["analyze_n"], cap["analyze"]), (1, False), "the slot for the Analyze report is shown for a member hound (tests/test_analyze_wire_web.py)")
         self.assertTrue(cap["look_sheet"])
 
     def test_edit_opens_the_builder_inside_the_studio_with_the_advanced_cards_collapsed(self):

@@ -210,7 +210,7 @@ class TheKennelCardOffersTheThreeTogether(unittest.TestCase):
             q("primary", ".kn-act--primary", "texts"), q("aria", "[data-hook='dog-action-outback']", "attr", attr="aria-label")])
         f = out["final"]
         # # owner ruling 2026-10-20 kennel-first: the card offers the three rites and Edit (Ask, Open and Remove moved into the studio and the name link)
-        self.assertEqual(f["actions"], ["Unleash", "Send to training", "Edit", "Take them out back"])
+        self.assertEqual(f["actions"], ["Unleash", "Send to training", "Edit", "Take them out back", "Analyze"])      # Analyze (2026-10-29) is not a rite: a row of its own
         self.assertEqual((f["danger"], f["danger_hook"], f["primary"]), (["Take them out back"], "dog-action-outback", ["Unleash"]))
         self.assertEqual(f["aria"], "Take Underdog Gus out back")
 

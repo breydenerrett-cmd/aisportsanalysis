@@ -4,8 +4,9 @@
  * MY KENNEL is the signed-in HOME (owner ruling 2026-10-20, kennel-first: docs/design/KENNEL_FIRST_BRIEF.md; the app shell and the landing
  * page send a member here, see home-route.js). Top to bottom: a "Tonight" strip (the open tickets of the member's hounds, soonest lock first,
  * from GET /hounds/{id}/bets?status=open); each hound as a big card with its locker-room avatar (an idle bob and blink; a happy wiggle when its
- * last pick won, a slump when it lost: all CSS, see css/lh.css), record, bankroll, return, bets and a "today" line, and exactly four buttons:
- * Unleash, Send to training, Edit and Take them out back (the burial, styled as the destructive act; see dog-rites.js); the member plan
+ * last pick won, a slump when it lost: all CSS, see css/lh.css), record, bankroll, return, bets and a "today" line, and five buttons:
+ * Unleash, Send to training, Edit and Take them out back (the burial, styled as the destructive act; see dog-rites.js), then Analyze on a row of
+ * its own (it opens the studio on Overview with the Analyze report in view); the member plan
  * card ONLY when earned (a free account at its one hound, or the studio showed the server's upgrade prompt for a paid tool); the Training camp
  * (learning.html is part of My Kennel); the latest settled results; the public page and rename links; and the Graveyard. With no hound the
  * page is one button, "Create your first hound" (the quiz). Tapping a card's art opens the STUDIO, an in-place drawer that REUSES the dog
@@ -15,7 +16,10 @@
  *   header   the hound's picture (tap it: the Look editor, dog-locker.js), name, version, status; Unleash (dog-fire.js: starts the hound
  *            betting today, paper), Train (dog-rites.js) and a ... menu with Versions, Take them out back and Remove
  *   Overview dog-manual.js + tickets  the season record, bankroll line, open and settled tickets, the Apprentice's lessons; the Unleash panel
- *            opens at its top; an empty slot (studio-analyze) is held for the Analyze report
+ *            opens at its top; the Analyze report (analyze-report.js, GET /hounds/{id}/report) is mounted in the studio-analyze slot ONCE per open of
+ *            the studio for a member hound (a house hound's kit is not "user", so its slot stays hidden). The report's "Review this change" buttons
+ *            announce "linehound:analyze-expand"; this page answers by starting the training review with the idea as the owner's words
+ *            (dog-rites.js startRetune: the proposal, then Apply / Veto / Tweak: nothing changes before Apply)
  *   Rules    hounds-build.js        ONE page: the hound's sports as chips, markets / price / bets a day, the rule in words, a live "Past 14
  *            days with these rules" line (the builder's 14-day hindsight), the full test (dog-backtest.js) behind a button, the rule cards
  *            folded under "Advanced", and "Save as v{N+1}" (builder-skeleton.js)
@@ -46,7 +50,8 @@ import { signedIn, get, put, errorText, SIGNIN_HREF, removeDog, removedText } fr
 import { dogBadge, DEFAULT_LOOK, lookFor } from "./dog-avatar.js";
 import { activityStrip, quietKennel, fetchStream, tonightInfo, tonightStrip, todayLine, upgradeCard } from "./kennel-extras.js";
 import { loadFoundingOffer } from "./pricing.js";
-import { startTraining, startOutBack, reducedMotion } from "./dog-rites.js";
+import { startTraining, startRetune, startOutBack, reducedMotion } from "./dog-rites.js";
+import { mountAnalyzeIfPresent, EXPAND_EVENT } from "./analyze-report.js";
 import { studioTarget, isStudioTab } from "./studio-tabs.js";
 import { mountVersions } from "./dog-versions.js";
 import { headstoneCard, trainedBadge } from "./dog-headstone.js";
@@ -83,6 +88,9 @@ const state = {
   upgradeTapped: false,     // the studio showed the server's upgrade prompt for a paid tool
   pending: null,            // what the tab being opened was asked for besides its content: {tab, fire, autofire, look, test, versions}
   fullTest: null,           // {open(on)} for the Rules tab's "See the full test"
+  analyze: null,            // {id, report, done} for the Analyze report mounted since the studio was last opened; null before it is (and for a house hound)
+  retuning: false,          // a review started from the Analyze report is open: a second tap does not stack another
+  scrollToAnalyze: null,    // the dog id whose Analyze report was asked for before it was mounted: the mount brings it into view
 };
 
 const stop = (e) => { if (e && e.stopPropagation) e.stopPropagation(); };
@@ -189,7 +197,7 @@ function dogCard(dog, { mine }, index) {
   const rec = dog.record || {};
   const mood = moodOf(dog);
   const open = () => openStudio(dog.id, defaultTab(dog), card);
-  // KENNEL-FIRST (owner ruling 2026-10-20): the card offers Unleash, Send to training, Edit and Take them out back, and nothing else. Ask, the full test and Remove live in
+  // KENNEL-FIRST (owner ruling 2026-10-20): the card offers Unleash, Send to training, Edit and Take them out back (and, since 2026-10-29, Analyze). Ask, the full test and Remove live in
   // the studio (tap the card's art); the hound's page is its name. Edit opens the studio's Rules tab; the art opens its Overview.
   const actions = mine && !dog.retired
     ? [
@@ -200,7 +208,10 @@ function dogCard(dog, { mine }, index) {
       h("button", { type: "button", class: "kn-act kn-act--edit", "data-hook": "dog-action-edit", text: "Edit",
         "aria-label": `Edit ${dog.name}`, on: { click: (e) => { stop(e); openStudio(dog.id, "rules", card); } } }),
       h("button", { type: "button", class: "kn-act kn-act--danger", "data-hook": "dog-action-outback", text: "Take them out back",
-        "aria-label": `Take ${dog.name} out back`, on: { click: (e) => { stop(e); takeOutBack(dog, e.currentTarget); } } })]
+        "aria-label": `Take ${dog.name} out back`, on: { click: (e) => { stop(e); takeOutBack(dog, e.currentTarget); } } }),
+      // the fifth button is not a rite: it opens the studio on Overview with the Analyze report scrolled into view, on a row of its own
+      h("button", { type: "button", class: "kn-act kn-act--wide", "data-hook": "dog-action-analyze", text: "Analyze",
+        "aria-label": `Analyze ${dog.name}`, on: { click: (e) => { stop(e); openStudio(dog.id, "overview", card, { analyze: true }); } } })]
     : mine
       ? [h("a", { class: "kn-act", href: houndHref(dog.id), "data-hook": "dog-action-open", text: "Open" }),
         h("a", { class: "kn-act", href: dog.builder_href || "build-a-hound.html", "data-hook": "dog-action-copy", text: "Build a copy" })]
@@ -727,6 +738,9 @@ function clearBlocks({ keepAsk = false } = {}) {
     if (q(hook)) clearNode(q(hook));
   }
   if (q("studio-fire")) q("studio-fire").hidden = true;
+  if (q("studio-analyze")) q("studio-analyze").hidden = true;             // the next Overview mounts the report again for whoever is shown
+  state.analyze = null;
+  state.scrollToAnalyze = null;
   if (!keepAsk && q("studio-ask")) clearNode(q("studio-ask"));
   const sheet = q("studio-look-sheet");
   if (sheet) sheet.hidden = true;
@@ -781,11 +795,94 @@ async function buildOverview(dog) {
   }
   if (state.open !== id) return;
   clearNode(rec);
+  mountAnalyzeOnce(dog, kit);
   // the Apprentice's own lessons (its owner logs real bets there); every other hound's Overview is the record alone
   const lessons = dog.style === "apprentice" && !dog.retired
     ? (less.appendChild(h("h3", { class: "hd-h3 kn-rec__h", text: "Lessons" })), mountApprentice(less, { hound: dog })) : null;
   await buildRecord(rec, dog, kit);
   if (lessons) await lessons;
+}
+
+/**
+ * The Analyze report in Overview's first slot, ONCE per open of the studio (a switch to Rules and back does not read it again; closing and
+ * reopening does, and so does a new version of the hound, which is a new id). Only for a member hound: the kit says `kind`, and a house hound's
+ * page has no report (the route refuses it), so its slot stays hidden. The report is whatever the server answers for this viewer (the free
+ * teaser, or the full report for the owner on a paid plan); this page adds nothing to it.
+ *
+ * The slot is shared by every hound the studio shows, so an answer that arrives after the studio moved on is dropped, not drawn: the request
+ * wrapper below never hands a stale answer back to the report module. It also keeps the answer, so an expand button can look its idea up.
+ */
+function mountAnalyzeOnce(dog, kit) {
+  const host = q("studio-analyze");
+  if (!host || !dog || !kit || kit.kind !== "user" || state.loaded.analyze === dog.id) return;
+  state.loaded.analyze = dog.id;
+  const mount = { id: dog.id, report: null, done: null };
+  state.analyze = mount;
+  const current = () => state.analyze === mount && state.open === mount.id;
+  const never = () => new Promise(() => {});
+  const read = async (path) => {
+    let report;
+    try { report = await apiGet(path); } catch (err) { if (!current()) await never(); throw err; }
+    if (!current()) await never();
+    mount.report = report;
+    return report;
+  };
+  host.hidden = false;
+  mount.done = mountAnalyzeIfPresent(q("studio"), dog.id, { apiGet: read }) || Promise.resolve(null);
+  if (state.scrollToAnalyze === dog.id) { state.scrollToAnalyze = null; bringAnalyze(); }
+}
+
+/**
+ * Bring the Analyze report into view in the drawer (the card's and the menu's Analyze), once it has been drawn. When Overview is still being built
+ * (the first open of the page builds it twice over: once as the tabs mount, once as the studio opens) the report is not mounted yet, so the wish
+ * is kept and the mount grants it. A house hound never mounts one, so there is nothing to bring and the wish is dropped at the next open.
+ */
+function bringAnalyze() {
+  const now = state.analyze;
+  if (!now || now.id !== state.open || !now.done) { state.scrollToAnalyze = state.open; return; }
+  const go = () => bring(q("studio-analyze"));
+  now.done.then(go, go);
+}
+
+/**
+ * The words of the idea an expand button announced: the event's own `text` when it carries one, else the idea's text from the report this page
+ * mounted for that hound (found by the idea's id). "" when there are none, so nothing is started on a guess.
+ */
+export function expandText(detail, mounted) {
+  const d = detail || {};
+  const tidy = (v) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim() : "");
+  if (tidy(d.text)) return tidy(d.text);
+  const report = mounted && mounted.id === d.dogId ? mounted.report : null;
+  const items = report && report.expand && Array.isArray(report.expand.items) ? report.expand.items : [];
+  const hit = items.find((i) => i && i.id === d.id);
+  return hit ? tidy(hit.text) : "";
+}
+
+const SAFE_HREF = /^[a-z0-9-]+\.html(\?[\w=&%.-]*)?$/i;
+
+/**
+ * "Review this change" on an idea in the report: start the existing training review (dog-rites.js startRetune) with the idea as the owner's
+ * words. The review shows the proposal and nothing is applied without the owner's Apply; once applied the kennel redraws. "Start a copy" (the
+ * spin-off idea) carries an `href` to the builder and is followed as a link instead: retuning THIS hound with a sentence that says to leave it
+ * alone would do the opposite of what the idea means.
+ */
+function onAnalyzeExpand(evt) {
+  const detail = (evt && evt.detail) || {};
+  const dog = studioDog();
+  if (!dog || dog.retired || (detail.dogId && detail.dogId !== dog.id)) return;
+  if (detail.href) {
+    if (SAFE_HREF.test(String(detail.href))) { try { window.location.href = String(detail.href); } catch (err) { /* a fake window */ } }
+    return;
+  }
+  const text = expandText(detail, state.analyze);
+  if (!text || state.retuning) return;
+  const opener = evt && evt.target && evt.target.focus ? evt.target : null;
+  state.retuning = true;
+  const done = startRetune(dog, { chat: [text], opener, onTrained: (r) => {
+    const version = r && r.new && r.new.version_no;
+    return afterRite(version ? `${dog.name} is back as version ${version}. Its new record starts now.` : `${dog.name} was retuned. Its new record starts now.`);
+  } });
+  Promise.resolve(done).then(() => { state.retuning = false; }, () => { state.retuning = false; });
 }
 
 /** Redraw the record and the lessons (not the Unleash panel above them) once the kennel's numbers have moved. */
@@ -1128,14 +1225,15 @@ function applyPending(tab) {
   if (p.fire) showUnleash({ fire: p.autofire });
   if (p.test && state.fullTest) state.fullTest.open(true);
   if (p.versions) bring(q("studio-versions"));
+  if (p.analyze) bringAnalyze();
 }
 
 /**
  * Open the studio on `tab`: one of overview / rules / coach, or any of the old names (studio-tabs.js maps them). A hound opens on Overview.
  * `autofire` presses Unleash for the person (the card's Unleash button, a builder next-step button); a plain link to ?tab=fire only shows the
- * Unleash panel, because a page address must not place bets.
+ * Unleash panel, because a page address must not place bets. `analyze` (the card's Analyze button) scrolls the Analyze report into view once drawn.
  */
-export function openStudio(id, tab = "overview", opener = null, { autofire = false } = {}) {
+export function openStudio(id, tab = "overview", opener = null, { autofire = false, analyze = false } = {}) {
   const studio = q("studio");
   if (!studio || state.mode !== "mine") return;
   state.open = id;
@@ -1158,7 +1256,8 @@ export function openStudio(id, tab = "overview", opener = null, { autofire = fal
   studio.setAttribute("data-open", "true");
   document.body.style.overflow = "hidden";
   const target = studioTarget(fresh ? "rules" : tab);
-  state.pending = { tab: target.tab, fire: target.fire, autofire: target.fire && autofire, look: target.look, test: target.test, versions: target.versions };
+  state.pending = { tab: target.tab, fire: target.fire, autofire: target.fire && autofire, look: target.look, test: target.test, versions: target.versions,
+    analyze: !!analyze && target.tab === "overview" };
   if (!state.tabs) state.tabs = mountTabs(q("studio-tabs"), { onChange: (key) => { buildTab(key).then(() => applyPending(key)); } });
   if (state.tabs.current === target.tab) buildTab(target.tab).then(() => applyPending(target.tab)); else state.tabs.select(target.tab);
   writeUrl(state.open === "new" ? null : state.open, target.tab);
@@ -1202,6 +1301,12 @@ function bindStudio() {
     if (!studioDog() || !state.tabs) return;
     state.pending = { tab: "coach", versions: true };
     if (state.tabs.current === "coach") buildTab("coach").then(() => applyPending("coach")); else state.tabs.select("coach");
+  });
+  if (q("studio-analyze-open")) q("studio-analyze-open").addEventListener("click", () => {
+    setMenu(false);
+    if (!studioDog() || !state.tabs) return;
+    state.pending = { tab: "overview", analyze: true };
+    if (state.tabs.current === "overview") buildTab("overview").then(() => applyPending("overview")); else state.tabs.select("overview");
   });
   if (q("studio-unleash")) q("studio-unleash").addEventListener("click", startUnleash);
   if (q("studio-train")) q("studio-train").addEventListener("click", () => { const dog = studioDog(); if (dog && !dog.retired) sendToTraining(dog, q("studio-train")); });
@@ -1251,6 +1356,8 @@ function bindStudio() {
     const detail = (evt && evt.detail) || {};
     if (detail.id && dogById(detail.id) && isStudioTab(detail.tab)) openStudio(detail.id, detail.tab, null, { autofire: detail.tab === "fire" });
   });
+  // the Analyze report's "Review this change" (analyze-report.js announces it and changes nothing; this page answers)
+  window.addEventListener(EXPAND_EVENT, onAnalyzeExpand);
   window.addEventListener(TOKEN_CHANGED_EVENT, () => { closeStudio(); load(); });
 }
 

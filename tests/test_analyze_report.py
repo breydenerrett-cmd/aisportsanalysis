@@ -17,13 +17,13 @@ import math
 import os
 import random
 import re
-import sys
 import types
 import unittest
 from datetime import datetime, timezone
 from unittest import mock
 
-from src.hounds import analyze_report as A, digest, stats, user_spec, verdict as vd
+from src.ai.postmortem_store import bet_key
+from src.hounds import analyze_report as A, digest, pick_grades, stats, user_spec, user_store, user_view, verdict as vd
 from src.hounds.interact import common, retune, rites
 from tests._hounds_rites_fixtures import NOW as RITES_NOW, RitesCase, ticket, write_ledger
 from tests._hounds_user_fixtures import spec_dict
@@ -605,9 +605,6 @@ class TheLoader(RitesCase):
         env = mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": ""})
         env.start()
         self.addCleanup(env.stop)
-        mod = mock.patch.dict(sys.modules, {"src.hounds.pick_grades": None})     # the sibling grader is absent here
-        mod.start()
-        self.addCleanup(mod.stop)
 
     def load(self, **kw):
         kw.setdefault("now", RITES_NOW)
@@ -621,7 +618,7 @@ class TheLoader(RitesCase):
         self.assertEqual(out["locked"], A.LOCKED)
         self.assertEqual(asked.calls, [])
         self.assertEqual(self.boards, [])
-        self.assertTrue(all(p["grades"] is None for p in out["picks"]))
+        self.assertTrue(all(set(p["grades"]) == {"value", "confidence", "clv"} for p in out["picks"]), "the teaser carries the meters too")
 
     def test_a_full_report_asks_the_board_and_the_coach_once(self):
         out = self.load(full=True, owner=True, router=self.router)
@@ -670,19 +667,18 @@ class TheLoader(RitesCase):
         self.assertEqual((out["coach_read"]["source"], out["coach_read"]["status"]), ("rules", "down"))
         self.assertIn("Drakeo Pup is 16-7", out["coach_read"]["text"])
 
-    def test_the_graders_grades_are_attached_when_the_module_exists(self):
-        bets = rites.forward_bets(self.row["id"], A.rites.read_rows())
-        newest = sorted(bets, key=A._order_key)[-1]
-        grade = {"value": {"score": 80, "label": "Strong", "reason": "r"}}
-        fake = types.SimpleNamespace(grade_bets=lambda rows: {newest.bet_id: grade})
-        with mock.patch.dict(sys.modules, {"src.hounds.pick_grades": fake}):
-            out = self.load(full=False)
-        self.assertEqual(out["picks"][0]["grades"], grade)
+    def test_the_tickets_carry_the_graders_blocks_built_from_the_books_own_rows(self):
+        out = self.load(full=False)
+        by_first = sorted(out["picks"], key=lambda p: p["date"])
+        self.assertEqual(by_first[0]["grades"]["value"]["label"], "Not yet available")      # nothing had settled before the first bet
+        last = by_first[-1]["grades"]
+        self.assertGreaterEqual(last["value"]["slice"]["n"], pick_grades.MIN_SLICE_BETS)       # the kind of spot it is in had a record by then
+        self.assertIsNotNone(last["confidence"]["score"])
 
     def test_a_grader_that_breaks_costs_the_report_nothing(self):
-        def boom(rows):
+        def boom(*args, **kwargs):
             raise RuntimeError("grader down")
-        with mock.patch.dict(sys.modules, {"src.hounds.pick_grades": types.SimpleNamespace(grade_bets=boom)}):
+        with mock.patch("src.hounds.pick_grades.grades_for_page", boom):
             out = self.load(full=False)
         self.assertEqual(len(out["picks"]), 23)
         self.assertTrue(all(p["grades"] is None for p in out["picks"]))
@@ -690,6 +686,65 @@ class TheLoader(RitesCase):
     def test_a_record_still_being_worked_out_is_none_not_a_guess(self):
         with mock.patch.object(common, "hound_data", lambda dog: None):
             self.assertIsNone(self.load(full=False))
+
+
+class TheReportGradesAreTheTicketsGrades(RitesCase):
+    """Owner ask 2026-10-29, "same grades everywhere": a pick reads the same Confidence and Value on its ticket card (GET /hounds/{id}/bets,
+    ``user_view.bets_for``) and in the Analyze report. Version 2 of a hound is graded on its WHOLE lineage's record, so its first picks are
+    graded against version 1's twelve settled bets; the report used to grade only the rows it was given."""
+
+    def setUp(self):
+        super().setUp()
+        A.clear_caches()
+        self.addCleanup(A.clear_caches)
+        spec = dict(sports=["MLB"], markets=["moneyline"], side_rule="underdog", price_min=-120, price_max=150, min_books=3, max_bets_per_day=2)
+        self.v1 = self.dog("Drakeo Pup", **spec)
+        self.v2 = user_store.create_version(self.v1["id"], spec_dict(name="Drakeo Pup", **dict(spec, price_max=200)), actor="owner:1", reason="widen")
+        # version 1: twelve settled bets (8-4 at +130), one a day. Version 2: six settled (3-3), then two still open.
+        old = [("away", 130, "WIN" if i % 3 else "LOSS") for i in range(12)]
+        new = [("away", 130, "WIN" if i % 2 else "LOSS") for i in range(6)] + [("away", 130, None)] * 2
+        rows = []
+        for day, (side, price, res) in enumerate(old):
+            rows.extend(ticket(self.v1["id"], day=day, result=res, side=side, price=price))
+        for day, (side, price, res) in enumerate(new, start=12):
+            rows.extend(ticket(self.v2["id"], day=day, result=res, side=side, price=price))
+        write_ledger(self.ledger, rows)
+        self.dog_ = common.resolve(self.v2["id"])
+
+    def report_grades(self):
+        out = A.load_report(self.dog_, full=False, now=RITES_NOW)
+        return {p["bet_id"]: p["grades"] for p in out["picks"]}
+
+    def ticket_grades(self):
+        body = user_view.bets_for(self.v2["id"], page_size=100)
+        return {bet_key(self.v2["id"], types.SimpleNamespace(**item)): item["grades"] for item in body["items"]}
+
+    def test_every_pick_has_the_same_grades_on_its_card_and_in_the_report(self):
+        report, tickets = self.report_grades(), self.ticket_grades()
+        self.assertEqual(len(tickets), 8)
+        self.assertEqual(set(report), set(tickets), "the report lists the same tickets the card list does")
+        for key, grades in tickets.items():
+            with self.subTest(ticket=key):
+                self.assertIsNotNone(report[key])
+                self.assertEqual(report[key], grades)
+
+    def test_the_first_picks_of_version_2_are_graded_on_version_1s_record(self):
+        report = self.report_grades()
+        first = min(self.ticket_pairs(), key=lambda pair: pair[1]["recorded_utc"])
+        grades = report[first[0]]
+        self.assertEqual(grades["value"]["slice"]["n"], 12, "the twelve settled bets of version 1 are this pick's history")
+        self.assertEqual((grades["value"]["slice"]["w"], grades["value"]["slice"]["l"]), (8, 4))
+        self.assertNotEqual(grades["value"]["label"], "Not yet available")
+
+    def ticket_pairs(self):
+        body = user_view.bets_for(self.v2["id"], page_size=100)
+        return [(bet_key(self.v2["id"], types.SimpleNamespace(**item)), item) for item in body["items"]]
+
+    def test_the_open_picks_are_graded_from_everything_that_had_settled_before_them(self):
+        report = self.report_grades()
+        latest = max(self.ticket_pairs(), key=lambda pair: pair[1]["recorded_utc"])
+        self.assertEqual(report[latest[0]]["value"]["slice"]["n"], 18)           # version 1's twelve and version 2's six
+        self.assertIsNone(report[latest[0]]["clv"], "an open pick has no closing line yet")
 
 
 def good_text_for_fixture():

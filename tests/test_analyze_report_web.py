@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import re
 import unittest
+from contextlib import contextmanager
 from pathlib import Path
 
 from src.hounds import analyze_report as A
@@ -74,7 +75,38 @@ def report(full=True, *, owner=True, grades=None, clv=None, reviews=False, board
     return out
 
 
-def js(body: str, rep=None, api=None):
+REAL = "real"
+
+
+@contextmanager
+def meters_module(source=None):
+    """What web/js/pick-meters.js is in the node work directory while a snippet runs: absent (``None``, the default: the report is held to
+    its text-chip fallback), the real module (``REAL``: the page as it ships), or a stub's source. The real file is ALWAYS put back.
+
+    The module exists now (src/hounds/pick_grades.py's meters). These tests were written when it did not, so they hid it by assuming it was
+    missing, and a stub they wrote and then unlinked deleted the real file from the per-process work directory, which broke every
+    later kennel page test in the same process (the whole sharded suite, 2026-10-29)."""
+    path = R._workdir() / "pick-meters.js"
+    original = path.read_bytes() if path.exists() else None
+    try:
+        if source is None:
+            path.unlink(missing_ok=True)
+        elif source != REAL:
+            path.write_text(source, encoding="utf-8")
+        yield
+    finally:
+        if original is None:
+            path.unlink(missing_ok=True)
+        else:
+            path.write_bytes(original)
+
+
+def js(body: str, rep=None, api=None, meters=None):
+    with meters_module(meters):
+        return _run(body, rep, api)
+
+
+def _run(body: str, rep=None, api=None):
     rep_json = json.dumps(rep if rep is not None else report())
     setup = f'''
 const REPORT = {rep_json};
@@ -242,27 +274,38 @@ console.log(JSON.stringify({ grades: byHook(box, "analyze-grade").length, meters
 ''')
         self.assertEqual(o, {"grades": 0, "meters": 0, "picks": 23, "err": 0})
 
+    STUB = ('export function renderPickMeters(grades, opts) { const n = document.createElement("div"); n.setAttribute("data-compact", String(!!opts.compact)); '
+            'n.textContent = "meters:" + (grades.confidence ? grades.confidence.score : "-"); return n; }')
+
     def test_the_pick_meters_module_is_used_when_it_exists_and_a_broken_one_falls_back(self):
         rep = report(grades=GRADES)
-        work = R._workdir()
-        stub = work / "pick-meters.js"
-        try:
-            stub.write_text('export function renderPickMeters(grades, opts) { const n = document.createElement("div"); n.setAttribute("data-compact", String(!!opts.compact)); n.textContent = "meters:" + (grades.confidence ? grades.confidence.score : "-"); return n; }', encoding="utf-8")
-            o = js('''
+        o = js('''
 await A.mountAnalyze(box, { dogId: "u-drakeo", apiGet });
 console.log(JSON.stringify({ meters: byHook(box, "analyze-meters").map(text), compact: byHook(box, "analyze-meters").map((m) => m.firstChild.attrs["data-compact"]), grades: byHook(box, "analyze-grade").length }));
-''', rep)
-            self.assertEqual(o["meters"][0], "meters:60")
-            self.assertEqual(set(o["compact"]), {"true"})
-            self.assertEqual(o["grades"], 0)
-            stub.write_text('export function renderPickMeters() { throw new Error("broken"); }', encoding="utf-8")
-            o = js('''
+''', rep, meters=self.STUB)
+        self.assertEqual(o["meters"][0], "meters:60")
+        self.assertEqual(set(o["compact"]), {"true"})
+        self.assertEqual(o["grades"], 0)
+        o = js('''
 await A.mountAnalyze(box, { dogId: "u-drakeo", apiGet });
 console.log(JSON.stringify({ meters: byHook(box, "analyze-meters").length, grades: byHook(box, "analyze-grade").map(text) }));
-''', rep)
-            self.assertEqual((o["meters"], o["grades"][0]), (0, "C 60 \u00b7 V 71"))
-        finally:
-            stub.unlink(missing_ok=True)
+''', rep, meters='export function renderPickMeters() { throw new Error("broken"); }')
+        self.assertEqual((o["meters"], o["grades"][0]), (0, "C 60 \u00b7 V 71"))
+
+    def test_the_real_pick_meters_module_draws_the_reports_grades_as_meters(self):
+        """The page as it ships: the same web/js/pick-meters.js the tickets use, so a pick reads the same meters in the report."""
+        rep = report(grades=GRADES)
+        o = js('''
+await A.mountAnalyze(box, { dogId: "u-drakeo", apiGet });
+console.log(JSON.stringify({ meters: byHook(box, "analyze-meters").length, chips: byHook(box, "analyze-grade").length, err: byHook(box, "analyze-error").length }));
+''', rep, meters=REAL)
+        self.assertEqual((o["meters"], o["chips"], o["err"]), (2, 0, 0))
+
+    def test_the_real_file_is_still_there_afterwards(self):
+        before = (R._workdir() / "pick-meters.js").exists()
+        js("console.log(1);", meters="export const x = 1;")
+        self.assertEqual((R._workdir() / "pick-meters.js").exists(), before)
+        self.assertTrue(before, "web/js/pick-meters.js is copied into the work directory")
 
     def test_a_phone_sees_twelve_tickets_and_a_button_for_the_rest(self):
         o = js('''

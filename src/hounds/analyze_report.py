@@ -941,18 +941,21 @@ def _ttl_put(store: dict, key: Any, value: Any, clock: Callable[[], float], limi
             store.pop(next(iter(store)))
 
 
-def _grades_for(rows: Sequence) -> Optional[dict]:
-    """The sibling grader's grades, or None when it does not exist yet or fails (a ticket then simply has none)."""
+def _grades_for(dog: common.Dog, book: Any) -> Optional[dict]:
+    """``{ticket key: grades}`` for the hound's tickets, or None when the book is not there or grading fails (a ticket then has none).
+
+    THE SAME GRADES AS THE TICKETS LIST (owner ask 2026-10-29: a pick must read the same Confidence and Value on its card and in the
+    report). They come from ``pick_grades_feed.grades_by_key``: the hound's WHOLE lineage as history (every version of the same root,
+    point in time), graded by ``pick_grades.grades_for_page`` over the cached book's own ``BetRow``s, the rows ``GET /hounds/{id}/bets``
+    pages through. This used to grade the ledger's raw rows (every hound's, a bet and its result on separate rows, and only the hound's own
+    version as history), so a report could disagree with the ticket it was describing."""
     try:
-        from src.hounds import pick_grades
-    except ImportError:
-        return None
-    try:
-        got = pick_grades.grade_bets(rows)
+        from src.hounds import pick_grades_feed, user_view
+        return pick_grades_feed.grades_by_key(dog.id, book, lambda vid: user_view.hound_data(vid, kick_build=False),
+                                              lambda row: _ticket_key(dog.id, row))
     except Exception as exc:  # noqa: BLE001 -- grades are garnish; the report stands without them
         logger.warning("analyze report: grading failed (%s)", type(exc).__name__)
         return None
-    return got if isinstance(got, dict) else None
 
 
 def _reviews_for(dog: common.Dog) -> Optional[dict]:
@@ -993,7 +996,7 @@ def load_report(dog: common.Dog, *, full: bool, owner: bool = False, now: Option
     rows = rites.read_rows() if rows is None else rows
     coach_fn = (lambda facts, ckey: coach_read(facts, ckey, router=router)) if full else None
     board_fn = _cached_board_fn(dog, now, clock) if full and (dog.status or "running") == "running" else None
-    report = build_report(dog, rows, now=now, postmortems=_reviews_for(dog) if full else None, grades=_grades_for(rows),
+    report = build_report(dog, rows, now=now, postmortems=_reviews_for(dog) if full else None, grades=_grades_for(dog, book),
                           board_fn=board_fn, full=full, book=book.view("all") if hasattr(book, "view") else book, coach_fn=coach_fn)
     _ttl_put(_reports, key, report, clock)
     return teaser_variant(report, owner=owner) if not full else copy.deepcopy(report)

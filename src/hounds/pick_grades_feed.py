@@ -13,6 +13,11 @@ it was placed, whichever version placed it. A house hound is one id with its ver
 record already is its lineage. When the lineage cannot be looked up, the hound's own version is used.
 
 The ticket list's season, status, outcome and sort filters narrow the PAGE, never the history the grades are read from.
+
+ONE GRADER FOR EVERY SCREEN. The Analyze report (``analyze_report.load_report``) shows the same tickets with the same two meters,
+and ``grades_by_key`` is how it gets them: the SAME ``history_for`` and ``pick_grades.grades_for_page`` as ``attach_grades``, keyed by
+the ticket's stable key instead of its position on a page. A pick therefore reads the same Confidence and Value on its card and in
+the report, because there is one history and one grader (owner ask 2026-10-29: "same grades everywhere").
 """
 
 from __future__ import annotations
@@ -53,6 +58,15 @@ def history_for(hound_id: str, own_data, data_for: Callable[[str], Optional[obje
         if vid != hound_id:
             rows.extend(_all_bets(data_for(vid)))
     return rows
+
+
+def grades_by_key(hound_id: str, own_data, data_for: Callable[[str], Optional[object]], key_fn: Callable[[object], str]) -> dict:
+    """``{key_fn(bet): grades}`` for every forward ticket of the hound's whole record (all seasons), graded against its lineage's
+    history exactly as ``attach_grades`` grades a page of them. A replay ticket has no grades and is left out. Raises what the grader
+    raises: the caller decides what a failure costs (the report goes on without meters)."""
+    page = [b for b in _all_bets(own_data) if getattr(b, "segment", "forward") == "forward"]
+    blocks = pick_grades.grades_for_page(history_for(hound_id, own_data, data_for), page)
+    return {key_fn(bet): block for bet, block in zip(page, blocks) if block is not None}
 
 
 def attach_grades(payload: dict, page_items: list, hound_id: str, own_data,
