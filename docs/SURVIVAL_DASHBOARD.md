@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-30 15:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-30 20:46Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-30 (8:30 am PT run): Thursday's Carolina at Green Bay brief is graded: Green Bay won 27-19; all three calls were passes (moneyline, spread, total). The ledger's would-have results are win, win, loss.
-- The public sample brief now points at that game, the first NFL sample. The MLB postseason is over and no MLB game is scheduled.
-- No brief this run: no MLB games remain and the next NFL game is Sunday.
-- Production /health ok; one restart at 12:29Z with no deploy finished near it; memory peak 857 MB against the 850 MB watch limit. Scheduled daily loop failed again (pre-slate guard, no MLB slate). Public MLB value picks remain paused.
-- Sends 0, replies 0, testers 0, paid 0.
+- 2026-10-30 (1:30 pm PT run): no brief this run. The MLB postseason is over (statsapi lists no games through 11-01) and the next NFL games are Sunday 11-01 (eight at 10:00 am PT, LAC at LA 1:05, KC at DEN and NE at MIA 1:25, PHI at WSH 5:20 pm PT) and Monday CHI at SEA.
+- Thursday's Carolina at Green Bay brief stays graded (Green Bay 27-19, three passes). MLB pilot ledger 20 rows and NFL pilot ledger 30 rows both verify.
+- Production /health ok, same process since 12:29Z. Production has not redeployed since 07:33Z: the hourly refresh only fires from a capture slot that starts in minute 00-14, and today's slots have all started at minute 17, so the site still shows the 10-28 MIL at TB sample and its odds are 13 hours old.
+- Memory peak since that start 857 MB against the 850 MB watch line (now 586 MB). The scheduled daily loop failed again on the pre-slate guard (no MLB slate to build). Public MLB value picks remain paused.
+- Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 

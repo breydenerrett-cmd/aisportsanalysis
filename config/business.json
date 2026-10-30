@@ -131,11 +131,11 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-10-30 (8:30 am PT run): Thursday's Carolina at Green Bay brief is graded: Green Bay won 27-19; all three calls were passes (moneyline, spread, total). The ledger's would-have results are win, win, loss.",
-    "The public sample brief now points at that game, the first NFL sample. The MLB postseason is over and no MLB game is scheduled.",
-    "No brief this run: no MLB games remain and the next NFL game is Sunday.",
-    "Production /health ok; one restart at 12:29Z with no deploy finished near it; memory peak 857 MB against the 850 MB watch limit. Scheduled daily loop failed again (pre-slate guard, no MLB slate). Public MLB value picks remain paused.",
-    "Sends 0, replies 0, testers 0, paid 0."
+    "2026-10-30 (1:30 pm PT run): no brief this run. The MLB postseason is over (statsapi lists no games through 11-01) and the next NFL games are Sunday 11-01 (eight at 10:00 am PT, LAC at LA 1:05, KC at DEN and NE at MIA 1:25, PHI at WSH 5:20 pm PT) and Monday CHI at SEA.",
+    "Thursday's Carolina at Green Bay brief stays graded (Green Bay 27-19, three passes). MLB pilot ledger 20 rows and NFL pilot ledger 30 rows both verify.",
+    "Production /health ok, same process since 12:29Z. Production has not redeployed since 07:33Z: the hourly refresh only fires from a capture slot that starts in minute 00-14, and today's slots have all started at minute 17, so the site still shows the 10-28 MIL at TB sample and its odds are 13 hours old.",
+    "Memory peak since that start 857 MB against the 850 MB watch line (now 586 MB). The scheduled daily loop failed again on the pre-slate guard (no MLB slate to build). Public MLB value picks remain paused.",
+    "Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at."
   ],
   "next_customer_action": "Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.",
   "next_research_action": "No market shows repeatable value (docs/PERFORMANCE_MATRIX.md: 110 measured populations, 0 candidates; moneyline closing-line value negative on 26 of 26 rows). The props question cannot be answered before 2026-10-31: the best-placed family, batter total bases, reaches a minimum sample about five weeks into the 2027 season (docs/PROP_EXPERIMENT_INVENTORY.md, docs/PREREG_PROP_FAMILIES_DRAFT.md, a DRAFT with seven owner decisions). Until then: sell the public record and the price comparison, not an edge. AI critic: adds one catch over a plain rule on 8 cases and is not ready to show customers (docs/AI_CRITIC_BENCHMARK.md).",
