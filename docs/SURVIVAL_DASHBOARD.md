@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-10-30 20:46Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-31 15:45Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **1** |
+| Days until 2026-10-31 | **0** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-30 (1:30 pm PT run): no brief this run. The MLB postseason is over (statsapi lists no games through 11-01) and the next NFL games are Sunday 11-01 (eight at 10:00 am PT, LAC at LA 1:05, KC at DEN and NE at MIA 1:25, PHI at WSH 5:20 pm PT) and Monday CHI at SEA.
-- Thursday's Carolina at Green Bay brief stays graded (Green Bay 27-19, three passes). MLB pilot ledger 20 rows and NFL pilot ledger 30 rows both verify.
-- Production /health ok, same process since 12:29Z. Production has not redeployed since 07:33Z: the hourly refresh only fires from a capture slot that starts in minute 00-14, and today's slots have all started at minute 17, so the site still shows the 10-28 MIL at TB sample and its odds are 13 hours old.
-- Memory peak since that start 857 MB against the 850 MB watch line (now 586 MB). The scheduled daily loop failed again on the pre-slate guard (no MLB slate to build). Public MLB value picks remain paused.
+- 2026-10-31 (8:30 am PT run): no brief this run. No MLB game exists (statsapi lists none from 10-31 through 11-02; the postseason is over) and no NFL game is dated today; the next are Sunday 11-01 (twelve games) and Monday CHI at SEA.
+- Grading found nothing new: Thursday's Carolina at Green Bay brief stays graded (Green Bay 27-19, three passes). MLB pilot ledger 20 rows and NFL pilot ledger 30 rows both verify.
+- Production /health ok; memory peak 829 MB, under the 850 MB watch line. The process restarted at 07:56Z with no deploy near it (the seventh unexplained restart). Production has not redeployed since 10-30 07:33Z: the hourly refresh gate ran at minute 35 again today, so the site still shows the 10-28 MIL at TB sample and its newest odds are 32 hours old.
+- The scheduled daily loop failed again on the pre-slate guard (no MLB capture for 10-31; nothing to slate). Tests are green for the newest push. Public MLB value picks remain paused.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
