@@ -25595,3 +25595,13 @@
 {"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 74358, "credits_used_last": 0, "utc": "2026-10-31T23:24:32.841471Z"}
 {"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 74358, "credits_used_last": 0, "utc": "2026-10-31T23:24:33.499641Z"}
 {"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 74355, "credits_used_last": 3, "utc": "2026-10-31T23:25:46.623465Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 74355, "credits_used_last": 0, "utc": "2026-10-31T23:44:50.086075Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 74355, "credits_used_last": 0, "utc": "2026-10-31T23:44:52.548038Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 74355, "credits_used_last": 0, "utc": "2026-10-31T23:44:52.865079Z"}
+{"budget_band": "live_capture", "caller": "mma_capture.run", "credits_remaining": 74354, "credits_used_last": 0, "utc": "2026-10-31T23:46:03.161202Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t30m", "credits_remaining": 74350, "credits_used_last": 4, "utc": "2026-10-31T23:46:21.945475Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t30m", "credits_remaining": 74346, "credits_used_last": 4, "utc": "2026-10-31T23:46:21.945475Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t30m", "credits_remaining": 74341, "credits_used_last": 5, "utc": "2026-10-31T23:46:21.945475Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t30m", "credits_remaining": 74336, "credits_used_last": 5, "utc": "2026-10-31T23:46:21.945475Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t30m", "credits_remaining": 74331, "credits_used_last": 5, "utc": "2026-10-31T23:46:21.945475Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t30m", "credits_remaining": 74326, "credits_used_last": 5, "utc": "2026-10-31T23:46:21.945475Z"}

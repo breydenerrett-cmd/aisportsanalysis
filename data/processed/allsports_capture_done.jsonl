@@ -12670,3 +12670,5 @@
 {"commence_utc": "2026-11-01T02:10:00Z", "event_id": "394955492df212637701f4f21464f05f", "kind": "phase", "observed_utc": "2026-10-31T23:25:46.623465Z", "phase": "lock120", "rows": 32, "sport_key": "icehockey_nhl"}
 {"commence_utc": "2026-11-01T23:00:00Z", "event_id": "d8dd95fa4fc001a1ea9f6629a8c8ffee", "kind": "phase", "observed_utc": "2026-10-31T23:25:46.623465Z", "phase": "t24h", "rows": 31, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 9, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-31T23:25:46.623465Z", "regions": ["us"], "rows": 260, "sport_key": "icehockey_nhl", "stored": 260}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-11-01T05:46:05.039501Z", "observed_utc": "2026-10-31T23:46:05.039501Z", "sport_key": "americanfootball_cfl"}
+{"events": 32, "kind": "peek", "next_check_utc": "2026-11-01T05:46:05.039501Z", "observed_utc": "2026-10-31T23:46:05.039501Z", "sport_key": "soccer_fa_cup"}
