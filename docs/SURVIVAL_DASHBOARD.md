@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-31 15:45Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-31 20:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,10 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-31 (8:30 am PT run): no brief this run. No MLB game exists (statsapi lists none from 10-31 through 11-02; the postseason is over) and no NFL game is dated today; the next are Sunday 11-01 (twelve games) and Monday CHI at SEA.
+- 2026-10-31 (1:30 pm PT run): no brief this run. No MLB game exists (statsapi lists none from 10-31 through 11-02; the postseason is over) and no NFL game is dated today; the next are Sunday 11-01 (twelve games, Week 8) and Monday CHI at SEA.
 - Grading found nothing new: Thursday's Carolina at Green Bay brief stays graded (Green Bay 27-19, three passes). MLB pilot ledger 20 rows and NFL pilot ledger 30 rows both verify.
-- Production /health ok; memory peak 829 MB, under the 850 MB watch line. The process restarted at 07:56Z with no deploy near it (the seventh unexplained restart). Production has not redeployed since 10-30 07:33Z: the hourly refresh gate ran at minute 35 again today, so the site still shows the 10-28 MIL at TB sample and its newest odds are 32 hours old.
+- Production redeployed three times today (dispatches at 18:14Z, 19:05Z and 20:04Z, all green). The site now shows the graded CAR at GB sample and its newest odds are under an hour old. Memory peak 699 MB, under the 850 MB watch line.
+- The process restarted at 20:32Z, seventeen minutes after the 20:15Z deploy finished, outside the watch's ten-minute match window; counted as the eighth unexplained restart.
 - The scheduled daily loop failed again on the pre-slate guard (no MLB capture for 10-31; nothing to slate). Tests are green for the newest push. Public MLB value picks remain paused.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
