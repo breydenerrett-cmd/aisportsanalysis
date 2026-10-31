@@ -6575,3 +6575,10 @@
 {"category": "other", "date": "2026-10-31", "first_seen_utc": "2026-10-31T22:18:31.704835+00:00", "player": "Pierce Johnson", "player_id": 572955, "team": "CIN", "transaction_id": 947556}
 {"fetched_utc": "2026-10-31T22:30:09.555101+00:00", "game_date": "2026-10-31", "poll": true}
 {"fetched_utc": "2026-10-31T22:46:49.529605+00:00", "game_date": "2026-10-31", "poll": true}
+{"fetched_utc": "2026-10-31T22:57:10.864537+00:00", "game_date": "2026-10-31", "poll": true}
+{"category": "other", "date": "2026-10-31", "first_seen_utc": "2026-10-31T22:57:10.864537+00:00", "player": "Luis Robert Jr.", "player_id": 673357, "team": "BAL", "transaction_id": 947563}
+{"category": "other", "date": "2026-10-31", "first_seen_utc": "2026-10-31T22:57:10.864537+00:00", "player": "Codi Heuer", "player_id": 676051, "team": "BAL", "transaction_id": 947564}
+{"category": "il_activation", "date": "2026-10-31", "first_seen_utc": "2026-10-31T22:57:10.864537+00:00", "player": "Colin Selby", "player_id": 681882, "team": "BAL", "transaction_id": 947565}
+{"category": "other", "date": "2026-10-31", "first_seen_utc": "2026-10-31T22:57:10.864537+00:00", "player": "Colin Selby", "player_id": 681882, "team": "BAL", "transaction_id": 947566}
+{"category": "other", "date": "2026-10-31", "first_seen_utc": "2026-10-31T22:57:10.864537+00:00", "player": "Jos\u00e9 Barrero", "player_id": 676480, "team": "BAL", "transaction_id": 947567}
+{"category": "other", "date": "2026-10-31", "first_seen_utc": "2026-10-31T22:57:10.864537+00:00", "player": "Albert Su\u00e1rez", "player_id": 544150, "team": "BAL", "transaction_id": 947568}

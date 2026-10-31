@@ -12664,3 +12664,4 @@
 {"events": 6, "kind": "peek", "next_check_utc": "2026-11-01T04:47:46.902461Z", "observed_utc": "2026-10-31T22:47:46.902461Z", "sport_key": "basketball_euroleague"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-01T04:47:46.902461Z", "observed_utc": "2026-10-31T22:47:46.902461Z", "sport_key": "soccer_uefa_europa_league"}
 {"events": 8, "kind": "peek", "next_check_utc": "2026-11-01T04:47:46.902461Z", "observed_utc": "2026-10-31T22:47:46.902461Z", "sport_key": "soccer_uefa_nations_league"}
+{"events": 36, "kind": "peek", "next_check_utc": "2026-11-01T04:58:27.191807Z", "observed_utc": "2026-10-31T22:58:27.191807Z", "sport_key": "boxing_boxing"}
