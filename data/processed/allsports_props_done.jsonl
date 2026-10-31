@@ -1503,3 +1503,4 @@
 {"books": 4, "credits": 4, "event_id": "8916ba5e623a0a1d97dd0e7f50e4a205", "family": "NCAAF", "kind": "call", "markets": ["player_pass_yds", "player_rush_yds", "player_reception_yds", "player_anytime_td"], "observed_utc": "2026-10-31T02:29:15.246354Z", "phase": "t30m", "regions": ["us"], "remaining": 76377, "sport_key": "americanfootball_ncaaf", "stored": 161}
 {"events": 65, "kind": "peek", "next_check_utc": "2026-10-31T06:27:07.094006Z", "observed_utc": "2026-10-31T03:27:07.094006Z", "sport_key": "americanfootball_ncaaf"}
 {"events": 10, "kind": "peek", "next_check_utc": "2026-10-31T07:25:16.170100Z", "observed_utc": "2026-10-31T04:25:16.170100Z", "sport_key": "icehockey_nhl"}
+{"events": 28, "kind": "peek", "next_check_utc": "2026-10-31T08:23:34.763587Z", "observed_utc": "2026-10-31T05:23:34.763587Z", "sport_key": "americanfootball_nfl"}
