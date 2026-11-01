@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-10-31 20:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-01 16:46Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **0** |
+| Days until 2026-10-31 | **-1** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,10 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-31 (1:30 pm PT run): no brief this run. No MLB game exists (statsapi lists none from 10-31 through 11-02; the postseason is over) and no NFL game is dated today; the next are Sunday 11-01 (twelve games, Week 8) and Monday CHI at SEA.
-- Grading found nothing new: Thursday's Carolina at Green Bay brief stays graded (Green Bay 27-19, three passes). MLB pilot ledger 20 rows and NFL pilot ledger 30 rows both verify.
-- Production redeployed three times today (dispatches at 18:14Z, 19:05Z and 20:04Z, all green). The site now shows the graded CAR at GB sample and its newest odds are under an hour old. Memory peak 699 MB, under the 850 MB watch line.
-- The process restarted at 20:32Z, seventeen minutes after the 20:15Z deploy finished, outside the watch's ten-minute match window; counted as the eighth unexplained restart.
-- The scheduled daily loop failed again on the pre-slate guard (no MLB capture for 10-31; nothing to slate). Tests are green for the newest push. Public MLB value picks remain paused.
+- 2026-11-01 (8:30 am PT run): three NFL briefs published for the 10:00 am PT slate: Arizona at Dallas (clean on attempt 1), Baltimore at Buffalo (clean on attempt 2), Minnesota at Detroit (clean on attempt 3). Each is three passes (moneyline, spread, total), no takes; every attempt is recorded in the folder.
+- No MLB game exists (statsapi lists none from 11-01 through 11-05; the postseason is over). Grading found nothing new: Thursday's Carolina at Green Bay brief stays graded and remains the public sample. MLB pilot ledger 20 rows and NFL pilot ledger 33 rows both verify.
+- Production /health ok; newest odds on the site 0.5 h old; last capture 11 min old; memory peak 123 MB (limit 850). The process restarted at 16:42Z with no deploy within ten minutes (the 16:10Z deploy finished at 16:20Z): the ninth unexplained restart. The production Fly config sets auto_stop_machines false and min_machines_running 1, so idle stop is not the cause.
+- The scheduled daily loop failed again on the pre-slate guard (no MLB capture for 11-01; nothing to slate) and the tier-ladder NOT ADOPT escalation. Tests are green for the newest push. Public MLB value picks remain paused.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
