@@ -13150,3 +13150,8 @@
 {"call_kind": "inplay", "credits": 1, "events": 21, "events_live": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T10:43:20.874512Z", "regions": ["us"], "rows": 94, "sport_key": "tennis_atp_paris_masters", "stored": 94}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T10:43:20.874512Z", "regions": ["us"], "rows": 0, "sport_key": "cricket_odi", "stored": 0}
 {"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T10:43:20.874512Z", "regions": ["us"], "rows": 46, "sport_key": "soccer_turkey_super_league", "stored": 38}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-01T16:53:53.179911Z", "observed_utc": "2026-11-01T10:53:53.179911Z", "sport_key": "basketball_euroleague"}
+{"events": 19, "kind": "peek", "next_check_utc": "2026-11-01T16:53:53.179911Z", "observed_utc": "2026-11-01T10:53:53.179911Z", "sport_key": "soccer_uefa_europa_league"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-01T16:53:53.179911Z", "observed_utc": "2026-11-01T10:53:53.179911Z", "sport_key": "soccer_uefa_nations_league"}
+{"commence_utc": "2026-11-01T11:15:00Z", "event_id": "016bdfefaa570d0fcaeffc5a1cb3625f", "kind": "phase", "observed_utc": "2026-11-01T10:53:53.179911Z", "phase": "t30m", "rows": 15, "sport_key": "soccer_netherlands_eredivisie"}
+{"call_kind": "pregame", "credits": 2, "events": 13, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-01T10:53:53.179911Z", "regions": ["us"], "rows": 107, "sport_key": "soccer_netherlands_eredivisie", "stored": 60}
