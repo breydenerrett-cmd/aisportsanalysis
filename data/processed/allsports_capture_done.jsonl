@@ -13977,3 +13977,5 @@
 {"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T22:17:09.104231Z", "regions": ["us"], "rows": 44, "sport_key": "soccer_portugal_primeira_liga", "stored": 18}
 {"commence_utc": "2026-11-02T01:10:00Z", "event_id": "a5203c5f9248aa3653feba547eabd4b8", "kind": "phase", "observed_utc": "2026-11-01T22:27:47.710659Z", "phase": "lock120", "rows": 33, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 8, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-01T22:27:47.710659Z", "regions": ["us"], "rows": 228, "sport_key": "icehockey_nhl", "stored": 228}
+{"events": 4, "kind": "peek", "next_check_utc": "2026-11-02T04:46:30.668277Z", "observed_utc": "2026-11-01T22:46:30.668277Z", "sport_key": "aussierules_aflw"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-02T04:46:30.668277Z", "observed_utc": "2026-11-01T22:46:30.668277Z", "sport_key": "soccer_australia_aleague"}
