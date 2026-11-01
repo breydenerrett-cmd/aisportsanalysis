@@ -13918,3 +13918,4 @@
 {"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T20:51:09.530375Z", "regions": ["us"], "rows": 88, "sport_key": "soccer_france_ligue_one", "stored": 16}
 {"call_kind": "inplay", "credits": 1, "events": 13, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T20:51:09.530375Z", "regions": ["us"], "rows": 95, "sport_key": "soccer_italy_serie_a", "stored": 25}
 {"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T20:51:09.530375Z", "regions": ["us"], "rows": 83, "sport_key": "soccer_spain_la_liga", "stored": 13}
+{"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T20:59:09.589210Z", "regions": ["us"], "rows": 45, "sport_key": "soccer_portugal_primeira_liga", "stored": 22}
