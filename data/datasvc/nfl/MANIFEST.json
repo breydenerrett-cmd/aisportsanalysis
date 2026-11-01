@@ -22,10 +22,10 @@
  },
  "files": {
   "games.jsonl": {
-   "bytes": 1787822,
-   "newest": "2026-10-30T00:15:00Z",
+   "bytes": 1787790,
+   "newest": "2026-11-01T18:00:00Z",
    "records": 1696,
-   "sha256": "6a04bfa98b47423a73adc228ecd823ff6a3aa387c8533fd5c467614e3226d37d"
+   "sha256": "1210708091a21c98baec52497562793e33e1fd8f09cce1296a91dfb1e59b9448"
   },
   "injuries.jsonl": {
    "bytes": 8888188,
@@ -40,16 +40,16 @@
    "sha256": "31f168f3294413102f8a8621ea568c519af13653f633a26973f7172af3aaef33"
   },
   "team_games.jsonl": {
-   "bytes": 3346875,
-   "newest": "2026-10-30T00:15:00Z",
+   "bytes": 3346728,
+   "newest": "2026-11-01T18:00:00Z",
    "records": 3392,
-   "sha256": "0d724e42019f9674f9d83cc3bd4f34405a1947c7727bb782ea3d22b4ec7282b9"
+   "sha256": "4b85c5b22eb36b16151f128b3a94adae8e1452fa08fb2725dd6a4c1072a9c44b"
   }
  },
- "generated_utc": "2026-11-01T16:45:24Z",
+ "generated_utc": "2026-11-01T21:45:02Z",
  "last_run": {
-  "finished_utc": "2026-11-01T16:45:24Z",
-  "games": 11,
+  "finished_utc": "2026-11-01T21:45:02Z",
+  "games": 26,
   "injuries": 0,
   "kind": "update",
   "missing_files": [],
@@ -75,9 +75,9 @@
   "seasons": [
    2026
   ],
-  "started_utc": "2026-11-01T16:45:22Z",
+  "started_utc": "2026-11-01T21:44:58Z",
   "stopped": null,
-  "team_games": 0
+  "team_games": 15
  },
  "last_run_errors": 0,
  "sources": {

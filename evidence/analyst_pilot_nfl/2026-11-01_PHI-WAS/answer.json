@@ -1,0 +1,57 @@
+{
+"summary": "Washington is priced as the clear winner at home, with the best moneyline at -245, so that side is closed to us, and Philadelphia at +220 is priced almost exactly where the books' own fair number of 0.3076 puts it, so I pass on the moneyline. On the spread, PHI +6 is the lean, but the number has already moved from 4.0 when first captured, and Philadelphia has 3 receivers listed out, which probably explains the move. Season margins per game for the two teams are nearly identical in the data, so I see no case that the number is wrong in points, and I pass. Washington is rested after a bye and has the better yards per play and turnover margin, while Philadelphia has lost 5 straight; the market appears to hold all of that. On the total, Philadelphia scores 18.1429 per game and Washington 22, which sits near 40.5 without clearly pointing either way, and weather is missing for an outdoor game. I pass on all three markets.",
+"summary_derived": [],
+"calls": [
+{
+"slot_id": "moneyline",
+"market": "moneyline",
+"selection": "WAS",
+"verdict": "PASS",
+"price": -245,
+"book": "betus",
+"fair_estimate": null,
+"confidence": "low",
+"reasons": [
+{"claim": "Washington is a heavy favourite at the best price of -245, which is -200 or worse, so the favourite is never a bet for us.", "evidence": [{"path": "markets.moneyline.options[0].best.price", "value": -245}], "derived": []},
+{"claim": "Philadelphia at the best price is priced close to the books' own fair probability, so the underdog price does not look like it is wrong.", "evidence": [{"path": "markets.moneyline.options[1].best.price", "value": 220}, {"path": "markets.moneyline.options[1].fair_probability", "value": 0.3076}], "derived": []}
+],
+"pass_price": null,
+"what_would_change_it": "A Philadelphia price well above +220, or a confirmed quarterback change for either side, would make me look again.",
+"case_against": null
+},
+{
+"slot_id": "spread",
+"market": "spread",
+"selection": "PHI +6",
+"verdict": "PASS",
+"price": -108,
+"book": "draftkings",
+"fair_estimate": null,
+"confidence": "low",
+"reasons": [
+{"claim": "The number has moved from 4.0 when first captured to 6, and Philadelphia has 3 receivers listed out, so the move may already hold the injuries.", "evidence": [{"path": "markets.spread.context.away_number_first_captured", "value": 4.0}, {"path": "sections.away.values.injuries.by_position_group.WR.out", "value": 3}], "derived": []},
+{"claim": "Season margin per game for the two teams is nearly the same, so the data gives no reason the number is wrong in points.", "evidence": [{"path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": 0.1904}, {"path": "markets.spread.options[0].fair_probability", "value": 0.5061}], "derived": []}
+],
+"pass_price": null,
+"what_would_change_it": "A report that Washington's quarterback is out, or the number moving off 6 to a key number such as 7 or 3, would change my view.",
+"case_against": null
+},
+{
+"slot_id": "total",
+"market": "total",
+"selection": "Under 40.5",
+"verdict": "PASS",
+"price": -110,
+"book": "fanatics",
+"fair_estimate": null,
+"confidence": "low",
+"reasons": [
+{"claim": "Each team's season scoring sits near the number, with Philadelphia at 18.1429 points per game and Washington at 22, so the price already holds the scoring.", "evidence": [{"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 18.1429}, {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 22}, {"path": "markets.total.options[0].fair_probability", "value": 0.5064}], "derived": []},
+{"claim": "Points allowed point the other way, with Washington giving up 28.6667 per game and Philadelphia 25, and weather is missing for an outdoor game, so I cannot lean either way.", "evidence": [{"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 28.6667}, {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 25}, {"path": "sections.schedule.values.venue.roof", "value": "outdoors"}], "derived": []}
+],
+"pass_price": null,
+"what_would_change_it": "A forecast showing wind or heavy weather, or the total moving off 40.5, would change the call.",
+"case_against": null
+}
+]
+}
