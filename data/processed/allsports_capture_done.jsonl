@@ -13064,3 +13064,4 @@
 {"call_kind": "pregame", "credits": 1, "events": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T08:33:03.054774Z", "regions": ["us"], "rows": 8, "sport_key": "tennis_atp_swiss_indoors", "stored": 8}
 {"commence_utc": "2026-11-02T08:36:00Z", "event_id": "c374a46caa85510f1bcab41544b6c032", "kind": "phase", "observed_utc": "2026-11-01T08:43:23.839102Z", "phase": "t24h", "rows": 3, "sport_key": "basketball_nbl"}
 {"call_kind": "pregame", "credits": 3, "events": 1, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-01T08:43:23.839102Z", "regions": ["us"], "rows": 3, "sport_key": "basketball_nbl", "stored": 3}
+{"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T08:51:37.970772Z", "regions": ["us"], "rows": 19, "sport_key": "soccer_australia_aleague", "stored": 4}
