@@ -1,0 +1,197 @@
+{
+  "summary": "I pass on all three markets. Detroit is the books' side at home, with a moneyline fair probability of 0.6191, but the two teams pull in opposite directions. Minnesota is 6-0 this season with a margin of 8.5 points per game and allows 12.3333 points per game. Detroit scores 30.6667 per game but allows 27.5. Detroit has the better yards per play, Minnesota the better defence, and a price that splits the two is about what I would expect. The spread is MIN +3.5 with a fair probability of 0.5132, half a point off the key number 3, and it was first captured at 3.0 for Minnesota, so the market has moved toward Detroit. I cannot show in points that the number is wrong. The total of 46 is priced almost exactly even, and the data holds both a high-scoring home offence and a stingy visiting defence, so I see no lean. What is missing matters: depth charts and the importance of injured players are not in the data, and Kyler Murray, Minnesota's projected quarterback, has 5 prior starts with the team.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "DET",
+      "verdict": "PASS",
+      "price": -170,
+      "book": "draftkings",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books make Detroit the clear favourite, with a de-vigged win probability of 0.6191, but nothing in the data shows the price is wrong.",
+          "evidence": [
+            {
+              "path": "markets.moneyline.options[0].fair_probability",
+              "value": 0.6191
+            },
+            {
+              "path": "markets.moneyline.options[0].best.price",
+              "value": -170
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Minnesota is unbeaten this season at 6-0 and allows 12.3333 points per game, which cuts against laying a price on Detroit.",
+          "evidence": [
+            {
+              "path": "sections.away.values.form.season_to_date.wins",
+              "value": 6
+            },
+            {
+              "path": "sections.away.values.form.season_to_date.points_against_per_game",
+              "value": 12.3333
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Detroit scores 30.6667 points per game at home against a Minnesota offence that scores 20.8333, so the two sides offset each other and the market is probably close to right.",
+          "evidence": [
+            {
+              "path": "sections.home.values.form.season_to_date.points_for_per_game",
+              "value": 30.6667
+            },
+            {
+              "path": "sections.away.values.form.season_to_date.points_for_per_game",
+              "value": 20.8333
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed change of quarterback for either side, or a key player ruled out on the final injury report, would make me revisit this.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "MIN +3.5",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "mybookieag",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides of the spread are close to even, with MIN +3.5 at a fair probability of 0.5132, so the number looks about right.",
+          "evidence": [
+            {
+              "path": "markets.spread.options[0].fair_probability",
+              "value": 0.5132
+            },
+            {
+              "path": "markets.spread.options[1].fair_probability",
+              "value": 0.4868
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number first appeared with Minnesota getting 3.0 and now gets 3.5, so the market has moved a half point toward Detroit; 3 is one of the key scoring numbers.",
+          "evidence": [
+            {
+              "path": "markets.spread.context.away_number_first_captured",
+              "value": 3.0
+            },
+            {
+              "path": "markets.spread.options[0].line",
+              "value": 3.5
+            },
+            {
+              "path": "sections.reference.values.key_numbers",
+              "value": "[3,6,7,10,14]"
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Minnesota's season margin of 8.5 points per game is better than Detroit's 3.1667, while Detroit's yards per play of 5.9899 is better than Minnesota's 4.6556; the form points both ways and gives no reason the number is off in points.",
+          "evidence": [
+            {
+              "path": "sections.away.values.form.season_to_date.margin_per_game",
+              "value": 8.5
+            },
+            {
+              "path": "sections.home.values.form.season_to_date.margin_per_game",
+              "value": 3.1667
+            },
+            {
+              "path": "sections.home.values.form.season_to_date.yards_per_play.value",
+              "value": 5.9899
+            },
+            {
+              "path": "sections.away.values.form.season_to_date.yards_per_play.value",
+              "value": 4.6556
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A quarterback change for either team, or the number moving off 3.5 onto a key number such as 3, would make me look again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 46",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total is priced almost exactly even, with the Over at a fair probability of 0.5019, so the price offers no lean.",
+          "evidence": [
+            {
+              "path": "markets.total.options[0].fair_probability",
+              "value": 0.5019
+            },
+            {
+              "path": "markets.total.options[1].fair_probability",
+              "value": 0.4981
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Detroit scores 30.6667 points per game and allows 27.5, which points toward points; Minnesota allows only 12.3333 and scores 20.8333, which points toward fewer. The data has both and the number of 46 already holds them.",
+          "evidence": [
+            {
+              "path": "sections.home.values.form.season_to_date.points_for_per_game",
+              "value": 30.6667
+            },
+            {
+              "path": "sections.home.values.form.season_to_date.points_against_per_game",
+              "value": 27.5
+            },
+            {
+              "path": "sections.away.values.form.season_to_date.points_against_per_game",
+              "value": 12.3333
+            },
+            {
+              "path": "sections.away.values.form.season_to_date.points_for_per_game",
+              "value": 20.8333
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The game is in a dome, so weather is not a worry, but a quarterback change or the injury report could still move the number, and the total started at 46.0 and has not moved.",
+          "evidence": [
+            {
+              "path": "sections.schedule.values.venue.roof",
+              "value": "dome"
+            },
+            {
+              "path": "markets.total.context.number_first_captured",
+              "value": 46.0
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A change of quarterback for either side, or a player ruled out on the final injury report, could move the total enough to take a side.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

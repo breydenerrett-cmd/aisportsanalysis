@@ -1,0 +1,23 @@
+{
+  "sport": "nfl",
+  "game_id": "2026_08_MIN_DET",
+  "date": "2026-11-01",
+  "away": "MIN",
+  "home": "DET",
+  "kickoff_utc": "2026-11-01T18:00:00Z",
+  "built_at": "2026-11-01T16:42:45Z",
+  "packet_hash": "99125ee4cacb5ec8bc4d5f887b839077e74b8d8481ade43d047b68a08e5d4399",
+  "prompt_version": "analyst_prompt_nfl_v1",
+  "prompt_hash": "8b80fc0cc2622da7497bed03b851d3934b8d687a6ca9c5a17d3eeb2d1c56ea7b",
+  "token_estimate": 9425,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "spread",
+    "total"
+  ],
+  "missing_items": 1,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "nfl_store+odds_multibook"
+}
