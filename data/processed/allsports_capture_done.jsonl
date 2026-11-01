@@ -13190,3 +13190,5 @@
 {"call_kind": "pregame", "credits": 2, "events": 13, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-01T11:01:54.860191Z", "regions": ["us"], "rows": 106, "sport_key": "soccer_greece_super_league", "stored": 77}
 {"commence_utc": "2026-11-02T11:00:00Z", "event_id": "cbbce01a444134baf2a8fa533eca853e", "kind": "phase", "observed_utc": "2026-11-01T11:01:54.860191Z", "phase": "t24h", "rows": 19, "sport_key": "basketball_ncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 134, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-01T11:01:54.860191Z", "regions": ["us"], "rows": 1148, "sport_key": "basketball_ncaab", "stored": 275}
+{"events": 38, "kind": "peek", "next_check_utc": "2026-11-01T17:18:04.114703Z", "observed_utc": "2026-11-01T11:18:04.114703Z", "sport_key": "boxing_boxing"}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T11:18:04.114703Z", "regions": ["us"], "rows": 0, "sport_key": "cricket_odi", "stored": 0}
