@@ -13307,3 +13307,5 @@
 {"call_kind": "inplay", "credits": 1, "events": 17, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T12:47:47.411744Z", "regions": ["us"], "rows": 115, "sport_key": "soccer_italy_serie_a", "stored": 65}
 {"call_kind": "inplay", "credits": 1, "events": 13, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T12:47:47.411744Z", "regions": ["us"], "rows": 66, "sport_key": "soccer_netherlands_eredivisie", "stored": 32}
 {"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T12:47:47.411744Z", "regions": ["us"], "rows": 22, "sport_key": "soccer_sweden_superettan", "stored": 20}
+{"events": 41, "kind": "peek", "next_check_utc": "2026-11-01T18:58:40.674814Z", "observed_utc": "2026-11-01T12:58:40.674814Z", "sport_key": "americanfootball_ncaaf"}
+{"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T12:58:40.674814Z", "regions": ["us"], "rows": 37, "sport_key": "soccer_belgium_first_div", "stored": 24}
