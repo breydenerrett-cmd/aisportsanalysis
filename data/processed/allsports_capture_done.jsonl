@@ -13683,3 +13683,6 @@
 {"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T17:08:26.068778Z", "regions": ["us"], "rows": 42, "sport_key": "soccer_netherlands_eredivisie", "stored": 5}
 {"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T17:08:26.068778Z", "regions": ["us"], "rows": 59, "sport_key": "soccer_portugal_primeira_liga", "stored": 49}
 {"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T17:08:26.068778Z", "regions": ["us"], "rows": 9, "sport_key": "soccer_russia_premier_league", "stored": 3}
+{"events": 39, "kind": "peek", "next_check_utc": "2026-11-01T23:19:22.206542Z", "observed_utc": "2026-11-01T17:19:22.206542Z", "sport_key": "boxing_boxing"}
+{"commence_utc": "2026-11-01T23:10:00Z", "event_id": "d8dd95fa4fc001a1ea9f6629a8c8ffee", "kind": "phase", "observed_utc": "2026-11-01T17:19:22.206542Z", "phase": "t6h", "rows": 33, "sport_key": "icehockey_nhl"}
+{"call_kind": "pregame", "credits": 3, "events": 9, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-01T17:19:22.206542Z", "regions": ["us"], "rows": 216, "sport_key": "icehockey_nhl", "stored": 216}
