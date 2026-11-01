@@ -2,10 +2,10 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2027.jsonl": {
-   "bytes": 197584,
-   "newest": "2026-11-01T03:56:53Z",
-   "records": 339,
-   "sha256": "f58510b4092e07c34c45b877ff3ca80493d1be71dc09cd6dd384061bf2086bf6"
+   "bytes": 198889,
+   "newest": "2026-11-01T07:11:48Z",
+   "records": 341,
+   "sha256": "07e43ccb2c696dd8b5d6ea9152c1ee5f9c262ba656abfa61a8b5491b16234cb0"
   },
   "standings_2026.jsonl": {
    "bytes": 219996,
@@ -20,8 +20,8 @@
    "sha256": "364bf31c7d107e3d459b165699cd843c1ba7f47ec22c866e8cf385ccc1d067e3"
   }
  },
- "generated_utc": "2026-11-01T03:56:54Z",
+ "generated_utc": "2026-11-01T07:11:49Z",
  "league": "ncaab",
- "refreshed_utc": "2026-11-01T03:56:54Z",
+ "refreshed_utc": "2026-11-01T07:11:49Z",
  "title": "NCAA men's basketball (D1)"
 }
