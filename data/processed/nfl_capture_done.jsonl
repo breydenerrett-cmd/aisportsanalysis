@@ -513,3 +513,4 @@
 {"game_id": "2026_08_LV_NYJ", "observed_utc": "2026-11-01T17:40:50.750305Z", "phase": "t30m"}
 {"game_id": "2026_08_CLE_PIT", "observed_utc": "2026-11-01T17:40:50.750305Z", "phase": "t30m"}
 {"game_id": "2026_08_ATL_TB", "observed_utc": "2026-11-01T17:40:50.750305Z", "phase": "t30m"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-11-01T18:14:40.489866Z", "phase": "refresh"}
