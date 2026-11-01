@@ -12847,3 +12847,10 @@
 {"events": 8, "kind": "peek", "next_check_utc": "2026-11-01T09:17:05.316994Z", "observed_utc": "2026-11-01T03:17:05.316994Z", "sport_key": "soccer_france_ligue_two"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-01T09:17:05.316994Z", "observed_utc": "2026-11-01T03:17:05.316994Z", "sport_key": "soccer_uefa_champs_league"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-01T09:17:05.316994Z", "observed_utc": "2026-11-01T03:17:05.316994Z", "sport_key": "soccer_uefa_europa_conference_league"}
+{"call_kind": "inplay", "credits": 1, "events": 17, "events_live": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T03:28:06.005796Z", "regions": ["us"], "rows": 58, "sport_key": "americanfootball_ncaaf", "stored": 23}
+{"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T03:28:06.005796Z", "regions": ["au"], "rows": 30, "sport_key": "aussierules_aflw", "stored": 26}
+{"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T03:28:06.005796Z", "regions": ["us"], "rows": 10, "sport_key": "icehockey_ahl", "stored": 10}
+{"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T03:28:06.005796Z", "regions": ["us"], "rows": 58, "sport_key": "icehockey_nhl", "stored": 58}
+{"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T03:28:06.005796Z", "regions": ["us"], "rows": 31, "sport_key": "soccer_mexico_ligamx", "stored": 20}
+{"call_kind": "inplay", "credits": 1, "events": 22, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T03:28:06.005796Z", "regions": ["us"], "rows": 108, "sport_key": "soccer_usa_mls", "stored": 73}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T03:28:06.005796Z", "regions": ["us"], "rows": 6, "sport_key": "tennis_wta_pan_pacific_open", "stored": 6}
