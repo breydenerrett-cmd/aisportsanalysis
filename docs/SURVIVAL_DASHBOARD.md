@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-01 16:46Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-01 21:54Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-01 (8:30 am PT run): three NFL briefs published for the 10:00 am PT slate: Arizona at Dallas (clean on attempt 1), Baltimore at Buffalo (clean on attempt 2), Minnesota at Detroit (clean on attempt 3). Each is three passes (moneyline, spread, total), no takes; every attempt is recorded in the folder.
-- No MLB game exists (statsapi lists none from 11-01 through 11-05; the postseason is over). Grading found nothing new: Thursday's Carolina at Green Bay brief stays graded and remains the public sample. MLB pilot ledger 20 rows and NFL pilot ledger 33 rows both verify.
-- Production /health ok; newest odds on the site 0.5 h old; last capture 11 min old; memory peak 123 MB (limit 850). The process restarted at 16:42Z with no deploy within ten minutes (the 16:10Z deploy finished at 16:20Z): the ninth unexplained restart. The production Fly config sets auto_stop_machines false and min_machines_running 1, so idle stop is not the cause.
-- The scheduled daily loop failed again on the pre-slate guard (no MLB capture for 11-01; nothing to slate) and the tier-ladder NOT ADOPT escalation. Tests are green for the newest push. Public MLB value picks remain paused.
+- 2026-11-01 (1:30 pm PT run): a fourth NFL brief published, Philadelphia at Washington (5:20 pm PT kickoff), frozen 21:47Z and clean on attempt 1: three passes (moneyline, spread, total), no takes. The 1:05 and 1:25 pm PT games (Chargers at Rams, Chiefs at Broncos, Patriots at Dolphins) had no scheduled run inside their window and went unbriefed.
+- Grading after nfl update: the three 10:00 am PT briefs are graded complete (Arizona at Dallas 33-30, Baltimore at Buffalo 10-36, Minnesota at Detroit 15-19, away score first); all were passes, so nothing counts for or against. The public sample now points at Baltimore at Buffalo. MLB pilot ledger 20 rows and NFL pilot ledger 37 rows both verify.
+- Production answered HTTP 503 from the Fly edge on every probe from 21:42Z to 21:50Z (health, sample brief, both hostnames, about 37 s per attempt) while staging answered 200. At 21:52Z it answered 200 again with a process started at 21:51:16Z: a restart with no deploy (the last production deploy finished healthy at 19:21Z), the tenth unexplained restart, which prod_watch did not count because its state held no start time after the failed check. After recovery: memory peak 183 MB (limit 850), newest odds on the site 2.7 h old because no hourly refresh ran at 20:0x or 21:0x, last capture 6 min old. The Fly CLI session on this PC has expired, so the machine events were not read; a redeploy dispatch from this session was refused by the permission classifier.
+- The scheduled daily loop stays red on the pre-slate guard (no MLB capture for 11-01; nothing to slate) plus the tier-ladder NOT ADOPT escalation. Tests are green for the newest tested push (18:37Z merge). Public MLB value picks remain paused.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
