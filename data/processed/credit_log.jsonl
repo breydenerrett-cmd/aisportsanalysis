@@ -26684,3 +26684,13 @@
 {"budget_band": "allsports_props", "caller": "allsports_props.t2h", "credits_remaining": 98338, "credits_used_last": 6, "utc": "2026-11-01T19:12:13.833111Z"}
 {"budget_band": "allsports_props", "caller": "allsports_props.t2h", "credits_remaining": 98333, "credits_used_last": 5, "utc": "2026-11-01T19:12:13.833111Z"}
 {"budget_band": "allsports_props", "caller": "allsports_props.t6h", "credits_remaining": 98329, "credits_used_last": 4, "utc": "2026-11-01T19:12:13.833111Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 98326, "credits_used_last": 0, "utc": "2026-11-01T19:27:50.768538Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 98326, "credits_used_last": 0, "utc": "2026-11-01T19:27:53.084373Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 98326, "credits_used_last": 0, "utc": "2026-11-01T19:27:53.532818Z"}
+{"budget_band": "live_capture", "caller": "nfl_capture.run", "credits_remaining": 98323, "credits_used_last": 0, "utc": "2026-11-01T19:28:25.805257Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 98321, "credits_used_last": 2, "utc": "2026-11-01T19:28:28.055453Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 98319, "credits_used_last": 2, "utc": "2026-11-01T19:28:28.055453Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 98316, "credits_used_last": 3, "utc": "2026-11-01T19:28:28.055453Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t2h", "credits_remaining": 98310, "credits_used_last": 6, "utc": "2026-11-01T19:28:38.204470Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t2h", "credits_remaining": 98304, "credits_used_last": 6, "utc": "2026-11-01T19:28:38.204470Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t6h", "credits_remaining": 98298, "credits_used_last": 6, "utc": "2026-11-01T19:28:38.204470Z"}
