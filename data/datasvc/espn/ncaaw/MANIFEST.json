@@ -13,6 +13,12 @@
    "records": 363,
    "sha256": "2cda4d2cc1055b8d82bcc940221995477c7669eaf5ddb78853f9585074beee67"
   },
+  "standings_2027.jsonl": {
+   "bytes": 212855,
+   "newest": "2026-11-01T13:16:06Z",
+   "records": 363,
+   "sha256": "d6c8ead38d21f9d9ee77875a865b93d754109c656a1ead88b49f3b4102d29534"
+  },
   "teams.jsonl": {
    "bytes": 122134,
    "newest": "2026-10-21T03:09:48Z",
@@ -20,8 +26,8 @@
    "sha256": "b2dcce115965ba042b2681b801b253e4ab7dac88e7adef6873f0d8345b0c72dc"
   }
  },
- "generated_utc": "2026-11-01T10:13:11Z",
+ "generated_utc": "2026-11-01T13:16:06Z",
  "league": "ncaaw",
- "refreshed_utc": "2026-11-01T10:13:11Z",
+ "refreshed_utc": "2026-11-01T13:16:06Z",
  "title": "NCAA women's basketball (D1)"
 }
