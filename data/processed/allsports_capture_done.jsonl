@@ -13215,3 +13215,10 @@
 {"call_kind": "inplay", "credits": 1, "events": 21, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T11:40:49.786500Z", "regions": ["us"], "rows": 92, "sport_key": "tennis_atp_paris_masters", "stored": 92}
 {"call_kind": "inplay", "credits": 1, "events": 17, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T11:40:49.786500Z", "regions": ["us"], "rows": 108, "sport_key": "soccer_italy_serie_a", "stored": 68}
 {"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T11:40:49.786500Z", "regions": ["us"], "rows": 47, "sport_key": "soccer_turkey_super_league", "stored": 33}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-11-01T17:57:04.796931Z", "observed_utc": "2026-11-01T11:57:04.796931Z", "sport_key": "americanfootball_cfl"}
+{"events": 32, "kind": "peek", "next_check_utc": "2026-11-01T17:57:04.796931Z", "observed_utc": "2026-11-01T11:57:04.796931Z", "sport_key": "soccer_fa_cup"}
+{"commence_utc": "2026-11-01T11:59:26Z", "event_id": "670a521efbb7b642d7f0bd4dce70c790", "kind": "phase", "observed_utc": "2026-11-01T11:57:04.796931Z", "phase": "t30m", "rows": 2, "sport_key": "tennis_atp_paris_masters"}
+{"commence_utc": "2026-11-02T10:00:00Z", "event_id": "b04959d8930aba4535db09fe57f9d093", "kind": "phase", "observed_utc": "2026-11-01T11:57:04.796931Z", "phase": "t24h", "rows": 0, "sport_key": "tennis_atp_paris_masters"}
+{"commence_utc": "2026-11-02T10:00:00Z", "event_id": "1ead1ee3704640aea824a5759ad1cc28", "kind": "phase", "observed_utc": "2026-11-01T11:57:04.796931Z", "phase": "t24h", "rows": 0, "sport_key": "tennis_atp_paris_masters"}
+{"call_kind": "pregame", "credits": 1, "events": 21, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T11:57:04.796931Z", "regions": ["us"], "rows": 91, "sport_key": "tennis_atp_paris_masters", "stored": 91}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-01T11:57:04.796931Z", "regions": ["au"], "rows": 2, "sport_key": "cricket_odi", "stored": 1}
