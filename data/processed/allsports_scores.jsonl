@@ -6614,3 +6614,15 @@
 {"away_score": null, "away_team": "Como", "commence_time": "2026-11-08T17:00:00Z", "completed": false, "event_id": "657fd1ac35832f65fcc6feba93970e10", "home_score": null, "home_team": "Inter Milan", "kind": "score", "last_update": null, "observed_utc": "2026-11-01T12:34:57.217224+00:00", "outcome": null, "scores": null, "sport_key": "soccer_italy_serie_a"}
 {"away_score": null, "away_team": "Juventus", "commence_time": "2026-11-08T19:45:00Z", "completed": false, "event_id": "7f50eb7deaebfbcd45c3f4e7cd3724e4", "home_score": null, "home_team": "Fiorentina", "kind": "score", "last_update": null, "observed_utc": "2026-11-01T12:34:57.217224+00:00", "outcome": null, "scores": null, "sport_key": "soccer_italy_serie_a"}
 {"credits": 2, "days_from": 3, "events": 22, "kind": "poll", "observed_utc": "2026-11-01T12:34:57.217224+00:00", "sport_key": "soccer_italy_serie_a"}
+{"credits": 2, "days_from": 3, "events": 10, "kind": "poll", "observed_utc": "2026-11-01T12:47:55.388057+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-01T12:47:55.388057+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-01T12:47:55.388057+00:00", "sport_key": "aussierules_aflw"}
+{"credits": 2, "days_from": 3, "events": 38, "kind": "poll", "observed_utc": "2026-11-01T12:47:55.388057+00:00", "sport_key": "boxing_boxing"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-01T12:47:55.388057+00:00", "sport_key": "icehockey_mestis"}
+{"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-01T12:47:55.388057+00:00", "sport_key": "soccer_korea_kleague1"}
+{"away_score": null, "away_team": "Netherlands", "commence_time": "2026-11-02T05:30:00Z", "completed": false, "event_id": "522a34657ba7c50e2f6184a00ae449a6", "home_score": null, "home_team": "Oman", "kind": "score", "last_update": null, "observed_utc": "2026-11-01T12:47:55.388057+00:00", "outcome": null, "scores": null, "sport_key": "cricket_odi"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-01T12:47:55.388057+00:00", "sport_key": "cricket_odi"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-01T12:47:55.388057+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-01T12:47:55.388057+00:00", "sport_key": "cricket_international_t20"}
+{"credits": 2, "days_from": 3, "events": 21, "kind": "poll", "observed_utc": "2026-11-01T12:47:55.388057+00:00", "sport_key": "soccer_spain_copa_del_rey"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-01T12:47:55.388057+00:00", "sport_key": "baseball_kbo"}
