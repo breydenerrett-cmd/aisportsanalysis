@@ -533,3 +533,4 @@
 {"game_id": "2026_08_PHI_WAS", "observed_utc": "2026-11-02T00:58:40.610869Z", "phase": "t30m"}
 {"game_id": "2026_08_CHI_SEA", "observed_utc": "2026-11-02T01:19:09.785878Z", "phase": "t24h"}
 {"game_id": "2026_08_CHI_SEA", "observed_utc": "2026-11-02T19:34:04.776147Z", "phase": "t6h"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-11-02T20:14:18.755631Z", "phase": "refresh"}
