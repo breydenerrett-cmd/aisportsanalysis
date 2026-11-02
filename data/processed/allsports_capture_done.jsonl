@@ -14205,3 +14205,13 @@
 {"call_kind": "pregame", "credits": 3, "events": 20, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-02T03:22:10.610831Z", "regions": ["us"], "rows": 446, "sport_key": "basketball_nba", "stored": 407}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T03:22:10.610831Z", "regions": ["us"], "rows": 0, "sport_key": "icehockey_ahl", "stored": 0}
 {"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T03:22:10.610831Z", "regions": ["us"], "rows": 44, "sport_key": "soccer_mexico_ligamx", "stored": 0}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-02T09:31:11.706770Z", "observed_utc": "2026-11-02T03:31:11.706770Z", "sport_key": "soccer_china_superleague"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-02T09:31:11.706770Z", "observed_utc": "2026-11-02T03:31:11.706770Z", "sport_key": "soccer_conmebol_copa_libertadores"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-02T09:31:11.706770Z", "observed_utc": "2026-11-02T03:31:11.706770Z", "sport_key": "soccer_japan_j_league"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-02T09:31:11.706770Z", "observed_utc": "2026-11-02T03:31:11.706770Z", "sport_key": "soccer_mexico_ligamx"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-02T09:31:11.706770Z", "observed_utc": "2026-11-02T03:31:11.706770Z", "sport_key": "soccer_uefa_champs_league"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-02T09:31:11.706770Z", "observed_utc": "2026-11-02T03:31:11.706770Z", "sport_key": "soccer_uefa_europa_conference_league"}
+{"commence_utc": "2026-11-02T05:30:00Z", "event_id": "522a34657ba7c50e2f6184a00ae449a6", "kind": "phase", "observed_utc": "2026-11-02T03:31:11.706770Z", "phase": "t2h", "rows": 4, "sport_key": "cricket_odi"}
+{"call_kind": "pregame", "credits": 1, "events": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T03:31:11.706770Z", "regions": ["au"], "rows": 4, "sport_key": "cricket_odi", "stored": 4}
+{"commence_utc": "2026-11-03T03:30:00Z", "event_id": "4cbae12ced189eef318ab0b6d3646107", "kind": "phase", "observed_utc": "2026-11-02T03:31:11.706770Z", "phase": "t24h", "rows": 16, "sport_key": "basketball_ncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 137, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-02T03:31:11.706770Z", "regions": ["us"], "rows": 2428, "sport_key": "basketball_ncaab", "stored": 2411}
