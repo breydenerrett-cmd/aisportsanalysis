@@ -6822,3 +6822,19 @@
 {"fetched_utc": "2026-11-02T22:08:33.621859+00:00", "game_date": "2026-11-02", "poll": true}
 {"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:08:33.621859+00:00", "player": "Pierson Ohl", "player_id": 701487, "team": "NYM", "transaction_id": 947679}
 {"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:08:33.621859+00:00", "player": "Eric Orze", "player_id": 679358, "team": "CHC", "transaction_id": 947680}
+{"fetched_utc": "2026-11-02T22:29:52.459082+00:00", "game_date": "2026-11-02", "poll": true}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Matt Brash", "player_id": 666374, "team": "SEA", "transaction_id": 947681}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Nick Davila", "player_id": 689546, "team": "SEA", "transaction_id": 947682}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Brennen Davis", "player_id": 680695, "team": "SEA", "transaction_id": 947683}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Colt Emerson", "player_id": 806068, "team": "SEA", "transaction_id": 947684}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Logan Evans", "player_id": 688138, "team": "SEA", "transaction_id": 947685}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Luke Raley", "player_id": 670042, "team": "SEA", "transaction_id": 947686}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Will Wilson", "player_id": 669717, "team": "SEA", "transaction_id": 947687}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Josh Simpson", "player_id": 681006, "team": "SEA", "transaction_id": 947688}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Troy Watson", "player_id": 681890, "team": "SEA", "transaction_id": 947689}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Weston Wilson", "player_id": 642215, "team": "SEA", "transaction_id": 947690}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Will Wilson", "player_id": 669717, "team": "SEA", "transaction_id": 947691}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Patrick Wisdom", "player_id": 621550, "team": "SEA", "transaction_id": 947692}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Mitch Keller", "player_id": 656605, "team": "PIT", "transaction_id": 947693}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Endy Rodr\u00edguez", "player_id": 682848, "team": "PIT", "transaction_id": 947694}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Akil Baddoo", "player_id": 668731, "team": "PIT", "transaction_id": 947695}
