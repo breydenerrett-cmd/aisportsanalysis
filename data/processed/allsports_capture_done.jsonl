@@ -14098,3 +14098,4 @@
 {"commence_utc": "2026-11-03T00:40:00Z", "event_id": "0a808d8f7afab3c0e249ca284c470806", "kind": "phase", "observed_utc": "2026-11-02T00:48:05.432405Z", "phase": "t24h", "rows": 19, "sport_key": "basketball_nba"}
 {"commence_utc": "2026-11-03T00:40:00Z", "event_id": "6acd74a2d987fa101c79eaf378fd5891", "kind": "phase", "observed_utc": "2026-11-02T00:48:05.432405Z", "phase": "t24h", "rows": 19, "sport_key": "basketball_nba"}
 {"call_kind": "pregame", "credits": 3, "events": 18, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-02T00:48:05.432405Z", "regions": ["us"], "rows": 286, "sport_key": "basketball_nba", "stored": 247}
+{"call_kind": "inplay", "credits": 1, "events": 20, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T00:58:46.599156Z", "regions": ["us"], "rows": 74, "sport_key": "soccer_argentina_primera_division", "stored": 37}
