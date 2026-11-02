@@ -1,0 +1,127 @@
+{
+  "summary": "Buffalo is the better side on the numbers we have. It scores 32.8333 points per game this season against 24.1429 for Baltimore, it is coming off a bye, and Josh Allen is projected to start. But the market already prices that in. The books' own fair probability for BUF on the moneyline is 0.608, and the best price is -160, so I pass. The spread sits on 3, one of the key numbers, and the fair probability for BUF -3 is 0.5143, close to a coin flip by design. Nothing in the data shows the number is wrong in points, so I pass the spread too. The Baltimore quarterback is the big unknown: Lamar Jackson is a projection, while Tyler Huntley started the last game, and the injury report does not tell us how much any listed player matters. On the total, the number was first captured at 52.5 and now sits at 54.5. Buffalo allows 28.5 points per game and Baltimore 23.8571, so scoring is plausible, but the price already holds that and we cannot see weather for an outdoor game. I pass on the total as well.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "BUF",
+      "verdict": "PASS",
+      "price": -160,
+      "book": "fanatics",
+      "fair_estimate": 0.6,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books' own de-vigged probability already makes Buffalo the clear favourite, and the best price of -160 is not far from it. The data gives me nothing the price does not already hold.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.608},
+            {"path": "markets.moneyline.options[0].best.price", "value": -160}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Buffalo has the stronger season form, with a season margin of 4.3333 points per game against 0.2857 for Baltimore, which is why the market leans its way.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 4.3333},
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 0.2857}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Baltimore's listed quarterback has changed since the last game and is only a projection, so the visitor's real strength is uncertain and I do not want to fade or back the price on it.",
+          "evidence": [
+            {"path": "sections.away.values.qb.listed_for_this_game.changed_since_last_game", "value": true},
+            {"path": "sections.away.values.qb.listed_for_this_game.projected", "value": true},
+            {"path": "sections.away.values.qb.last_game_starter", "value": "Tyler Huntley"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -150,
+      "what_would_change_it": "A confirmed change at quarterback for either team, or Buffalo moving to -150 or better at a book, would make me look at this again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "BUF -3",
+      "verdict": "PASS",
+      "price": -115,
+      "book": "williamhill_us",
+      "fair_estimate": 0.51,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books' fair probability for BUF -3 is 0.5143, so the number is close to a coin flip by design, and I have no reason in points that it is wrong.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5143},
+            {"path": "markets.spread.options[0].line", "value": -3.0}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number is 3, which is a key number because a field goal is worth 3, and it has not moved from where it was first captured, so there is no line movement to read.",
+          "evidence": [
+            {"path": "sections.reference.values.key_numbers[0]", "value": 3},
+            {"path": "markets.spread.context.away_number_first_captured", "value": 3.0}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Past meetings do not settle it either. Buffalo has won 3 of the 4 meetings in the data, but that covers only the meetings in our data store, and Baltimore's quarterback for this game is a projection.",
+          "evidence": [
+            {"path": "sections.matchup.values.head_to_head.home_team_wins", "value": 3},
+            {"path": "sections.matchup.values.head_to_head.meetings", "value": 4}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -104,
+      "what_would_change_it": "A move of the number off 3, or a confirmed quarterback change for Baltimore, would change this; BUF -3 would start to interest me at -104 or better.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 54.5",
+      "verdict": "PASS",
+      "price": -109,
+      "book": "betrivers",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total has moved up from 52.5 when first captured to 54.5, and the books' fair probability is 0.505 for the Over, so the market is split and already reflects the high scoring.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 52.5},
+            {"path": "markets.total.options[0].line", "value": 54.5},
+            {"path": "markets.total.options[0].fair_probability", "value": 0.505}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Buffalo scores 32.8333 and allows 28.5 points per game, while Baltimore scores 24.1429 and allows 23.8571, so the two sides point in different directions and the price already holds them.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 32.8333},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 28.5},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 24.1429},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 23.8571}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The game is outdoors and the data has no weather forecast, and Baltimore's quarterback is a projection, both of which could move a total.",
+          "evidence": [
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"},
+            {"path": "sections.away.values.qb.listed_for_this_game.projected", "value": true}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A forecast showing calm conditions or a confirmed quarterback change would change it, and the Over would only interest me at a price of +100 or better.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

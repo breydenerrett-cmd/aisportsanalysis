@@ -21,8 +21,8 @@ WHAT IS A BREACH (the thresholds; change them here, in one place)
   (the 2026-10-01 failure).
 - The newest odds row on the site is older than ODDS_STALE_HOURS.
 - A protected page answers anything but 401 to a visitor with no token.
-- Billing is anything but off (until the go-live checklist turns it on, at
-  which point set EXPECT_CHECKOUT below).
+- Billing is anything but EXPECT_CHECKOUT ("ok" since Stripe went live in
+  production; it was "off" until the go-live checklist turned billing on).
 - The newest finished `tests` run is not green, no capture slot has succeeded
   for CAPTURE_GAP_MINUTES, or the newest daily loop failed.
 
@@ -52,7 +52,7 @@ CAPTURE_GAP_MINUTES = 150          # quiet-hours slots are 60 minutes apart
 DEPLOY_MATCH_MINUTES = 10
 DEPLOY_HUNG_MINUTES = 20           # a deploy takes about four; one hung run blocks every later one
 DEPLOY_RUNS_READ = 20              # enough to reach the last success behind a queue of cancelled runs
-EXPECT_CHECKOUT = "off"
+EXPECT_CHECKOUT = "ok"             # Stripe live in production since 2026-10-2x; was "off" until the go-live checklist
 
 
 def _get(path, timeout=30):

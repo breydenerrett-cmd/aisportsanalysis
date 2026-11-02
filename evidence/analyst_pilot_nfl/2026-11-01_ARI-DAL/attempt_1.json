@@ -1,0 +1,119 @@
+{
+  "summary": "Dallas is the better team on the season numbers, and the books know it: the moneyline has Dallas at -310 at best, which is a price I will not take under any circumstances, and the Arizona side at +300 is priced close to what the books' own de-vigged number says. I pass on the moneyline. The spread is the interesting one on paper, since Dallas holds a season margin of 1.2857 per game against Arizona's -9.4286, and Arizona has won all three meetings in the data. But each team has only seven games behind it, the number has already moved from 6.5 to 7.5, and the books split almost evenly on both sides at 7.5, so I pass there too. On the total, 54.5 sits well above where it was first captured at 51.5. Dallas scores 27 per game and Arizona allows 29.7143, which points up, but Dallas allows 25.7143 and Arizona scores only 20.2857, which points the other way, and the price already holds all of it. Weather and roof are missing for an outdoor-looking game, so I pass on all three markets.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "DAL",
+      "verdict": "PASS",
+      "price": -310,
+      "book": "draftkings",
+      "fair_estimate": null,
+      "confidence": "medium",
+      "reasons": [
+        {
+          "claim": "Dallas is the clear favourite at the best price on offer, and a price of -310 is past the limit I will lay on any bet.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].best.price", "value": -310},
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.7479}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Arizona at +300 is priced close to the books' own de-vigged chance for the Cardinals, so the underdog price does not look off, and Arizona has the worse season margin.",
+          "evidence": [
+            {"path": "markets.moneyline.options[1].best.price", "value": 300},
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.2521},
+            {"path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": 10.7143}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed change at quarterback for either team would reopen the Arizona side, but no price on Dallas is one I would take.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "ARI +7.5",
+      "verdict": "PASS",
+      "price": -109,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books split almost evenly on the two sides of 7.5, so the market has no strong view for me to argue with.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5094},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4906}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number has already moved toward Dallas from where it was first captured, so some of the Dallas case is in the price.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": 6.5},
+            {"path": "markets.spread.options[0].line", "value": 7.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Dallas holds the better season margin, but both teams have only seven games behind them, and Arizona has won all three meetings in the data, so the evidence pulls in both directions.",
+          "evidence": [
+            {"path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": 10.7143},
+            {"path": "sections.home.values.form.season_to_date.games", "value": 7},
+            {"path": "sections.matchup.values.head_to_head.away_team_wins", "value": 3}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A move of the number off 7.5, or a quarterback or key skill player ruled out on the final report, would make me look again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 54.5",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books are split almost exactly down the middle on 54.5, and the number has climbed since it was first captured at 51.5, so the price already holds the scoring that both teams have shown.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5005},
+            {"path": "markets.total.context.number_first_captured", "value": 51.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The scoring numbers point both ways: Dallas scores 27 per game and Arizona allows 29.7143, but Dallas allows 25.7143 and Arizona scores 20.2857.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 27},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 29.7143},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 25.7143},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 20.2857}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We cannot see the weather or the roof type for this game, which matters for a total this high.",
+          "evidence": [
+            {"path": "missing[2].item", "value": "weather"},
+            {"path": "missing[1].item", "value": "venue.roof"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A forecast showing strong wind, or a quarterback change on either side, would move the number and could flip my view.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
