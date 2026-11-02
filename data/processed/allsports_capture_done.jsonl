@@ -14248,3 +14248,4 @@
 {"commence_utc": "2026-11-02T11:10:00Z", "event_id": "0b15b685479df1479050365848bcfe54", "kind": "phase", "observed_utc": "2026-11-02T05:15:26.044544Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
 {"commence_utc": "2026-11-02T11:10:00Z", "event_id": "35c20c072dc49b1f1762bd71838ad56b", "kind": "phase", "observed_utc": "2026-11-02T05:15:26.044544Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
 {"call_kind": "pregame", "credits": 1, "events": 24, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T05:15:26.044544Z", "regions": ["us"], "rows": 181, "sport_key": "tennis_atp_paris_masters", "stored": 181}
+{"events": 39, "kind": "peek", "next_check_utc": "2026-11-02T11:30:21.383719Z", "observed_utc": "2026-11-02T05:30:21.383719Z", "sport_key": "boxing_boxing"}
