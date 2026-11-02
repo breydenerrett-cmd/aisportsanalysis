@@ -14351,3 +14351,5 @@
 {"commence_utc": "2026-11-02T11:10:00Z", "event_id": "0b15b685479df1479050365848bcfe54", "kind": "phase", "observed_utc": "2026-11-02T10:45:58.014780Z", "phase": "t30m", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
 {"commence_utc": "2026-11-02T11:10:00Z", "event_id": "35c20c072dc49b1f1762bd71838ad56b", "kind": "phase", "observed_utc": "2026-11-02T10:45:58.014780Z", "phase": "t30m", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
 {"call_kind": "pregame", "credits": 1, "events": 25, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T10:45:58.014780Z", "regions": ["us"], "rows": 180, "sport_key": "tennis_atp_paris_masters", "stored": 180}
+{"events": 4, "kind": "peek", "next_check_utc": "2026-11-02T16:53:48.207438Z", "observed_utc": "2026-11-02T10:53:48.207438Z", "sport_key": "aussierules_aflw"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-02T16:53:48.207438Z", "observed_utc": "2026-11-02T10:53:48.207438Z", "sport_key": "soccer_australia_aleague"}
