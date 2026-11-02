@@ -14251,3 +14251,7 @@
 {"events": 39, "kind": "peek", "next_check_utc": "2026-11-02T11:30:21.383719Z", "observed_utc": "2026-11-02T05:30:21.383719Z", "sport_key": "boxing_boxing"}
 {"call_kind": "inplay", "credits": 1, "events": 137, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T05:43:35.759197Z", "regions": ["us"], "rows": 438, "sport_key": "basketball_ncaab", "stored": 438}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T05:43:35.759197Z", "regions": ["au"], "rows": 4, "sport_key": "cricket_odi", "stored": 4}
+{"events": 0, "kind": "peek", "next_check_utc": "2026-11-02T11:55:04.315833Z", "observed_utc": "2026-11-02T05:55:04.315833Z", "sport_key": "cricket_odi"}
+{"events": 24, "kind": "peek", "next_check_utc": "2026-11-02T11:55:04.315833Z", "observed_utc": "2026-11-02T05:55:04.315833Z", "sport_key": "soccer_efl_champ"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-02T11:55:04.315833Z", "observed_utc": "2026-11-02T05:55:04.315833Z", "sport_key": "soccer_england_league2"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-02T11:55:04.315833Z", "observed_utc": "2026-11-02T05:55:04.315833Z", "sport_key": "soccer_switzerland_superleague"}
