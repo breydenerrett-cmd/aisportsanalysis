@@ -15,6 +15,7 @@ import { h, isNum, signed, fmtPrice, shortDate, houndHref, NOT_REPORTED } from "
 import { formatStamp } from "./local-time.js";
 import { signedMoney } from "./hound-money.js";
 import { liveSpan, liveAttrs, watchTickets } from "./ticket-live.js";
+import { logBetPanel } from "./member-bets.js";
 import { renderPickMeters, gradeFold } from "./pick-meters.js";
 import {
   ticketStatus, ticketState, RESULT_WORDS, recordedText, ticketPrice, pickOf, marketLabel, booksText, NA,
@@ -63,6 +64,42 @@ function clvText(ticket) {
 /** True for a ticket whose server sent a ratings block (an object). A replay ticket sends null and a feed without ratings sends nothing. */
 function hasGrades(t) {
   return !!t && t.grades !== null && typeof t.grades === "object";
+}
+
+/** "away at home" / "away @ home" / "away vs home" -> {away, home}; null when the text is not in that shape. */
+function teamsOf(game) {
+  const m = /^(.+?)\s+(?:at|@|vs\.?|v)\s+(.+)$/i.exec(String(game || "").trim());
+  return m ? { away: m[1].trim(), home: m[2].trim() } : null;
+}
+
+/** The side a ticket took, in the server's words: its own `side` when it has one, else read from the pick text ("Over 8.5", "Team to win"). */
+function sideOf(t, teams) {
+  const given = String(t.side || "").toLowerCase();
+  if (given === "home" || given === "away" || given === "over" || given === "under") return given;
+  const pick = String(t.selection || "").trim().toLowerCase();
+  if (/^over\b/.test(pick)) return "over";
+  if (/^under\b/.test(pick)) return "under";
+  if (teams.home && pick.startsWith(teams.home.toLowerCase())) return "home";
+  if (teams.away && pick.startsWith(teams.away.toLowerCase())) return "away";
+  return null;
+}
+
+/**
+ * "Log this bet" (web/js/member-bets.js): inside the "Why this bet" fold of a ticket that is still open and names its game, a button that opens
+ * the member's Log a bet panel with this hound's side, line and price filled in. null for a ticket that cannot be logged.
+ */
+function logThisBet(t, state) {
+  if (state !== "pending" || !t.event_id) return null;
+  const teams = teamsOf(t.game || t.game_text) || {};
+  const slot = h("div", { class: "mb-slot", "data-hook": "ticket-log-slot" });
+  const btn = h("button", { type: "button", class: "btn btn--ghost mb-open", "data-hook": "ticket-log-bet", "aria-expanded": "false", text: "Log this bet",
+    on: { click: () => {
+      if (slot.firstChild) { while (slot.firstChild) slot.removeChild(slot.firstChild); btn.setAttribute("aria-expanded", "false"); return; }
+      btn.setAttribute("aria-expanded", "true");
+      slot.appendChild(logBetPanel({ event_id: t.event_id, sport: t.sport, home_team: teams.home, away_team: teams.away, commence_time: t.start_utc },
+        { prefill: { market: t.market_key || t.market, side: sideOf(t, teams), line: t.line, price: ticketPrice(t) } }));
+    } } });
+  return h("div", { class: "mb-ticketlog" }, [btn, slot]);
 }
 
 /**
@@ -122,7 +159,8 @@ export function ticketCard(ticket, { showModel = false, name = "", flip = false 
   if (t.reason || rated) {
     lines.push(h("details", { class: "hd-card__why", "data-hook": "card-why" }, [
       h("summary", { text: "Why this bet" }), t.reason ? h("p", { text: t.reason }) : null,
-      rated ? renderPickMeters(t.grades, { compact: false, dials: false, note: false }) : null]));
+      rated ? renderPickMeters(t.grades, { compact: false, dials: false, note: false }) : null,
+      logThisBet(t, state)]));
   }
   return h("div", Object.assign({ class: "hd-card", "data-hook": "ticket-card", "data-status": state,
     "data-segment": String(t.segment || "") }, liveAttrs(t)), lines);

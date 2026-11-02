@@ -68,6 +68,13 @@
 
 <p class="hd-fine kn-status" data-hook="kennel-status" role="status" aria-live="polite"></p>
 
+<!-- PAGE TABS (member bet log, docs/plans/MEMBER_BET_LOG.md): "My hounds" and "My bets" (?tab=mybets). Shown by web/js/kennel.js only to a signed-in member on their own kennel;
+     everyone else sees the page as it always was. -->
+<div class="lh-tabs kn-pagetabs" role="tablist" aria-label="My kennel" data-hook="kennel-pagetabs" hidden>
+  <button type="button" role="tab" data-tab="hounds" aria-selected="true">My hounds</button>
+  <button type="button" role="tab" data-tab="mybets" aria-selected="false">My bets</button>
+</div>
+<div data-tabpanel="hounds" data-hook="kennel-hounds-panel">
 <div data-hook="kennel-gate" hidden></div>
 <div data-hook="kennel-profile-slot"></div>
 <div data-hook="kennel-tonight-slot"></div>
@@ -83,6 +90,8 @@
 <p class="hd-fine kn-interview" data-hook="kennel-interview"><a class="bd-textlink" href="interview.html" data-hook="kennel-interview-link">Turn your strategy into a hound</a></p>
 <div data-hook="kennel-graveyard"></div>
 <div data-hook="kennel-retired"></div>
+</div>
+<section class="kn-mybets" data-tabpanel="mybets" data-hook="kennel-mybets" role="tabpanel" aria-label="My bets" hidden></section>
 
 <!-- THE STUDIO: an in-place drawer for one dog (or a new one). Filled by web/js/kennel.js; hidden until a dog is opened. -->
 <div class="kn-scrim" data-hook="studio-scrim" hidden></div>

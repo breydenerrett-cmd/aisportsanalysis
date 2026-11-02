@@ -584,3 +584,55 @@ a.hd-ticket__model:hover { text-decoration: underline; text-underline-offset: 3p
   .hd-pick { grid-template-columns: 1fr; }
   .hd-pickchip { justify-self: start; }
 }
+
+/* ---- Log a bet: the member's own bet log (web/js/member-bets.js). Phone first: 16px text in every field (no zoom on focus), 44px buttons, nothing wider than its box. ---- */
+.mb-panel { display: grid; gap: 10px; min-width: 0; max-width: 100%; padding: 10px 0 4px; }
+.mb-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-width: 0; color: var(--hd-text); }
+.mb-game { min-width: 0; overflow-wrap: anywhere; font-size: 16px; }
+.mb-pill {
+  display: inline-flex; align-items: center; padding: 1px 8px; border: 1px solid var(--hd-accent); border-radius: 4px; color: var(--hd-accent);
+  font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+}
+.mb-form { display: grid; gap: 12px; min-width: 0; }
+.mb-field { display: grid; gap: 4px; min-width: 0; }
+.mb-label { font-size: 13px; font-weight: 600; color: var(--hd-text-2); }
+.mb-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; min-width: 0; }
+.mb-input {
+  box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px; padding: 0 10px; background: var(--hd-card-2); color: var(--hd-text);
+  border: 1px solid var(--hd-line); border-radius: 6px; font: inherit; font-size: 16px;
+}
+.mb-input:focus-visible, .mb-side:focus-visible { outline: 2px solid var(--hd-accent); outline-offset: 2px; }
+.mb-hint { margin: 0; font-size: 12.5px; color: var(--hd-mute); overflow-wrap: anywhere; }
+.mb-sides { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; min-width: 0; }
+.mb-side {
+  box-sizing: border-box; min-width: 0; min-height: 44px; padding: 6px 10px; background: var(--hd-card-2); color: var(--hd-text);
+  border: 1px solid var(--hd-line); border-radius: 6px; font-family: inherit; font-size: 15px; font-weight: 600; line-height: 1.2; text-align: center; overflow-wrap: anywhere; cursor: pointer;
+}
+.mb-side[aria-pressed="true"] { border-color: var(--hd-accent); box-shadow: inset 0 0 0 1px var(--hd-accent); color: #fff; }
+.mb-status { margin: 0; font-size: 14px; color: #FFD7DB; overflow-wrap: anywhere; }
+.mb-status[data-kind="ok"] { color: var(--hd-text-2); }
+.mb-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.mb-save, .mb-open, .mb-remove { min-height: 44px; }
+.mb-done { margin: 0; font-size: 15px; color: var(--hd-text); overflow-wrap: anywhere; }
+.mb-ticketlog { display: grid; gap: 8px; margin-top: 8px; min-width: 0; }
+.mb-slot { min-width: 0; }
+/* My bets tab */
+.mb-record { margin: 4px 0 var(--lh-s4, 16px); }
+.mb-section { display: grid; gap: 8px; margin: 18px 0; min-width: 0; }
+.mb-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; min-width: 0; }
+.mb-bet { display: grid; gap: 4px; padding: 10px 14px 12px; min-width: 0; background: var(--hd-card); border: 1px solid var(--hd-line); border-radius: 6px; }
+.mb-bet__main { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }
+.mb-bet__pick { min-width: 0; overflow-wrap: anywhere; font-size: 16px; color: var(--hd-text); }
+.mb-bet__game, .mb-bet__meta, .mb-bet__note { font-size: 13px; color: var(--hd-mute); overflow-wrap: anywhere; }
+.mb-bet__result { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 14px; font-variant-numeric: tabular-nums; color: var(--hd-text-2); }
+.mb-units--up { color: #5BE39A; }
+.mb-units--down { color: #FF8A94; }
+.kn-pagetabs { margin: 8px 0 var(--lh-s4, 16px); }
+.kn-pagetabs [role="tab"] { min-height: 44px; }
+.kn-mybets { min-width: 0; max-width: 100%; }
+.mb-res { font-weight: 700; color: var(--hd-text); }
+.mb-units { font-weight: 700; }
+.mb-units--flat { color: var(--hd-text-2); }
+.mb-close { color: var(--hd-mute); }
+.mb-bet__actions { display: flex; gap: 8px; margin-top: 4px; }
+.mb-manual { padding-top: 14px; border-top: 1px solid var(--hd-line); }

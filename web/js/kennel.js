@@ -67,6 +67,7 @@ import { bootChat } from "./dog-chat.js";
 import { mountManual } from "./dog-manual.js";
 import { mountApprentice } from "./apprentice-studio.js";
 import { ticketList } from "./hounds-tickets.js";
+import { mountMyBets } from "./member-bets.js";
 import { gradingBadge } from "./ticket-live.js";
 import { bankrollNow, bankrollOf, returnPctOf, fmtUsd, fmtPct, isSmallSample, smallSampleTitle, onlyTickets, ticketState } from "./hounds-board.js";
 import { getSizing, priced, startText, unitSentence, sizingTag } from "./unitsize.js";
@@ -80,6 +81,7 @@ const state = {
   open: null,               // the dog id (or "new") the studio shows
   opener: null,
   tabs: null,
+  pageTabs: null,           // the page's own two tabs (My hounds / My bets), mounted once for a signed-in member
   loaded: {},               // tab -> the dog id it was built for
   kit: null,
   plan: null,               // "free" | "paid" | null: from GET /hounds/mine, read once per load (null = unknown, so no upgrade card)
@@ -1358,12 +1360,27 @@ function bindStudio() {
   });
   // the Analyze report's "Review this change" (analyze-report.js announces it and changes nothing; this page answers)
   window.addEventListener(EXPAND_EVENT, onAnalyzeExpand);
-  window.addEventListener(TOKEN_CHANGED_EVENT, () => { closeStudio(); load(); });
+  window.addEventListener(TOKEN_CHANGED_EVENT, () => { closeStudio(); load().then(paintPageTabs); });
+}
+
+/**
+ * The page's two tabs, "My hounds" and "My bets" (?tab=mybets; web/js/member-bets.js fills the second). Shown only to a signed-in member on
+ * their own kennel: a visitor, or someone looking at a public kennel, sees the page as it always was.
+ */
+function paintPageTabs(data) {
+  const list = q("kennel-pagetabs");
+  if (!list) return;
+  const mine = !!data && state.mode === "mine" && signedIn();
+  if (!mine) { list.setAttribute("hidden", ""); return; }
+  list.removeAttribute("hidden");
+  if (state.pageTabs) { if (state.pageTabs.current === "mybets") mountMyBets(q("kennel-mybets")); return; }
+  state.pageTabs = mountTabs(list, { onChange: (key) => { if (key === "mybets") mountMyBets(q("kennel-mybets")); } });
 }
 
 async function boot() {
   bindStudio();
   const data = await load();
+  paintPageTabs(data);
   const params = new URLSearchParams(window.location.search);
   const want = params.get("dog");
   if (data && state.mode === "mine" && want && dogById(want)) openStudio(want, params.get("tab") || defaultTab(dogById(want)));

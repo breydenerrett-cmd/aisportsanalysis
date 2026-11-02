@@ -309,9 +309,9 @@ class NextStepsAtTheEndOfEveryFlow(unittest.TestCase):
         out = helper.sheet(dogs=[dog("u-1", "Underdog Gus", wins=0, losses=2, bets=2)], extra={BET_URL: [200, {"items": lost, "total": 2}]}, actions=[
             dict(do="click", sel="[data-hook='dog-avatar']", wait=300, label="open", capture=[q("n", "[data-hook='studio-loss-next']", "count"), q("ask", "[data-hook='studio-ask-why']"),
                                                                                               q("retune", "[data-hook='studio-retune']")]),
-            dict(do="click", sel="[data-hook='studio-ask-why']", wait=200, label="ask", capture=[q("sel", "[role='tab'][aria-selected='true']", "texts")]),
+            dict(do="click", sel="[data-hook='studio-ask-why']", wait=200, label="ask", capture=[q("sel", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts")]),
             dict(do="click", sel="[role='tab'][data-tab='overview']", wait=300, label="back"),
-            dict(do="click", sel="[data-hook='studio-retune']", wait=300, label="retune", capture=[q("sel", "[role='tab'][aria-selected='true']", "texts")])])
+            dict(do="click", sel="[data-hook='studio-retune']", wait=300, label="retune", capture=[q("sel", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts")])])
         c = out["captures"]
         self.assertEqual((c["open"]["n"], c["open"]["ask"], c["open"]["retune"]), (1, "Ask why", "Retune"))
         self.assertEqual(c["ask"]["sel"], ["Coach"])        # Ask lives on the Coach tab now (2026-10-29)

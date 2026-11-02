@@ -53,6 +53,8 @@ PAGES = {
     "room": ("room.html", "room-page.js"),
     # Account -> Alerts (tests/test_alerts_panel_web.py): alertsPanel() has no auto-run, so a two-line boot file mounts it on the shell page
     "alerts": ("index.html", "alerts_boot.js"),
+    # a ticket card with its "Log this bet" button (tests/test_member_bets_web.py): the boot file reads GET /test/ticket and draws the card
+    "ticket": ("index.html", "ticket_boot.js"),
 }
 
 _tmp = None
@@ -83,6 +85,9 @@ def _workdir() -> Path:
             'import { mountHome } from "./landing-home.js";\nmountHome();\n', encoding="utf-8")
         Path(_tmp.name, "alerts_boot.js").write_text(
             'import { alertsPanel } from "./alerts.js";\ndocument.body.appendChild(alertsPanel());\n', encoding="utf-8")
+        Path(_tmp.name, "ticket_boot.js").write_text(
+            'import { apiGet } from "./api.js";\nimport { ticketCard } from "./hounds-tickets.js";\n'
+            'const t = await apiGet("/test/ticket");\ndocument.body.appendChild(ticketCard(t));\n', encoding="utf-8")
         Path(_tmp.name, "board_boot.js").write_text(
             'import { fillBoard } from "./landing-board.js";\nawait fillBoard();\n', encoding="utf-8")
     return Path(_tmp.name)

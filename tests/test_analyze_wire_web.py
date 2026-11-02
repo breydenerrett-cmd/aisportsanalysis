@@ -25,7 +25,7 @@ from tests.test_kennel_page import SIGNED, dog, kit, q
 REPORT_URL = "/hounds/u-1/report"
 OPEN = dict(do="click", sel="[data-hook='dog-avatar']", label="open", wait=400)
 CLOSE = dict(do="click", sel="[data-hook='studio-close']", wait=100)
-SELECTED = q("selected", "[role='tab'][aria-selected='true']", "texts")
+SELECTED = q("selected", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts")
 EXPAND_EVENT = "linehound:analyze-expand"
 FOUR = ["Unleash", "Send to training", "Edit", "Take them out back"]
 

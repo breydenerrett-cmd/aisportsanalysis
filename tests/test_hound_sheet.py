@@ -160,16 +160,16 @@ class TheTabs(StudioHelpers, unittest.TestCase):
 
     def test_every_hound_opens_on_overview_whether_or_not_it_has_tickets(self):
         out = self.sheet(dogs=[dog("u-1", "Has Tickets", wins=0, losses=2, bets=2), dog("u-2", "Nothing Yet")], actions=[
-            dict(do="click", sel="[data-hook='dog-avatar']", index=0, label="busy", wait=200, capture=[q("selected", "[role='tab'][aria-selected='true']", "texts")]),
+            dict(do="click", sel="[data-hook='dog-avatar']", index=0, label="busy", wait=200, capture=[q("selected", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts")]),
             dict(do="click", sel="[data-hook='studio-close']", wait=50),
-            dict(do="click", sel="[data-hook='dog-avatar']", index=1, label="quiet", wait=200, capture=[q("selected", "[role='tab'][aria-selected='true']", "texts")])])
+            dict(do="click", sel="[data-hook='dog-avatar']", index=1, label="quiet", wait=200, capture=[q("selected", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts")])])
         self.assertEqual(out["captures"]["busy"]["selected"], ["Overview"])
         self.assertEqual(out["captures"]["quiet"]["selected"], ["Overview"])
 
     def test_an_open_ticket_alone_shows_on_overview(self):
         out = self.sheet(dogs=[dog("u-1", "Doctor Data Dog", open_bets=1)], actions=[
             dict(do="click", sel="[data-hook='dog-avatar']", label="open", wait=250, capture=[
-                q("selected", "[role='tab'][aria-selected='true']", "texts"), q("counts", "[data-hook='studio-counts']")])])
+                q("selected", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts"), q("counts", "[data-hook='studio-counts']")])])
         self.assertEqual(out["captures"]["open"]["selected"], ["Overview"])
         self.assertEqual(out["captures"]["open"]["counts"], "1 open · 0 settled")
 
@@ -265,7 +265,7 @@ class TheUnleashTab(StudioHelpers, unittest.TestCase):
         out = self.sheet(dogs=[d], search="?dog=u-1&tab=fire", settleMs=800, queries=[
             q("state", "[data-hook='unleash-state']"), q("counts", "[data-hook='unleash-counts']"),
             q("note", "[data-hook='unleash-running-note']"), q("btn", "[data-hook='fire-btn']"),
-            q("now", "[data-hook='unleash-now']"), q("text", "[data-hook='studio-fire']"), q("selected", "[role='tab'][aria-selected='true']", "texts")])
+            q("now", "[data-hook='unleash-now']"), q("text", "[data-hook='studio-fire']"), q("selected", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts")])
         c = out["final"]
         self.assertEqual(c["selected"], ["Overview"], "the panel is at the top of Overview, not a tab of its own")
         self.assertRegex(c["state"], r"^Running ·")
@@ -365,7 +365,7 @@ class TheRulesTab(StudioHelpers, unittest.TestCase):
         out = self.go(actions=[dict(do="click", sel="[data-hook='dog-action-edit']", label="rules", wait=500, capture=[
             q("sentences", "[data-hook='rule-sentences'] li", "texts"), q("gate", "[data-hook='studio-rule-now']", "count"),
             q("edit_btn", "[data-hook='studio-edit-rules']", "count"), q("editor_hidden", "[data-hook='build-app']", "hidden"),
-            q("title", "[data-hook='build-title']"), q("selected", "[role='tab'][aria-selected='true']", "texts")])])
+            q("title", "[data-hook='build-title']"), q("selected", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts")])])
         c = out["captures"]["rules"]
         self.assertEqual(c["selected"], ["Rules"])
         self.assertEqual((c["gate"], c["edit_btn"], c["editor_hidden"]), (0, 0, False))

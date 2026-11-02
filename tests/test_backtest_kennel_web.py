@@ -175,7 +175,7 @@ class TheCopyInTheKennel(unittest.TestCase):
         routes = TheStudio().routes([dog("u-1")])
         out = run_page("kennel", routes=routes, **SIGNED, queries=[q("btn", "[data-hook='dog-action-fire']", "texts")], actions=[
             dict(do="click", sel="[data-hook='dog-action-fire']", label="out", wait=300, capture=[
-                q("selected", "[role='tab'][aria-selected='true']", "texts"), q("btn", "[data-hook='fire-btn']"),
+                q("selected", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts"), q("btn", "[data-hook='fire-btn']"),
                 q("title", "[data-hook='unleash-title']")])])
         self.assertEqual(out["final"]["btn"], ["Unleash"])
         self.assertEqual(out["captures"]["out"]["selected"], ["Overview"])     # the Unleash panel opens at the top of Overview (2026-10-29)

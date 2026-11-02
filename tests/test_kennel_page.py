@@ -510,7 +510,7 @@ class TheStudio(unittest.TestCase):
         out = run_page("kennel", routes=self.routes([dog("u-1")]), **SIGNED, actions=[
             dict(do="click", sel="[data-hook='dog-avatar']", label="open", wait=200, capture=[
                 q("hidden", "[data-hook='studio']", "hidden"), q("title", "[data-hook='studio-title']"),
-                q("tabs", "[data-hook='studio-tabs'] [role='tab']", "texts"), q("selected", "[role='tab'][aria-selected='true']", "texts"),
+                q("tabs", "[data-hook='studio-tabs'] [role='tab']", "texts"), q("selected", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts"),
                 q("tab_hidden", "[data-hook='studio-tabs'] [role='tab'][hidden]", "count"), q("scroll", "[data-hook='studio-tabs']", "attr", attr="data-scrollactive"),
                 q("head_avatar", "[data-hook='studio-avatar'] svg", "count"), q("avatar_tag", "[data-hook='studio-avatar'] .kn-studio__avatar-tag"),
                 q("open_link", "[data-hook='studio-open']", "attr", attr="href"), q("overview_panel", "[data-tabpanel='overview']", "hidden"),
@@ -540,7 +540,7 @@ class TheStudio(unittest.TestCase):
                                                                               "max_bets_per_day": 2, "paper_only": True}]})
         out = run_page("kennel", routes=routes, **SIGNED, settleMs=200, actions=[
             dict(do="click", sel="[data-hook='dog-action-edit']", label="edit", wait=500, capture=[
-                q("hidden", "[data-hook='studio']", "hidden"), q("selected", "[role='tab'][aria-selected='true']", "texts"),
+                q("hidden", "[data-hook='studio']", "hidden"), q("selected", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts"),
                 q("builder", "[data-hook='studio-rules'] [data-hook='build-app']", "count"),
                 q("title", "[data-hook='build-title']"), q("advanced", "[data-hook='rules-advanced']", "count"),
                 q("fold_open", "[data-hook='rules-fold']", "attr", attr="open"), q("fold_summary", "[data-hook='rules-fold'] summary"),
@@ -586,7 +586,7 @@ class TheStudio(unittest.TestCase):
         # 2026-10-29: there is no Unleash tab; the panel opens at the top of Overview
         out = run_page("kennel", routes=self.routes([dog("u-1")]), **SIGNED, actions=[
             dict(do="click", sel="[data-hook='dog-action-fire']", label="fire", wait=300, capture=[
-                q("selected", "[role='tab'][aria-selected='true']", "texts"), q("headline", "[data-hook='unleash-headline']"),
+                q("selected", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts"), q("headline", "[data-hook='unleash-headline']"),
                 q("preview", "[data-hook='fire-headline']", "count"), q("fire_host", "[data-hook='studio-fire']", "hidden")])])
         self.assertEqual(out["captures"]["fire"]["selected"], ["Overview"])
         self.assertFalse(out["captures"]["fire"]["fire_host"])
@@ -599,7 +599,7 @@ class TheStudio(unittest.TestCase):
         out = run_page("kennel", routes=self.routes([dog("u-1")]), **SIGNED, actions=[
             dict(do="click", sel="[data-hook='dog-avatar']", label="open", wait=120),
             dict(do="click", sel="[role='tab'][data-tab='coach']", label="ask", wait=300, capture=[
-                q("selected", "[role='tab'][aria-selected='true']", "texts"), q("thread", "[data-hook='ask-thread']"),
+                q("selected", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts"), q("thread", "[data-hook='ask-thread']"),
                 q("chips", "[data-hook='ask-chip']", "texts"), q("training", "[data-hook='studio-training']"), q("train_btn", "[data-hook='coach-train']", "count"),
                 q("versions", "[data-hook='studio-versions']", "count"), q("versions_title", "[data-hook='coach-versions-title']", "count")])])
         cap = out["captures"]["ask"]

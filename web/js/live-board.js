@@ -32,6 +32,7 @@ import { renderFireResult, unleash } from "./dog-fire.js";
 import { showUpgrade } from "./upgrade.js";
 import { formatStamp } from "./local-time.js";
 import { eventLiveModel, liveStateLine } from "./livestate.js";
+import { logBetPanel } from "./member-bets.js";
 
 export const REFRESH_MS = 60000;
 const ROW_CAP = 20;          // one sport chosen
@@ -272,10 +273,15 @@ function rowFor(ev, live) {
   }
   const li = h("li", { class: "lv-row", id: `lv-ev-${ev.event_id}`, "data-hook": "live-row", "data-event": ev.event_id, "data-family": ev._family, "data-live": live ? "true" : "false" });
   const open = state.trays.has(ev.event_id);
+  const mode = open ? state.trays.get(ev.event_id).getAttribute("data-mode") : "";
   const btn = h("button", { type: "button", class: "lv-send", "data-hook": "live-send", "data-event": ev.event_id,
-    "aria-expanded": open ? "true" : "false", "aria-label": `Send a hound at ${ev.away || "TBD"} versus ${ev.home || "TBD"}`, text: "Send a hound",
-    on: { click: () => toggleTray(ev, li, btn) } });
-  li.appendChild(h("div", { class: "lv-row__top" }, [h("div", { class: "lv-row__meta" }, meta), btn]));   // the small secondary action sits at the end of the card's top line
+    "aria-expanded": open && mode !== "log" ? "true" : "false", "aria-label": `Send a hound at ${ev.away || "TBD"} versus ${ev.home || "TBD"}`, text: "Send a hound",
+    on: { click: () => toggleTray(ev, li, "send") } });
+  // "Log a bet" (web/js/member-bets.js): the member's own bet, beside the hound control, sharing its tray
+  const logBtn = h("button", { type: "button", class: "lv-send lv-log", "data-hook": "live-log-bet", "data-event": ev.event_id,
+    "aria-expanded": open && mode === "log" ? "true" : "false", "aria-label": `Log a bet on ${ev.away || "TBD"} versus ${ev.home || "TBD"}`, text: "Log a bet",
+    on: { click: () => toggleTray(ev, li, "log") } });
+  li.appendChild(h("div", { class: "lv-row__top" }, [h("div", { class: "lv-row__meta" }, meta), h("div", { class: "lv-row__acts" }, [logBtn, btn])]));   // the small secondary actions sit at the end of the card's top line
   li.appendChild(h("div", { class: "lv-teams" }, [teamLine(ev.away, ev.best_price_away, sc.away), teamLine(ev.home, ev.best_price_home, sc.home)]));
   const on = houndsOnGame(ev);
   if (on) li.appendChild(on);
@@ -418,20 +424,42 @@ function trayShell(ev) {
   return h("div", { class: "lv-tray", "data-hook": "live-tray", "data-event": ev.event_id, "aria-live": "polite" });
 }
 
-function closeTray(ev, li, btn) {
+function syncButtons(li, ev) {
+  const tray = state.trays.get(ev.event_id);
+  const mode = tray ? tray.getAttribute("data-mode") : "";
+  for (const [hook, want] of [["live-send", "send"], ["live-log-bet", "log"]]) {
+    const b = li.querySelector(`[data-hook='${hook}']`);
+    if (b) b.setAttribute("aria-expanded", mode === want ? "true" : "false");
+  }
+}
+
+function closeTray(ev, li) {
   const tray = state.trays.get(ev.event_id);
   state.trays.delete(ev.event_id);
   if (tray && tray.parentNode) tray.parentNode.removeChild(tray);
-  btn.setAttribute("aria-expanded", "false");
+  syncButtons(li, ev);
 }
 
-function toggleTray(ev, li, btn) {
-  if (state.trays.has(ev.event_id)) { closeTray(ev, li, btn); return; }
-  const tray = trayShell(ev);
-  state.trays.set(ev.event_id, tray);
-  li.appendChild(tray);
-  btn.setAttribute("aria-expanded", "true");
-  showPicker(tray, ev);
+/** The tray under a row is shared by "Send a hound" (mode "send") and "Log a bet" (mode "log"): the same button closes it, the other swaps it. */
+function toggleTray(ev, li, mode = "send") {
+  const open = state.trays.get(ev.event_id);
+  if (open && open.getAttribute("data-mode") === mode) { closeTray(ev, li); return; }
+  let tray = open;
+  if (!tray) {
+    tray = trayShell(ev);
+    state.trays.set(ev.event_id, tray);
+    li.appendChild(tray);
+  }
+  tray.setAttribute("data-mode", mode);
+  syncButtons(li, ev);
+  if (mode === "log") showLogBet(tray, ev);
+  else showPicker(tray, ev);
+}
+
+function showLogBet(tray, ev) {
+  clearNode(tray);
+  tray.appendChild(logBetPanel({ event_id: ev.event_id, sport: ev._family, home_team: ev.home, away_team: ev.away,
+    commence_time: ev.start_utc, league_title: ev.league_title }));
 }
 
 async function showPicker(tray, ev) {

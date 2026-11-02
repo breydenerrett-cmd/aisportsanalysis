@@ -96,7 +96,7 @@ class EveryOldTabNameLandsOnANewTab(unittest.TestCase):
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
 class TheAddressStillOpensTheRightTab(StudioHelpers, unittest.TestCase):
-    SEL = q("selected", "[role='tab'][aria-selected='true']", "texts")
+    SEL = q("selected", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts")
 
     def open_at(self, tab, **kw):
         dogs = kw.pop("dogs", None)
@@ -235,7 +235,7 @@ class TheHeaderButtons(StudioHelpers, unittest.TestCase):
 
     def test_the_header_unleash_starts_the_hound_and_shows_the_day_on_overview(self):
         out = self.studio(actions=[self.OPEN, dict(do="click", sel="[data-hook='studio-unleash']", label="fire", wait=400, capture=[
-            q("selected", "[role='tab'][aria-selected='true']", "texts"), q("headline", "[data-hook='unleash-headline']"), q("panel", "[data-hook='studio-fire']", "hidden")])])
+            q("selected", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts"), q("headline", "[data-hook='unleash-headline']"), q("panel", "[data-hook='studio-fire']", "hidden")])])
         c = out["captures"]["fire"]
         self.assertEqual(c["selected"], ["Overview"])
         self.assertIn("Nothing on today's board fits its rule yet", c["headline"])
@@ -245,7 +245,7 @@ class TheHeaderButtons(StudioHelpers, unittest.TestCase):
     def test_the_header_unleash_works_from_the_rules_tab_too(self):
         out = self.studio(actions=[dict(do="click", sel="[data-hook='dog-action-edit']", wait=500),
                                    dict(do="click", sel="[data-hook='studio-unleash']", label="fire", wait=500, capture=[
-                                       q("selected", "[role='tab'][aria-selected='true']", "texts"), q("headline", "[data-hook='unleash-headline']")])])
+                                       q("selected", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts"), q("headline", "[data-hook='unleash-headline']")])])
         self.assertEqual(out["captures"]["fire"]["selected"], ["Overview"])
         self.assertIn("is unleashed", out["captures"]["fire"]["headline"])
 
@@ -631,10 +631,13 @@ class TheStudioMarkup(unittest.TestCase):
     HTML = read("kennel.html")
 
     def test_three_tabs_and_none_of_the_old_ones(self):
-        tabs = re.findall(r'role="tab" data-tab="([a-z]+)"', self.HTML)
+        # the studio drawer only: the page's own two tabs (My hounds / My bets, member bet log) sit above it
+        studio = self.HTML[self.HTML.index('<aside class="kn-studio"'):]
+        tabs = re.findall(r'role="tab" data-tab="([a-z]+)"', studio)
         self.assertEqual(tabs, ["overview", "rules", "coach"])
         self.assertNotIn("data-scrollactive", self.HTML)
-        self.assertEqual(re.findall(r'data-tabpanel="([a-z]+)"', self.HTML), ["overview", "rules", "coach"])
+        self.assertEqual(re.findall(r'data-tabpanel="([a-z]+)"', studio), ["overview", "rules", "coach"])
+        self.assertEqual(re.findall(r'role="tab" data-tab="([a-z]+)"', self.HTML[:self.HTML.index('<aside class="kn-studio"')]), ["hounds", "mybets"])
 
     def test_the_header_buttons_and_the_analyze_slot_and_the_look_sheet_are_in_the_markup(self):
         for hook in ("studio-unleash", "studio-train", "studio-more", "studio-menu", "studio-versions-open", "studio-outback", "studio-remove",

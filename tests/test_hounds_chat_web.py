@@ -65,7 +65,7 @@ def open_ask(extra=(), **kw):
 class TheThread(unittest.TestCase):
     def test_the_owner_gets_the_conversation_with_the_saved_history_showing(self):
         out = open_ask(capture=[
-            q("selected", "[role='tab'][aria-selected='true']", "texts"), q("you", "[data-hook='chat-you-text']", "texts"),
+            q("selected", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts"), q("you", "[data-hook='chat-you-text']", "texts"),
             q("hound", "[data-hook='chat-hound-text'] .dc-line", "texts"), q("faces", "[data-hook='chat-face'] svg", "count"),
             q("rows_you", "[data-hook='chat-you']", "count"), q("rows_hound", "[data-hook='chat-hound']", "count"),
             q("classic", "[data-hook='ask-thread']", "count"), q("clear", "[data-hook='chat-clear']"),
@@ -222,7 +222,7 @@ class TheCard(unittest.TestCase):
             dict(do="click", sel="[data-hook='chat-apply']", label="apply", wait=300, capture=[
                 q("status", "[data-hook='chat-proposal']", "attr", attr="data-status"), q("result", "[data-hook='chat-proposal-status']"),
                 q("buttons", "[data-hook='chat-apply']", "count"), q("notice", "[data-hook='chat-notice']"),
-                q("version", "[data-hook='studio-version']"), q("selected", "[role='tab'][aria-selected='true']", "texts"),
+                q("version", "[data-hook='studio-version']"), q("selected", "[data-hook='studio-tabs'] [role='tab'][aria-selected='true']", "texts"),
                 q("thread", "[data-hook='chat-you']", "count")])])
         cap = out["captures"]["apply"]
         self.assertEqual([p["url"] for p in out["posts"]], ["/hounds/u-1/chat/proposals/12/apply"])
