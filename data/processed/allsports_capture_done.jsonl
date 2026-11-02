@@ -14257,3 +14257,11 @@
 {"events": 6, "kind": "peek", "next_check_utc": "2026-11-02T11:55:04.315833Z", "observed_utc": "2026-11-02T05:55:04.315833Z", "sport_key": "soccer_switzerland_superleague"}
 {"commence_utc": "2026-11-02T08:00:00Z", "event_id": "7dc58df9af17b42764b2571a22a8f309", "kind": "phase", "observed_utc": "2026-11-02T06:05:14.157636Z", "phase": "t2h", "rows": 21, "sport_key": "basketball_ncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 137, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-02T06:05:14.157636Z", "regions": ["us"], "rows": 2485, "sport_key": "basketball_ncaab", "stored": 2468}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-11-02T12:22:41.951323Z", "observed_utc": "2026-11-02T06:22:41.951323Z", "sport_key": "americanfootball_cfl"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-02T12:22:41.951323Z", "observed_utc": "2026-11-02T06:22:41.951323Z", "sport_key": "soccer_austria_bundesliga"}
+{"events": 35, "kind": "peek", "next_check_utc": "2026-11-02T12:22:41.951323Z", "observed_utc": "2026-11-02T06:22:41.951323Z", "sport_key": "soccer_fa_cup"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-02T12:22:41.951323Z", "observed_utc": "2026-11-02T06:22:41.951323Z", "sport_key": "soccer_netherlands_eredivisie"}
+{"commence_utc": "2026-11-02T12:20:00Z", "event_id": "d54412ae826f63d7234c2ea00d4809ac", "kind": "phase", "observed_utc": "2026-11-02T06:22:41.951323Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
+{"commence_utc": "2026-11-02T12:20:00Z", "event_id": "a397cd2c21e2038f589dfcc1bbf4a5d9", "kind": "phase", "observed_utc": "2026-11-02T06:22:41.951323Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
+{"commence_utc": "2026-11-02T12:20:00Z", "event_id": "99851274de5cc3c943371f330f1b4c71", "kind": "phase", "observed_utc": "2026-11-02T06:22:41.951323Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
+{"call_kind": "pregame", "credits": 1, "events": 24, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T06:22:41.951323Z", "regions": ["us"], "rows": 181, "sport_key": "tennis_atp_paris_masters", "stored": 181}
