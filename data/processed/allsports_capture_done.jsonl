@@ -14369,3 +14369,12 @@
 {"events": 8, "kind": "peek", "next_check_utc": "2026-11-02T17:21:22.423217Z", "observed_utc": "2026-11-02T11:21:22.423217Z", "sport_key": "soccer_uefa_nations_league"}
 {"events": 15, "kind": "peek", "next_check_utc": "2026-11-02T17:21:22.423217Z", "observed_utc": "2026-11-02T11:21:22.423217Z", "sport_key": "soccer_usa_mls"}
 {"call_kind": "inplay", "credits": 1, "events": 25, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T11:21:22.423217Z", "regions": ["us"], "rows": 176, "sport_key": "tennis_atp_paris_masters", "stored": 176}
+{"events": 39, "kind": "peek", "next_check_utc": "2026-11-02T17:30:43.903834Z", "observed_utc": "2026-11-02T11:30:43.903834Z", "sport_key": "boxing_boxing"}
+{"commence_utc": "2026-11-02T13:30:00Z", "event_id": "a916463c001545483b340777daefd7c6", "kind": "phase", "observed_utc": "2026-11-02T11:30:43.903834Z", "phase": "t2h", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
+{"call_kind": "pregame", "credits": 1, "events": 24, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T11:30:43.903834Z", "regions": ["us"], "rows": 173, "sport_key": "tennis_atp_paris_masters", "stored": 173}
+{"commence_utc": "2026-11-02T17:30:00Z", "event_id": "b6b186eeddf010582866d3ca7123a2b7", "kind": "phase", "observed_utc": "2026-11-02T11:30:43.903834Z", "phase": "t6h", "rows": 12, "sport_key": "soccer_greece_super_league"}
+{"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-02T11:30:43.903834Z", "regions": ["us"], "rows": 71, "sport_key": "soccer_greece_super_league", "stored": 25}
+{"commence_utc": "2026-11-02T17:30:00Z", "event_id": "66608b64d462d1d3deabe573c8456d86", "kind": "phase", "observed_utc": "2026-11-02T11:30:43.903834Z", "phase": "t6h", "rows": 16, "sport_key": "soccer_italy_serie_a"}
+{"call_kind": "pregame", "credits": 2, "events": 12, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-02T11:30:43.903834Z", "regions": ["us"], "rows": 171, "sport_key": "soccer_italy_serie_a", "stored": 31}
+{"commence_utc": "2026-11-02T17:30:00Z", "event_id": "7ec0555b03e5f46aa4e4c7e315ba6880", "kind": "phase", "observed_utc": "2026-11-02T11:30:43.903834Z", "phase": "t6h", "rows": 11, "sport_key": "soccer_spain_segunda_division"}
+{"call_kind": "pregame", "credits": 2, "events": 14, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-02T11:30:43.903834Z", "regions": ["us"], "rows": 119, "sport_key": "soccer_spain_segunda_division", "stored": 44}
