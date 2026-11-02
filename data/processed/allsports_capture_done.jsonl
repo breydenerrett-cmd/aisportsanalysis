@@ -14465,3 +14465,11 @@
 {"commence_utc": "2026-11-02T21:00:00Z", "event_id": "6b94b62916fc2ffe9a41e1df8df01b25", "kind": "phase", "observed_utc": "2026-11-02T14:23:29.621844Z", "phase": "t24h", "rows": 5, "sport_key": "basketball_wncaab"}
 {"commence_utc": "2026-11-02T22:00:00Z", "event_id": "204237eb92ba5192a32459e2c1a2659f", "kind": "phase", "observed_utc": "2026-11-02T14:23:29.621844Z", "phase": "t24h", "rows": 2, "sport_key": "basketball_wncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 4, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-02T14:23:29.621844Z", "regions": ["us"], "rows": 31, "sport_key": "basketball_wncaab", "stored": 31}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-02T20:36:30.345728Z", "observed_utc": "2026-11-02T14:36:30.345728Z", "sport_key": "soccer_belgium_first_div"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-02T20:36:30.345728Z", "observed_utc": "2026-11-02T14:36:30.345728Z", "sport_key": "soccer_norway_eliteserien"}
+{"commence_utc": "2026-11-02T15:00:00Z", "event_id": "6427e4ec579967b3a80259bfc2a27c9f", "kind": "phase", "observed_utc": "2026-11-02T14:36:30.345728Z", "phase": "t30m", "rows": 6, "sport_key": "soccer_russia_premier_league"}
+{"call_kind": "pregame", "credits": 2, "events": 7, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-02T14:36:30.345728Z", "regions": ["us"], "rows": 28, "sport_key": "soccer_russia_premier_league", "stored": 6}
+{"commence_utc": "2026-11-02T16:30:00Z", "event_id": "f0eb27924ac613d7606d8988e9d1e871", "kind": "phase", "observed_utc": "2026-11-02T14:36:30.345728Z", "phase": "t2h", "rows": 27, "sport_key": "basketball_ncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 117, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-02T14:36:30.345728Z", "regions": ["us"], "rows": 2458, "sport_key": "basketball_ncaab", "stored": 2458}
+{"commence_utc": "2026-11-03T10:00:00Z", "event_id": "bc5dffba531009c0a80d3facb9410062", "kind": "phase", "observed_utc": "2026-11-02T14:36:30.345728Z", "phase": "t24h", "rows": 1, "sport_key": "tennis_atp_paris_masters"}
+{"call_kind": "pregame", "credits": 1, "events": 20, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T14:36:30.345728Z", "regions": ["us"], "rows": 145, "sport_key": "tennis_atp_paris_masters", "stored": 145}
