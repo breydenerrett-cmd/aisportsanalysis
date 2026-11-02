@@ -14281,3 +14281,4 @@
 {"call_kind": "pregame", "credits": 3, "events": 136, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-02T07:40:49.300750Z", "regions": ["us"], "rows": 2467, "sport_key": "basketball_ncaab", "stored": 2450}
 {"commence_utc": "2026-11-02T13:30:00Z", "event_id": "a916463c001545483b340777daefd7c6", "kind": "phase", "observed_utc": "2026-11-02T07:40:49.300750Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
 {"call_kind": "pregame", "credits": 1, "events": 24, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T07:40:49.300750Z", "regions": ["us"], "rows": 183, "sport_key": "tennis_atp_paris_masters", "stored": 183}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-02T08:30:00Z", "observed_utc": "2026-11-02T07:52:08.148808Z", "sport_key": "baseball_kbo"}
