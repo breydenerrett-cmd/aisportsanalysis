@@ -14396,3 +14396,5 @@
 {"commence_utc": "2026-11-02T18:00:00Z", "event_id": "a3c9e036df6ae208dedeb9887d7b9f95", "kind": "phase", "observed_utc": "2026-11-02T12:11:33.191158Z", "phase": "t6h", "rows": 14, "sport_key": "soccer_sweden_superettan"}
 {"commence_utc": "2026-11-02T18:05:00Z", "event_id": "c6e22cedfe80846343bbae2ca09d4c0b", "kind": "phase", "observed_utc": "2026-11-02T12:11:33.191158Z", "phase": "t6h", "rows": 14, "sport_key": "soccer_sweden_superettan"}
 {"call_kind": "pregame", "credits": 2, "events": 4, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-02T12:11:33.191158Z", "regions": ["us"], "rows": 42, "sport_key": "soccer_sweden_superettan", "stored": 28}
+{"commence_utc": "2026-11-02T12:45:00Z", "event_id": "938ba34db91fe03db5630c6087840b3d", "kind": "phase", "observed_utc": "2026-11-02T12:22:32.225339Z", "phase": "t30m", "rows": 4, "sport_key": "tennis_atp_paris_masters"}
+{"call_kind": "pregame", "credits": 1, "events": 21, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T12:22:32.225339Z", "regions": ["us"], "rows": 156, "sport_key": "tennis_atp_paris_masters", "stored": 156}
