@@ -14290,3 +14290,7 @@
 {"call_kind": "pregame", "credits": 1, "events": 24, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T08:06:27.662791Z", "regions": ["us"], "rows": 183, "sport_key": "tennis_atp_paris_masters", "stored": 183}
 {"commence_utc": "2026-11-02T14:00:00Z", "event_id": "38f469202f748211c7d5bf585a0f4458", "kind": "phase", "observed_utc": "2026-11-02T08:06:27.662791Z", "phase": "t6h", "rows": 24, "sport_key": "basketball_ncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 136, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-02T08:06:27.662791Z", "regions": ["us"], "rows": 2470, "sport_key": "basketball_ncaab", "stored": 2453}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-02T14:32:45.180796Z", "observed_utc": "2026-11-02T08:32:45.180796Z", "sport_key": "soccer_belgium_first_div"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-02T14:32:45.180796Z", "observed_utc": "2026-11-02T08:32:45.180796Z", "sport_key": "soccer_norway_eliteserien"}
+{"commence_utc": "2026-11-02T14:30:00Z", "event_id": "b363b01046ccc43cdfcc7e7f4e42d735", "kind": "phase", "observed_utc": "2026-11-02T08:32:45.180796Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
+{"call_kind": "pregame", "credits": 1, "events": 24, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T08:32:45.180796Z", "regions": ["us"], "rows": 185, "sport_key": "tennis_atp_paris_masters", "stored": 185}
