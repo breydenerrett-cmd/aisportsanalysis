@@ -7203,3 +7203,4 @@
 {"credits": 2, "days_from": 3, "events": 8, "kind": "poll", "observed_utc": "2026-11-02T09:38:06.444498+00:00", "sport_key": "basketball_nbl"}
 {"away_score": null, "away_team": "Grambling St Tigers", "commence_time": "2026-11-02T08:05:40Z", "completed": false, "event_id": "7dc58df9af17b42764b2571a22a8f309", "home_score": null, "home_team": "Northern Illinois Huskies", "kind": "score", "last_update": null, "observed_utc": "2026-11-02T10:12:57.817764+00:00", "outcome": null, "scores": null, "sport_key": "basketball_ncaab"}
 {"credits": 2, "days_from": 3, "events": 138, "kind": "poll", "observed_utc": "2026-11-02T10:12:57.817764+00:00", "sport_key": "basketball_ncaab"}
+{"errors": [], "events": 3, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 3, "observed_utc": "2026-11-02T10:37:31.660546Z", "source": "espn_tennis", "unmatched": 0, "unmatched_ids": [], "void": 0, "written": 0}
