@@ -2041,3 +2041,4 @@
 {"events": 6, "kind": "peek", "next_check_utc": "2026-11-02T04:19:23.813589Z", "observed_utc": "2026-11-02T01:19:23.813589Z", "sport_key": "icehockey_nhl"}
 {"commence_utc": "2026-11-02T01:40:00Z", "event_id": "094b083ace229ca31ff360a80e35a1a8", "kind": "phase", "observed_utc": "2026-11-02T01:19:23.813589Z", "phase": "t30m", "rows": 976, "sport_key": "basketball_nba", "status": "done"}
 {"books": 8, "credits": 5, "event_id": "094b083ace229ca31ff360a80e35a1a8", "family": "NBA", "kind": "call", "markets": ["player_points", "player_rebounds", "player_assists", "player_threes", "player_points_rebounds_assists"], "observed_utc": "2026-11-02T01:19:23.813589Z", "phase": "t30m", "regions": ["us"], "remaining": 97845, "sport_key": "basketball_nba", "stored": 976}
+{"events": 17, "kind": "peek", "next_check_utc": "2026-11-02T04:30:18.090646Z", "observed_utc": "2026-11-02T01:30:18.090646Z", "sport_key": "americanfootball_nfl"}
