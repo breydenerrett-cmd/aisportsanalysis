@@ -14419,3 +14419,5 @@
 {"call_kind": "pregame", "credits": 3, "events": 135, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-02T13:03:24.992381Z", "regions": ["us"], "rows": 2576, "sport_key": "basketball_ncaab", "stored": 2559}
 {"commence_utc": "2026-11-02T19:00:00Z", "event_id": "a7a542233e06c0e0bae3c43f383d0544", "kind": "phase", "observed_utc": "2026-11-02T13:03:24.992381Z", "phase": "t6h", "rows": 14, "sport_key": "soccer_brazil_serie_b"}
 {"call_kind": "pregame", "credits": 2, "events": 8, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-02T13:03:24.992381Z", "regions": ["us"], "rows": 55, "sport_key": "soccer_brazil_serie_b", "stored": 39}
+{"commence_utc": "2026-11-02T15:15:00Z", "event_id": "6891a7ee06d4118eba6fb1ea59026099", "kind": "phase", "observed_utc": "2026-11-02T13:18:18.224779Z", "phase": "t2h", "rows": 11, "sport_key": "soccer_spain_segunda_division"}
+{"call_kind": "pregame", "credits": 2, "events": 14, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-02T13:18:18.224779Z", "regions": ["us"], "rows": 117, "sport_key": "soccer_spain_segunda_division", "stored": 40}
