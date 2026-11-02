@@ -14580,3 +14580,8 @@
 {"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T16:41:07.741283Z", "regions": ["us"], "rows": 15, "sport_key": "soccer_finland_veikkausliiga", "stored": 8}
 {"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T16:41:07.741283Z", "regions": ["us"], "rows": 51, "sport_key": "soccer_greece_super_league", "stored": 12}
 {"call_kind": "inplay", "credits": 1, "events": 13, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T16:41:07.741283Z", "regions": ["us"], "rows": 70, "sport_key": "soccer_spain_segunda_division", "stored": 18}
+{"events": 4, "kind": "peek", "next_check_utc": "2026-11-02T22:59:32.608177Z", "observed_utc": "2026-11-02T16:59:32.608177Z", "sport_key": "aussierules_aflw"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-02T22:59:32.608177Z", "observed_utc": "2026-11-02T16:59:32.608177Z", "sport_key": "icehockey_sweden_hockey_league"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-02T22:59:32.608177Z", "observed_utc": "2026-11-02T16:59:32.608177Z", "sport_key": "soccer_australia_aleague"}
+{"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T16:59:32.608177Z", "regions": ["us"], "rows": 16, "sport_key": "soccer_russia_premier_league", "stored": 0}
+{"call_kind": "inplay", "credits": 1, "events": 19, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T16:59:32.608177Z", "regions": ["us"], "rows": 136, "sport_key": "tennis_atp_paris_masters", "stored": 124}
