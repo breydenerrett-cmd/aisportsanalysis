@@ -114,6 +114,9 @@ def run_pass(*, now: Optional[datetime] = None, ledger: Optional[str] = None,
                     "engine": [], "settle": None, "wrote": 0, "paper_only": True}
     if not running:
         report["skipped"] = "no running hounds"
+        # Members' own bets settle whether or not any hound is running.
+        with freshness._gated_build():
+            _settle_members(moment, ledger, settle_kwargs, report)
         return report
 
     with freshness._gated_build():
@@ -135,6 +138,7 @@ def run_pass(*, now: Optional[datetime] = None, ledger: Optional[str] = None,
         settled = user_settle.settle(ledger=ledger, now=moment, **kwargs)
         report["settle"] = {k: settled[k] for k in ("considered", "graded", "pending")}
         report["wrote"] += settled["graded"]
+        _settle_members(moment, ledger, kwargs, report)
         # The owners' manual picks sit in their own ledger, never in the dogs' record; they are graded by the
         # same grader, here, so a manual ticket settles without a second scheduler. Never stops the pass.
         try:
@@ -160,6 +164,23 @@ def run_pass(*, now: Optional[datetime] = None, ledger: Optional[str] = None,
     if report["wrote"]:
         (refresh_stats or stats.refresh_async)()
     return report
+
+
+def _settle_members(moment: datetime, ledger: Optional[str], settle_kwargs: Optional[Mapping],
+                    report: dict) -> None:
+    """Grade the members' bet ledger (src/hounds/member_bets.py) with the same grader, alert off. Never stops the pass.
+    Settling a member's bet does not change any public stats, so it does not count toward ``wrote``."""
+    try:
+        from src.hounds import member_bets
+        kwargs = {k: v for k, v in (settle_kwargs or {}).items() if k != "alert"}
+        if not kwargs.get("postponed_lookup"):
+            kwargs["postponed_lookup"] = _postponed_lookup()
+        if not kwargs.get("cancelled_lookup"):
+            kwargs["cancelled_lookup"] = _cancelled_lookup()
+        out = member_bets.settle(ledger=member_bets.ledger_beside(ledger), now=moment, **kwargs)
+        report["member_settle"] = {k: out[k] for k in ("considered", "graded", "pending")}
+    except Exception:  # noqa: BLE001
+        logger.exception("member bet settle failed")
 
 
 def _postponed_lookup():
