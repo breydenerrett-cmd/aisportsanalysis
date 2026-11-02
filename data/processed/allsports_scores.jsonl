@@ -7183,3 +7183,16 @@
 {"credits": 2, "days_from": 3, "events": 30, "kind": "poll", "observed_utc": "2026-11-02T06:46:24.247402+00:00", "sport_key": "soccer_usa_mls"}
 {"away_score": 72.0, "away_team": "High Point Panthers", "commence_time": "2026-11-02T05:03:40Z", "completed": true, "event_id": "d961840cf470389306fa79cf82f5d46c", "home_score": 57.0, "home_team": "Liberty Flames", "kind": "score", "last_update": "2026-11-02T08:06:27Z", "observed_utc": "2026-11-02T08:06:32.957357+00:00", "outcome": "away", "scores": [{"name": "High Point Panthers", "score": "72"}, {"name": "Liberty Flames", "score": "57"}], "sport_key": "basketball_ncaab"}
 {"credits": 2, "days_from": 3, "events": 138, "kind": "poll", "observed_utc": "2026-11-02T08:06:32.957357+00:00", "sport_key": "basketball_ncaab"}
+{"credits": 2, "days_from": 3, "events": 7, "kind": "poll", "observed_utc": "2026-11-02T08:59:14.013001+00:00", "sport_key": "icehockey_ahl"}
+{"away_score": null, "away_team": "KalPa", "commence_time": "2026-11-09T16:30:00Z", "completed": false, "event_id": "cc67d1126281e6cf78f470ed4440055c", "home_score": null, "home_team": "TPS", "kind": "score", "last_update": null, "observed_utc": "2026-11-02T08:59:14.013001+00:00", "outcome": null, "scores": null, "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-02T08:59:14.013001+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 39, "kind": "poll", "observed_utc": "2026-11-02T08:59:14.013001+00:00", "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 4, "kind": "poll", "observed_utc": "2026-11-02T08:59:14.013001+00:00", "sport_key": "aussierules_aflw"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-02T08:59:14.013001+00:00", "sport_key": "icehockey_mestis"}
+{"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-02T08:59:14.013001+00:00", "sport_key": "soccer_korea_kleague1"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-02T08:59:14.013001+00:00", "sport_key": "cricket_odi"}
+{"away_score": null, "away_team": "Samsung Lions", "commence_time": "2026-11-03T09:30:00Z", "completed": false, "event_id": "a7c2f6236942b6afbea2dedfdd86dbee", "home_score": null, "home_team": "KT Wiz", "kind": "score", "last_update": null, "observed_utc": "2026-11-02T08:59:14.013001+00:00", "outcome": null, "scores": null, "sport_key": "baseball_kbo"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-02T08:59:14.013001+00:00", "sport_key": "baseball_kbo"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-02T08:59:14.013001+00:00", "sport_key": "cricket_international_t20"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-02T08:59:14.013001+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 21, "kind": "poll", "observed_utc": "2026-11-02T08:59:14.013001+00:00", "sport_key": "soccer_spain_segunda_division"}
