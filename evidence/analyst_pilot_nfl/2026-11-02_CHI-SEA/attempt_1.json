@@ -1,0 +1,123 @@
+{
+  "summary": "Seattle is the better team on the season numbers we have, mostly because of its defence: it allows 3.9927 yards per play against 6.2507 for Chicago. That is real, but the market has already priced it. Seattle is a 3 point home favourite, sitting right on a key number, and the books split almost evenly between the two sides, so I pass on the spread. The moneyline at -170 sits close to the books' own fair figure of 0.6157, and I see nothing in the data that shows it wrong, so I pass there too. Chicago has 11 days of rest to Seattle's 8, and Seattle lists 11 players on the injury report with 3 out, including quarterback Drew Lock as questionable while Sam Darnold is the projected starter, but the report does not tell us how much any of that matters. The total of 46.5 has not moved since it was first captured, and the scoring and allowing numbers for the two teams pull in different directions, so I pass on that as well. Weather is missing for an outdoor game, and that matters most for the total.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "SEA",
+      "verdict": "PASS",
+      "price": -170,
+      "book": "williamhill_us",
+      "fair_estimate": 0.6,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books' own de-vigged number already makes Seattle the clear favourite, and our read of the season numbers lands in about the same place, so the price looks roughly right.",
+          "evidence": [
+            { "path": "markets.moneyline.options[0].fair_probability", "value": 0.6157 },
+            { "path": "markets.moneyline.options[0].best.price", "value": -170 },
+            { "path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": 0.8572 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Seattle's defence is the real edge in the data, but its recent turnover margin and a long injury list keep us from moving off the market.",
+          "evidence": [
+            { "path": "sections.home.values.form.season_to_date.yards_per_play_allowed.value", "value": 3.9927 },
+            { "path": "sections.away.values.form.season_to_date.yards_per_play_allowed.value", "value": 6.2507 },
+            { "path": "sections.home.values.form.last_3.turnover_margin.value", "value": -1.3333 },
+            { "path": "sections.home.values.injuries.totals.listed", "value": 11 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -150,
+      "what_would_change_it": "Seattle's moneyline falling to -150 or better, or a change at quarterback, would put this back on the table.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "SEA -3",
+      "verdict": "PASS",
+      "price": -117,
+      "book": "williamhill_us",
+      "fair_estimate": 0.52,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides of the number are priced almost as a coin flip, and the line has not moved off 3 since it was first captured, so the market sees the same game we do.",
+          "evidence": [
+            { "path": "markets.spread.options[0].fair_probability", "value": 0.5193 },
+            { "path": "markets.spread.options[1].fair_probability", "value": 0.4807 },
+            { "path": "markets.spread.context.away_number_first_captured", "value": 3.0 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "A margin of 3 is one of the key numbers from the scoring, so a small view on the team does not become a view on the number without a reason it is wrong in points, and we do not have one.",
+          "evidence": [
+            { "path": "sections.reference.values.key_numbers", "value": "3,6,7,10,14" },
+            { "path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": 0.8572 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Chicago has more rest and Seattle has the longer injury list including a questionable quarterback, but the data does not measure how much either matters.",
+          "evidence": [
+            { "path": "sections.away.values.rest.days_since_last_game", "value": 11 },
+            { "path": "sections.home.values.rest.days_since_last_game", "value": 8 },
+            { "path": "sections.home.values.injuries.skill_players_listed[0].report_status", "value": "questionable" }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -108,
+      "what_would_change_it": "Seattle's price at -3 improving to -108 or better, or Drew Lock being ruled out or the quarterback changing, would change this.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 46.5",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books split the over and the under evenly, and the number has not moved since it was first captured, so the market has no strong view to argue with.",
+          "evidence": [
+            { "path": "markets.total.options[0].fair_probability", "value": 0.5002 },
+            { "path": "markets.total.options[1].fair_probability", "value": 0.4998 },
+            { "path": "markets.total.context.number_first_captured", "value": 46.5 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Chicago scores more per game than Seattle, but Seattle allows fewer points and far fewer yards per play, so the scoring and allowing numbers pull in opposite directions and the price already holds both.",
+          "evidence": [
+            { "path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 25.7143 },
+            { "path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 24 },
+            { "path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 17.8571 },
+            { "path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 20.4286 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The game is outdoors and we cannot see weather, and a quarterback change could move the number, so we hold back on the total.",
+          "evidence": [
+            { "path": "sections.schedule.values.venue.roof", "value": "outdoors" },
+            { "path": "missing[1].item", "value": "weather" }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A weather report showing strong wind or cold, or a quarterback change, would change this; so would the Over 46.5 price reaching even money.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
