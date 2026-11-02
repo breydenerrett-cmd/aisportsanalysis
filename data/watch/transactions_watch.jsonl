@@ -6845,3 +6845,15 @@
 {"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:41:26.776389+00:00", "player": "Tyler O'Neill", "player_id": 641933, "team": "BAL", "transaction_id": 947703}
 {"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:41:26.776389+00:00", "player": "Jordan Westburg", "player_id": 676059, "team": "BAL", "transaction_id": 947704}
 {"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:41:26.776389+00:00", "player": "Marco Luciano", "player_id": 682617, "team": "NYY", "transaction_id": 947705}
+{"fetched_utc": "2026-11-02T23:03:21.623436+00:00", "game_date": "2026-11-02", "poll": true}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:03:21.623436+00:00", "player": "CJ Van Eyk", "player_id": 669310, "team": "TOR", "transaction_id": 947706}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:03:21.623436+00:00", "player": "Addison Barger", "player_id": 680718, "team": "TOR", "transaction_id": 947707}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:03:21.623436+00:00", "player": "Jos\u00e9 Berr\u00edos", "player_id": 621244, "team": "TOR", "transaction_id": 947708}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:03:21.623436+00:00", "player": "Jonatan Clase", "player_id": 682729, "team": "TOR", "transaction_id": 947709}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:03:21.623436+00:00", "player": "Jake Bloss", "player_id": 814005, "team": "TOR", "transaction_id": 947710}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:03:21.623436+00:00", "player": "Bowden Francis", "player_id": 670102, "team": "TOR", "transaction_id": 947711}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:03:21.623436+00:00", "player": "Cody Ponce", "player_id": 664074, "team": "TOR", "transaction_id": 947712}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:03:21.623436+00:00", "player": "Anthony Santander", "player_id": 623993, "team": "TOR", "transaction_id": 947713}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:03:21.623436+00:00", "player": "Myles Straw", "player_id": 664702, "team": "TOR", "transaction_id": 947714}
+{"category": "designated", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:03:21.623436+00:00", "player": "Kyren Paris", "player_id": 677347, "team": "NYM", "transaction_id": 947716}
+{"category": "designated", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:03:21.623436+00:00", "player": "Christian Cairo", "player_id": 686551, "team": "NYM", "transaction_id": 947717}
