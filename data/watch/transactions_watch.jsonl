@@ -6838,3 +6838,10 @@
 {"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Mitch Keller", "player_id": 656605, "team": "PIT", "transaction_id": 947693}
 {"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Endy Rodr\u00edguez", "player_id": 682848, "team": "PIT", "transaction_id": 947694}
 {"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:29:52.459082+00:00", "player": "Akil Baddoo", "player_id": 668731, "team": "PIT", "transaction_id": 947695}
+{"fetched_utc": "2026-11-02T22:41:26.776389+00:00", "game_date": "2026-11-02", "poll": true}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:41:26.776389+00:00", "player": "Ryan Mountcastle", "player_id": 663624, "team": "BAL", "transaction_id": 947700}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:41:26.776389+00:00", "player": "Kyle Bradish", "player_id": 680694, "team": "BAL", "transaction_id": 947701}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:41:26.776389+00:00", "player": "Ryan Helsley", "player_id": 664854, "team": "BAL", "transaction_id": 947702}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:41:26.776389+00:00", "player": "Tyler O'Neill", "player_id": 641933, "team": "BAL", "transaction_id": 947703}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:41:26.776389+00:00", "player": "Jordan Westburg", "player_id": 676059, "team": "BAL", "transaction_id": 947704}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T22:41:26.776389+00:00", "player": "Marco Luciano", "player_id": 682617, "team": "NYY", "transaction_id": 947705}
