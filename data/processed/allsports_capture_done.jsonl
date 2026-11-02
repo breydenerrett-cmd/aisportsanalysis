@@ -15240,3 +15240,13 @@
 {"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T23:42:48.333269Z", "regions": ["us"], "rows": 91, "sport_key": "soccer_brazil_campeonato", "stored": 26}
 {"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T23:42:48.333269Z", "regions": ["us"], "rows": 36, "sport_key": "soccer_brazil_serie_b", "stored": 7}
 {"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T23:42:48.333269Z", "regions": ["us"], "rows": 52, "sport_key": "soccer_chile_campeonato", "stored": 7}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-03T05:51:31.411045Z", "observed_utc": "2026-11-02T23:51:31.411045Z", "sport_key": "basketball_euroleague"}
+{"events": 40, "kind": "peek", "next_check_utc": "2026-11-03T05:51:31.411045Z", "observed_utc": "2026-11-02T23:51:31.411045Z", "sport_key": "boxing_boxing"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-03T05:51:31.411045Z", "observed_utc": "2026-11-02T23:51:31.411045Z", "sport_key": "cricket_test_match"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-03T05:51:31.411045Z", "observed_utc": "2026-11-02T23:51:31.411045Z", "sport_key": "soccer_russia_premier_league"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-03T05:51:31.411045Z", "observed_utc": "2026-11-02T23:51:31.411045Z", "sport_key": "soccer_uefa_europa_league"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-03T05:51:31.411045Z", "observed_utc": "2026-11-02T23:51:31.411045Z", "sport_key": "soccer_uefa_nations_league"}
+{"events": 15, "kind": "peek", "next_check_utc": "2026-11-03T05:51:31.411045Z", "observed_utc": "2026-11-02T23:51:31.411045Z", "sport_key": "soccer_usa_mls"}
+{"commence_utc": "2026-11-03T00:15:00Z", "event_id": "a41ed4b74cdea4bb58e2d9643eedb150", "kind": "phase", "observed_utc": "2026-11-02T23:51:31.411045Z", "phase": "t30m", "rows": 13, "sport_key": "soccer_argentina_primera_division"}
+{"commence_utc": "2026-11-03T00:15:00Z", "event_id": "50df068deb2aa655cf35d4ea23848697", "kind": "phase", "observed_utc": "2026-11-02T23:51:31.411045Z", "phase": "t30m", "rows": 13, "sport_key": "soccer_argentina_primera_division"}
+{"call_kind": "pregame", "credits": 2, "events": 19, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-02T23:51:31.411045Z", "regions": ["us"], "rows": 137, "sport_key": "soccer_argentina_primera_division", "stored": 34}
