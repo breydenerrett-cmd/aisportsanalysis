@@ -14255,3 +14255,5 @@
 {"events": 24, "kind": "peek", "next_check_utc": "2026-11-02T11:55:04.315833Z", "observed_utc": "2026-11-02T05:55:04.315833Z", "sport_key": "soccer_efl_champ"}
 {"events": 1, "kind": "peek", "next_check_utc": "2026-11-02T11:55:04.315833Z", "observed_utc": "2026-11-02T05:55:04.315833Z", "sport_key": "soccer_england_league2"}
 {"events": 6, "kind": "peek", "next_check_utc": "2026-11-02T11:55:04.315833Z", "observed_utc": "2026-11-02T05:55:04.315833Z", "sport_key": "soccer_switzerland_superleague"}
+{"commence_utc": "2026-11-02T08:00:00Z", "event_id": "7dc58df9af17b42764b2571a22a8f309", "kind": "phase", "observed_utc": "2026-11-02T06:05:14.157636Z", "phase": "t2h", "rows": 21, "sport_key": "basketball_ncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 137, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-02T06:05:14.157636Z", "regions": ["us"], "rows": 2485, "sport_key": "basketball_ncaab", "stored": 2468}
