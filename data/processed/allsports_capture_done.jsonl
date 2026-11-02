@@ -14265,3 +14265,4 @@
 {"commence_utc": "2026-11-02T12:20:00Z", "event_id": "a397cd2c21e2038f589dfcc1bbf4a5d9", "kind": "phase", "observed_utc": "2026-11-02T06:22:41.951323Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
 {"commence_utc": "2026-11-02T12:20:00Z", "event_id": "99851274de5cc3c943371f330f1b4c71", "kind": "phase", "observed_utc": "2026-11-02T06:22:41.951323Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
 {"call_kind": "pregame", "credits": 1, "events": 24, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T06:22:41.951323Z", "regions": ["us"], "rows": 181, "sport_key": "tennis_atp_paris_masters", "stored": 181}
+{"call_kind": "inplay", "credits": 1, "events": 137, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T06:35:21.103690Z", "regions": ["us"], "rows": 439, "sport_key": "basketball_ncaab", "stored": 439}
