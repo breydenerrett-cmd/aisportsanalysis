@@ -6857,3 +6857,18 @@
 {"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:03:21.623436+00:00", "player": "Myles Straw", "player_id": 664702, "team": "TOR", "transaction_id": 947714}
 {"category": "designated", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:03:21.623436+00:00", "player": "Kyren Paris", "player_id": 677347, "team": "NYM", "transaction_id": 947716}
 {"category": "designated", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:03:21.623436+00:00", "player": "Christian Cairo", "player_id": 686551, "team": "NYM", "transaction_id": 947717}
+{"fetched_utc": "2026-11-02T23:15:53.978893+00:00", "game_date": "2026-11-02", "poll": true}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Sawyer Gipson-Long", "player_id": 687830, "team": "DET", "transaction_id": 947730}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Bailey Horn", "player_id": 690544, "team": "DET", "transaction_id": 947731}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Kerry Carpenter", "player_id": 681481, "team": "DET", "transaction_id": 947732}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Wenceel P\u00e9rez", "player_id": 672761, "team": "DET", "transaction_id": 947733}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Parker Meadows", "player_id": 678009, "team": "DET", "transaction_id": 947734}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Reese Olson", "player_id": 681857, "team": "DET", "transaction_id": 947735}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Trey Sweeney", "player_id": 700242, "team": "DET", "transaction_id": 947736}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Will Vest", "player_id": 676684, "team": "DET", "transaction_id": 947737}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Matt Vierling", "player_id": 663837, "team": "DET", "transaction_id": 947738}
+{"category": "designated", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Yilber D\u00edaz", "player_id": 700270, "team": "DET", "transaction_id": 947739}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Corey Julks", "player_id": 667452, "team": "DET", "transaction_id": 947740}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Kenley Jansen", "player_id": 445276, "team": "DET", "transaction_id": 947742}
+{"category": "signed", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Jacob Waguespack", "player_id": 621097, "team": "DET", "transaction_id": 947743}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Bryse Wilson", "player_id": 669060, "team": "MIL", "transaction_id": 947744}
