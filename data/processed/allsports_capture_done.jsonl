@@ -14421,3 +14421,8 @@
 {"call_kind": "pregame", "credits": 2, "events": 8, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-02T13:03:24.992381Z", "regions": ["us"], "rows": 55, "sport_key": "soccer_brazil_serie_b", "stored": 39}
 {"commence_utc": "2026-11-02T15:15:00Z", "event_id": "6891a7ee06d4118eba6fb1ea59026099", "kind": "phase", "observed_utc": "2026-11-02T13:18:18.224779Z", "phase": "t2h", "rows": 11, "sport_key": "soccer_spain_segunda_division"}
 {"call_kind": "pregame", "credits": 2, "events": 14, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-02T13:18:18.224779Z", "regions": ["us"], "rows": 117, "sport_key": "soccer_spain_segunda_division", "stored": 40}
+{"events": 63, "kind": "peek", "next_check_utc": "2026-11-02T19:29:25.387443Z", "observed_utc": "2026-11-02T13:29:25.387443Z", "sport_key": "americanfootball_ncaaf"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-02T19:29:25.387443Z", "observed_utc": "2026-11-02T13:29:25.387443Z", "sport_key": "aussierules_afl"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-02T19:29:25.387443Z", "observed_utc": "2026-11-02T13:29:25.387443Z", "sport_key": "soccer_conmebol_copa_sudamericana"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-02T19:29:25.387443Z", "observed_utc": "2026-11-02T13:29:25.387443Z", "sport_key": "soccer_england_efl_cup"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-02T19:29:25.387443Z", "observed_utc": "2026-11-02T13:29:25.387443Z", "sport_key": "soccer_germany_dfb_pokal"}
