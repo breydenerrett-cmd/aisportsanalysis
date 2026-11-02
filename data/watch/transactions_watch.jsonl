@@ -6785,3 +6785,36 @@
 {"fetched_utc": "2026-11-02T21:02:36.495425+00:00", "game_date": "2026-11-02", "poll": true}
 {"fetched_utc": "2026-11-02T21:09:49.437132+00:00", "game_date": "2026-11-02", "poll": true}
 {"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:09:49.437132+00:00", "player": "Garrett Stubbs", "player_id": 596117, "team": "PHI", "transaction_id": 947645}
+{"fetched_utc": "2026-11-02T21:31:26.475450+00:00", "game_date": "2026-11-02", "poll": true}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Brad Keller", "player_id": 641745, "team": "PHI", "transaction_id": 947646}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Caleb Kilian", "player_id": 668873, "team": "PHI", "transaction_id": 947647}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Felix Reyes", "player_id": 694025, "team": "PHI", "transaction_id": 947648}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Johan Rojas", "player_id": 679032, "team": "PHI", "transaction_id": 947649}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Brett Harris", "player_id": 695391, "team": "PHI", "transaction_id": 947650}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Shay Whitcomb", "player_id": 694376, "team": "PHI", "transaction_id": 947651}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Max Rajcic", "player_id": 691008, "team": "STL", "transaction_id": 947652}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Ryne Stanek", "player_id": 592773, "team": "STL", "transaction_id": 947653}
+{"category": "designated", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Chase Hampton", "player_id": 694633, "team": "STL", "transaction_id": 947654}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Chase Hampton", "player_id": 694633, "team": "BAL", "transaction_id": 947655}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Tristan Beck", "player_id": 663941, "team": "SF", "transaction_id": 947656}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Joel Kuhnel", "player_id": 669270, "team": "SF", "transaction_id": 947657}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Seth Lonsway", "player_id": 675920, "team": "SF", "transaction_id": 947658}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Jos\u00e9 Butt\u00f3", "player_id": 676130, "team": "TEX", "transaction_id": 947659}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Zach Morgan", "player_id": 681439, "team": "BAL", "transaction_id": 947660}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Heston Kjerstad", "player_id": 677008, "team": "BAL", "transaction_id": 947661}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Yohel Pozo", "player_id": 650968, "team": "BAL", "transaction_id": 947662}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Yosver Zulueta", "player_id": 691172, "team": "BAL", "transaction_id": 947663}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Leody Taveras", "player_id": 665750, "team": "BAL", "transaction_id": 947664}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Josh White", "player_id": 687985, "team": "BAL", "transaction_id": 947665}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Philip Abner", "player_id": 691769, "team": "BAL", "transaction_id": 947666}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Jake Meyers", "player_id": 676694, "team": "HOU", "transaction_id": 947667}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Roddery Mu\u00f1oz", "player_id": 682610, "team": "HOU", "transaction_id": 947668}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "C\u00e9sar Salazar", "player_id": 663967, "team": "HOU", "transaction_id": 947669}
+{"category": "traded", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": null, "player_id": null, "team": "TB", "transaction_id": 947670}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Reed Garrett", "player_id": 657585, "team": "NYM", "transaction_id": 947671}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Tylor Megill", "player_id": 656731, "team": "NYM", "transaction_id": 947672}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Jorge Polanco", "player_id": 593871, "team": "NYM", "transaction_id": 947673}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Cristian Pache", "player_id": 665506, "team": "NYM", "transaction_id": 947674}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Eric Wagaman", "player_id": 676572, "team": "NYM", "transaction_id": 947675}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Cameron Weston", "player_id": 687721, "team": "MIA", "transaction_id": 947677}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T21:31:26.475450+00:00", "player": "Jack Anderson", "player_id": 681252, "team": "NYM", "transaction_id": 947678}
