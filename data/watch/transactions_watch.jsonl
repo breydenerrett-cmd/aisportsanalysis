@@ -6872,3 +6872,7 @@
 {"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Kenley Jansen", "player_id": 445276, "team": "DET", "transaction_id": 947742}
 {"category": "signed", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Jacob Waguespack", "player_id": 621097, "team": "DET", "transaction_id": 947743}
 {"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:15:53.978893+00:00", "player": "Bryse Wilson", "player_id": 669060, "team": "MIL", "transaction_id": 947744}
+{"fetched_utc": "2026-11-02T23:33:14.954023+00:00", "game_date": "2026-11-02", "poll": true}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:33:14.954023+00:00", "player": "Jared Koenig", "player_id": 657649, "team": "MIL", "transaction_id": 947745}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:33:14.954023+00:00", "player": "Gary S\u00e1nchez", "player_id": 596142, "team": "MIL", "transaction_id": 947746}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T23:33:14.954023+00:00", "player": "Antonio Senzatela", "player_id": 622608, "team": "MIL", "transaction_id": 947747}
