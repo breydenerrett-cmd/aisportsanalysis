@@ -14223,3 +14223,6 @@
 {"commence_utc": "2026-11-02T10:00:00Z", "event_id": "ab2cc6778482917ac72005c2edb26824", "kind": "phase", "observed_utc": "2026-11-02T04:12:45.178294Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
 {"commence_utc": "2026-11-02T10:00:00Z", "event_id": "f510a63a2e3852e183f84eb8cd44fcac", "kind": "phase", "observed_utc": "2026-11-02T04:12:45.178294Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
 {"call_kind": "pregame", "credits": 1, "events": 24, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T04:12:45.178294Z", "regions": ["us"], "rows": 181, "sport_key": "tennis_atp_paris_masters", "stored": 181}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-02T10:25:22.327816Z", "observed_utc": "2026-11-02T04:25:22.327816Z", "sport_key": "soccer_england_league1"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-02T10:25:22.327816Z", "observed_utc": "2026-11-02T04:25:22.327816Z", "sport_key": "soccer_korea_kleague1"}
+{"call_kind": "inplay", "credits": 1, "events": 16, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-02T04:25:22.327816Z", "regions": ["us"], "rows": 140, "sport_key": "soccer_usa_mls", "stored": 7}
