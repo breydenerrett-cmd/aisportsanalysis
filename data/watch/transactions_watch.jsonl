@@ -6780,3 +6780,5 @@
 {"fetched_utc": "2026-11-02T20:32:48.624633+00:00", "game_date": "2026-11-02", "poll": true}
 {"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T20:32:48.624633+00:00", "player": "Duncan Davitt", "player_id": 701474, "team": "CIN", "transaction_id": 947642}
 {"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T20:32:48.624633+00:00", "player": "Paxton Schultz", "player_id": 687606, "team": "CIN", "transaction_id": 947643}
+{"fetched_utc": "2026-11-02T20:43:28.267715+00:00", "game_date": "2026-11-02", "poll": true}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-02T20:43:28.267715+00:00", "player": "Isaac Mattson", "player_id": 676755, "team": "SEA", "transaction_id": 947644}
