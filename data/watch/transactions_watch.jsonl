@@ -6881,3 +6881,14 @@
 {"fetched_utc": "2026-11-03T00:13:07.375556+00:00", "game_date": "2026-11-02", "poll": true}
 {"category": "designated", "date": "2026-11-02", "first_seen_utc": "2026-11-03T00:13:07.375556+00:00", "player": "Reiver Sanmartin", "player_id": 665665, "team": "SF", "transaction_id": 947751}
 {"fetched_utc": "2026-11-03T00:24:24.427102+00:00", "game_date": "2026-11-02", "poll": true}
+{"fetched_utc": "2026-11-03T00:46:44.678670+00:00", "game_date": "2026-11-02", "poll": true}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-03T00:46:44.678670+00:00", "player": "Triston Casas", "player_id": 671213, "team": "BOS", "transaction_id": 947752}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-03T00:46:44.678670+00:00", "player": "Kutter Crawford", "player_id": 676710, "team": "BOS", "transaction_id": 947753}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-03T00:46:44.678670+00:00", "player": "Zack Kelly", "player_id": 677161, "team": "BOS", "transaction_id": 947754}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-03T00:46:44.678670+00:00", "player": "Johan Oviedo", "player_id": 670912, "team": "BOS", "transaction_id": 947755}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-03T00:46:44.678670+00:00", "player": "Justin Slaten", "player_id": 686580, "team": "BOS", "transaction_id": 947756}
+{"category": "il_activation", "date": "2026-11-02", "first_seen_utc": "2026-11-03T00:46:44.678670+00:00", "player": "Eli White", "player_id": 642201, "team": "BOS", "transaction_id": 947757}
+{"category": "designated", "date": "2026-11-02", "first_seen_utc": "2026-11-03T00:46:44.678670+00:00", "player": "Eduardo Rivera", "player_id": 700842, "team": "BOS", "transaction_id": 947758}
+{"category": "designated", "date": "2026-11-02", "first_seen_utc": "2026-11-03T00:46:44.678670+00:00", "player": "Zack Kelly", "player_id": 677161, "team": "BOS", "transaction_id": 947759}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-03T00:46:44.678670+00:00", "player": "Jeff McNeil", "player_id": 643446, "team": "OAK", "transaction_id": 947760}
+{"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-03T00:46:44.678670+00:00", "player": "Jeffrey Springs", "player_id": 605488, "team": "OAK", "transaction_id": 947761}
