@@ -7892,3 +7892,15 @@
 {"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-03T08:22:36.325136+00:00", "sport_key": "cricket_test_match"}
 {"errors": [], "events": 2, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-03T08:22:39.525826Z", "source": "espn_tennis", "unmatched": 2, "unmatched_ids": ["938ba34db91fe03db5630c6087840b3d", "d54412ae826f63d7234c2ea00d4809ac"], "void": 0, "written": 0}
 {"errors": [], "events": 2, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-03T09:28:44.399480Z", "source": "espn_tennis", "unmatched": 2, "unmatched_ids": ["938ba34db91fe03db5630c6087840b3d", "d54412ae826f63d7234c2ea00d4809ac"], "void": 0, "written": 0}
+{"credits": 2, "days_from": 3, "events": 7, "kind": "poll", "observed_utc": "2026-11-03T10:29:04.165112+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 40, "kind": "poll", "observed_utc": "2026-11-03T10:29:04.165112+00:00", "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-03T10:29:04.165112+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 4, "kind": "poll", "observed_utc": "2026-11-03T10:29:04.165112+00:00", "sport_key": "aussierules_aflw"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-03T10:29:04.165112+00:00", "sport_key": "icehockey_mestis"}
+{"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-03T10:29:04.165112+00:00", "sport_key": "soccer_korea_kleague1"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-03T10:29:04.165112+00:00", "sport_key": "cricket_international_t20"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-03T10:29:04.165112+00:00", "sport_key": "cricket_odi"}
+{"credits": 2, "days_from": 3, "events": 22, "kind": "poll", "observed_utc": "2026-11-03T10:29:04.165112+00:00", "sport_key": "soccer_spain_segunda_division"}
+{"away_score": null, "away_team": "Samsung Lions", "commence_time": "2026-11-03T09:31:23Z", "completed": false, "event_id": "a7c2f6236942b6afbea2dedfdd86dbee", "home_score": null, "home_team": "KT Wiz", "kind": "score", "last_update": null, "observed_utc": "2026-11-03T10:29:04.165112+00:00", "outcome": null, "scores": null, "sport_key": "baseball_kbo"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-03T10:29:04.165112+00:00", "sport_key": "baseball_kbo"}
+{"errors": [], "events": 5, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 3, "observed_utc": "2026-11-03T10:29:06.711281Z", "source": "espn_tennis", "unmatched": 2, "unmatched_ids": ["938ba34db91fe03db5630c6087840b3d", "d54412ae826f63d7234c2ea00d4809ac"], "void": 0, "written": 0}
