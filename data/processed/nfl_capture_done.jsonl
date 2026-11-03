@@ -544,3 +544,4 @@
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-03T00:14:12.200491Z", "phase": "refresh"}
 {"game_id": "2026_08_CHI_SEA", "observed_utc": "2026-11-03T00:47:41.147833Z", "phase": "t30m"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-03T01:13:33.264305Z", "phase": "refresh"}
+{"game_id": "2026_09_JAX_BAL", "observed_utc": "2026-11-03T01:32:34.890660Z", "phase": "t72h"}
