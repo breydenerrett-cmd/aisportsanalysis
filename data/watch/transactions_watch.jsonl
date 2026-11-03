@@ -6892,3 +6892,4 @@
 {"category": "designated", "date": "2026-11-02", "first_seen_utc": "2026-11-03T00:46:44.678670+00:00", "player": "Zack Kelly", "player_id": 677161, "team": "BOS", "transaction_id": 947759}
 {"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-03T00:46:44.678670+00:00", "player": "Jeff McNeil", "player_id": 643446, "team": "OAK", "transaction_id": 947760}
 {"category": "other", "date": "2026-11-02", "first_seen_utc": "2026-11-03T00:46:44.678670+00:00", "player": "Jeffrey Springs", "player_id": 605488, "team": "OAK", "transaction_id": 947761}
+{"fetched_utc": "2026-11-03T00:55:50.738472+00:00", "game_date": "2026-11-02", "poll": true}

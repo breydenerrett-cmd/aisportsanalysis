@@ -15353,3 +15353,4 @@
 {"call_kind": "pregame", "credits": 2, "events": 10, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-03T00:47:47.323857Z", "regions": ["us"], "rows": 152, "sport_key": "soccer_brazil_campeonato", "stored": 42}
 {"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-03T00:47:47.323857Z", "regions": ["us"], "rows": 39, "sport_key": "soccer_brazil_serie_b", "stored": 4}
 {"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-03T00:47:47.323857Z", "regions": ["us"], "rows": 49, "sport_key": "soccer_chile_campeonato", "stored": 4}
+{"call_kind": "inplay", "credits": 1, "events": 17, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-03T00:56:28.951986Z", "regions": ["us"], "rows": 69, "sport_key": "soccer_argentina_primera_division", "stored": 9}
