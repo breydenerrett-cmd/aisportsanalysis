@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-03 16:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-03 21:41Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-03 (8:30 am PT run): no game today (MLB season over, statsapi 11-03 to 11-10: 0 games; no NFL game on Tuesday). No brief published.
-- Grading after nfl update: Chicago at Seattle (11-02) is graded complete, a pass on all three markets, so nothing counts for or against. The sample config now points at Chicago at Seattle. MLB pilot ledger 20 rows and NFL pilot ledger 40 rows both verify.
-- Production /health 200 at 16:41Z. prod_watch reads another process restart at 13:09Z with no deploy near it (11 unexplained so far) and a memory peak of 829 MB against an 850 MB limit. Newest odds on the site 15.5 h old on a day with no games.
-- The scheduled daily loop is still red (10:10Z dispatch failed). Tests are green for the newest tested push (22:15Z 11-02). Public MLB value picks remain paused.
+- 2026-11-03 (1:30 pm PT run): no game today (MLB statsapi 11-03 and 11-04: 0 games; no NFL game on Tuesday). No brief published.
+- Grading re-run for 11-02 wrote nothing new: Chicago at Seattle stays complete, a pass on all three markets. The sample config points at Chicago at Seattle, but production still serves Philadelphia at Washington because no production deploy has run since 01:14Z.
+- Production /health 200 at 21:41Z on the same process since 13:09Z. Memory peak 829 MB against an 850 MB limit, now 561 MB. Newest odds on the site 20.5 h old on a day with no games.
+- The scheduled daily loop's newest run was cancelled (17:23Z) and afternoon-slate runs keep failing on the default branch. Tests are green for the newest tested push (17:15Z). Public MLB value picks remain paused.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
