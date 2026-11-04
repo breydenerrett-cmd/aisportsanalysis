@@ -8191,3 +8191,6 @@
 {"credits": 2, "days_from": 3, "events": 150, "kind": "poll", "observed_utc": "2026-11-04T10:03:47.820452+00:00", "sport_key": "basketball_ncaab"}
 {"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-04T10:03:47.820452+00:00", "sport_key": "cricket_international_t20"}
 {"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-04T10:03:47.820452+00:00", "sport_key": "icehockey_liiga"}
+{"away_score": 61.0, "away_team": "Perth Wildcats", "commence_time": "2026-11-04T09:00:00Z", "completed": false, "event_id": "4415d206254a76f2f9c1ed1492ad4ea6", "home_score": 80.0, "home_team": "Brisbane Bullets", "kind": "score", "last_update": "2026-11-04T10:27:59Z", "observed_utc": "2026-11-04T10:28:04.212052+00:00", "outcome": "home", "scores": [{"name": "Brisbane Bullets", "score": "80"}, {"name": "Perth Wildcats", "score": "61"}], "sport_key": "basketball_nbl"}
+{"credits": 2, "days_from": 3, "events": 5, "kind": "poll", "observed_utc": "2026-11-04T10:28:04.212052+00:00", "sport_key": "basketball_nbl"}
+{"errors": [], "events": 3, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 1, "observed_utc": "2026-11-04T10:28:04.748530Z", "source": "espn_tennis", "unmatched": 2, "unmatched_ids": ["b04959d8930aba4535db09fe57f9d093", "c2e61aa3d1076fb1efc4756a1006e80a"], "void": 0, "written": 0}
