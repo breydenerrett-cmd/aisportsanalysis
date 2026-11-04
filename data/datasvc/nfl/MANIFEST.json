@@ -22,22 +22,22 @@
  },
  "files": {
   "games.jsonl": {
-   "bytes": 1787665,
+   "bytes": 1787648,
    "newest": "2026-11-03T01:15:00Z",
    "records": 1696,
-   "sha256": "c25ff9d6ff7168465cb3c70ccdd25225a66708fa57e828d1db2adfdc66913f01"
+   "sha256": "9927ec87e23faae8bda14017143d2cc5f9bf35ebfd6fdb48bfda5c835f86d700"
   },
   "injuries.jsonl": {
-   "bytes": 8888188,
-   "newest": "2026-11-01T10:27:56Z",
-   "records": 19141,
-   "sha256": "a29f1e0b9a96a66f57f6e4fb57b79a1ee8542c7faf8891f78b59b5ea81d012a7"
+   "bytes": 8896134,
+   "newest": "2026-11-04T10:19:22Z",
+   "records": 19159,
+   "sha256": "0f802216015d878a9e87964a6c317c96b75472de4a344b8b646963dd43bd2b25"
   },
   "player_games.jsonl": {
-   "bytes": 9537542,
+   "bytes": 9537543,
    "newest": "2026-11-03T01:15:00Z",
    "records": 15439,
-   "sha256": "3007c29bd773f3d769858d3ddf3a3bf689509a6552fe360585327b8f7c04b796"
+   "sha256": "dc895745f170fe060bb30036e42dea68e2c4d76171ebdda3865f03c5515293da"
   },
   "team_games.jsonl": {
    "bytes": 3345851,
@@ -46,19 +46,19 @@
    "sha256": "81d2a6347f42537485cfcb76bed74c7edd2b188051636c50b513c7ad0412a392"
   }
  },
- "generated_utc": "2026-11-03T16:41:40Z",
+ "generated_utc": "2026-11-04T10:19:22Z",
  "last_run": {
-  "finished_utc": "2026-11-03T16:41:40Z",
-  "games": 13,
-  "injuries": 0,
+  "finished_utc": "2026-11-04T10:19:22Z",
+  "games": 28,
+  "injuries": 18,
   "kind": "update",
   "missing_files": [],
   "per_season": {
    "2026": {
     "injuries": {
-     "dropped_full_participation_only": 1112,
-     "kept": 1347,
-     "rows": 2459
+     "dropped_full_participation_only": 1122,
+     "kept": 1365,
+     "rows": 2487
     },
     "player_stats": {
      "dropped_no_player_id": 8,
@@ -71,11 +71,11 @@
     "team_stats_unmatched": []
    }
   },
-  "player_games": 0,
+  "player_games": 8,
   "seasons": [
    2026
   ],
-  "started_utc": "2026-11-03T16:41:34Z",
+  "started_utc": "2026-11-04T10:19:19Z",
   "stopped": null,
   "team_games": 0
  },
