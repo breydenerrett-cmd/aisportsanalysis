@@ -7032,3 +7032,6 @@
 {"fetched_utc": "2026-11-03T22:25:29.267467+00:00", "game_date": "2026-11-03", "poll": true}
 {"fetched_utc": "2026-11-03T22:42:00.991634+00:00", "game_date": "2026-11-03", "poll": true}
 {"fetched_utc": "2026-11-03T23:23:52.762438+00:00", "game_date": "2026-11-03", "poll": true}
+{"fetched_utc": "2026-11-04T00:29:31.413722+00:00", "game_date": "2026-11-03", "poll": true}
+{"category": "other", "date": "2026-11-03", "first_seen_utc": "2026-11-04T00:29:31.413722+00:00", "player": "RJ Petit", "player_id": 696275, "team": "DET", "transaction_id": 948590}
+{"category": "other", "date": "2026-11-03", "first_seen_utc": "2026-11-04T00:29:31.413722+00:00", "player": "Bradley Blalock", "player_id": 687134, "team": "MIA", "transaction_id": 948594}
