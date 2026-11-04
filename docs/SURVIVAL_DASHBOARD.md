@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-03 21:41Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-04 16:41Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-3** |
+| Days until 2026-10-31 | **-4** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-03 (1:30 pm PT run): no game today (MLB statsapi 11-03 and 11-04: 0 games; no NFL game on Tuesday). No brief published.
-- Grading re-run for 11-02 wrote nothing new: Chicago at Seattle stays complete, a pass on all three markets. The sample config points at Chicago at Seattle, but production still serves Philadelphia at Washington because no production deploy has run since 01:14Z.
-- Production /health 200 at 21:41Z on the same process since 13:09Z. Memory peak 829 MB against an 850 MB limit, now 561 MB. Newest odds on the site 20.5 h old on a day with no games.
-- The scheduled daily loop's newest run was cancelled (17:23Z) and afternoon-slate runs keep failing on the default branch. Tests are green for the newest tested push (17:15Z). Public MLB value picks remain paused.
+- 2026-11-04 (8:30 am PT run): no game today (MLB statsapi 11-04 to 11-12: 0 games; no NFL game on Wednesday). No brief published.
+- Grading for 11-03 (MLB) and 11-02 (NFL) wrote nothing new. Production's sample brief still shows Philadelphia at Washington; the config points at Chicago at Seattle, and no production deploy has run since 01:14Z on 11-03.
+- Production /health 200 at 16:41Z. Another unexplained restart at 04:19Z 11-04 with no deploy near it (12 seen so far). Memory peak 820 MB against an 850 MB limit, now 542 MB.
+- The scheduled daily loop failed again (10:10Z dispatch). Tests are green for the newest tested push (22:16Z 11-03). Public MLB value picks remain paused.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
