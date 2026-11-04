@@ -16077,3 +16077,4 @@
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-04T02:30:25.159504Z", "regions": ["us"], "rows": 3, "sport_key": "basketball_wncaab", "stored": 3}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-04T02:30:25.159504Z", "regions": ["au"], "rows": 11, "sport_key": "cricket_odi", "stored": 10}
 {"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-04T02:30:25.159504Z", "regions": ["us"], "rows": 71, "sport_key": "soccer_brazil_campeonato", "stored": 43}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-04T08:58:53.534692Z", "observed_utc": "2026-11-04T02:58:53.534692Z", "sport_key": "soccer_sweden_allsvenskan"}
