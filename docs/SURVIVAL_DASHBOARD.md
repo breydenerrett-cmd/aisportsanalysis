@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-04 16:41Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-04 21:41Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-04 (8:30 am PT run): no game today (MLB statsapi 11-04 to 11-12: 0 games; no NFL game on Wednesday). No brief published.
+- 2026-11-04 (1:30 pm PT run): no game today (MLB season over; no NFL game on Wednesday). No brief published. Next: Thursday night NFL, kickoff 5:15 pm PT 11-05.
 - Grading for 11-03 (MLB) and 11-02 (NFL) wrote nothing new. Production's sample brief still shows Philadelphia at Washington; the config points at Chicago at Seattle, and no production deploy has run since 01:14Z on 11-03.
-- Production /health 200 at 16:41Z. Another unexplained restart at 04:19Z 11-04 with no deploy near it (12 seen so far). Memory peak 820 MB against an 850 MB limit, now 542 MB.
-- The scheduled daily loop failed again (10:10Z dispatch). Tests are green for the newest tested push (22:16Z 11-03). Public MLB value picks remain paused.
+- Production /health 200 at 21:41Z, same process since 04:19Z (12 unexplained restarts seen so far). Memory peak 820 MB against an 850 MB limit, now 544 MB.
+- The scheduled daily loop failed again (17:37Z, cowork-session-migration branch): the engine slate refused 11-04 because no MLB prices exist after the season. Tests are green (17:16Z push). Public MLB value picks remain paused.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
