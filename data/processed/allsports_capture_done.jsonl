@@ -17095,3 +17095,5 @@
 {"commence_utc": "2026-11-05T20:00:00Z", "event_id": "84b68e09ecbe93fdbce759cd822322a2", "kind": "phase", "observed_utc": "2026-11-05T14:00:33.461480Z", "phase": "t6h", "rows": 16, "sport_key": "soccer_uefa_europa_league"}
 {"call_kind": "pregame", "credits": 2, "events": 17, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-05T14:00:33.461480Z", "regions": ["us"], "rows": 269, "sport_key": "soccer_uefa_europa_league", "stored": 269}
 {"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T14:00:33.461480Z", "regions": ["us"], "rows": 43, "sport_key": "tennis_atp_paris_masters", "stored": 43}
+{"commence_utc": "2026-11-05T14:40:00Z", "event_id": "235263f6f3bbd21f2327b39e61407934", "kind": "phase", "observed_utc": "2026-11-05T14:13:37.704437Z", "phase": "t30m", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
+{"call_kind": "pregame", "credits": 1, "events": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T14:13:37.704437Z", "regions": ["us"], "rows": 43, "sport_key": "tennis_atp_paris_masters", "stored": 43}
