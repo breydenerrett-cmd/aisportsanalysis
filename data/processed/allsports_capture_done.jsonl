@@ -17046,3 +17046,6 @@
 {"call_kind": "pregame", "credits": 2, "events": 15, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-05T12:09:30.433954Z", "regions": ["us"], "rows": 195, "sport_key": "soccer_argentina_primera_division", "stored": 78}
 {"commence_utc": "2026-11-05T18:00:00Z", "event_id": "6a03e950601f142942705acfb764d107", "kind": "phase", "observed_utc": "2026-11-05T12:09:30.433954Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
 {"call_kind": "pregame", "credits": 1, "events": 7, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T12:09:30.433954Z", "regions": ["us"], "rows": 47, "sport_key": "tennis_atp_paris_masters", "stored": 47}
+{"commence_utc": "2026-11-05T14:10:00Z", "event_id": "235263f6f3bbd21f2327b39e61407934", "kind": "phase", "observed_utc": "2026-11-05T12:18:41.970540Z", "phase": "t2h", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
+{"commence_utc": "2026-11-05T18:10:00Z", "event_id": "1ef82c68f5ccf78aa0a6d031f750cc6e", "kind": "phase", "observed_utc": "2026-11-05T12:18:41.970540Z", "phase": "t6h", "rows": 0, "sport_key": "tennis_atp_paris_masters"}
+{"call_kind": "pregame", "credits": 1, "events": 7, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T12:18:41.970540Z", "regions": ["us"], "rows": 46, "sport_key": "tennis_atp_paris_masters", "stored": 46}
