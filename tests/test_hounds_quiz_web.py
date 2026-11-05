@@ -980,5 +980,85 @@ class TheHelpAndSkip(unittest.TestCase):
         self.assertEqual((out["final"]["help"], out["final"]["skip"]), (0, 0))
 
 
+INSIGHT_ANSWER = {
+    "will_do": ["Slide Rule Sally looks at NHL moneylines and makes at most 2 bets a day, 1 unit each.",
+                "Over the last 7 days of boards it would have made 14 bets, 5-9, -2.5u, all on paper and in hindsight.",
+                "2 things to watch are listed below. Nothing blocks you from keeping it."],
+    "watch_out": [
+        {"code": "personality_data", "text": "Stats Nerd reads form and rest data that exist only for MLB and NFL, so for NHL it asks for more books.",
+         "fix": {"action": "set_personality", "personality": "underdog_hunter", "label": "Switch to Underdog Hunter"}},
+        {"code": "tagline_blank", "text": 'The catchphrase uses "house", which is reserved for the sites and leagues themselves, so it was left blank.',
+         "fix": {"action": "edit_field", "field": "tagline", "label": "Edit the catchphrase"}},
+        {"code": "min_books_high", "text": "Stats Nerd (NHL moneylines) wants 6 books quoting a price, but a typical NHL game had 4, so it skips most games.",
+         "fix": {"action": "edit_rules", "label": "Lower the books it needs"}}],
+    "replay": True, "paper_only": True}
+INSIGHT_Q = [q("do", "[data-hook='reveal-willdo-line']", "texts"), q("watch", "[data-hook='reveal-watch-item']", "texts"),
+             q("fixes", "[data-hook='reveal-watch-fix']", "texts"), q("hidden", hook("reveal-insight"), "hidden"),
+             q("save_disabled", hook("reveal-save"), "disabled"), q("title", hook("reveal-title"))]
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class TheInsightOnTheReveal(unittest.TestCase):
+    """Phase 5 (docs/plans/BANKROLL_AND_QUIZ_INSIGHT.md): before Keep the reveal says what the hound will do and what to watch out for,
+    each finding with a fix. Keep stays enabled; nothing blocks."""
+
+    def routes(self, **over):
+        return base_routes(**{"POST /hounds/quiz/insight": [200, INSIGHT_ANSWER], **over})
+
+    def test_what_it_will_do_and_the_findings_show_before_keep_and_keep_stays_enabled(self):
+        out = quiz(self.routes(), stored=SIGNED["stored"], actions=QUICK, queries=INSIGHT_Q)
+        f = out["final"]
+        self.assertEqual(f["do"], INSIGHT_ANSWER["will_do"])
+        self.assertEqual(len(f["watch"]), 3)
+        self.assertEqual(f["fixes"], ["Switch to Underdog Hunter", "Edit the catchphrase", "Lower the books it needs"])
+        self.assertFalse(f["hidden"])
+        self.assertFalse(f["save_disabled"])
+
+    def test_the_check_is_asked_with_the_same_answers_as_compose(self):
+        out = quiz(self.routes(), actions=QUICK)
+        asked = posts_to(out, "/hounds/quiz/insight")[0]["body"]
+        self.assertEqual(asked["answers"], posts_to(out, "/hounds/quiz/compose")[0]["body"]["answers"])
+
+    def test_it_sits_between_the_rules_and_the_keep_buttons(self):
+        src = JS
+        self.assertLess(src.index('"reveal-insight"'), src.index('"reveal-keep-host"'))
+        self.assertLess(src.index('"reveal-chosen"'), src.index('"reveal-insight"'))
+
+    def test_a_personality_fix_changes_the_answer_and_composes_again(self):
+        fix = click("[data-hook='reveal-watch-fix'][data-action='set_personality']", "fix")
+        out = quiz(self.routes(), actions=QUICK + [dict(fix, wait=300)])
+        composes = posts_to(out, "/hounds/quiz/compose")
+        self.assertEqual(len(composes), 2)
+        self.assertEqual(composes[0]["body"]["answers"]["personality"], "chalk_eater")
+        self.assertEqual(composes[1]["body"]["answers"]["personality"], "underdog_hunter")
+        self.assertEqual(len(posts_to(out, "/hounds/quiz/insight")), 2)
+
+    def test_a_go_back_fix_returns_to_the_questions(self):
+        answer = dict(INSIGHT_ANSWER, watch_out=[{"code": "no_games", "text": "No MLB games were on the board in the last 7 days.",
+                                                  "fix": {"action": "go_back", "label": "Change the sports"}}])
+        out = quiz(self.routes(**{"POST /hounds/quiz/insight": [200, answer]}),
+                   actions=QUICK + [dict(click("[data-hook='reveal-watch-fix']", "fix"), wait=200)],
+                   queries=[q("quiz_hidden", hook("quiz-shell"), "hidden"), q("reveal_hidden", hook("quiz-reveal"), "hidden")])
+        self.assertEqual((out["final"]["quiz_hidden"], out["final"]["reveal_hidden"]), (False, True))
+
+    def test_no_findings_says_so(self):
+        answer = dict(INSIGHT_ANSWER, watch_out=[], will_do=INSIGHT_ANSWER["will_do"][:2])
+        out = quiz(self.routes(**{"POST /hounds/quiz/insight": [200, answer]}), actions=QUICK,
+                   queries=[q("none", hook("reveal-watch-none")), q("items", hook("reveal-watch-item"), "count")])
+        self.assertEqual((out["final"]["none"], out["final"]["items"]), ("Nothing to watch out for.", 0))
+
+    def test_a_check_that_fails_leaves_the_reveal_and_keep_alone(self):
+        out = quiz(self.routes(**{"POST /hounds/quiz/insight": [503, {"detail": {"error": "x"}}]}), stored=SIGNED["stored"], actions=QUICK,
+                   queries=INSIGHT_Q)
+        self.assertTrue(out["final"]["hidden"])
+        self.assertFalse(out["final"]["save_disabled"])
+        self.assertTrue(out["final"]["title"].startswith("Meet "))
+
+    def test_the_wording_follows_the_copy_rules(self):
+        text = " ".join(INSIGHT_ANSWER["will_do"] + [f["text"] + " " + f["fix"]["label"] for f in INSIGHT_ANSWER["watch_out"]]).lower()
+        for pattern in (r"\bbeta\b", r"\bnew\b", r"\bedge\b", r"\block\b", r"\bclv\b", r"nothing cleared the bar", r"\bprofit"):
+            self.assertIsNone(re.search(pattern, text), pattern)
+
+
 if __name__ == "__main__":
     unittest.main()

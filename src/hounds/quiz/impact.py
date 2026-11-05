@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping, Optional
 
+from src.hounds import user_rules as R
 from src.hounds import user_spec
 from src.hounds.interact import drill
 from src.hounds.quiz import compose as quiz_compose
@@ -89,6 +90,8 @@ def measure(answers: Any, previous_answers: Any = None, *, english_draft: Any = 
     if user_spec.is_gematria(spec):
         return {"available": False, "windows": [], "delta": None, "spec_hash": user_spec.spec_hash(spec), "note": GEMATRIA_NOTE}
     spec, cap_note = capped(spec)
+    if any(R.market_kind(m) == "prop" for r in spec.get("rules") or [] for m in r.get("markets") or []):
+        cap_note = ((cap_note + " ") if cap_note else "") + "Player props are not replayed, so these lines cover game bets only."
     specs = [spec]
     prev_spec = _compose_spec(previous_answers, english_draft) if previous_answers is not None else None
     if prev_spec is not None:

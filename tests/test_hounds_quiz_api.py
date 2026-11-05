@@ -198,6 +198,20 @@ class TheQuizDoors(unittest.TestCase):
         self.assertEqual(self.client.post("/hounds/quiz/choose", json={"step": "markets"}).status_code, 422)
         self.assertEqual(self.client.post("/hounds/quiz/choose", json={"answers": {}}).status_code, 422)
 
+    def test_insight_is_open_read_only_and_answers_even_when_the_replay_is_missing(self):
+        from unittest import mock
+        from src.hounds.interact import drill
+        with mock.patch.object(drill, "impact_windows", side_effect=drill.DrillError("drill_busy", "busy", 429, retry_after=30)):
+            out = self.client.post("/hounds/quiz/insight", json={"answers": {"sports": ["NHL"], "personality": "stats_nerd"}})
+        self.assertEqual(out.status_code, 200)
+        body = out.json()
+        self.assertTrue(body["paper_only"])
+        self.assertFalse(body["replay"])
+        self.assertIn("personality_data", [f["code"] for f in body["watch_out"]])
+        self.assertEqual(out.headers["cache-control"], "no-store")
+        self.assertEqual(self.client.post("/hounds/quiz/insight", json={"answers": {}, "english_text": "x" * 700}).status_code, 422)
+        self.assertEqual(self.client.post("/hounds/quiz/insight", json={"answers": "nope"}).status_code, 422)
+
     def test_impact_shares_the_builder_previews_allowance(self):
         source = (REPO / "api" / "hounds_quiz.py").read_text(encoding="utf-8")
         self.assertIn("from api.hounds_create import _rate_limit_preview", source)

@@ -103,6 +103,7 @@ const S = {
   result: null, composing: false, composeError: "", seq: 0, preview: null, previewSeq: 0, drill: null, drillBusy: false,
   saving: false, saved: null, problems: [], pendingSave: false, resumed: false, notice: "", celebrated: false, bound: false,
   keep: null, previewSettled: false, mode: "quiz", describe: null, preset: null, libWait: null,
+  insight: null,
   chosen: {},              // question key -> { how: "help" | "skip", label }: the answers the member did not pick themselves
   helpBusy: false,
 };
@@ -761,7 +762,7 @@ function resetAll() {
   S.answers = blankAnswers();
   S.name = ""; S.nameTouched = false; S.tagline = ""; S.shownName = "";
   S.english = { text: "", draft: null, understood: [], notRead: [], assumed: [] };
-  S.result = null; S.preview = null; S.drill = null; S.saved = null; S.pendingSave = false; S.problems = []; S.moreSports = false;
+  S.result = null; S.insight = null; insightSeq += 1; S.preview = null; S.drill = null; S.saved = null; S.pendingSave = false; S.problems = []; S.moreSports = false;
   S.personalityTouched = false; S.personalityPage = 0; S.step = 0; S.resumed = false;
   S.previewSettled = false;
   S.mode = "quiz"; S.describe = null; S.preset = null; S.chosen = {};
@@ -798,6 +799,7 @@ async function compose() {
     renderResult();
     persist();
     loadPreview();
+    loadInsight();
     if (!S.celebrated) { S.celebrated = true; celebrate(q("reveal-dog"), "quiz"); }
   } catch (err) {
     if (seq !== S.seq) return;
@@ -867,6 +869,12 @@ function buildReveal() {
             h("ul", { class: "qz-list", "data-hook": "reveal-english-understood" }),
             h("ul", { class: "qz-list qz-list--warn", "data-hook": "reveal-english-notread" })]),
           h("p", { class: "qz-fine", text: "Anything you add becomes an extra rule, and a number you name (bets a day, stake, how early) replaces the quiz's." })]),
+        h("section", { class: "qz-block qz-insight", "data-hook": "reveal-insight", "aria-labelledby": "qz-insight-h", hidden: true }, [
+          h("h2", { id: "qz-insight-h", class: "qz-h2", text: "What this hound will do" }),
+          h("div", { class: "qz-insight__do", "data-hook": "reveal-willdo" }),
+          h("h2", { class: "qz-h2", "data-hook": "reveal-watch-title", text: "Watch out" }),
+          h("ul", { class: "qz-list qz-list--warn qz-insight__watch", "data-hook": "reveal-watch" }),
+          h("p", { class: "qz-fine", "data-hook": "reveal-insight-note", text: "A read of its rules against the last 7 days of stored boards. Paper only. It never stops you keeping it." })]),
         h("section", { class: "qz-block qz-finish" }, [
           h("div", { class: "qz-signin", "data-hook": "reveal-signin", role: "status", hidden: true }),
           h("div", { class: "qz-keep-host", "data-hook": "reveal-keep-host" }),
@@ -1025,6 +1033,72 @@ async function loadPreview() {
   renderPreviewState(previewState(res, previewName(), failure));
   S.previewSettled = true;
   syncKeep();
+}
+
+// ---- What this hound will do, and Watch out (the pre-build check: src/hounds/quiz/insight.py) -----------------------------
+
+let insightSeq = 0;
+
+async function loadInsight() {
+  const seq = ++insightSeq;
+  const box = q("reveal-insight");
+  if (!box || !S.result) return;
+  const body = { answers: answersPayload() };
+  if (S.english.draft) body.english_draft = S.english.draft;
+  let res = null;
+  try {
+    res = await apiPost("/hounds/quiz/insight", body);
+  } catch (err) {
+    res = null;                                         // the check is an extra: without it the reveal is the reveal
+  }
+  if (seq !== insightSeq) return;
+  S.insight = res;
+  renderInsight();
+}
+
+/** Run one fix action. Nothing here saves a hound: each one changes an answer and re-reads the reveal, or moves the person to the place to edit. */
+function runFix(fix) {
+  if (!fix) return;
+  if (fix.action === "set_personality" && fix.personality) {
+    dropPreset("personality");
+    S.answers.personality = fix.personality; S.personalityTouched = false; delete S.chosen.personality;
+    persist(); compose();
+  } else if (fix.action === "set_sports" && Array.isArray(fix.sports) && fix.sports.length) {
+    dropPreset("sports");
+    S.answers.sports = fix.sports.slice(); delete S.chosen.sports;
+    persist(); compose();
+  } else if (fix.action === "edit_field") {
+    const field = q(fix.field === "name" ? "reveal-name" : "reveal-tagline");
+    if (field) { if (typeof field.scrollIntoView === "function") field.scrollIntoView({ block: "center" }); field.focus(); }
+  } else if (fix.action === "edit_rules") {
+    editRules();
+  } else if (fix.action === "go_back") {
+    S.seq += 1; S.dir = "back"; S.stage = "quiz"; startQuiz();
+  }
+}
+
+function renderInsight() {
+  const box = q("reveal-insight");
+  if (!box) return;
+  const res = S.insight;
+  if (!res || !Array.isArray(res.will_do)) { box.hidden = true; return; }
+  box.hidden = false;
+  const doing = clearNode(q("reveal-willdo"));
+  for (const t of res.will_do) doing.appendChild(h("p", { class: "qz-insight__line", "data-hook": "reveal-willdo-line", text: t }));
+  const list = clearNode(q("reveal-watch"));
+  const found = res.watch_out || [];
+  q("reveal-watch-title").hidden = false;
+  if (!found.length) {
+    list.appendChild(h("li", { "data-hook": "reveal-watch-none", text: "Nothing to watch out for." }));
+  }
+  for (const f of found) {
+    const item = h("li", { "data-hook": "reveal-watch-item", "data-code": f.code }, [h("span", { class: "qz-insight__text", text: f.text })]);
+    if (f.fix && f.fix.label) {
+      item.appendChild(h("button", { type: "button", class: "qz-btn qz-btn--ghost qz-insight__fix", "data-hook": "reveal-watch-fix",
+        "data-action": f.fix.action, text: f.fix.label, on: { click: () => runFix(f.fix) } }));
+    }
+    list.appendChild(item);
+  }
 }
 
 /** The name the preview speaks in: the one the hound will be kept under. */

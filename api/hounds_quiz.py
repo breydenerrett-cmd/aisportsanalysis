@@ -8,6 +8,8 @@
     POST /hounds/quiz/pick      {answers} -> the one move "Pick for me" takes
     POST /hounds/quiz/choose    {step, answers} -> the answer "Help me choose" applies: what the house pack would use for the sports
                                 already chosen (src/hounds/quiz/choose.py)
+    POST /hounds/quiz/insight   {answers, english_draft?, english_text?} -> the reveal's pre-build check: "what this hound will do" (2-3
+                                sentences) and "watch out" (findings, each a sentence and a fix action). Read-only; nothing blocks Keep.
     POST /hounds/quiz/impact    {answers, previous_answers?, english_draft?} -> what the answers so far would have done over the last 1, 3
                                 and 7 days of stored boards (one line each), and what this answer changed over 7 days. Open to
                                 signed-out visitors: read-only, nothing saved. Shares the builder preview's allowance.
@@ -35,6 +37,7 @@ from src.appstate import ratelimit
 from api.hounds_create import _rate_limit_preview
 from src.hounds.interact import drill as drill_mod
 from src.hounds.quiz import impact as quiz_impact
+from src.hounds.quiz import insight as quiz_insight
 from src.hounds import user_spec, user_store
 from src.hounds.english import parser as english_parser
 from src.hounds.quiz import choose as quiz_choose
@@ -164,6 +167,23 @@ def quiz_help_me_choose(body: ChooseRequest, response: Response, _rl: None = Dep
         raise HTTPException(status_code=422, detail={"error": "step_unknown", "message": "that question has no default to choose"})
     except (OSError, KeyError) as exc:
         raise HTTPException(status_code=503, detail={"error": "library_unavailable", "message": type(exc).__name__})
+    out.update(PAPER)
+    return out
+
+
+@router.post("/hounds/quiz/insight")
+def quiz_pre_build_check(body: ComposeRequest, response: Response, _rl: None = Depends(_rate_limit_preview)) -> dict:
+    """The pre-build check on the reveal: "What this hound will do" and "Watch out". Deterministic, read-only, open to a signed-out
+    visitor, on the builder preview's allowance. A replay that is busy or unreadable still answers (from the composer's own notes)."""
+    response.headers["Cache-Control"] = "no-store"
+    text = body.english_text
+    if text is not None and len(text) > english_parser.MAX_TEXT:
+        raise HTTPException(status_code=422, detail={"error": "text_too_long", "max": english_parser.MAX_TEXT})
+    try:
+        out = quiz_insight.check(body.answers, english_draft=body.english_draft, english_text=text)
+    except user_spec.SpecError as exc:
+        raise HTTPException(status_code=422, detail={"error": "spec_invalid", "message": "the quiz could not compose a valid hound from that",
+                                                     "fields": exc.errors})
     out.update(PAPER)
     return out
 

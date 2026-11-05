@@ -36,6 +36,7 @@ import gc
 import hashlib
 import json
 import os
+import re
 import tempfile
 import threading
 import time
@@ -210,7 +211,7 @@ def run_user(hound: dict, days: int, *, now: Optional[datetime] = None, rows_by_
 
 
 def run_user_many(hounds: list, days: int, *, now: Optional[datetime] = None, rows_by_date: Optional[dict] = None,
-                  mlb_results=None, nfl_results=None, game_pk_index=None) -> dict:
+                  mlb_results=None, nfl_results=None, game_pk_index=None, collector=None) -> dict:
     """Replay several user rules in ONE pass over the same boards: ``{hound id: summary}``. The boards are read once, every rule is
     evaluated on each day's games together (a Gematria hound's signals are computed once per game and shared by the variants that
     read the same ciphers, see ``user_gematria.Weigher``), and one settle grades them all. The training screen's Fine-tune and Full rebuild
@@ -239,6 +240,8 @@ def run_user_many(hounds: list, days: int, *, now: Optional[datetime] = None, ro
             else:
                 with fire._heavy():              # one slice of the store in memory at a time
                     window_rows = _window_rows(_shift(chunk[0], -1), _shift(chunk[-1], 1), sports)
+            if collector is not None:
+                collector(window_rows)            # the pre-build check counts what the boards offered, from the rows already in hand
             for date in chunk:
                 near = []
                 for offset in (-1, 0, 1):
@@ -401,8 +404,14 @@ def _summary(picks: list) -> dict:
             d["pushes"] += 1
         if pk["result"] in ("WIN", "LOSS", "PUSH") and isinstance(pk.get("units_average_price"), (int, float)):
             d["units"] = round(d["units"] + pk["units_average_price"], 4)
+    rule_bets: dict = {}
+    for pk in picks:                                 # a bet's reason opens "Rule N:" (user_engine), N counting from 1
+        m = re.match(r"Rule (\d+):", str(pk.get("reason") or ""))
+        if m:
+            rule_bets[int(m.group(1)) - 1] = rule_bets.get(int(m.group(1)) - 1, 0) + 1
     return {
         "record_by_day": [record_by_day[d] for d in sorted(record_by_day)],
+        "rule_bets": rule_bets,
         "record": {"bets": len(picks), "graded": n, "wins": wins, "losses": losses, "pushes": pushes,
                    "voids": voids, "pending": pending},
         "units_average_price": total("units_average_price"), "units_best_price": total("units_best_price"),
@@ -572,13 +581,19 @@ def impact_windows(specs: list, *, now: Optional[datetime] = None, **inject) -> 
         return out
     if not _drill_slot.acquire(blocking=False):
         raise DrillError("drill_busy", "another drill is running; try again in a moment", 429, retry_after=BUSY_RETRY_AFTER_S)
+    from src.hounds.quiz import boardstats
+    first, last = _span(7, now)
+    stats = boardstats.BoardStats(first, last)
     try:
-        got = run_user_many([t[2] for t in todo], 7, now=now, **inject)
+        got = run_user_many([t[2] for t in todo], 7, now=now, collector=stats, **inject)
     finally:
         _drill_slot.release()
         gc.collect()
+    board = stats.summary()
     for i, key, hound in todo:
         out[i] = _windows_of(got[hound["id"]], now)
+        out[i]["rule_bets"] = dict(got[hound["id"]].get("rule_bets") or {})      # how many bets each rule made in the 7 days
+        out[i]["board"] = board                                                  # what the boards offered, by "SPORT|market"
         if not inject:
             with _cache_lock:
                 if len(_impact_cache) >= CACHE_MAX:

@@ -56,6 +56,11 @@
 .qz .qz-h2 { margin: 0 0 6px; font-family: var(--qz-display); font-weight: 700; font-size: 28px; line-height: 1.05; color: var(--qz-ink); letter-spacing: -.01em; }
 .qz .qz-h3 { margin: 22px 0 8px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--qz-mute); }
 .qz-fine { margin: 6px 0; font-size: 13px; line-height: 1.4; color: var(--qz-mute); }
+.qz-insight__line { margin: 0 0 8px; font-size: 16px; line-height: 1.45; color: var(--qz-ink); overflow-wrap: anywhere; }
+.qz-insight__watch { margin: 6px 0 10px; padding: 0; list-style: none; }
+.qz-insight__watch > li { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 0 0 12px; overflow-wrap: anywhere; }
+.qz-insight__text { font-size: 15px; line-height: 1.45; }
+.qz-insight__fix { min-height: 44px; max-width: 100%; text-align: left; }
 .qz-help { margin: 0 0 14px; max-width: 60ch; }
 .qz-help__buttons { display: flex; flex-wrap: wrap; gap: 8px; }
 .qz-help__buttons .qz-btn { min-height: 44px; }
