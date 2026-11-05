@@ -17099,3 +17099,5 @@
 {"call_kind": "pregame", "credits": 1, "events": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T14:13:37.704437Z", "regions": ["us"], "rows": 43, "sport_key": "tennis_atp_paris_masters", "stored": 43}
 {"commence_utc": "2026-11-05T16:30:00Z", "event_id": "a6ee3c60d23477fa1537dc4fcf6a9060", "kind": "phase", "observed_utc": "2026-11-05T14:41:35.479585Z", "phase": "t2h", "rows": 3, "sport_key": "icehockey_ahl"}
 {"call_kind": "pregame", "credits": 3, "events": 12, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-05T14:41:35.479585Z", "regions": ["us"], "rows": 36, "sport_key": "icehockey_ahl", "stored": 36}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-05T20:54:53.238539Z", "observed_utc": "2026-11-05T14:54:53.238539Z", "sport_key": "soccer_spain_copa_del_rey"}
+{"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T14:54:53.238539Z", "regions": ["us"], "rows": 36, "sport_key": "tennis_atp_paris_masters", "stored": 36}
