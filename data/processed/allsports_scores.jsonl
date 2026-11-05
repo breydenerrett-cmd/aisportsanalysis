@@ -8580,3 +8580,8 @@
 {"away_score": null, "away_team": "Brisbane Bullets", "commence_time": "2026-11-07T08:36:00Z", "completed": false, "event_id": "9ac99c3bb098a42af6340d1a71236132", "home_score": null, "home_team": "Melbourne United", "kind": "score", "last_update": null, "observed_utc": "2026-11-05T09:44:04.890862+00:00", "outcome": null, "scores": null, "sport_key": "basketball_nbl"}
 {"credits": 2, "days_from": 3, "events": 5, "kind": "poll", "observed_utc": "2026-11-05T09:44:04.890862+00:00", "sport_key": "basketball_nbl"}
 {"errors": [], "events": 3, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-05T09:44:05.361966Z", "source": "espn_tennis", "unmatched": 3, "unmatched_ids": ["b04959d8930aba4535db09fe57f9d093", "c2e61aa3d1076fb1efc4756a1006e80a", "bff9716e2c2e4b207744b20ff82a2241"], "void": 0, "written": 0}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-05T10:35:34.914552+00:00", "sport_key": "soccer_spain_copa_del_rey"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-05T10:35:34.914552+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-05T10:35:34.914552+00:00", "sport_key": "baseball_kbo"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-05T10:35:34.914552+00:00", "sport_key": "cricket_odi"}
+{"credits": 2, "days_from": 3, "events": 45, "kind": "poll", "observed_utc": "2026-11-05T10:35:34.914552+00:00", "sport_key": "boxing_boxing"}

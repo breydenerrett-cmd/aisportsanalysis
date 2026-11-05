@@ -16980,3 +16980,11 @@
 {"call_kind": "pregame", "credits": 3, "events": 1, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-05T09:44:01.007090Z", "regions": ["us"], "rows": 18, "sport_key": "baseball_kbo", "stored": 18}
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T09:44:01.007090Z", "regions": ["us"], "rows": 3, "sport_key": "basketball_nbl", "stored": 1}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T10:04:29.127458Z", "regions": ["au"], "rows": 10, "sport_key": "cricket_test_match", "stored": 8}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-05T16:35:31.025232Z", "observed_utc": "2026-11-05T10:35:31.025232Z", "sport_key": "soccer_belgium_first_div"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-11-05T16:35:31.025232Z", "observed_utc": "2026-11-05T10:35:31.025232Z", "sport_key": "soccer_efl_champ"}
+{"commence_utc": "2026-11-05T12:20:00Z", "event_id": "8962e5108426884c7237a80948c77cfb", "kind": "phase", "observed_utc": "2026-11-05T10:35:31.025232Z", "phase": "t2h", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
+{"call_kind": "pregame", "credits": 1, "events": 8, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T10:35:31.025232Z", "regions": ["us"], "rows": 60, "sport_key": "tennis_atp_paris_masters", "stored": 60}
+{"commence_utc": "2026-11-05T16:30:00Z", "event_id": "a6ee3c60d23477fa1537dc4fcf6a9060", "kind": "phase", "observed_utc": "2026-11-05T10:35:31.025232Z", "phase": "t6h", "rows": 3, "sport_key": "icehockey_ahl"}
+{"call_kind": "pregame", "credits": 3, "events": 1, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-05T10:35:31.025232Z", "regions": ["us"], "rows": 3, "sport_key": "icehockey_ahl", "stored": 3}
+{"commence_utc": "2026-11-06T03:30:00Z", "event_id": "32a77d579cfa7c79980e22f1ec91ac92", "kind": "phase", "observed_utc": "2026-11-05T10:35:31.025232Z", "phase": "t24h", "rows": 1, "sport_key": "cricket_test_match"}
+{"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T10:35:31.025232Z", "regions": ["au"], "rows": 12, "sport_key": "cricket_test_match", "stored": 9}
