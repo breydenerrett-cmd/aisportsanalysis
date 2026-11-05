@@ -16812,3 +16812,5 @@
 {"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 5, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T02:06:28.128396Z", "regions": ["us"], "rows": 1, "sport_key": "basketball_wncaab", "stored": 1}
 {"call_kind": "inplay", "credits": 1, "events": 15, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T02:06:28.128396Z", "regions": ["us"], "rows": 155, "sport_key": "icehockey_nhl", "stored": 155}
 {"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T02:06:28.128396Z", "regions": ["us"], "rows": 46, "sport_key": "soccer_brazil_campeonato", "stored": 32}
+{"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 5, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T02:29:29.956362Z", "regions": ["us"], "rows": 5, "sport_key": "icehockey_ahl", "stored": 5}
+{"call_kind": "inplay", "credits": 1, "events": 74, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T02:29:29.956362Z", "regions": ["us"], "rows": 647, "sport_key": "americanfootball_ncaaf", "stored": 37}
