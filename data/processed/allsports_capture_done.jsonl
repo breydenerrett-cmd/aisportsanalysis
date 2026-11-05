@@ -16990,3 +16990,5 @@
 {"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T10:35:31.025232Z", "regions": ["au"], "rows": 12, "sport_key": "cricket_test_match", "stored": 9}
 {"commence_utc": "2026-11-05T11:10:00Z", "event_id": "8a2e76c34cf0bce53c2afc75d9f2793e", "kind": "phase", "observed_utc": "2026-11-05T10:43:30.960287Z", "phase": "t30m", "rows": 6, "sport_key": "tennis_atp_paris_masters"}
 {"call_kind": "pregame", "credits": 1, "events": 8, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T10:43:30.960287Z", "regions": ["us"], "rows": 60, "sport_key": "tennis_atp_paris_masters", "stored": 60}
+{"commence_utc": "2026-11-05T13:00:00Z", "event_id": "ce54c1892701e4d3d4713f621a47cc00", "kind": "phase", "observed_utc": "2026-11-05T11:01:53.045620Z", "phase": "t2h", "rows": 8, "sport_key": "tennis_atp_paris_masters"}
+{"call_kind": "pregame", "credits": 1, "events": 8, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T11:01:53.045620Z", "regions": ["us"], "rows": 60, "sport_key": "tennis_atp_paris_masters", "stored": 60}
