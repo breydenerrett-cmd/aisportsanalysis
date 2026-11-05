@@ -29024,3 +29024,13 @@
 {"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 94611, "credits_used_last": 0, "utc": "2026-11-05T17:25:49.942546Z"}
 {"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 94611, "credits_used_last": 0, "utc": "2026-11-05T17:25:52.301946Z"}
 {"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 94611, "credits_used_last": 0, "utc": "2026-11-05T17:25:52.646672Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 94611, "credits_used_last": 0, "utc": "2026-11-05T17:44:41.160865Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 94611, "credits_used_last": 0, "utc": "2026-11-05T17:44:43.471790Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 94611, "credits_used_last": 0, "utc": "2026-11-05T17:44:43.848143Z"}
+{"budget_band": "live_capture", "caller": "mma_capture.run", "credits_remaining": 94610, "credits_used_last": 0, "utc": "2026-11-05T17:45:20.964266Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 94607, "credits_used_last": 3, "utc": "2026-11-05T17:45:22.337222Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 94605, "credits_used_last": 2, "utc": "2026-11-05T17:45:22.337222Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 94604, "credits_used_last": 1, "utc": "2026-11-05T17:45:22.337222Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 94601, "credits_used_last": 3, "utc": "2026-11-05T17:45:22.337222Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 94599, "credits_used_last": 2, "utc": "2026-11-05T17:45:22.337222Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 94597, "credits_used_last": 2, "utc": "2026-11-05T17:45:22.337222Z"}
