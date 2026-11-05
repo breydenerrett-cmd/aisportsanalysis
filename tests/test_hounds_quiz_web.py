@@ -199,7 +199,8 @@ class TheFourSteps(unittest.TestCase):
                                             q("entry_hidden", hook("quiz-entry"), "hidden")])
         f = out["final"]
         self.assertEqual((f["q"], f["step"]), ("Which sports should it bet?", "Step 1 of 4"))
-        self.assertEqual((f["intro"], f["skip"], f["back_hidden"], f["shell_hidden"], f["entry_hidden"]), (0, 0, True, False, True))
+        # Phase 4 (2026-11-05): every question has "Help me choose" and a labelled Skip, drawn per step (the shell HTML still has none)
+        self.assertEqual((f["intro"], f["skip"], f["back_hidden"], f["shell_hidden"], f["entry_hidden"]), (0, 1, True, False, True))
         self.assertEqual((f["next"], f["next_disabled"], f["builder"], f["restart_hidden"]), ("Next", True, "build-a-hound.html", True))
         self.assertEqual([g for g in out["gets"] if "quiz" in g], ["/hounds/quiz/library"])
 
@@ -905,6 +906,78 @@ class TheImpactMeter(unittest.TestCase):
         text = " ".join(w["line"] for w in IMPACT_ANSWER["windows"]) + IMPACT_ANSWER["note"] + IMPACT_ANSWER["delta"]["line"]
         for pattern in (r"beta", r"new", r"edge", r"lock", r"clv", r"nothing cleared the bar", r"profit"):
             self.assertIsNone(re.search(pattern, text.lower()), pattern)
+
+
+CHOOSE_SPORTS = {"step": "sports", "value": ["MLB"], "label": "MLB", "skip_label": "MLB and NFL", "paper_only": True}
+CHOOSE_STYLE = {"step": "personality", "value": "chalk_eater", "label": "Chalk Eater", "skip_label": "x", "paper_only": True}
+CHOSEN_Q = [q("note", hook("quiz-chosen-note")), q("rows", "[data-hook='reveal-chosen-row']", "texts"),
+            q("chosen_hidden", hook("reveal-chosen"), "hidden"), q("q", hook("quiz-question"))]
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class TheHelpAndSkip(unittest.TestCase):
+    """Phase 4 (docs/plans/BANKROLL_AND_QUIZ_INSIGHT.md): every question has Help me choose (the house pack's pick, labelled) and Skip
+    (the default, labelled); the reveal lists the answers the member did not pick."""
+
+    def routes(self, **over):
+        return base_routes(**{"POST /hounds/quiz/choose": [200, CHOOSE_SPORTS], **over})
+
+    def test_every_question_has_both_buttons(self):
+        caps = [q("help", hook("quiz-help")), q("skip", hook("quiz-skip")), q("step", "[data-hook='quiz-step-body']", "attr", attr="data-step")]
+        out = quiz(self.routes(), actions=[TAKE, dict(click(card("sports", "MLB")), capture=caps, label="a"), NEXT,
+                                           dict(click(card("personality", "chalk_eater")), capture=caps, label="b"),
+                                           dict(NEXT, label="c", capture=caps), dict(NEXT, label="d", capture=caps)])
+        c = out["captures"]
+        self.assertEqual([c[k]["step"] for k in "abcd"], ["sports", "personality", "risk", "finish"])
+        for k in "abcd":
+            self.assertEqual((c[k]["help"], c[k]["skip"]), ("Help me choose", "Skip"), k)
+
+    def test_help_me_choose_applies_the_servers_pick_labels_it_and_asks_with_the_sports_so_far(self):
+        out = quiz(self.routes(), actions=[TAKE, dict(click(hook("quiz-help")), wait=200, label="h", capture=CHOSEN_Q + [
+            q("pressed", card("sports", "MLB"), "attr", attr="aria-pressed"), q("next_disabled", hook("quiz-next"), "disabled")])])
+        h_ = out["captures"]["h"]
+        self.assertEqual(h_["note"], "Chosen for you: MLB. Tap any option to change it.")
+        self.assertEqual((h_["pressed"], h_["next_disabled"]), ("true", False))
+        sent = posts_to(out, "/hounds/quiz/choose")
+        self.assertEqual(sent[0]["body"]["step"], "sports")
+
+    def test_a_later_question_is_asked_with_the_sports_already_chosen(self):
+        routes = self.routes(**{"POST /hounds/quiz/choose": [200, CHOOSE_STYLE]})
+        out = quiz(routes, actions=[TAKE, click(card("sports", "NHL")), NEXT, dict(click(hook("quiz-help")), wait=200, label="h", capture=[
+            q("pressed", card("personality", "chalk_eater"), "attr", attr="aria-pressed")])])
+        sent = posts_to(out, "/hounds/quiz/choose")
+        self.assertEqual((sent[0]["body"]["step"], sent[0]["body"]["answers"]["sports"]), ("personality", ["NHL"]))
+        self.assertEqual(out["captures"]["h"]["pressed"], "true")
+
+    def test_skip_moves_on_with_the_default_and_the_reveal_lists_it(self):
+        actions = [TAKE, dict(click(hook("quiz-skip")), label="s1", capture=CHOSEN_Q), dict(click(hook("quiz-skip")), label="s2"),
+                   dict(click(hook("quiz-skip")), label="s3"), dict(click(hook("quiz-skip")), wait=300, label="rev", capture=CHOSEN_Q)]
+        out = quiz(self.routes(), actions=actions)
+        self.assertEqual(out["captures"]["s1"]["q"], "Pick its style.")
+        rev = out["captures"]["rev"]
+        self.assertFalse(rev["chosen_hidden"])
+        self.assertEqual(len(rev["rows"]), 4)
+        self.assertEqual(rev["rows"][0], "Sports: MLB and NFL (skipped, using the default)")
+        self.assertTrue(all(r.endswith("(skipped, using the default)") for r in rev["rows"]), rev["rows"])
+        body = posts_to(out, "/hounds/quiz/compose")[0]["body"]["answers"]
+        self.assertNotIn("sports", body)                                   # skipped: the composer's own default, not a made-up answer
+
+    def test_a_pick_of_the_members_own_replaces_the_label(self):
+        out = quiz(self.routes(), actions=[TAKE, dict(click(hook("quiz-help")), wait=200), click(card("sports", "NBA")), NEXT,
+                                           click(card("personality", "chalk_eater")), NEXT, NEXT, dict(NEXT, wait=300, label="rev", capture=CHOSEN_Q)])
+        self.assertEqual(out["captures"]["rev"]["rows"], [])
+        self.assertTrue(out["captures"]["rev"]["chosen_hidden"])
+
+    def test_help_that_fails_says_so_and_the_member_can_still_choose(self):
+        out = quiz(self.routes(**{"POST /hounds/quiz/choose": [503, {"detail": {"error": "library_unavailable"}}]}),
+                   actions=[TAKE, dict(click(hook("quiz-help")), wait=200, label="h", capture=CHOSEN_Q + [q("next_disabled", hook("quiz-next"), "disabled")])])
+        self.assertIn("Could not pick one just now", out["captures"]["h"]["note"])
+        self.assertTrue(out["captures"]["h"]["next_disabled"])
+
+    def test_the_describe_text_box_has_no_help_or_skip(self):
+        out = run_page("quiz", routes=base_routes(), actions=[click(hook("quiz-describe"), "describe")],
+                       queries=[q("help", hook("quiz-help"), "count"), q("skip", hook("quiz-skip"), "count")])
+        self.assertEqual((out["final"]["help"], out["final"]["skip"]), (0, 0))
 
 
 if __name__ == "__main__":

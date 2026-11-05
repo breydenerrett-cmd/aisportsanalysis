@@ -103,7 +103,27 @@ const S = {
   result: null, composing: false, composeError: "", seq: 0, preview: null, previewSeq: 0, drill: null, drillBusy: false,
   saving: false, saved: null, problems: [], pendingSave: false, resumed: false, notice: "", celebrated: false, bound: false,
   keep: null, previewSettled: false, mode: "quiz", describe: null, preset: null, libWait: null,
+  chosen: {},              // question key -> { how: "help" | "skip", label }: the answers the member did not pick themselves
+  helpBusy: false,
 };
+
+/** What each question becomes when it is skipped (the same defaults src/hounds/quiz/choose.py names), and the words for them. */
+export const SKIP_LABELS = { sports: "MLB and NFL", personality: "a plain starter: underdog moneylines at plus money", risk: "",
+  aggression: "", stats: "no stat picked", finish: "a suggested name and look" };      // risk and aggression: the library's default level, by name
+function skipLabel(key) {
+  if (key === "risk" || key === "aggression") {
+    const level = S.lib && (S.lib.risk_levels || []).find((r) => r.id === DEFAULT_RISK);
+    return (level && level.name) || "the middle setting";
+  }
+  return SKIP_LABELS[key] || "its default";
+}
+export const QUESTION_NAMES = { sports: "Sports", personality: "Style", risk: "How bold", aggression: "How aggressive", stats: "Stats",
+  finish: "Name and look" };
+export const CHOSEN_TAG = "chosen for you";
+export const SKIPPED_TAG = "skipped, using the default";
+
+/** The question a step id answers: "dq:risk" -> "risk". The describe step itself is a text box and has no default to choose. */
+const keyOfStep = (id) => (id === "describe" ? null : String(id).replace(/^dq:/, ""));
 
 // ---- the draft (localStorage, every touch guarded) ------------------------------------------------------------------
 
@@ -127,7 +147,7 @@ function persist() {
     if (!ls) return;
     if (!hasAnyAnswer() && !S.english.text && !S.nameTouched && !S.describe && !S.preset) { ls.removeItem(DRAFT_KEY); return; }
     ls.setItem(DRAFT_KEY, JSON.stringify({ v: 1, answers: S.answers, step: S.step, stage: S.stage === "reveal" ? "reveal" : "quiz",
-      mode: S.mode, describe: S.describe, preset: S.preset,
+      mode: S.mode, describe: S.describe, preset: S.preset, chosen: S.chosen,
       name: S.nameTouched ? S.name : "", tagline: S.tagline, english: { text: S.english.text, draft: S.english.draft },
       pendingSave: S.pendingSave, savedAt: Date.now() }));
   } catch (err) { /* a full or blocked store: no resume, nothing else */ }
@@ -157,6 +177,13 @@ function restore(d) {
   S.english = { text: typeof e.text === "string" ? e.text : "", draft: e.draft && typeof e.draft === "object" ? e.draft : null,
     understood: [], notRead: [], assumed: [] };
   S.pendingSave = !!d.pendingSave;
+  S.chosen = {};
+  if (d.chosen && typeof d.chosen === "object") {
+    for (const k of Object.keys(QUESTION_NAMES)) {
+      const c = d.chosen[k];
+      if (c && (c.how === "help" || c.how === "skip") && typeof c.label === "string") S.chosen[k] = { how: c.how, label: c.label.slice(0, 120) };
+    }
+  }
 }
 
 // ---- answers ------------------------------------------------------------------------------------------------------------
@@ -167,6 +194,8 @@ function hasAnyAnswer() {
 }
 
 function answered(stepId) {
+  const k = keyOfStep(stepId);
+  if (k && S.chosen[k]) return true;               // a question skipped or chosen for the member is answered
   const a = S.answers;
   const dans = (S.describe && S.describe.answers) || {};
   switch (stepId) {
@@ -236,6 +265,7 @@ function selected(group, id) {
 function toggle(group, id) {
   const a = S.answers;
   S.notice = "";
+  delete S.chosen[group === "coat" || group === "accessory" ? "finish" : group];     // a pick of the member's own replaces a default
   if (S.preset && (group === "sports" || group === "personality" || group === "risk")) {
     // a change of its own drops the preset: the answers are the hound again
     S.preset = null;
@@ -537,7 +567,7 @@ function stepFinish() {
   const preview = h("div", { class: "qz-look__preview", "data-hook": "quiz-look-preview" }, [dogSpan(previewLook(), "happy", 200, previewBreed(), "qz-dog qz-dog--big")]);
   const name = h("input", { id: "qz-name-step", type: "text", maxlength: "24", autocomplete: "off", "data-hook": "quiz-name",
     placeholder: "Pick a name for me", value: S.nameTouched ? S.name : "" });
-  name.addEventListener("input", () => { S.name = String(name.value); S.nameTouched = !!S.name.trim(); persist(); });
+  name.addEventListener("input", () => { S.name = String(name.value); S.nameTouched = !!S.name.trim(); if (S.nameTouched) delete S.chosen.finish; persist(); });
   const coats = h("div", { class: "qz-swatches", role: "group", "aria-label": "Coat", "data-hook": "quiz-coats" }, S.lib.looks.coats.map((c) =>
     h("button", { type: "button", class: "qz-swatch", "data-hook": "quiz-coat", "data-group": "coat", "data-id": c, "data-coat": c,
       "aria-label": c, title: c, "aria-pressed": selected("coat", c) ? "true" : "false", on: { click: () => toggle("coat", c) } })));
@@ -562,6 +592,79 @@ const STEP_BUILDERS = { sports: stepSports, personality: stepPersonality, risk: 
   describe: () => stepDescribe(), "dq:sports": stepSports, "dq:risk": stepRisk, "dq:stats": () => stepStats(),
   "dq:aggression": () => stepAggression() };
 
+// ---- Help me choose, and Skip ----------------------------------------------------------------------------------------------
+
+function chosenNote(key) {
+  const c = S.chosen[key];
+  if (!c) return "";
+  return c.how === "help" ? `Chosen for you: ${c.label}. Tap any option to change it.` : `Skipped. It will use ${c.label}.`;
+}
+
+function setChosenNote(key, text) {
+  const n = q("quiz-chosen-note");
+  if (n) n.textContent = text === undefined ? chosenNote(key) : text;
+}
+
+/** Every question except the free-text one gets the same two buttons: the house pack's pick for the sports so far, or the default. */
+function helpRow(step) {
+  const key = keyOfStep(step.id);
+  if (!key) return null;
+  return h("div", { class: "qz-help", "data-hook": "quiz-help-row" }, [
+    h("div", { class: "qz-help__buttons" }, [
+      h("button", { type: "button", class: "qz-btn qz-btn--ghost", "data-hook": "quiz-help", text: "Help me choose", on: { click: () => helpMe(key) } }),
+      h("button", { type: "button", class: "qz-btn qz-btn--ghost", "data-hook": "quiz-skip", text: "Skip", on: { click: () => skipIt(key) } })]),
+    h("p", { class: "qz-fine qz-help__note", "data-hook": "quiz-chosen-note", "aria-live": "polite", text: chosenNote(key) })]);
+}
+
+function dropPreset(key) {
+  if (S.preset && (key === "sports" || key === "personality" || key === "risk")) { S.preset = null; S.english.draft = null; }
+}
+
+function applyChoice(key, res) {
+  const a = S.answers;
+  dropPreset(key);
+  if (key === "sports" && Array.isArray(res.value)) a.sports = res.value.slice();
+  else if (key === "personality" && res.value) { a.personality = res.value; S.personalityTouched = false; }
+  else if (key === "risk" && res.value) a.risk = res.value;
+  else if (key === "aggression" && S.describe && res.value) S.describe.answers.aggression = res.value;
+  else if (key === "stats" && S.describe && Array.isArray(res.value)) S.describe.answers.stats = res.value.slice();
+  S.chosen[key] = { how: "help", label: String(res.label || skipLabel(key)).slice(0, 120) };
+}
+
+async function helpMe(key) {
+  if (S.helpBusy) return;
+  S.helpBusy = true;
+  setChosenNote(key, "Picking one for you...");
+  try {
+    const res = await apiPost("/hounds/quiz/choose", { step: key, answers: answersPayload() });
+    applyChoice(key, res);
+    persist();
+    sync();
+    if (key === "sports") refreshSports();
+    if (key === "personality") { refreshPersonality(); refreshRiskNote(); }
+    if (key === "risk") refreshRiskNote();
+    setChosenNote(key);
+    if (key === "finish") go(1);                       // nothing to look at on the last question: on to the reveal
+  } catch (err) {
+    setChosenNote(key, "Could not pick one just now. Choose one yourself, or skip.");
+  } finally {
+    S.helpBusy = false;
+  }
+}
+
+function skipIt(key) {
+  const a = S.answers;
+  dropPreset(key);
+  if (key === "sports") a.sports = [];
+  else if (key === "personality") a.personality = null;
+  else if (key === "risk") a.risk = DEFAULT_RISK;
+  else if (key === "aggression" && S.describe) delete S.describe.answers.aggression;
+  else if (key === "stats" && S.describe) S.describe.answers.stats = [];
+  S.chosen[key] = { how: "skip", label: skipLabel(key) };
+  persist();
+  go(1);
+}
+
 // ---- the shell: stage, progress, bar ---------------------------------------------------------------------------------------
 
 function renderStep() {
@@ -572,6 +675,7 @@ function renderStep() {
   const section = h("section", { class: "qz-step", "data-hook": "quiz-step-body", "data-step": step.id, "aria-labelledby": "qz-q" }, [
     h("h1", { id: "qz-q", class: "qz-q", tabindex: "-1", "data-hook": "quiz-question", text: step.title }),
     h("p", { class: "qz-sub", text: step.sub }),
+    helpRow(step),
     step.id === "finish" ? null : h("div", { class: "qz-impact", "data-hook": "quiz-impact", role: "status", "aria-live": "polite", hidden: true }),
     body]);
   if (S.resumed && S.step === 0 && hasAnyAnswer()) {
@@ -660,7 +764,7 @@ function resetAll() {
   S.result = null; S.preview = null; S.drill = null; S.saved = null; S.pendingSave = false; S.problems = []; S.moreSports = false;
   S.personalityTouched = false; S.personalityPage = 0; S.step = 0; S.resumed = false;
   S.previewSettled = false;
-  S.mode = "quiz"; S.describe = null; S.preset = null;
+  S.mode = "quiz"; S.describe = null; S.preset = null; S.chosen = {};
   clearDraft();
   meter.reset();
 }
@@ -730,6 +834,10 @@ function buildReveal() {
           h("ol", { class: "qz-rules", "data-hook": "reveal-rules" }),
           h("ul", { class: "qz-globals", "data-hook": "reveal-globals" }),
           h("div", { class: "qz-warnings", "data-hook": "reveal-warnings" })]),
+        h("section", { class: "qz-block", "data-hook": "reveal-chosen", "aria-labelledby": "qz-chosen-h", hidden: true }, [
+          h("h2", { id: "qz-chosen-h", class: "qz-h2", text: "Answers we filled in" }),
+          h("p", { class: "qz-fine", text: "You did not pick these, so the quiz did. Go back to the questions to change any of them." }),
+          h("ul", { class: "qz-list", "data-hook": "reveal-chosen-list" })]),
         h("section", { class: "qz-block qz-checks", "aria-labelledby": "qz-check-h" }, [
           h("h2", { id: "qz-check-h", class: "qz-h2", text: "Kick the tires" }),
           h("div", { class: "qz-check qz-preview", "data-hook": "reveal-preview", "data-state": "loading" }, [
@@ -768,7 +876,7 @@ function buildReveal() {
             h("button", { type: "button", class: "qz-btn qz-btn--ghost qz-btn--lg", "data-hook": "reveal-edit", text: "Edit rules", disabled: true }),
             h("button", { type: "button", class: "qz-btn qz-btn--text", "data-hook": "reveal-back", text: "Back to the questions" }),
             h("button", { type: "button", class: "qz-btn qz-btn--text", "data-hook": "reveal-retake", text: "Retake the quiz" })])])])])]));
-  q("reveal-name").addEventListener("input", () => { S.name = String(q("reveal-name").value); S.nameTouched = true; persist(); });
+  q("reveal-name").addEventListener("input", () => { S.name = String(q("reveal-name").value); S.nameTouched = true; delete S.chosen.finish; persist(); });
   q("reveal-name").addEventListener("change", () => { S.name = String(q("reveal-name").value).trim(); S.nameTouched = !!S.name; persist(); compose(); });
   q("reveal-tagline").addEventListener("input", () => { S.tagline = String(q("reveal-tagline").value); persist(); });
   q("reveal-tagline").addEventListener("change", () => { compose(); });
@@ -876,8 +984,23 @@ function renderResult() {
     warn.appendChild(h("ul", { class: "qz-list qz-list--warn", "data-hook": "reveal-warning-list" },
       heads.concat(notes).map((w) => h("li", { "data-hook": "reveal-warning", "data-code": w.code, text: w.message }))));
   }
+  renderChosen();
   if (S.saved) renderSaved();
   syncKeep();
+}
+
+/** The answers the member did not pick: "Sports: MLB (chosen for you)", "How bold: the middle level (skipped, using the default)". */
+function renderChosen() {
+  const box = q("reveal-chosen");
+  if (!box) return;
+  const list = clearNode(q("reveal-chosen-list"));
+  const rows = Object.keys(QUESTION_NAMES).filter((k) => S.chosen[k]);
+  for (const k of rows) {
+    const c = S.chosen[k];
+    list.appendChild(h("li", { "data-hook": "reveal-chosen-row", "data-question": k, "data-how": c.how,
+      text: `${QUESTION_NAMES[k]}: ${c.label} (${c.how === "help" ? CHOSEN_TAG : SKIPPED_TAG})` }));
+  }
+  box.hidden = rows.length === 0;
 }
 
 // ---- Would have bet today, and the backtest ---------------------------------------------------------------------------

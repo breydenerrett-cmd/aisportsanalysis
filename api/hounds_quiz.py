@@ -6,6 +6,8 @@
     POST /hounds/quiz/moves     {answers, page?} -> the four move cards on that page for the sports and answers so far
                                 (name, one short line, sport badge, the full rule behind it); page + 1 is "Show me 4 others"
     POST /hounds/quiz/pick      {answers} -> the one move "Pick for me" takes
+    POST /hounds/quiz/choose    {step, answers} -> the answer "Help me choose" applies: what the house pack would use for the sports
+                                already chosen (src/hounds/quiz/choose.py)
     POST /hounds/quiz/impact    {answers, previous_answers?, english_draft?} -> what the answers so far would have done over the last 1, 3
                                 and 7 days of stored boards (one line each), and what this answer changed over 7 days. Open to
                                 signed-out visitors: read-only, nothing saved. Shares the builder preview's allowance.
@@ -35,6 +37,7 @@ from src.hounds.interact import drill as drill_mod
 from src.hounds.quiz import impact as quiz_impact
 from src.hounds import user_spec, user_store
 from src.hounds.english import parser as english_parser
+from src.hounds.quiz import choose as quiz_choose
 from src.hounds.quiz import compose as quiz_compose
 from src.hounds.quiz import describe as quiz_describe
 from src.hounds.quiz import library as quiz_library
@@ -65,6 +68,11 @@ class ImpactRequest(BaseModel):
     answers: Dict[str, Any] = {}
     previous_answers: Optional[Dict[str, Any]] = None
     english_draft: Optional[Dict[str, Any]] = None
+
+
+class ChooseRequest(BaseModel):
+    step: str
+    answers: Dict[str, Any] = {}
 
 
 class DescribeRequest(BaseModel):
@@ -142,6 +150,20 @@ def quiz_moves_page(body: MovesRequest, response: Response, _rl: None = Depends(
 def quiz_pick_for_me(body: MovesRequest, response: Response, _rl: None = Depends(_rl_moves)) -> dict:
     response.headers["Cache-Control"] = "no-store"
     out = quiz_moves.pick_for_me(body.answers)
+    out.update(PAPER)
+    return out
+
+
+@router.post("/hounds/quiz/choose")
+def quiz_help_me_choose(body: ChooseRequest, response: Response, _rl: None = Depends(_rl_moves)) -> dict:
+    """"Help me choose": the answer the house pack would use for this question, for the sports already chosen."""
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        out = quiz_choose.choose(body.step, body.answers)
+    except ValueError:
+        raise HTTPException(status_code=422, detail={"error": "step_unknown", "message": "that question has no default to choose"})
+    except (OSError, KeyError) as exc:
+        raise HTTPException(status_code=503, detail={"error": "library_unavailable", "message": type(exc).__name__})
     out.update(PAPER)
     return out
 

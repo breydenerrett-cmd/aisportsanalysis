@@ -188,6 +188,16 @@ class TheQuizDoors(unittest.TestCase):
         self.assertEqual(out.json()["detail"]["retry_after"], 30)
         self.assertEqual(self.client.post("/hounds/quiz/impact", json={"answers": "nope"}).status_code, 422)
 
+    def test_choose_returns_the_house_default_labelled_and_refuses_an_unknown_question(self):
+        out = self.client.post("/hounds/quiz/choose", json={"step": "sports", "answers": {}})
+        self.assertEqual(out.status_code, 200)
+        self.assertEqual(out.json()["value"], ["MLB"])
+        self.assertTrue(out.json()["paper_only"])
+        style = self.client.post("/hounds/quiz/choose", json={"step": "personality", "answers": {"sports": ["NHL"]}}).json()
+        self.assertTrue(style["value"] and style["label"])
+        self.assertEqual(self.client.post("/hounds/quiz/choose", json={"step": "markets"}).status_code, 422)
+        self.assertEqual(self.client.post("/hounds/quiz/choose", json={"answers": {}}).status_code, 422)
+
     def test_impact_shares_the_builder_previews_allowance(self):
         source = (REPO / "api" / "hounds_quiz.py").read_text(encoding="utf-8")
         self.assertIn("from api.hounds_create import _rate_limit_preview", source)
