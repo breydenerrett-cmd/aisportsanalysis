@@ -16749,3 +16749,4 @@
 {"call_kind": "pregame", "credits": 2, "events": 8, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-05T00:42:34.810511Z", "regions": ["us"], "rows": 89, "sport_key": "soccer_brazil_campeonato", "stored": 65}
 {"commence_utc": "2026-11-06T00:31:00Z", "event_id": "a9260dc7fe4f98cf771cd7670af9b45d", "kind": "phase", "observed_utc": "2026-11-05T00:42:34.810511Z", "phase": "t24h", "rows": 9, "sport_key": "americanfootball_ncaaf_fcs"}
 {"call_kind": "pregame", "credits": 3, "events": 57, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-05T00:42:34.810511Z", "regions": ["us"], "rows": 177, "sport_key": "americanfootball_ncaaf_fcs", "stored": 9}
+{"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 5, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T00:54:12.475997Z", "regions": ["us"], "rows": 8, "sport_key": "icehockey_ahl", "stored": 8}
