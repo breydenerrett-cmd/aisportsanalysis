@@ -427,10 +427,47 @@ def _prop_move(game, market, player, observed, side, prices) -> tuple:
     return (1 if delta > 0 else -1), steam
 
 
+_REASON_ORDER = ("no_board_at_lock", "no_live_board", "board_too_old", "live_price_too_old", "too_few_books",
+                 "price_cap", "outside_price_band", "outside_line_range", "conditions_not_met")
+_REASON_TEXT = {
+    "no_board_at_lock": "no price was quoted for this game at or before the time it is read",
+    "no_live_board": "there is no live price for this bet",
+    "price_cap": "the price is -200 or worse, which no hound takes",
+    "outside_price_band": "no side's average price is inside the rule's price range",
+    "outside_line_range": "the line is outside the rule's line range",
+    "conditions_not_met": "the rule's extra conditions were not met",
+}
+
+
+def _left_out_row(spec: Mapping, game: "E.GameBoards", event_id: str, commence: datetime, lock_utc: datetime,
+                  as_of: datetime, delta) -> dict:
+    """One game a preview left out, with the plain reason (the most basic failing check first) and every code that fired."""
+    codes = [c for c in _REASON_ORDER if delta.get(c)] + sorted(c for c in delta if c not in _REASON_ORDER)
+    code = codes[0] if codes else "no_side_priced"
+    text = _REASON_TEXT.get(code, "no side of this game has a price on the board")
+    rules = [r for r in spec["rules"] if game.sport in r["sports"]]
+    markets = [m for r in rules for m in r["markets"]]
+    found = None
+    for m in markets:
+        found = game.board_at(m, as_of) if R.market_kind(m) != "prop" else None
+        if found:
+            break
+    if code in ("board_too_old", "live_price_too_old") and found:
+        age = round((as_of - found[0]).total_seconds() / 60.0)
+        text = (f"the newest price for this game is {age} minutes old "
+                f"(read at {E._iso(as_of)}); a bet needs one at most {round(game.board_max_age())} minutes old")
+    elif code == "too_few_books" and found:
+        need = max(r["min_books"] for r in rules)
+        text = f"only {found[1]['n_books']} books quote it and the rule needs {need}"
+    return {"event_id": event_id, "sport": game.sport, "away_team": game.away_team, "home_team": game.home_team,
+            "start_utc": E._iso(commence), "lock_utc": E._iso(lock_utc), "reason_code": code,
+            "reason": text[0].upper() + text[1:] + ".", "all_reasons": codes}
+
+
 def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, facts, date: str, *, mode: str,
                      clock: Callable[[], datetime], seen_ids: set, game_pk_index: Optional[Mapping],
                      skipped, considered: dict, preview_now: Optional[datetime] = None,
-                     ahead: bool = False, dropped: Optional[list] = None) -> list:
+                     ahead: bool = False, dropped: Optional[list] = None, left_out: Optional[list] = None) -> list:
     """The ranked candidates of one version-2 hound on one slate date:
     [(sortkey, lock_utc, event_id, market, game, commence, cand, bet_id)], de-duplicated per bet and held to
     one side per game (the first in the hound's own rank order keeps the game's side slot, its total slot,
@@ -481,12 +518,15 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, facts, date:
         if game_pk_index:
             entry = game_pk_index.get(event_id)
             game_pk = str(entry.get("game_pk")) if entry and entry.get("game_pk") is not None else None
+        before = E.Counter(skipped)
+        yielded = False
         for i, rule in enumerate(spec["rules"]):
             if game.sport not in rule["sports"]:
                 continue
             for market in rule["markets"]:
                 for cand in rule_candidates(rule, i, spec, game, market, as_of, lock_utc, commence, date, seed,
                                             facts, game_pk, skipped):
+                    yielded = True
                     key = market if not cand["player"] else f"{market}|{R.fold_player(cand['player'])}"
                     bet_id = E.bet_id_for(hound["id"], event_id, key)
                     if bet_id in seen_ids:
@@ -496,6 +536,8 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, facts, date:
                     kept = best.get(bet_id)
                     if kept is None or item[0] < kept[0]:
                         best[bet_id] = item
+        if left_out is not None and not yielded:
+            left_out.append(_left_out_row(spec, game, event_id, commence, lock_utc, as_of, skipped - before))
     # One side per game (src/hounds/one_side.py): in the hound's own rank order, the first candidate on a
     # game keeps its slot (side / total / one player's stat) and a later one that contradicts or repeats it
     # is dropped and counted. The ranking is the owner's ``rank_by``, never the better price afterwards.
@@ -514,10 +556,11 @@ def preview(spec: Mapping, games: Mapping, facts, date: str, now: datetime, *,
     not reached its lock is evaluated on the newest board, flagged `locked: false`). Writes nothing."""
     skipped: Counter = E.Counter()
     considered: dict = {}
+    left_out: list = []
     hound = {"id": "preview", "spec": spec, "created_at": None}
     ranked = hound_candidates(hound, spec, games, facts, date, mode="replay", clock=lambda: now,
                               seen_ids=set(), game_pk_index=game_pk_index, skipped=skipped,
-                              considered=considered, preview_now=now)
+                              considered=considered, preview_now=now, left_out=left_out)
     ranked.sort(key=lambda c: c[0])
     picks = []
     for position, (_k, lock_utc, event_id, market, game, commence, cand, _bet) in enumerate(ranked):
@@ -535,7 +578,7 @@ def preview(spec: Mapping, games: Mapping, facts, date: str, now: datetime, *,
             "games_fit": len({p["event_id"] for p in picks}),
             "qualifying": len(picks), "would_bet": min(len(picks), spec["max_bets_per_day"]),
             "max_bets_per_day": spec["max_bets_per_day"], "picks": picks,
-            "skipped": dict(skipped)}
+            "skipped": dict(skipped), "skipped_games": left_out}
 
 
 # ---------------------------------------------------------------------------

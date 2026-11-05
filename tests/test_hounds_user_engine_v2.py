@@ -317,5 +317,55 @@ class Preview(_Base):
         self.assertEqual([p["would_bet"] for p in out["picks"]], [True, False])
 
 
+class PreviewOnAFullNhlBoard(_Base):
+    """The 2026-11-05 "Hockey Nerd" defect: a quiz-built NHL moneyline hound said "passes today" on a 16-game NHL night.
+    The fixture is that night: 16 games, both sides priced by 11 books, a dog between +100 and +250 in every game."""
+
+    DAY = "2026-11-05"
+    NOW = F.utc("2026-11-05T21:30:00Z")
+
+    def games(self, captured: str, books: int = 11):
+        rows = []
+        for i in range(16):
+            start = f"2026-11-06T{i // 8:02d}:{10 + 30 * (i % 2):02d}:00Z"
+            rows += F.board_rows(captured, event_id=f"nhl{i:02d}", home=f"Home {i}", away=f"Away {i}", start=start, sport="nhl",
+                                 moneyline=[(f"book_{b}", -140 - b, 120 + b) for b in range(books)])
+        games = user_engine.build_games(rows, near_date=self.DAY)
+        return {k: g for k, g in games.items() if g.commence is not None}
+
+    def spec(self, **rule_over):
+        rule = F.rule(**{**dict(sports=["NHL"], markets=["moneyline"], side="either", price_min=100, price_max=250, min_books=5), **rule_over})
+        return user_spec.validate_spec(F.v2(rules=[rule], lock_minutes=120, max_bets_per_day=3, stake_units=2))
+
+    def run_preview(self, games, spec=None, now=None):
+        return user_engine_v2.preview(spec or self.spec(), games, F.facts(), self.DAY, now or self.NOW, game_pk_index={})
+
+    def test_a_fresh_board_gives_picks(self):
+        out = self.run_preview(self.games("2026-11-05T21:00:00Z"))
+        self.assertGreater(out["qualifying"], 0)
+        self.assertEqual(out["skipped_games"], [])
+
+    def test_a_stale_board_is_named_for_every_game_left_out(self):
+        out = self.run_preview(self.games("2026-11-05T17:00:00Z"))          # newest price is 4.5 hours old
+        self.assertEqual(out["qualifying"], 0)
+        self.assertEqual(len(out["skipped_games"]), 16)
+        one = out["skipped_games"][0]
+        self.assertEqual(one["reason_code"], "board_too_old")
+        self.assertIn("270 minutes old", one["reason"])
+        self.assertIn("75", one["reason"])
+        self.assertEqual({g["event_id"] for g in out["skipped_games"]}, {f"nhl{i:02d}" for i in range(16)})
+
+    def test_a_game_with_no_price_at_all_says_so(self):
+        out = self.run_preview(self.games("2026-11-05T21:00:00Z"), now=F.utc("2026-11-05T10:00:00Z"))
+        self.assertEqual({g["reason_code"] for g in out["skipped_games"]}, {"no_board_at_lock"})
+        self.assertIn("No price",out["skipped_games"][0]["reason"])
+
+    def test_a_game_that_misses_the_rule_says_which_part(self):
+        out = self.run_preview(self.games("2026-11-05T21:00:00Z", books=4))
+        self.assertEqual({g["reason_code"] for g in out["skipped_games"]}, {"too_few_books"})
+        self.assertIn("only 4 books", out["skipped_games"][0]["reason"].replace("Only", "only"))
+        self.assertIn("needs 5", out["skipped_games"][0]["reason"])
+
+
 if __name__ == "__main__":
     unittest.main()
