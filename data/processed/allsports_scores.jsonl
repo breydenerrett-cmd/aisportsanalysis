@@ -8617,3 +8617,5 @@
 {"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-05T14:54:57.699371+00:00", "sport_key": "baseball_kbo"}
 {"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-05T14:54:57.699371+00:00", "sport_key": "cricket_odi"}
 {"credits": 2, "days_from": 3, "events": 45, "kind": "poll", "observed_utc": "2026-11-05T14:54:57.699371+00:00", "sport_key": "boxing_boxing"}
+{"away_score": null, "away_team": "Zimbabwe", "commence_time": "2026-11-06T06:00:00Z", "completed": false, "event_id": "4c9b3b0a9a37c3ebd69d09bd038e2c29", "home_score": null, "home_team": "Afghanistan", "kind": "score", "last_update": null, "observed_utc": "2026-11-05T15:09:09.749693+00:00", "outcome": null, "scores": null, "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-05T15:09:09.749693+00:00", "sport_key": "cricket_test_match"}
