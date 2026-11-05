@@ -16932,3 +16932,12 @@
 {"events": 3, "kind": "peek", "next_check_utc": "2026-11-05T13:28:00.428817Z", "observed_utc": "2026-11-05T07:28:00.428817Z", "sport_key": "cricket_big_bash"}
 {"events": 2, "kind": "peek", "next_check_utc": "2026-11-05T13:28:00.428817Z", "observed_utc": "2026-11-05T07:28:00.428817Z", "sport_key": "soccer_uefa_champs_league"}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T07:28:00.428817Z", "regions": ["au"], "rows": 6, "sport_key": "cricket_test_match", "stored": 5}
+{"events": 4, "kind": "peek", "next_check_utc": "2026-11-05T13:56:11.699129Z", "observed_utc": "2026-11-05T07:56:11.699129Z", "sport_key": "aussierules_aflw"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-05T08:30:00Z", "observed_utc": "2026-11-05T07:56:11.699129Z", "sport_key": "baseball_kbo"}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-11-05T13:56:11.699129Z", "observed_utc": "2026-11-05T07:56:11.699129Z", "sport_key": "cricket_odi"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-05T13:56:11.699129Z", "observed_utc": "2026-11-05T07:56:11.699129Z", "sport_key": "icehockey_sweden_allsvenskan"}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-05T13:56:11.699129Z", "observed_utc": "2026-11-05T07:56:11.699129Z", "sport_key": "icehockey_sweden_hockey_league"}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-11-05T13:56:11.699129Z", "observed_utc": "2026-11-05T07:56:11.699129Z", "sport_key": "soccer_epl"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-05T13:56:11.699129Z", "observed_utc": "2026-11-05T07:56:11.699129Z", "sport_key": "soccer_korea_kleague1"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-05T13:56:11.699129Z", "observed_utc": "2026-11-05T07:56:11.699129Z", "sport_key": "soccer_portugal_primeira_liga"}
+{"events": 11, "kind": "peek", "next_check_utc": "2026-11-05T13:56:11.699129Z", "observed_utc": "2026-11-05T07:56:11.699129Z", "sport_key": "soccer_spain_segunda_division"}
