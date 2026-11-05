@@ -389,7 +389,20 @@ def _summary(picks: list) -> dict:
         d["units"] = round(d["units"] + p["units_average_price"], 2)
         d["usd"] = round(d["usd"] + p["usd"], 2)
     n = len(final)
+    record_by_day: dict = {}
+    for pk in picks:
+        d = record_by_day.setdefault(pk["date"], {"date": pk["date"], "bets": 0, "wins": 0, "losses": 0, "pushes": 0, "units": 0.0})
+        d["bets"] += 1
+        if pk["result"] == "WIN":
+            d["wins"] += 1
+        elif pk["result"] == "LOSS":
+            d["losses"] += 1
+        elif pk["result"] == "PUSH":
+            d["pushes"] += 1
+        if pk["result"] in ("WIN", "LOSS", "PUSH") and isinstance(pk.get("units_average_price"), (int, float)):
+            d["units"] = round(d["units"] + pk["units_average_price"], 4)
     return {
+        "record_by_day": [record_by_day[d] for d in sorted(record_by_day)],
         "record": {"bets": len(picks), "graded": n, "wins": wins, "losses": losses, "pushes": pushes,
                    "voids": voids, "pending": pending},
         "units_average_price": total("units_average_price"), "units_best_price": total("units_best_price"),
@@ -509,6 +522,71 @@ def drill_many(*, specs: list, days: int, now: Optional[datetime] = None, **inje
     return [got[h["id"]] for h in hounds]
 
 
+# ---------------------------------------------------------------------------
+# the quiz's impact meter: the last 1, 3 and 7 days of one or two specs in a single 7-day pass
+# ---------------------------------------------------------------------------
+
+IMPACT_WINDOWS = (1, 3, 7)
+IMPACT_CACHE_TTL_S = 1800.0
+_impact_cache: dict = {}
+
+
+def _windows_of(summary: dict, now: datetime) -> dict:
+    """{1: {bets, wins, losses, pushes, units}, 3: ..., 7: ...} from a 7-day summary's per-day record. Window n is the last n completed days."""
+    _first, last = _span(7, now)
+    out = {}
+    for n in IMPACT_WINDOWS:
+        floor = _shift(last, -(n - 1))
+        agg = {"bets": 0, "wins": 0, "losses": 0, "pushes": 0, "units": 0.0}
+        for d in summary.get("record_by_day") or []:
+            if floor <= d["date"] <= last:
+                for k in ("bets", "wins", "losses", "pushes"):
+                    agg[k] += d[k]
+                agg["units"] += d["units"]
+        agg["units"] = round(agg["units"], 2)
+        out[n] = agg
+    return out
+
+
+def impact_windows(specs: list, *, now: Optional[datetime] = None, **inject) -> list:
+    """For each spec, its 1/3/7-day windows (``{1: {...}, 3: {...}, 7: {...}}``), or None for a spec that cannot be replayed (a Gematria
+    hound is forward-only). Everything not remembered is replayed in ONE 7-day pass under ONE take of the process-wide slot, so the
+    meter costs one pass whether it shows one spec or the spec and the one before it. Read-only: nothing is written or counted.
+    Raises ``DrillError('drill_busy')`` when another drill holds the slot."""
+    now = now or common.now_utc()
+    today = common.eastern_date(now)
+    norms = [spec_from_request(raw) for raw in specs]
+    out: list = [None] * len(norms)
+    todo: list = []
+    for i, norm in enumerate(norms):
+        if user_spec.is_gematria(norm):
+            continue
+        key = (user_spec.spec_hash(norm), today)
+        with _cache_lock:
+            hit = None if inject else _impact_cache.get(key)
+            if hit and time.monotonic() - hit[0] < IMPACT_CACHE_TTL_S:
+                out[i] = hit[1]
+                continue
+        todo.append((i, key, {"id": f"impact-{i}-" + user_spec.spec_hash(norm)[:8], "spec": norm}))
+    if not todo:
+        return out
+    if not _drill_slot.acquire(blocking=False):
+        raise DrillError("drill_busy", "another drill is running; try again in a moment", 429, retry_after=BUSY_RETRY_AFTER_S)
+    try:
+        got = run_user_many([t[2] for t in todo], 7, now=now, **inject)
+    finally:
+        _drill_slot.release()
+        gc.collect()
+    for i, key, hound in todo:
+        out[i] = _windows_of(got[hound["id"]], now)
+        if not inject:
+            with _cache_lock:
+                if len(_impact_cache) >= CACHE_MAX:
+                    _impact_cache.pop(next(iter(_impact_cache)))
+                _impact_cache[key] = (time.monotonic(), out[i])
+    return out
+
+
 def peek(dog: common.Dog, days: int, now: Optional[datetime] = None) -> Optional[dict]:
     """The remembered drill for this dog and window, or None. Free: it never touches the engine or the one-drill
     slot, so Ask can answer a repeat of a replay for anyone, signed in or not."""
@@ -527,3 +605,4 @@ def peek(dog: common.Dog, days: int, now: Optional[datetime] = None) -> Optional
 def clear_cache() -> None:
     with _cache_lock:
         _cache.clear()
+        _impact_cache.clear()

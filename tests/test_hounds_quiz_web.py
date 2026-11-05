@@ -845,5 +845,67 @@ class TheEntryPoints(unittest.TestCase):
         self.assertEqual(out["final"], {"top": "build-a-hound.html", "intro": 0})
 
 
+IMPACT_ANSWER = {"available": True, "spec_hash": "abc", "paper_only": True,
+                 "windows": [{"days": 1, "bets": 0, "line": "Last day: would not have bet"},
+                             {"days": 3, "bets": 4, "line": "Last 3 days: 4 bets, 3-1, +1.6u"},
+                             {"days": 7, "bets": 14, "line": "Last 7 days: 14 bets, 8-6, +2.1u"}],
+                 "delta": {"bets": 3, "units": 0.8, "line": "this choice: +3 bets, +0.8u over 7 days"},
+                 "note": "Hindsight on stored boards. Paper only, never counted."}
+IMPACT_Q = [q("lines", "[data-hook='quiz-impact-line']", "texts"), q("delta", hook("quiz-impact-delta")),
+            q("hidden", hook("quiz-impact"), "hidden"), q("note", hook("quiz-impact-note"))]
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class TheImpactMeter(unittest.TestCase):
+    """Phase 3 (docs/plans/BANKROLL_AND_QUIZ_INSIGHT.md): under each question, what the answers so far would have done over the last
+    1, 3 and 7 days, asked 600 ms after the last answer, one request however fast the taps."""
+
+    def routes(self, **over):
+        return base_routes(**{"POST /hounds/quiz/impact": [200, IMPACT_ANSWER], **over})
+
+    def test_three_lines_and_the_delta_appear_under_the_question_after_the_pause(self):
+        out = quiz(self.routes(), actions=[TAKE, click(card("sports", "MLB")), dict(click(card("sports", "NBA")), wait=1000, label="m",
+                                                                                      capture=IMPACT_Q)])
+        m = out["captures"]["m"]
+        self.assertEqual(m["lines"], [w["line"] for w in IMPACT_ANSWER["windows"]])
+        self.assertEqual(m["delta"], "this choice: +3 bets, +0.8u over 7 days")
+        self.assertFalse(m["hidden"])
+        self.assertIn("never counted", m["note"])
+
+    def test_fast_taps_make_one_request_and_it_carries_the_answer_before(self):
+        out = quiz(self.routes(), actions=[TAKE, click(card("sports", "MLB")), click(card("sports", "NBA")),
+                                           dict(click(card("sports", "NHL")), wait=1000)])
+        sent = posts_to(out, "/hounds/quiz/impact")
+        self.assertEqual(len(sent), 1)
+        self.assertEqual(sent[0]["body"]["answers"]["sports"], ["MLB", "NBA", "NHL"])
+        self.assertNotIn("previous_answers", sent[0]["body"])             # nothing had been shown yet, so there is nothing to compare with
+
+    def test_a_second_pause_measures_against_what_was_last_shown(self):
+        out = quiz(self.routes(), actions=[TAKE, dict(click(card("sports", "MLB")), wait=1000), dict(click(card("sports", "NBA")), wait=1000)])
+        sent = posts_to(out, "/hounds/quiz/impact")
+        self.assertEqual(len(sent), 2)
+        self.assertEqual(sent[1]["body"]["answers"]["sports"], ["MLB", "NBA"])
+        self.assertEqual(sent[1]["body"]["previous_answers"]["sports"], ["MLB"])
+
+    def test_nothing_is_asked_before_the_first_answer_and_a_failing_meter_is_silent(self):
+        out = quiz(self.routes(), actions=[TAKE], queries=[q("hidden", hook("quiz-impact"), "hidden")])
+        self.assertEqual(posts_to(out, "/hounds/quiz/impact"), [])
+        self.assertTrue(out["final"]["hidden"])
+        out = quiz(self.routes(**{"POST /hounds/quiz/impact": [429, {"detail": {"error": "drill_busy"}}]}),
+                   actions=[TAKE, dict(click(card("sports", "MLB")), wait=1000, label="m", capture=IMPACT_Q)])
+        self.assertEqual(out["captures"]["m"]["lines"], [])
+        self.assertTrue(out["captures"]["m"]["hidden"])
+        self.assertFalse(out["crashed"] if "crashed" in out else False)
+
+    def test_going_back_to_an_answered_step_costs_no_new_request(self):
+        out = quiz(self.routes(), actions=[TAKE, dict(click(card("sports", "MLB")), wait=1000), NEXT, dict(BACK, wait=300)])
+        self.assertEqual(len(posts_to(out, "/hounds/quiz/impact")), 1)       # steps 2 and 1 again show the answer already in hand
+
+    def test_the_meter_wording_follows_the_copy_rules(self):
+        text = " ".join(w["line"] for w in IMPACT_ANSWER["windows"]) + IMPACT_ANSWER["note"] + IMPACT_ANSWER["delta"]["line"]
+        for pattern in (r"beta", r"new", r"edge", r"lock", r"clv", r"nothing cleared the bar", r"profit"):
+            self.assertIsNone(re.search(pattern, text.lower()), pattern)
+
+
 if __name__ == "__main__":
     unittest.main()

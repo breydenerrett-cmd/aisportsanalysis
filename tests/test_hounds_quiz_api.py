@@ -167,5 +167,32 @@ class TheQuizDoors(unittest.TestCase):
         self.assertNotRegex(text, r'"price_(min|max)": -(2\d\d|[3-9]\d\d)')
 
 
+    def test_impact_is_open_to_a_signed_out_visitor_and_is_read_only_paper(self):
+        from unittest import mock
+        from src.hounds.quiz import impact
+        fake = {"available": True, "windows": [{"days": 7, "bets": 0, "line": "Last 7 days: would not have bet"}], "delta": None, "note": "x"}
+        with mock.patch.object(impact, "measure", return_value=fake) as m:
+            out = self.client.post("/hounds/quiz/impact", json={"answers": {"sports": ["NHL"]}, "previous_answers": {"sports": ["NBA"]}})
+        self.assertEqual(out.status_code, 200)
+        self.assertTrue(out.json()["paper_only"])
+        self.assertEqual(out.headers["cache-control"], "no-store")
+        self.assertEqual(m.call_args.args[:2], ({"sports": ["NHL"]}, {"sports": ["NBA"]}))
+
+    def test_impact_busy_is_a_429_with_the_wait_and_a_bad_body_is_refused(self):
+        from unittest import mock
+        from src.hounds.interact import drill
+        from src.hounds.quiz import impact
+        with mock.patch.object(impact, "measure", side_effect=drill.DrillError("drill_busy", "busy", 429, retry_after=30)):
+            out = self.client.post("/hounds/quiz/impact", json={"answers": {}})
+        self.assertEqual(out.status_code, 429)
+        self.assertEqual(out.json()["detail"]["retry_after"], 30)
+        self.assertEqual(self.client.post("/hounds/quiz/impact", json={"answers": "nope"}).status_code, 422)
+
+    def test_impact_shares_the_builder_previews_allowance(self):
+        source = (REPO / "api" / "hounds_quiz.py").read_text(encoding="utf-8")
+        self.assertIn("from api.hounds_create import _rate_limit_preview", source)
+        self.assertRegex(source, r"def quiz_impact_meter\([^)]*Depends\(_rate_limit_preview\)")
+
+
 if __name__ == "__main__":
     unittest.main()

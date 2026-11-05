@@ -47,6 +47,7 @@ import { showUpgrade } from "./upgrade.js";
 import { mountKeep, keepLabel } from "./keep.js";
 import { playReveal, skipReveal, countTo, previewState, priceText } from "./reveal-fx.js";
 import { watchFirstGrade } from "./first-grade.js";
+import { createMeter } from "./quiz-impact.js";
 
 export const DRAFT_KEY = "linehound.quiz.draft.v1";
 export const HANDOFF_KEY = "linehound.quiz.handoff.v1";
@@ -570,19 +571,35 @@ function renderStep() {
   const body = STEP_BUILDERS[step.id]();
   const section = h("section", { class: "qz-step", "data-hook": "quiz-step-body", "data-step": step.id, "aria-labelledby": "qz-q" }, [
     h("h1", { id: "qz-q", class: "qz-q", tabindex: "-1", "data-hook": "quiz-question", text: step.title }),
-    h("p", { class: "qz-sub", text: step.sub }), body]);
+    h("p", { class: "qz-sub", text: step.sub }),
+    step.id === "finish" ? null : h("div", { class: "qz-impact", "data-hook": "quiz-impact", role: "status", "aria-live": "polite", hidden: true }),
+    body]);
   if (S.resumed && S.step === 0 && hasAnyAnswer()) {
     section.appendChild(h("p", { class: "qz-fine", role: "status", "data-hook": "quiz-welcome", text: "Welcome back. Your quiz was saved on this device." }));
   }
   stage.appendChild(section);
   syncBar();
+  refreshImpact();
   if (typeof window.scrollTo === "function") window.scrollTo(0, 0);
   const heading = q("quiz-question");
   if (heading && typeof heading.focus === "function") heading.focus();
 }
 
 /** Keep the pressed state of every card in step with the answers without rebuilding (so nothing re-animates). */
+/** The impact meter (web/js/quiz-impact.js): what the answers so far would have done over the last 1, 3 and 7 days. */
+const meter = createMeter({ post: apiPost, getHost: () => q("quiz-impact") });
+
+function refreshImpact() {
+  if (S.stage !== "quiz" || !q("quiz-impact")) return;
+  let draft = S.english.draft || null;
+  if (S.mode === "describe" && S.describe) {
+    try { draft = describeDraft(); } catch (err) { draft = null; }
+  }
+  meter.update(answersPayload(), draft);
+}
+
 function sync() {
+  refreshImpact();
   const nodes = document.querySelectorAll("[data-group]");
   for (const n of nodes) n.setAttribute("aria-pressed", selected(n.getAttribute("data-group"), n.getAttribute("data-id")) ? "true" : "false");
   syncBar();
@@ -645,11 +662,13 @@ function resetAll() {
   S.previewSettled = false;
   S.mode = "quiz"; S.describe = null; S.preset = null;
   clearDraft();
+  meter.reset();
 }
 
 // ---- the reveal -----------------------------------------------------------------------------------------------------------
 
 function showReveal() {
+  meter.cancel();
   S.stage = "reveal";
   S.step = steps().length - 1;
   persist();
