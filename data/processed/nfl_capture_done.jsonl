@@ -546,3 +546,4 @@
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-03T01:13:33.264305Z", "phase": "refresh"}
 {"game_id": "2026_09_JAX_BAL", "observed_utc": "2026-11-03T01:32:34.890660Z", "phase": "t72h"}
 {"game_id": "2026_09_JAX_BAL", "observed_utc": "2026-11-05T01:19:53.725894Z", "phase": "t24h"}
+{"game_id": "2026_09_CIN_ATL", "observed_utc": "2026-11-05T14:41:19.507780Z", "phase": "t72h"}
