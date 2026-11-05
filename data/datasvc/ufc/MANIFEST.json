@@ -1,22 +1,22 @@
 {
  "files": {
   "bouts.jsonl": {
-   "bytes": 1450390,
+   "bytes": 1451319,
    "newest": "2026-11-01T00:00Z",
-   "records": 1716,
-   "sha256": "052ad75c583d353b3fe9bf766df43bf673c8c5db7fbafb0941aad1447ca8f9f9"
+   "records": 1717,
+   "sha256": "7a13b08a04a359573814ecf98bee85d6ba434874b4d53d58c2d63d8ca82f1b0f"
   },
   "events.jsonl": {
-   "bytes": 80344,
+   "bytes": 80331,
    "newest": "2026-10-31T21:00Z",
    "records": 156,
-   "sha256": "67feac174fea004aeb9e526b40503ffb3ae59dca9b80015b32711918c0779a53"
+   "sha256": "2d28610d989ca23e76b90c9cb40d18fb1ba69863a0f2c6eb2b6d6ebd3d9a4e75"
   },
   "fight_stats.jsonl": {
    "bytes": 5739642,
    "newest": "2026-11-01T00:00Z",
    "records": 3332,
-   "sha256": "272477ddb45fd9b3a6cc3abdb0d935678f41400c2b681bcc579c06345c84fd38"
+   "sha256": "10f1283eab2e3ab03afa6f39f156621af16c723f0a3570efb937ce2ab113a8f4"
   },
   "fighters.jsonl": {
    "bytes": 609912,
@@ -25,10 +25,10 @@
    "sha256": "f58cf30bd906b88b6ca06550a933f7afb9adce97fa39129720f2010f601639e1"
   },
   "odds.jsonl": {
-   "bytes": 6214302,
-   "newest": "2026-11-02T10:25:33Z",
+   "bytes": 6228802,
+   "newest": "2026-11-05T17:55:05Z",
    "records": 4089,
-   "sha256": "fa5a42df5573bf85fa90f92640dcc839fd9c23f599e6ac3f8797f2c391eae6fc"
+   "sha256": "1b9c82442a28d7bb09d9a9f6851c7afb87f85b618cf9d3e4c6529c63156be15b"
   },
   "ufccom_profiles.jsonl": {
    "bytes": 1263862,
@@ -37,17 +37,17 @@
    "sha256": "f9d7f7ec8aa1bf8e6c6f556c4a324c4546537888cfff4654f15de97323098267"
   }
  },
- "generated_utc": "2026-11-02T10:25:40Z",
+ "generated_utc": "2026-11-05T17:55:13Z",
  "last_run": {
-  "bouts": 82,
-  "events": 6,
-  "fight_stats": 52,
+  "bouts": 54,
+  "events": 4,
+  "fight_stats": 24,
   "fighters": 0,
-  "finished_utc": "2026-11-02T10:25:39Z",
+  "finished_utc": "2026-11-05T17:55:13Z",
   "kind": "update",
-  "odds": 56,
+  "odds": 30,
   "profiles": 0,
-  "started_utc": "2026-11-02T10:24:08Z",
+  "started_utc": "2026-11-05T17:53:39Z",
   "stopped": null
  },
  "last_run_errors": 0

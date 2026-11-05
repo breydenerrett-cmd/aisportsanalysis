@@ -1,0 +1,113 @@
+{
+  "summary": "Jacksonville is the better team on what we have: a season margin of 12.1429 points per game against -3 for Baltimore, and Baltimore has lost three straight. But the price already knows that. Baltimore's listed quarterback, Joe Fagnano, has no prior starts in the store, and the injury report lists Lamar Jackson and Tyler Huntley as out. The spread was first captured at 3 for the away side and now sits at 10, so the market has moved a long way on that news, and nothing we have shows the number is wrong. Both sides of the spread are priced close to even, so I pass. The total opened at 48.5 and is now 39.5. Both teams' scoring and yards per play are in the data, but the drop already reflects an offense with an untested quarterback, and weather for this outdoor game is missing, so I pass there too. On the moneyline Jacksonville is -500, which my rules do not allow me to take, and Baltimore at 410 would need a better price than the books' own 0.1958 chance supports. All three are passes.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "BAL",
+      "verdict": "PASS",
+      "price": 410,
+      "book": "fanduel",
+      "fair_estimate": 0.19,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books give Baltimore about a 0.1958 chance, and that already reflects a quarterback with no prior starts in the store and two quarterbacks listed out. We have nothing that says the books are too low.",
+          "evidence": [
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.1958},
+            {"path": "sections.home.values.qb.listed_for_this_game.prior_starts_in_store", "value": 0}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Jacksonville is the better side on form, with a season margin of 12.1429 points per game, but its best price is -500, too expensive to take under our rules, so the only live question is Baltimore, and it is not cheap enough.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 12.1429},
+            {"path": "markets.moneyline.options[0].best.price", "value": -500}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 426,
+      "what_would_change_it": "A Baltimore price of +426 or longer, or confirmation that Lamar Jackson plays, would make Baltimore worth taking.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "BAL +10",
+      "verdict": "PASS",
+      "price": -108,
+      "book": "betmgm",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides of the spread are priced almost even, with Baltimore at 0.5072 after the books take out their margin, so the market is saying this number is about right.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5072},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4928}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number has moved from 3 for the away side when first captured to 10 now, and the quarterback change at Baltimore is the obvious reason. The price already holds that news.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": 3.0},
+            {"path": "sections.home.values.qb.listed_for_this_game.changed_since_last_game", "value": true}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Ten is one of the scoring key numbers, so a Jacksonville win by exactly that margin would be a push at this number. It is not a reason to lean either way.",
+          "evidence": [
+            {"path": "sections.reference.values.key_numbers[3]", "value": 10}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Confirmation that Lamar Jackson starts, or the number moving off 10, would make me look at this spread again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 39.5",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total has come down from 48.5 when first captured to 39.5, and both sides are priced almost even, so the market has already absorbed the drop.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 48.5},
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5008}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Baltimore has scored 11 points per game over its last three, but Jacksonville has scored 30.6667 over its last three. These point in opposite directions for the total, and with a new quarterback in the picture the form numbers are not a clean guide.",
+          "evidence": [
+            {"path": "sections.home.values.form.last_3.points_for_per_game", "value": 11},
+            {"path": "sections.away.values.form.last_3.points_for_per_game", "value": 30.6667}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Weather for this outdoor game is not in the data, so we cannot see wind or cold, which matters for a total this low.",
+          "evidence": [
+            {"path": "missing[1].item", "value": "weather"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A weather forecast showing a clear lean, or the quarterback situation being settled, would change my view of this total.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

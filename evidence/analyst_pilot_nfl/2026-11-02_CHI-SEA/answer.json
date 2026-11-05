@@ -1,0 +1,103 @@
+{
+  "summary": "Seattle is the better team on the season numbers, mostly because of its defence, which allows 3.9927 yards per play against 6.2507 for Chicago. The books see it the same way: Seattle is a small favourite at 3 points and a moneyline price of -170, with a fair probability of 0.6157 once the margin is removed. I pass on all three markets because the prices already hold that gap. On the spread, 3 is a key number and the line has not moved since it was first captured, so nothing here shows the number is wrong. On the moneyline, Chicago would need to be better than the books' own 0.3843 to be worth taking, and nothing we have shows that. On the total, 46.5 sits against Seattle at 24 points scored and 17.8571 allowed and Chicago at 25.7143 scored and 20.4286 allowed, which does not point either way. Missing inputs matter: we cannot see weather for an outdoor game, and Seattle's injury report lists quarterback Drew Lock as questionable while Sam Darnold is the projected starter, so a quarterback change could move the number.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "SEA",
+      "verdict": "PASS",
+      "price": -170,
+      "book": "williamhill_us",
+      "fair_estimate": 0.6,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Seattle's defence is clearly the stronger one this season, and the books already price Seattle as the likely winner.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.yards_per_play_allowed.value", "value": 3.9927},
+            {"path": "sections.away.values.form.season_to_date.yards_per_play_allowed.value", "value": 6.2507},
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.6157}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "For Chicago to be worth taking, we would need to see Chicago beat the books' own fair probability, and nothing in the data shows that. Seattle also lists its quarterback Drew Lock as questionable, but Sam Darnold is the projected starter, so that is not enough to move off the market.",
+          "evidence": [
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.3843},
+            {"path": "sections.home.values.injuries.skill_players_listed[0].report_status", "value": "questionable"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -150,
+      "what_would_change_it": "A projected Seattle starter other than Sam Darnold, or Seattle's moneyline price drifting to -150 or longer, would make me reconsider.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "SEA -3",
+      "verdict": "PASS",
+      "price": -117,
+      "book": "williamhill_us",
+      "fair_estimate": 0.52,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two teams are close on season scoring margin, with Seattle slightly ahead, which is about what a 3 point spread says.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 6.1429},
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 5.2857}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The spread sits on 3, a key number because a field goal is worth 3, and it has not moved since it was first captured. Nothing we have shows the number is wrong in points.",
+          "evidence": [
+            {"path": "sections.reference.values.key_numbers[0]", "value": 3},
+            {"path": "markets.spread.options[0].line", "value": -3.0},
+            {"path": "markets.spread.context.away_number_first_captured", "value": 3.0}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -108,
+      "what_would_change_it": "Seattle at -3 coming back to -108 or better, or the number moving off 3, would make me take another look.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 46.5",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Seattle scores less and allows less than Chicago, so the scoring numbers point in different directions and the 46.5 total already holds them.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 24},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 17.8571},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 25.7143},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 20.4286}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The books split almost exactly evenly on Over and Under, and we cannot see the weather for an outdoor game, so there is no reason to move off the price.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5002},
+            {"path": "missing[1].item", "value": "weather"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -100,
+      "what_would_change_it": "A quarterback change on either side or a weather forecast showing wind or cold would move the total, and I would look again at even money.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
