@@ -772,10 +772,7 @@ def ask_dog(hound_id: str, body: AskRequest, response: Response,
         raise _err(422, "question_too_long", "keep the question under 300 characters")
     ctx = _context(dog, _viewer_id(authorization), request, authorization)
     if body.sizing is not None:
-        try:
-            ctx.sizing = unit_size.validate(body.sizing)
-        except unit_size.SizingError:
-            ctx.sizing = None                 # a sizing that does not validate is no sizing: the reference account, never a guess
+        ctx.sizing = None                     # the bankroll is locked ($2,500 / $25): a sent sizing changes nothing
     return envelope(ask.answer(question, ctx))
 
 

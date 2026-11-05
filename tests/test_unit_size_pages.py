@@ -174,41 +174,34 @@ class PercentOfBankroll(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
-class TheChip(unittest.TestCase):
-    def test_it_sits_beside_the_money_on_the_leaderboard_the_hound_page_and_my_kennel(self):
-        for page, kw in (("hounds", dict(routes=routes())),
-                         ("hound", dict(routes=routes(**ticket_routes("closer")), search="?id=closer")),
-                         ("kennel", dict(routes={**routes(), **kennel_routes()}, stored={TOKEN_KEY: "tok"}))):
+class TheLabelIsNotAControl(unittest.TestCase):
+    """2026-11-05: the bankroll is locked, so "1u = $25" is plain text beside the money and there is no picker anywhere."""
+
+    PAGES = (("hounds", dict(routes=routes())),
+             ("hound", dict(routes=routes(**ticket_routes("closer")), search="?id=closer")),
+             ("kennel", dict(routes={**routes(), **kennel_routes()}, stored={TOKEN_KEY: "tok"})))
+
+    def test_the_label_sits_beside_the_money_and_nothing_opens(self):
+        for page, kw in self.PAGES:
             with self.subTest(page=page):
-                out = run_page(page, viewer=fixed(25), queries=[q("chip", "[data-hook='unit-chip']")], **kw)
-                self.assertIn("1u = $25", out["final"]["chip"])
+                out = run_page(page, viewer=None, queries=[q("label", "[data-hook='unit-chip-label']"),
+                                                           q("buttons", "[data-hook='unit-chip']", "count"),
+                                                           q("forms", "[data-hook='unit-settings']", "count")], **kw)
+                self.assertIn("1u = $25", out["final"]["label"])
+                self.assertEqual((out["final"]["buttons"], out["final"]["forms"]), (0, 0))
 
-    def test_saving_a_custom_unit_stores_it_for_a_visitor_and_sends_nothing(self):
-        out = run_page("hounds", viewer=None, routes=routes(), actions=[
-            dict(do="click", sel="[data-hook='unit-chip']", wait=20),
-            dict(do="set", sel="[data-hook='us-unit']", value="75", wait=10),
-            dict(do="click", sel="[data-hook='us-save']", wait=80, label="saved", capture=[q("status", "[data-hook='us-status']")])],
-            queries=[q("stored", "[data-hook='us-status']")])
-        self.assertIn("Saved: 1u = $75", out["captures"]["saved"]["status"])
-        self.assertEqual([p for p in out.get("posts", []) if "unit-size" in p["url"]], [])      # a visitor has no account to PUT to
+    def test_nothing_the_visitor_stored_changes_the_page(self):
+        stored = {"linehound.unit_size": json.dumps(fixed(250))}
+        text, out = page_text("hounds", None, routes=routes(), stored=stored, queries=[q("label", "[data-hook='unit-chip-label']")])
+        self.assertEqual(out["final"]["label"], "1u = $25")
+        self.assertIn("$2,500", text)
+        self.assertNotIn("$25,000", text)
+        self.assertNotIn("1u = $250", text)
 
-    def test_a_refused_unit_says_why_and_stores_nothing(self):
-        for bad in ("0", "1001", "12.5"):
-            with self.subTest(unit=bad):
-                out = run_page("hounds", viewer=None, routes=routes(), actions=[
-                    dict(do="click", sel="[data-hook='unit-chip']", wait=20),
-                    dict(do="set", sel="[data-hook='us-unit']", value=bad, wait=10),
-                    dict(do="click", sel="[data-hook='us-save']", wait=40, label="refused", capture=[q("status", "[data-hook='us-status']")])])
-                self.assertIn("whole number of dollars", out["captures"]["refused"]["status"])
-
-    def test_a_signed_in_member_saves_to_the_account(self):
-        out = run_page("hounds", viewer=None, routes={**routes(), "/me/unit-size": [200, {"sizing": fixed(25)}]}, stored={TOKEN_KEY: "tok"}, actions=[
-            dict(do="click", sel="[data-hook='unit-chip']", wait=20),
-            dict(do="click", sel="[data-hook='us-chip-100']", wait=10),
-            dict(do="click", sel="[data-hook='us-save']", wait=120)])
-        puts = [p for p in out.get("posts", []) if p["url"].endswith("/me/unit-size") and p["method"] == "PUT"]
-        self.assertEqual(len(puts), 1)
-        self.assertEqual((puts[0]["body"]["mode"], puts[0]["body"]["unit_usd"], puts[0]["body"]["start_usd"]), ("fixed", 100, 10000))
+    def test_a_signed_in_member_sends_no_unit_size_request(self):
+        out = run_page("hounds", viewer=None, routes={**routes(), "/me/unit-size": [200, {"sizing": fixed(25)}]}, stored={TOKEN_KEY: "tok"})
+        self.assertEqual([p for p in out.get("posts", []) if "unit-size" in p["url"]], [])
+        self.assertEqual([g for g in out.get("gets", []) if "unit-size" in g], [])
 
 
 class TheStaticWords(unittest.TestCase):

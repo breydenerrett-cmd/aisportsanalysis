@@ -96,9 +96,7 @@ def _workdir() -> Path:
 def run_page(page: str, viewer=PIN_REFERENCE, **scenario) -> dict:
     html, module = PAGES[page]
     if viewer is not None:
-        stored = dict(scenario.get("stored") or {})
-        stored.setdefault(SIZING_KEY, json.dumps(viewer))
-        scenario["stored"] = stored
+        scenario["pinSizing"] = viewer      # the test seam in web/js/unitsize.js; stored sizing is ignored in production
     html = scenario.pop("page_html", html)
     work = _workdir()
     scenario["html"] = str(WEB / html)
@@ -120,10 +118,6 @@ def run_page(page: str, viewer=PIN_REFERENCE, **scenario) -> dict:
     out = json.loads(lines[-1][2:])
     if out.get("crashed"):
         raise AssertionError(out["crashed"])
-    # the pinned viewer is the runner's, not the page's: a test that asks what the page stored must not see it
-    after = out.get("storedAfter")
-    if viewer is not None and isinstance(after, dict) and after.get(SIZING_KEY) == json.dumps(viewer):
-        after.pop(SIZING_KEY)
     return out
 
 
@@ -136,8 +130,7 @@ def run_js(source: str, viewer=PIN_REFERENCE, tz: str = None) -> object:
         marker = chr(10)
         lines = source.split(marker)
         at = max([i for i, ln in enumerate(lines) if ln.lstrip().startswith("import ")] + [-1]) + 1
-        pre = (f"globalThis.window = globalThis.window || {{}}; if (!globalThis.window.localStorage) "
-               f"globalThis.window.localStorage = {{ getItem: (k) => (k === {json.dumps(SIZING_KEY)} ? {json.dumps(json.dumps(viewer))} : null), setItem() {{}} }};")
+        pre = f"globalThis.window = globalThis.window || {{}}; globalThis.__lhSizingPin = {json.dumps(viewer)};"
         source = marker.join(lines[:at] + [pre] + lines[at:])
     (work / "snippet.mjs").write_text(source, encoding="utf-8")
     env = dict(os.environ, TZ=tz) if tz else None      # ``tz``: the viewer's zone (the machine's when None)

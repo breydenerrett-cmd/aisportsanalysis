@@ -50,7 +50,7 @@ class Constants(unittest.TestCase):
 
     def test_the_public_label_says_every_model_starts_the_same(self):
         pub = bk.public_block()
-        self.assertEqual(pub["label"], "Every model starts with the same $1,000 paper bankroll. 1 unit = $10.")
+        self.assertEqual(pub["label"], "Every hound starts with the same $1,000 paper bankroll. 1 unit = $10.")
         self.assertIs(pub["flat_stakes"], True)
         self.assertIn("does not compound", pub["note"])
 
@@ -62,7 +62,7 @@ class Constants(unittest.TestCase):
                     path.write_text(text, encoding="utf-8")
                 with mock.patch.object(bk, "config_path", lambda: path):
                     p = bk.params()
-                    self.assertEqual((p.start, p.unit_usd, p.small_sample_min), (1000.0, 10.0, 20))
+                    self.assertEqual((p.start, p.unit_usd, p.small_sample_min), (2500.0, 25.0, 20))     # the locked defaults
 
     def test_a_changed_unit_size_moves_the_dollars_and_nothing_else(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -375,7 +375,7 @@ class OverTheWorld(unittest.TestCase):
     def test_payloads_carry_the_rules_and_fresh_windows(self):
         board = contract.leaderboard_payload(stats.leaderboard(self.book, "all"), self.book.as_of)
         self.assertEqual(board["bankroll_rules"]["label"],
-                         "Every model starts with the same $1,000 paper bankroll. 1 unit = $10.")
+                         "Every hound starts with the same $1,000 paper bankroll. 1 unit = $10.")
         self.assertTrue(all("bankroll" in h for h in board["hounds"]))
         detail = contract.hound_payload(self.book.hounds["u-2"].summary, self.book.hounds["u-2"].series,
                                         contract.paginate(self.book.hounds["u-2"].bets, 1), self.book.as_of)
@@ -565,6 +565,17 @@ class Routes(unittest.TestCase):
         s = self.get("/hounds/series?ids=u-2,alpha&season=all")
         self.assertEqual([p["bankroll_usd"] for p in s["series"]["u-2"]], [1000.0, 1028.0, 1008.0])
         self.assertIn("cum_units_average_price", s["series"]["u-2"][0])
+
+
+from tests import _legacy_bankroll  # noqa: E402
+
+
+def setUpModule():
+    _legacy_bankroll.pin()          # the $1,000 / $10 account this module was written against (tests/_legacy_bankroll.py)
+
+
+def tearDownModule():
+    _legacy_bankroll.unpin()
 
 
 if __name__ == "__main__":

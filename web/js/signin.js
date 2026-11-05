@@ -35,8 +35,6 @@ import { getToken, setToken, clearToken, apiGet, apiPost, ApiError } from "./api
 import { continueAsFree, CONTINUE_FREE_LINE, FREE_HOME } from "./continue_free.js";
 import { attributionPayload } from "./attribution.js";
 import { el, clear } from "./dom.js";
-import { unitSettings } from "./unitchip.js";
-import { syncFromAccount } from "./unitsize.js";
 import { alertsPanel } from "./alerts.js";
 import {
   loadCheckoutState, loadTesterBilling, NOT_ON, signinNote, signinLinkLabel,
@@ -599,14 +597,6 @@ export async function renderSignin(container, query = {}) {
     row.appendChild(out);
     account.appendChild(row);
     account.appendChild(slot);
-    // Paper dollars at the member's own unit size (a fixed unit or a percent of bankroll). A viewer lens: the record
-    // stays in units. The saved choice is the account's (GET/PUT /me/unit-size), so pull it before drawing the form.
-    await syncFromAccount();
-    if (mine !== accountGeneration) return null;
-    const sizing = el("div", { class: "us-account", "data-hook": "account-unit-size" });
-    sizing.appendChild(el("h3", { class: "signin__section-title", text: "Paper dollars" }));
-    sizing.appendChild(unitSettings());
-    account.appendChild(sizing);
     // Bet alerts: email, browser/phone notifications and (paid members) texts. web/js/alerts.js.
     account.appendChild(alertsPanel());
     if (query && (query.password === "1" || query.password === "true")) openChangePassword(slot, has);

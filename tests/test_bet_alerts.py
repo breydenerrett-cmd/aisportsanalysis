@@ -331,11 +331,11 @@ class Rendering(Base):
 
     def test_the_email_is_priced_at_the_members_unit_size(self):
         user, hound = self.member()
-        unit_size.save(user.id, {"mode": "fixed", "unit_usd": 50})
+        # the unit is locked at $25 (2026-11-05): a stored $50 row would change nothing, so none is written
         alerts.emit_placed(self.bet_row(hound, stake=2.0), now=at(0))
         self.drain(at(30))
         mail_out = self.http.emails()[0]
-        self.assertIn("stake $100", mail_out["text"])
+        self.assertIn("stake $50", mail_out["text"])
         self.assertIn(f"{hound['name']} just bet: Boston Red Sox ML +110", mail_out["subject"])
         self.assertIn("starts Wed 7:10 PM EDT", mail_out["text"])
         self.assertIn(f"/web/hound.html?id={hound['id']}", mail_out["text"])
@@ -912,6 +912,17 @@ class CheckerRound(Base):
             f.filter(record)
         self.assertNotIn(token, record.getMessage())
         self.assertIn("/alerts/feed/REDACTED.xml", record.getMessage())
+
+
+from tests import _legacy_bankroll  # noqa: E402
+
+
+def setUpModule():
+    _legacy_bankroll.pin()          # the $1,000 / $10 account this module was written against (tests/_legacy_bankroll.py)
+
+
+def tearDownModule():
+    _legacy_bankroll.unpin()
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 {
   "currency": "USD",
   "paper": true,
-  "starting_bankroll": 1000,
+  "starting_bankroll": 2500,
   "unit_pct": 1.0,
   "small_sample_min_settled": 20,
   "fallback_settle_hours_after_slate_start": 30

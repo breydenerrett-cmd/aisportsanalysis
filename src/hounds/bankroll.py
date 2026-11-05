@@ -58,7 +58,7 @@ MAX_STAKE_UNITS = 5.0
 FLAT_STAKE_UNITS = 1.0
 
 #: what is used if config/bankroll.json is missing or unreadable (the owner's 2026-10-19 decision)
-_DEFAULTS = {"currency": "USD", "starting_bankroll": 1000.0, "unit_pct": 1.0,
+_DEFAULTS = {"currency": "USD", "starting_bankroll": 2500.0, "unit_pct": 1.0,
              "small_sample_min_settled": 20, "fallback_settle_hours_after_slate_start": 30.0}
 
 WINDOWS = (("h24", timedelta(hours=24)), ("d7", timedelta(days=7)), ("d30", timedelta(days=30)))
@@ -127,7 +127,7 @@ def public_block() -> dict:
     p = params()
     return {"currency": p.currency, "start_usd": p.start, "unit_pct": p.unit_pct, "unit_usd": p.unit_usd,
             "flat_stakes": True, "paper": True,
-            "label": (f"Every model starts with the same ${_money(p.start)} paper bankroll. "
+            "label": (f"Every hound starts with the same ${_money(p.start)} paper bankroll. "
                       f"1 unit = ${_money(p.unit_usd)}."),
             "note": ("A unit is a fixed share of the STARTING bankroll, not of the current balance, so it does not "
                      "compound. House dogs bet 1 unit; a member dog bets the units its owner chose (0.5 to 3).")}

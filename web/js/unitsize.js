@@ -15,16 +15,13 @@
  *     viewer sets ($100 to $100,000, default $2,500). It compounds: every bet of one slate day is sized off the
  *     balance before any of that day's bets settle. The return % is the compounded figure "at your sizing".
  *
- * WHERE THE CHOICE LIVES. A signed-in member's is on the account (GET/PUT /me/unit-size) and mirrored into
- * localStorage so the next page paints in the right dollars before any request returns; a visitor's is in
- * localStorage alone. Storage can be missing, blocked or throw (a private window): every read and write is
- * wrapped, and the answer is then the default ($25 fixed) -- the page never breaks over it.
+ * LOCKED (owner, 2026-11-05): there is no choice any more. Every hound starts at $2,500 and 1 unit is $25; storage and
+ * the account are not read (see "the lock" below). The arithmetic stays because the payload's reference block and the
+ * test seam still use it.
  *
  * A PAYLOAD WITHOUT `events` (a saved copy from before this lens) still scales in fixed mode (every dollar figure
  * is linear in the unit); in percent mode it has no dollars rather than a guess.
  */
-
-import { apiFetch, getToken } from "./api.js";
 
 export const FIXED_MIN = 1;
 export const FIXED_MAX = 1000;
@@ -36,8 +33,8 @@ export const DEFAULT_PCT = 1;
 export const START_MIN = 100;
 export const START_MAX = 100000;
 export const DEFAULT_START_USD = 2500;
-export const STORAGE_KEY = "linehound.unit_size";
-export const CHANGED_EVENT = "linehound:unit-size";
+export const START_USD = 2500;
+export const UNIT_USD = 25;
 
 const WINDOW_SECONDS = { h24: 24 * 3600, d7: 7 * 24 * 3600, d30: 30 * 24 * 3600 };
 const isNum = (n) => typeof n === "number" && Number.isFinite(n);
@@ -71,123 +68,42 @@ export function parseSizing(raw) {
   return raw.mode === "fixed" ? fixedSizing(raw.unit_usd) : percentSizing(raw.pct, raw.start_usd);
 }
 
-// ---- where the choice lives ---------------------------------------------------------------------------
+// ---- the lock -----------------------------------------------------------------------------------------
 
-// `override` is a choice made on this page view (it holds even when storage will not take the write); otherwise the
-// answer is whatever storage says right now, re-parsed only when the stored text changes.
-let override = null;
-let cache = { raw: undefined, sizing: null };
+// THE BANKROLL IS LOCKED (owner, 2026-11-05): every hound starts at $2,500 and 1 unit is $25, for every viewer.
+// Nothing stored in the browser or on the account changes a figure: getSizing() always answers the lock. The ONE
+// exception is a test seam, `globalThis.__lhSizingPin`, which the page-test harness sets; production never does.
 const listeners = [];
 
-function readRaw() {
-  try {
-    return window.localStorage.getItem(STORAGE_KEY);
-  } catch (err) {
-    return null;                       // blocked, throwing, or no window at all: the default stands
-  }
-}
-
-function parseStored(raw) {
-  try {
-    return raw ? parseSizing(JSON.parse(raw)) : null;
-  } catch (err) {
-    return null;                       // not JSON
-  }
-}
-
-function writeStored(sizing) {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sizing));
-  } catch (err) {
-    /* private window or storage off: the choice lasts for this page view only */
-  }
-}
-
-/** The viewer's sizing right now: what they chose, else $25 fixed. Never throws. */
+/** The sizing in force: always the lock ($25 fixed, $2,500 start). Never throws. */
 export function getSizing() {
-  if (override !== null) return override;
-  const raw = readRaw();
-  if (raw !== cache.raw || cache.sizing === null) cache = { raw, sizing: parseStored(raw) || defaultSizing() };
-  return cache.sizing;
+  try {
+    const pin = globalThis.__lhSizingPin;
+    if (pin) return parseSizing(pin) || defaultSizing();
+  } catch (err) { /* no globalThis */ }
+  return defaultSizing();
 }
 
-/**
- * `url` with `events=1` added when this viewer sizes by a percent of bankroll. The list endpoints (/hounds, /hounds/graveyard) leave
- * each hound's units-only bet list out by default (it grows with the store and a fixed unit does not need it); a percent-of-bankroll
- * lens compounds bet by bet, so it asks for them.
- */
+/** Kept so callers that ask for the account sizing line keep working; the lock needs no request. */
 export function withEvents(url) {
-  let wants = false;
-  try { wants = getSizing().mode === "percent"; } catch (err) { wants = false; }
-  return wants ? `${url}${url.includes("?") ? "&" : "?"}events=1` : url;
+  return getSizing().mode === "percent" ? `${url}${url.includes("?") ? "&" : "?"}events=1` : url;
 }
 
-/** Test seam: forget this page view's choice so the next read goes to storage again. */
-export function resetSizing() {
-  override = null;
-  cache = { raw: undefined, sizing: null };
-}
+/** Test seam kept for the old tests: there is no remembered choice to forget. */
+export function resetSizing() {}
 
-/** Run `fn(sizing)` whenever the choice changes. Returns true so a page can say it handles the change itself. */
+/** Run `fn(sizing)` whenever the sizing changes. It never does now; kept so a page's registration is harmless. */
 export function onSizingChange(fn) {
   listeners.push(fn);
 }
 
-function announce() {
-  const sizing = getSizing();
-  for (const fn of listeners.slice()) {
-    try { fn(sizing); } catch (err) { /* one page's redraw must not stop the others */ }
-  }
-  try { window.dispatchEvent(new Event(CHANGED_EVENT)); } catch (err) { /* no window/Event */ }
-  return listeners.length > 0;
+/** Refused: the sizing is locked. Resolves to null so a stale caller sees "not accepted". */
+export async function chooseSizing() {
+  return null;
 }
 
-/**
- * Adopt `sizing` (validated) for this viewer: memory, localStorage and, when signed in, the account. Returns the
- * sizing used, or null when it was refused. The account write is best effort: a failed PUT leaves the local choice.
- */
-export async function chooseSizing(raw) {
-  const sizing = parseSizing(raw);
-  if (sizing === null) return null;
-  override = sizing;
-  writeStored(sizing);
-  const handled = announce();
-  if (getToken()) {
-    try {
-      await apiFetch("/me/unit-size", { method: "PUT", body: JSON.stringify(sizing) });
-    } catch (err) {
-      /* offline or refused: the browser copy still holds */
-    }
-  }
-  if (!handled) reloadPage();
-  return sizing;
-}
-
-function reloadPage() {
-  try {
-    if (typeof window !== "undefined" && window.location && typeof window.location.reload === "function") window.location.reload();
-  } catch (err) { /* nothing to reload */ }
-}
-
-/**
- * A signed-in member's saved sizing, pulled once per page. If it differs from the browser copy the account wins:
- * it is stored locally and the page told. Resolves to the sizing in force; never rejects.
- */
-let synced = false;
+/** Nothing to pull from the account: the sizing is locked. Resolves to the lock; never rejects. */
 export async function syncFromAccount() {
-  if (synced || !getToken()) return getSizing();
-  synced = true;
-  try {
-    const out = await apiFetch("/me/unit-size", { method: "GET" });
-    const mine = out && parseSizing(out.sizing);
-    if (mine && JSON.stringify(mine) !== JSON.stringify(getSizing())) {
-      override = mine;
-      writeStored(mine);
-      if (!announce()) reloadPage();
-    }
-  } catch (err) {
-    /* signed out, offline, or an older server: the browser copy stands */
-  }
   return getSizing();
 }
 

@@ -11,6 +11,10 @@ bankroll that compounds. What this file holds the feature to:
   * the browser's port gives the same dollars as Python over the same bets;
   * a signed-in member's choice round-trips through the account, and a visitor whose storage throws gets $25.
 
+LOCKED 2026-11-05 (owner): every hound starts at $2,500 and 1 unit is $25, for every viewer. A stored sizing (the
+account table, the browser) changes no figure, the write route answers 410, and the dollar arithmetic above is only
+exercised through the test seam (``globalThis.__lhSizingPin``) and the reference block.
+
 The logic tests need no FastAPI (Linux CI has none); the route tests are skipped without it.
 """
 
@@ -299,49 +303,41 @@ class TheBrowserPortAgreesWithPython(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
-class TheVisitorsChoice(unittest.TestCase):
-    """A visitor's choice is in localStorage; storage may be missing or throw, and the answer is then $25."""
+class TheBrowserIgnoresAnyStoredChoice(unittest.TestCase):
+    """Nothing in the browser can change the sizing: storage is not read, a choice is refused."""
+
+    LOCK = {"mode": "fixed", "unit_usd": 25, "pct": None, "start_usd": 2500}
 
     def read(self, setup):
-        out = run_js('import * as U from "./unitsize.js";\n' + setup + "\nconsole.log(JSON.stringify(U.getSizing()));")
-        return out
+        return run_js('import * as U from "./unitsize.js";\n' + setup + "\nconsole.log(JSON.stringify(U.getSizing()));")
 
-    def test_no_window_at_all_is_the_default(self):
-        self.assertEqual(self.read(""), us.default_sizing().as_dict())
+    def test_no_window_at_all_is_the_lock(self):
+        self.assertEqual(self.read(""), self.LOCK)
 
-    def test_storage_that_throws_on_every_call_is_the_default(self):
-        out = self.read('globalThis.window = {localStorage: {getItem() { throw new Error("denied"); }, setItem() { throw new Error("denied"); }}};')
-        self.assertEqual(out["unit_usd"], 25)
+    def test_a_stored_250_dollar_unit_changes_nothing(self):
+        stored = json.dumps(json.dumps({"mode": "fixed", "unit_usd": 250, "pct": None, "start_usd": 25000}))
+        out = self.read(f"globalThis.window = {{localStorage: {{getItem: () => {stored}, setItem() {{}}}}}};")
+        self.assertEqual(out, self.LOCK)
 
-    def test_storage_whose_accessor_throws_is_the_default(self):
-        out = self.read('globalThis.window = {}; Object.defineProperty(globalThis.window, "localStorage", {get() { throw new Error("denied"); }});')
-        self.assertEqual(out["unit_usd"], 25)
-
-    def test_a_stored_choice_is_read_back(self):
+    def test_a_stored_percent_choice_changes_nothing(self):
         out = self.read('globalThis.window = {localStorage: {getItem: () => JSON.stringify({mode: "percent", unit_usd: null, pct: 2, start_usd: 5000}), setItem() {}}};')
-        self.assertEqual(out, {"mode": "percent", "unit_usd": None, "pct": 2, "start_usd": 5000})
+        self.assertEqual(out, self.LOCK)
 
-    def test_junk_in_storage_is_the_default(self):
-        for junk in ("not json", '{"mode":"fixed","unit_usd":0}', '{"mode":"percent","pct":9,"start_usd":5000}', "null"):
-            with self.subTest(junk=junk):
-                out = self.read(f"globalThis.window = {{localStorage: {{getItem: () => {json.dumps(junk)}, setItem() {{}}}}}};")
-                self.assertEqual(out["unit_usd"], 25, junk)
+    def test_storage_that_throws_is_the_lock(self):
+        out = self.read('globalThis.window = {localStorage: {getItem() { throw new Error("denied"); }, setItem() { throw new Error("denied"); }}};')
+        self.assertEqual(out, self.LOCK)
 
-    def test_choosing_with_storage_throwing_still_applies_for_the_page_and_does_not_throw(self):
+    def test_choosing_is_refused_and_nothing_is_written(self):
         out = run_js('import * as U from "./unitsize.js";\n'
-                     'globalThis.window = {localStorage: {getItem() { throw new Error("x"); }, setItem() { throw new Error("x"); }}, dispatchEvent() {}};\n'
-                     'U.onSizingChange(() => {});\n'
+                     'let wrote = 0;\n'
+                     'globalThis.window = {localStorage: {getItem: () => null, setItem() { wrote++; }}, dispatchEvent() {}};\n'
                      'const r = await U.chooseSizing({mode: "fixed", unit_usd: 50});\n'
-                     "console.log(JSON.stringify([r, U.getSizing().unit_usd]));")
-        self.assertEqual(out[1], 50)
-        self.assertEqual(out[0]["unit_usd"], 50)
+                     "console.log(JSON.stringify([r, U.getSizing().unit_usd, U.getSizing().start_usd, wrote]));")
+        self.assertEqual(out, [None, 25, 2500, 0])
 
-    def test_a_refused_choice_changes_nothing(self):
-        out = run_js('import * as U from "./unitsize.js";\n'
-                     'globalThis.window = {localStorage: {getItem: () => null, setItem() {}}, dispatchEvent() {}};\n'
-                     'const r = await U.chooseSizing({mode: "fixed", unit_usd: 5000});\n'
-                     "console.log(JSON.stringify([r, U.getSizing().unit_usd]));")
-        self.assertEqual(out, [None, 25])
+    def test_the_constants_are_pythons(self):
+        out = run_js('import * as U from "./unitsize.js";\nconsole.log(JSON.stringify([U.START_USD, U.UNIT_USD]));')
+        self.assertEqual(out, [us.START_USD, us.UNIT_USD])
 
 
 class TheReplayAndTheHeadstoneCarryTheBetList(unittest.TestCase):
@@ -367,7 +363,7 @@ class TheReplayAndTheHeadstoneCarryTheBetList(unittest.TestCase):
         out = drill._summary([dict(p) for p in self.PICKS])
         ref = out["bankroll"]
         got = run_js('import * as B from "./dog-backtest.js";\nimport * as U from "./unitsize.js";\n'
-                     'globalThis.window = {localStorage: {getItem: () => JSON.stringify({mode: "percent", unit_usd: null, pct: 2, start_usd: 5000}), setItem() {}}};\n'
+                     'globalThis.__lhSizingPin = {mode: "percent", unit_usd: null, pct: 2, start_usd: 5000};\n'
                      f"const ref = {json.dumps(ref)};\nconst picks = {json.dumps(out['picks'])};\n"
                      "console.log(JSON.stringify(picks.map((p) => B.pickUsd(p, ref))));")
         # 2% of $5,000 = $100 a unit on day 1 (2.4u won = +$240); day 2's balance is $5,240, so a lost unit is $104.80
@@ -381,7 +377,7 @@ class TheReplayAndTheHeadstoneCarryTheBetList(unittest.TestCase):
 
         def text(box, viewer):
             return run_js('import * as H from "./dog-headstone.js";\n'
-                          f"globalThis.window = {{localStorage: {{getItem: () => {json.dumps(json.dumps(viewer))}, setItem() {{}}}}}};\n"
+                          f"globalThis.__lhSizingPin = {json.dumps(viewer)};\n"
                           f"console.log(JSON.stringify(H.finalBankrollText({json.dumps(box)})));")
         self.assertEqual(text(stone, {"mode": "fixed", "unit_usd": 50, "pct": None, "start_usd": 5000}), "$5,100 (+2.0%)")
         self.assertEqual(text(old, {"mode": "fixed", "unit_usd": 50, "pct": None, "start_usd": 5000}), "$5,100 (+2.0%)")
@@ -409,42 +405,34 @@ class TheAccountEndpoint(unittest.TestCase):
     def put(self, user, **body):
         return self.api.put_my_unit_size(self.api.UnitSizeRequest(**body), Response(), current_user=user, _rl=None)
 
-    def refused(self, user, **body):
-        with self.assertRaises(HTTPException) as ctx:
-            self.put(user, **body)
-        return ctx.exception
-
-    def test_a_new_member_reads_the_25_dollar_default(self):
+    def test_a_member_reads_the_lock(self):
         out = self.get(self.jacob)
-        self.assertEqual(out["sizing"], us.default_sizing().as_dict())
-        self.assertIn("chips", out["choices"]["fixed"])
+        self.assertEqual(out["sizing"], {"mode": "fixed", "unit_usd": 25.0, "pct": None, "start_usd": 2500.0})
+        self.assertEqual((out["choices"]["locked"], out["choices"]["start_usd"], out["choices"]["unit_usd"]), (True, 2500, 25))
+        self.assertEqual(out["choices"]["label"], "Every hound starts with the same $2,500 paper bankroll. 1 unit = $25.")
         self.assertTrue(out["paper_only"])
 
-    def test_fixed_round_trip(self):
-        out = self.put(self.jacob, mode="fixed", unit_usd=50)
-        self.assertEqual((out["sizing"]["mode"], out["sizing"]["unit_usd"], out["sizing"]["start_usd"]), ("fixed", 50.0, 5000.0))
-        self.assertEqual(self.get(self.jacob)["sizing"], out["sizing"])
-
-    def test_percent_round_trip_and_a_later_write_replaces_it(self):
-        self.put(self.jacob, mode="percent", pct=2, start_usd=5000)
-        self.assertEqual(self.get(self.jacob)["sizing"], {"mode": "percent", "unit_usd": None, "pct": 2.0, "start_usd": 5000.0})
-        self.put(self.jacob, mode="fixed", unit_usd=100)
-        self.assertEqual(self.get(self.jacob)["sizing"]["unit_usd"], 100.0)
-
-    def test_one_member_never_sees_anothers_choice(self):
-        self.put(self.jacob, mode="fixed", unit_usd=100)
-        self.assertEqual(self.get(self.sam)["sizing"]["unit_usd"], 25.0)
-
-    def test_refusals_carry_a_code_and_store_nothing(self):
-        for body, code in (({"mode": "fixed", "unit_usd": 0}, "unit_usd"), ({"mode": "fixed", "unit_usd": 1001}, "unit_usd"),
-                           ({"mode": "fixed", "unit_usd": 12.5}, "unit_usd"), ({"mode": "fixed", "unit_usd": "25"}, "unit_usd"),
-                           ({"mode": "percent", "pct": 7, "start_usd": 5000}, "pct"),
-                           ({"mode": "percent", "pct": 2, "start_usd": 50}, "start_usd"),
-                           ({"mode": "nonsense"}, "sizing_mode"), ({}, "sizing_mode")):
+    def test_the_write_route_is_gone_with_a_plain_sentence(self):
+        for body in ({"mode": "fixed", "unit_usd": 50}, {"mode": "percent", "pct": 2, "start_usd": 5000}, {}):
             with self.subTest(body=body):
-                exc = self.refused(self.jacob, **body)
-                self.assertEqual((exc.status_code, exc.detail["error"]), (422, code))
-        self.assertEqual(self.get(self.jacob)["sizing"]["unit_usd"], 25.0)
+                with self.assertRaises(HTTPException) as ctx:
+                    self.put(self.jacob, **body)
+                self.assertEqual(ctx.exception.status_code, 410)
+                self.assertEqual(ctx.exception.detail["error"], "unit_size_locked")
+                self.assertIn("$2,500", ctx.exception.detail["message"])
+
+    def test_a_stored_250_dollar_unit_changes_nothing(self):
+        """A row written before the lock (the table is kept) is ignored on read, and says so in the log once."""
+        with us._connect() as conn:
+            conn.execute("INSERT INTO member_unit_size (user_id, mode, unit_usd, pct, start_usd, updated_at) VALUES (?, 'fixed', 250, NULL, 25000, 'x')",
+                         (self.jacob.id,))
+        us._logged = False
+        with self.assertLogs("src.hounds.unit_size", level="INFO") as logs:
+            sizing = us.get(self.jacob.id)
+        self.assertEqual(sizing.as_dict(), {"mode": "fixed", "unit_usd": 25.0, "pct": None, "start_usd": 2500.0})
+        self.assertTrue(any("ignored" in line for line in logs.output))
+        self.assertEqual(self.get(self.jacob)["sizing"]["start_usd"], 2500.0)
+        self.assertEqual(self.get(self.sam)["sizing"], self.get(self.jacob)["sizing"])
 
     def test_the_routes_need_a_signed_in_member(self):
         deps = {}
@@ -455,10 +443,54 @@ class TheAccountEndpoint(unittest.TestCase):
         self.assertIn("get_current_user", deps[("GET",)])
         self.assertIn("get_current_user", deps[("PUT",)])
 
-    def test_the_choice_is_private_not_in_any_public_profile_table(self):
-        self.put(self.jacob, mode="fixed", unit_usd=100)
-        from src.hounds import member_profile
-        self.assertNotIn("100", json.dumps(member_profile.get(self.jacob.id)))
+
+class TheKennelCardCannotOverflowAt375(unittest.TestCase):
+    """The card's stats are a six-column grid of minmax(0, 1fr) tracks: Units and Return (big, one short figure each), Record
+    and Bets (wrap-safe), and the Bankroll "$2,500 -> $2,534" on a full row of its own, so no cell is wider than its track."""
+
+    CSS = (REPO / "web" / "css" / "studio.css").read_text(encoding="utf-8").replace("\r\n", "\n")
+
+    def test_the_grid_is_fluid_and_the_long_cell_has_its_own_row(self):
+        css = self.CSS
+        self.assertIn(".kn-stats.kn-stats--card { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));", css)
+        self.assertIn(".kn-stats--card .kn-stat { grid-column: span 3; min-width: 0; }", css)
+        self.assertIn(".kn-stats--card .kn-stat:nth-child(5) { grid-column: 1 / -1; }", css)
+        # the only nowrap cells are the two big short figures (+12.34u, +12.3%): about 7 characters in a 150px track
+        self.assertIn(".kn-stats--card .kn-stat:nth-child(n + 3) dd { font-size: 16px; white-space: normal; overflow-wrap: anywhere; }", css)
+
+    def test_the_card_source_orders_units_and_return_first_and_the_bankroll_last(self):
+        import re
+        js = (REPO / "web" / "js" / "kennel.js").read_text(encoding="utf-8").replace("\r\n", "\n")
+        at = js.index('class: "kn-stats kn-stats--card"')
+        labels = re.findall(r'stat\("([A-Za-z]+)"', js[at:at + 900])
+        self.assertEqual(labels[:5], ["Units", "Return", "Record", "Bets", "Bankroll"])
+
+
+class TheLockIsOneConstant(unittest.TestCase):
+    def test_the_constants(self):
+        self.assertEqual((us.START_USD, us.UNIT_USD), (2500, 25))
+        self.assertEqual(us.START_USD, us.UNIT_USD * us.UNITS_IN_START)
+        self.assertEqual(us.default_sizing().as_dict(), {"mode": "fixed", "unit_usd": 25.0, "pct": None, "start_usd": 2500.0})
+
+    def test_the_reference_account_is_the_lock(self):
+        p = bk.params()
+        self.assertEqual((p.start, p.unit_usd), (2500.0, 25.0))
+        block = bk.public_block()
+        self.assertEqual((block["start_usd"], block["unit_usd"]), (2500.0, 25.0))
+        self.assertEqual(block["label"], us.BANKROLL_COPY)
+        self.assertEqual(us.BANKROLL_COPY, "Every hound starts with the same $2,500 paper bankroll. 1 unit = $25.")
+
+    def test_the_hounds_payload_pins_2500_and_25_and_the_copy(self):
+        from src.hounds import contract
+        rules = contract._bankroll().public_block()
+        self.assertEqual((rules["start_usd"], rules["unit_usd"]), (2500.0, 25.0))
+        self.assertEqual(rules["label"], "Every hound starts with the same $2,500 paper bankroll. 1 unit = $25.")
+        self.assertEqual(json.loads((REPO / "config" / "bankroll.json").read_text(encoding="utf-8"))["starting_bankroll"], 2500)
+
+    def test_return_percent_is_units_over_100(self):
+        b = bk.block(FIVE, NOW)
+        units = sum(e.units for e in FIVE)       # $25 a unit on $2,500: 1 unit is 1 percent
+        self.assertAlmostEqual(b["return_pct"], units, places=1)
 
 
 if __name__ == "__main__":

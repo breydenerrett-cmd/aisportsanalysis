@@ -283,6 +283,7 @@ class MyKennel(unittest.TestCase):
         out = self.page({"/hounds/kennels/mine": mine(dogs)}, **SIGNED, queries=[
             q("names", f"{self.CARDS} [data-hook='dog-name']", "texts"), q("records", "[data-hook='dog-record']", "texts"),
             q("bank", "[data-hook='dog-bankroll']", "texts"), q("ret", "[data-hook='dog-return']", "texts"),
+            q("units", "[data-hook='dog-units']", "texts"), q("stat_labels", ".kn-stats--card .kn-stat dt", "texts"),
             q("status", "[data-hook='dog-status']", "texts"),
             q("last", "[data-hook='dog-last']", "texts"), q("moods", self.CARDS, "attrs", attr="data-mood"),
             q("avatars", f"{self.CARDS} svg.dk-badge", "count"), q("avatar_moods", f"{self.CARDS} svg.dk-badge", "attrs", attr="data-mood"),
@@ -290,12 +291,13 @@ class MyKennel(unittest.TestCase):
             q("edit", "[data-hook='dog-action-edit']", "count"), q("open", "[data-hook='dog-name']", "attrs", attr="href"),
             q("build_card", "[data-hook='kennel-build-card']", "count"), q("create", "[data-hook='kennel-build']", "attr", attr="href"),
             q("title", "[data-hook='kennel-title']"), q("sub", "[data-hook='kennel-sub']"), q("today", "[data-hook='dog-today']", "texts"),
-            q("count_attr", "[data-hook='dog-bankroll']", "attrs", attr="data-count"),
             q("small", "[data-hook='dog-bankroll']", "attrs", attr="title")])
         f = out["final"]
         self.assertEqual(f["names"], ["Underdog Gus", "Totals Tina", "Slumpy"])
         self.assertEqual(f["records"], ["3-1", "0-0", "0-2"])
-        self.assertEqual(f["bank"], ["$1,018", "$1,000", "$980"])                  # every dog starts with the same $1,000
+        self.assertEqual(f["bank"], ["$1,000 \u2192 $1,018", "$1,000 \u2192 $1,000", "$1,000 \u2192 $980"])    # start, then now; this page test runs pinned to the old $1,000 account (PIN_REFERENCE), the $2,500 lock is held in test_unit_size_pages.py
+        self.assertEqual(f["units"], ["+1.80u", "0.00u", "-2.00u"])
+        self.assertEqual(f["stat_labels"], ["Units", "Return", "Record", "Bets", "Bankroll"] * 3)      # Units and Return lead
         self.assertEqual(f["ret"], ["+1.8%", "0.0%", "-2.0%"])
         self.assertTrue(all(s.startswith("Ranked in full at") for s in f["small"]), f["small"])   # owner ruling 2026-10-20, complete-product positioning
         self.assertEqual(f["status"], ["Running", "Running", "Running"])      # owner rule 2026-10-21: no "New" badge; a dog with no bet yet is Running
@@ -308,7 +310,6 @@ class MyKennel(unittest.TestCase):
         self.assertEqual(f["open"], ["hound.html?id=u-1", "hound.html?id=u-2", "hound.html?id=u-3"])
         self.assertEqual((f["title"], f["sub"]), ("My Kennel", "3 hounds"))
         self.assertEqual(f["today"], ["Nothing open right now", "Waiting on its first game", "Nothing open right now"])
-        self.assertEqual(f["count_attr"], ["1", "1", "1"])                            # the figures count up when they enter view
         self.assertEqual(out["gets"][0].split("?")[0], "/hounds/kennels/mine")
 
     def test_a_zero_bet_dog_is_listed_with_its_status_and_no_new_badge(self):

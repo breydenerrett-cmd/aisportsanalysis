@@ -205,6 +205,8 @@ globalThis.window = {
   confirm: (message) => { confirms.push(String(message)); return scenario.confirm !== false; },
 };
 globalThis.location = loc;
+// test seam: pins the viewer sizing (web/js/unitsize.js reads globalThis.__lhSizingPin); production ignores storage
+if (scenario.pinSizing) globalThis.__lhSizingPin = scenario.pinSizing;
 // `reducedMotion` (true/false) gives the window a matchMedia that answers prefers-reduced-motion; without the key there is none,
 // as before, so no page that never asked sees a difference.
 if (scenario.reducedMotion !== undefined) {

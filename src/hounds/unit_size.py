@@ -1,4 +1,12 @@
-"""How a viewer reads the money: a unit size, or a percent of bankroll. A LENS on the record, never the record.
+"""THE BANKROLL IS LOCKED (owner, 2026-11-05): every hound starts at ``START_USD`` = $2,500 and one unit is
+``UNIT_USD`` = $25 (start / 100), for every viewer. A member can no longer choose either: ``get`` ignores anything
+stored (the ``member_unit_size`` table is kept, never read for a figure; one log line says so) and the write route
+answers 410. Members keep the per-hound stake_units and bets per day, which live in the hound spec. Return % = units / 100.
+
+Everything below the constants is the older viewer-lens arithmetic, kept because ``priced`` is also how the reference
+account is priced and a stored percent row must still parse; nothing a member can set reaches it any more.
+
+HISTORY. How a viewer reads the money: a unit size, or a percent of bankroll. A LENS on the record, never the record.
 
 WHY THIS EXISTS (owner, 2026-10-21, relaying Jacob). At a fixed $10 unit a 1-unit bet and a 3-unit bet were $10 and
 $30: too small a spread to feel like money. A member wants to choose what a unit is worth, or to size bets as a
@@ -29,6 +37,7 @@ Standard library only (no FastAPI), so it loads where the app does not.
 
 from __future__ import annotations
 
+import logging
 import math
 import sqlite3
 import threading
@@ -39,17 +48,24 @@ from typing import Iterable, Iterator, Optional
 
 from src.appstate import users as users_store
 
+log = logging.getLogger(__name__)
+
+#: THE LOCK. Same for every hound and every viewer; web/js/unitsize.js mirrors them; tests/test_unit_size.py pins both.
+START_USD = 2500
+UNIT_USD = 25
+BANKROLL_COPY = f"Every hound starts with the same ${START_USD:,} paper bankroll. 1 unit = ${UNIT_USD}."
+
 # ---- the choices (web/js/unitsize.js mirrors these; tests/test_unit_size.py pins the pair) ----------------------
 FIXED_MIN, FIXED_MAX = 1, 1000
 #: quick chips for the fixed mode; any whole dollar from FIXED_MIN to FIXED_MAX is also valid
 FIXED_CHIPS = (10, 25, 50, 100)
-DEFAULT_FIXED_USD = 25
+DEFAULT_FIXED_USD = UNIT_USD
 #: the fixed starting bankroll is this many units, at every unit size (so return % does not depend on the size)
 UNITS_IN_START = 100
 PCT_CHOICES = tuple(i / 2 for i in range(1, 11))          # 0.5, 1.0 ... 5.0
 DEFAULT_PCT = 1.0
 START_MIN, START_MAX = 100, 100000
-DEFAULT_START_USD = 2500
+DEFAULT_START_USD = START_USD
 MODES = ("fixed", "percent")
 
 
@@ -199,46 +215,28 @@ def _connect() -> Iterator[sqlite3.Connection]:
         yield conn
 
 
+_logged = False
+
+
 def get(user_id: int) -> Sizing:
-    """The member's saved sizing, else the default. A broken row is the default too."""
-    try:
-        if not users_store.db_path().is_file():
-            return default_sizing()
-        with _connect() as conn:
-            row = conn.execute("SELECT mode, unit_usd, pct, start_usd FROM member_unit_size WHERE user_id = ?",
-                               (int(user_id),)).fetchone()
-    except (sqlite3.Error, OSError):
-        return default_sizing()
-    if row is None:
-        return default_sizing()
-    try:
-        return validate({"mode": row["mode"], "unit_usd": row["unit_usd"], "pct": row["pct"],
-                         "start_usd": row["start_usd"]})
-    except SizingError:
-        return default_sizing()
-
-
-def save(user_id: int, raw, *, now: Optional[datetime] = None) -> Sizing:
-    """Validate and store the member's sizing; returns what was stored."""
-    sizing = validate(raw)
-    if users_store.get_user(int(user_id)) is None:
-        raise SizingError("not_found", "no such member", 404)
-    stamp = (now or datetime.now(timezone.utc)).astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    unit = int(sizing.unit_usd) if sizing.unit_usd is not None else None
-    with _lock, _connect() as conn:
-        conn.execute(
-            "INSERT INTO member_unit_size (user_id, mode, unit_usd, pct, start_usd, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET mode = excluded.mode, "
-            "unit_usd = excluded.unit_usd, pct = excluded.pct, start_usd = excluded.start_usd, "
-            "updated_at = excluded.updated_at",
-            (int(user_id), sizing.mode, unit, sizing.pct, int(sizing.start_usd), stamp))
-    return sizing
+    """The locked sizing ($2,500 start, $25 unit) for every member. A stored row is IGNORED: if one differs from the
+    lock, one log line says so, once per process."""
+    global _logged
+    if not _logged:
+        try:
+            if users_store.db_path().is_file():
+                with _connect() as conn:
+                    n = conn.execute("SELECT COUNT(*) FROM member_unit_size").fetchone()[0]
+                if n:
+                    log.info("unit_size: %s stored member sizing row(s) ignored; the bankroll is locked at $%d / $%d unit",
+                             n, START_USD, UNIT_USD)
+                _logged = True
+        except (sqlite3.Error, OSError):
+            pass
+    return default_sizing()
 
 
 def choices() -> dict:
-    """The legal values, for the endpoint and for a page that wants to draw its pickers from the server."""
-    return {"modes": list(MODES), "fixed": {"min": FIXED_MIN, "max": FIXED_MAX, "chips": list(FIXED_CHIPS),
-                                            "default": DEFAULT_FIXED_USD, "units_in_start": UNITS_IN_START},
-            "percent": {"choices": list(PCT_CHOICES), "default": DEFAULT_PCT, "start_min": START_MIN,
-                        "start_max": START_MAX, "start_default": DEFAULT_START_USD},
+    """What a page may say about the sizing: it is locked, so there is nothing to choose."""
+    return {"locked": True, "start_usd": START_USD, "unit_usd": UNIT_USD, "label": BANKROLL_COPY,
             "default": default_sizing().as_dict()}

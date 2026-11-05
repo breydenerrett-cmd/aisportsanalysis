@@ -818,5 +818,16 @@ class ThePagesUnderNode(unittest.TestCase):
         self.assertEqual(out["count"], "Fan tips: 3. Grades coming from the coach report card.")
 
 
+from tests import _legacy_bankroll  # noqa: E402
+
+
+def setUpModule():
+    _legacy_bankroll.pin()          # the $1,000 / $10 account this module was written against (tests/_legacy_bankroll.py)
+
+
+def tearDownModule():
+    _legacy_bankroll.unpin()
+
+
 if __name__ == "__main__":
     unittest.main()

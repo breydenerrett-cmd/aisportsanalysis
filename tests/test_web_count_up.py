@@ -29,8 +29,9 @@ def js(body: str, reduced: bool = False, viewer=PIN_REFERENCE):
     # 2026-10-21: a bankroll counts from the VIEWER's start (web/js/unitsize.js). The tests below are about the count and were
     # written for the reference $1,000 account, so the viewer here chose the $10 unit; other starts and the default are held
     # in their own tests at the end of BankrollCountUp.
-    storage = ('{ getItem: (k) => (k === "linehound.unit_size" ? ' + json.dumps(json.dumps(viewer)) + ' : null), setItem() {} }')
-    head = ('globalThis.window = { matchMedia: () => ({ matches: ' + str(reduced).lower() + ' }), localStorage: ' + storage + ' };' + chr(10)) + SETUP
+    # 2026-11-05: the sizing is locked, so the viewer is pinned through the test seam (web/js/unitsize.js reads globalThis.__lhSizingPin)
+    pin = ('globalThis.__lhSizingPin = ' + json.dumps(viewer) + ';' + chr(10)) if viewer is not None else ''
+    head = pin + ('globalThis.window = { matchMedia: () => ({ matches: ' + str(reduced).lower() + ' }) };' + chr(10)) + SETUP
     return run_js(head + 'const Fx = await import("./fx.js");' + chr(10) + body, viewer=None)
 
 

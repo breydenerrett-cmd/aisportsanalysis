@@ -110,9 +110,15 @@ export function unitsText(rec) {
   return `${u > 0 ? "+" : ""}${u.toFixed(2)}u`;
 }
 
-/** The dog's paper account now, "$1,023" (every dog starts with the same $1,000), or "n/a" without the server's block. */
+/** The dog's paper account now, "$1,023" (every hound starts with the same $2,500), or "n/a" without the server's block. */
 export function bankrollText(dog) {
   return fmtUsd(bankrollNow(dog));
+}
+
+/** "$2,500 -> $2,534" (the locked start, then now), or "n/a" without the server's block. */
+export function bankrollRangeText(dog) {
+  const now = bankrollNow(dog);
+  return now === null ? "n/a" : `${fmtUsd(getSizing().start_usd)} \u2192 ${fmtUsd(now)}`;
 }
 
 /** The account's return on that start, "+2.3%", or "n/a". */
@@ -234,11 +240,14 @@ function dogCard(dog, { mine }, index) {
           trainedBadge(dog.trained_times)])])]),
     h("div", { class: "kn-card__main" }, [
       mine ? h("p", { class: "kn-card__today", "data-hook": "dog-today", text: todayLine(dog, state.tonight && state.tonight.byId[dog.id]) }) : null,
-      h("dl", { class: "kn-stats" }, [
-        stat("Record", recordText(rec), { "data-hook": "dog-record" }),
-        stat("Bankroll", bankrollText(dog), Object.assign({ "data-hook": "dog-bankroll", "data-count": "1" }, small)),
+      // Units and Return come first and biggest (the bankroll is the same $2,500 for every hound, so they are the news);
+      // Record and Bets share a row; the Bankroll (start -> now) has a row of its own so it never overflows at 375px.
+      h("dl", { class: "kn-stats kn-stats--card" }, [
+        stat("Units", unitsText(rec), { "data-hook": "dog-units" }),
         stat("Return", returnText(dog), Object.assign({ "data-hook": "dog-return" }, small)),
-        stat("Bets", betsText(dog), { "data-hook": "dog-bets" })]),
+        stat("Record", recordText(rec), { "data-hook": "dog-record" }),
+        stat("Bets", betsText(dog), { "data-hook": "dog-bets" }),
+        stat("Bankroll", bankrollRangeText(dog), Object.assign({ "data-hook": "dog-bankroll" }, small))]),
       h("p", { class: "kn-card__last", "data-hook": "dog-last", text: lastPickText(dog) }),
       h("div", { class: "kn-card__actions" }, actions)]),
   ]);

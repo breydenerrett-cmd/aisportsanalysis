@@ -6,7 +6,7 @@
     PUT  /me/kennel                 signed in: {"kennel_name"} (2-30 chars, unique) or {"dismiss_prompt": true}
     POST /admin/users/kennel-name   admin: {user_id, kennel_name, reason}: set or clear a member's kennel name
     GET  /me/unit-size              signed in: how the caller reads dollars (a fixed unit, or a percent of bankroll)
-    PUT  /me/unit-size              signed in: {"mode", "unit_usd" | "pct" + "start_usd"}, validated (src/hounds/unit_size.py)
+    PUT  /me/unit-size              410: the bankroll is locked at $2,500 / $25 unit (src/hounds/unit_size.py)
 
 Public reads, no auth. The handle is the anonymous owner label ("Handler 3F2A" -> "handler-3f2a"); no email, no
 account id and no token is ever in a payload. The logic and the numbers are src/hounds/kennels.py (the
@@ -129,7 +129,7 @@ def _sizing_payload(user_id: int) -> dict:
 def my_unit_size(response: Response, current_user: users_store.User = Depends(get_current_user),
                  _rl: None = Depends(_rl_read)) -> dict:
     """How the signed-in member reads the money. A VIEWER LENS: stored bets, grades and ranks are in units and never
-    move with it; only the dollars a page prints do (docs/BANKROLL.md). The default is a $25 unit."""
+    move with it. Since 2026-11-05 the sizing is locked: $2,500 start, $25 unit, for everyone."""
     response.headers["Cache-Control"] = "no-store"
     return envelope(_sizing_payload(current_user.id))
 
@@ -145,15 +145,12 @@ class UnitSizeRequest(BaseModel):
 def put_my_unit_size(body: UnitSizeRequest, response: Response,
                      current_user: users_store.User = Depends(get_current_user),
                      _rl: None = Depends(_rl_write)) -> dict:
-    """Save the member's sizing. ``{"mode": "fixed", "unit_usd": 25}`` (a whole dollar from 1 to 1,000) or
-    ``{"mode": "percent", "pct": 2, "start_usd": 5000}`` (0.5 to 5 in half steps; $100 to $100,000). Anything else is
-    a 422 with a stable ``error`` code; nothing is rounded or guessed."""
+    """Gone. Every hound starts at $2,500 with a $25 unit and a member cannot change it (owner, 2026-11-05)."""
     response.headers["Cache-Control"] = "no-store"
-    try:
-        unit_size.save(current_user.id, body.model_dump())
-    except unit_size.SizingError as exc:
-        raise HTTPException(status_code=exc.status, detail={"error": exc.code, "message": str(exc)})
-    return envelope(_sizing_payload(current_user.id))
+    raise HTTPException(status_code=410, detail={
+        "error": "unit_size_locked",
+        "message": "Every hound starts with the same $2,500 paper bankroll and 1 unit is $25, so there is nothing to set. "
+                   "Pick your stake and bets per day on each hound's Rules tab."})
 
 
 class AdminKennelNameRequest(BaseModel):
