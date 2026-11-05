@@ -1,0 +1,135 @@
+{
+  "summary": "Jacksonville is the better team on the numbers we have, and the books agree strongly: the moneyline sits near -500, and the spread now asks JAX to lay 10 after the Jaguars were first captured laying 3.0. The cause is visible in the data. Baltimore lists Joe Fagnano, who has 0 prior starts in what we have, while Lamar Jackson and Tyler Huntley both show as out on the injury report. Baltimore has lost three straight and scored 11 points per game over its last three. I pass on the moneyline because -500 is past the price where I will back a favourite, and the underdog at +410 only pays if Baltimore wins more often than the books' 0.1958, which nothing here supports. I pass on the spread because 10 is a key number and the move already holds the quarterback news. I pass on the total of 39.5, down from 48.5, because Jacksonville scores 28 a game this season and Baltimore 22.375, and the quarterback situation cuts against both. Weather is missing for an outdoor game, so I cannot see wind or cold.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "JAX",
+      "verdict": "PASS",
+      "price": -500,
+      "book": "bovada",
+      "fair_estimate": null,
+      "confidence": "medium",
+      "reasons": [
+        {
+          "claim": "Jacksonville is a heavy favourite at -500, which is past the price where I will back any side, and the books' own number for Jacksonville is 0.8042.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].best.price", "value": -500},
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.8042}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Baltimore's listed quarterback has 0 prior starts in what we have and Lamar Jackson is out, which explains why the market is this lopsided; nothing here says the price is wrong.",
+          "evidence": [
+            {"path": "sections.home.values.qb.listed_for_this_game.prior_starts_in_store", "value": 0},
+            {"path": "sections.home.values.qb.listed_for_this_game.changed_since_last_game", "value": true},
+            {"path": "sections.home.values.injuries.skill_players_listed[0].report_status", "value": "out"}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The underdog side pays +410, and it is only worth taking if Baltimore wins more often than the books' 0.1958. Baltimore has lost three straight, so I do not see a reason to go above that.",
+          "evidence": [
+            {"path": "markets.moneyline.options[1].best.price", "value": 410},
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.1958},
+            {"path": "sections.home.values.streak.length", "value": 3}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A report that Lamar Jackson is cleared to start would put Baltimore's real chance above the books' 0.1958 and make the underdog price worth a second look.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "BAL +10",
+      "verdict": "PASS",
+      "price": -108,
+      "book": "betmgm",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides are priced as a near coin flip, with the books' own number at 0.5072 for BAL +10, so the market is not leaving an obvious gap.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5072},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4928}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number has moved a long way from where it was first captured, with the Jaguars first laying 3.0 and now laying 10, which fits Baltimore's quarterback change and the two quarterbacks out on its report. The move already holds that news.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": 3.0},
+            {"path": "markets.spread.options[1].selection", "value": "JAX -10"},
+            {"path": "sections.home.values.qb.listed_for_this_game.name", "value": "Joe Fagnano"}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "10 is one of the key numbers from scoring, so a Jacksonville win by exactly that margin would be a push for the favourite; with no clear reason the number is off by points, I leave it.",
+          "evidence": [
+            {"path": "sections.reference.values.key_numbers", "value": "[3,6,7,10,14]"},
+            {"path": "markets.spread.options[0].line", "value": 10.0}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed change at quarterback for Baltimore, or the number moving off 10, would make me look at this again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 39.5",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total is a coin flip in the books' own numbers, 0.5008 for the Under, so the price alone gives no lean.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5008},
+            {"path": "markets.total.options[1].fair_probability", "value": 0.4992}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number has dropped from 48.5 when first captured to 39.5, so the market has already taken the Baltimore quarterback news into the total.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 48.5},
+            {"path": "markets.total.options[0].line", "value": 39.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The scoring data points both ways: Baltimore has scored 11 points per game over its last three, which favours the Under, while Jacksonville scored 42 in its last game and averages 28 on the season, which favours the Over.",
+          "evidence": [
+            {"path": "sections.home.values.form.last_3.points_for_per_game", "value": 11},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 28},
+            {"path": "sections.away.values.last_three[0].points_for", "value": 42}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "This is an outdoor game and we have no weather data, so wind or cold, which could move a total, is something we cannot see.",
+          "evidence": [
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"},
+            {"path": "missing[1].item", "value": "weather"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A weather forecast showing heavy wind or cold, or a quarterback change for Baltimore, would be the new fact that moves me off a pass.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
