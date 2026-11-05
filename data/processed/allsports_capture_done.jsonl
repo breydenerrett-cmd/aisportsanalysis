@@ -16870,3 +16870,5 @@
 {"call_kind": "inplay", "credits": 1, "events": 13, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T04:23:51.419717Z", "regions": ["us"], "rows": 134, "sport_key": "icehockey_nhl", "stored": 134}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T04:23:51.419717Z", "regions": ["us"], "rows": 0, "sport_key": "basketball_wncaab", "stored": 0}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-05T04:23:51.419717Z", "regions": ["au"], "rows": 15, "sport_key": "cricket_test_match", "stored": 13}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-05T10:34:53.543139Z", "observed_utc": "2026-11-05T04:34:53.543139Z", "sport_key": "soccer_belgium_first_div"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-11-05T10:34:53.543139Z", "observed_utc": "2026-11-05T04:34:53.543139Z", "sport_key": "soccer_efl_champ"}
