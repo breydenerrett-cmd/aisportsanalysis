@@ -8604,3 +8604,4 @@
 {"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-05T12:42:00.916960+00:00", "sport_key": "baseball_kbo"}
 {"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-05T12:42:00.916960+00:00", "sport_key": "cricket_odi"}
 {"credits": 2, "days_from": 3, "events": 45, "kind": "poll", "observed_utc": "2026-11-05T12:42:00.916960+00:00", "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-05T12:57:16.115276+00:00", "sport_key": "cricket_test_match"}
