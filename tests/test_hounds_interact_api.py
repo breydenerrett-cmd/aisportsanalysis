@@ -430,6 +430,37 @@ class Ask(ApiCase):
         self.assertEqual(asked["intent"], "picks_now")
         self.assertIn("Boston Red Sox to win at +120", asked["answer"])
 
+    def stale_slate(self, observed="2026-10-20T17:55:00Z"):
+        """The standard game with only one early capture (the pregame gap between the 6h and 2h captures)."""
+        rows = [dict(r, observed_utc=observed, book_last_update=observed) for r in standard_rows()
+                if r["observed_utc"] == "2026-10-20T19:55:00Z"]
+        return lambda date, with_props: user_engine_v2.build_slate(
+            date, ["MLB", "NFL"], with_props=with_props, rows=rows, prop_rows=[], facts=FactBook(), game_pk_index={})
+
+    def test_right_now_shows_an_old_board_before_the_lock_and_says_how_old(self):
+        spec = user_spec.validate_spec({**user_spec.upgrade_v1(spec_dict(name="Rule Dog")), "name": "Rule Dog"})
+        made = user_store.create_hound(self.owner.id, spec, now=CREATED)
+        ask_eval.clear_cache()
+        before_lock = utc("2026-10-20T21:05:00Z")                   # the lock is 21:10; the board is 190 minutes old
+        with mock.patch.object(ask_eval, "default_slate", self.stale_slate()), \
+                mock.patch.object(common, "now_utc", lambda: before_lock):
+            out = self.api.right_now_pick(made["id"], Response(), authorization=None, _rl=None)
+        data = out.get("data", out)
+        self.assertEqual([c["selection"] for c in data["candidates"]], ["Boston Red Sox to win"])
+        self.assertEqual(data["candidates"][0]["board_age_minutes"], 190)
+        self.assertEqual(data["candidates"][0]["board_observed_utc"], "2026-10-20T17:55:00Z")
+        self.assertIn("hours ago; the hound decides at lock", data["board_age_note"])
+
+    def test_right_now_keeps_the_75_minute_cap_once_the_lock_has_passed(self):
+        spec = user_spec.validate_spec({**user_spec.upgrade_v1(spec_dict(name="Rule Dog")), "name": "Rule Dog"})
+        made = user_store.create_hound(self.owner.id, spec, now=CREATED)
+        ask_eval.clear_cache()
+        with mock.patch.object(ask_eval, "default_slate", self.stale_slate()):       # NOW 21:30 is after the 21:10 lock
+            out = self.api.right_now_pick(made["id"], Response(), authorization=None, _rl=None)
+        data = out.get("data", out)
+        self.assertEqual(data["candidates"], [])
+        self.assertIsNone(data["board_age_note"])
+
     def test_asking_in_chat_is_not_a_way_around_the_fire_allowance(self):
         from fastapi import HTTPException as Http
         refuse = Http(status_code=429, detail={"error": "rate_limited", "retry_after": 7})

@@ -289,9 +289,29 @@ def _tally_unknown(skipped, unknown: list) -> None:
         skipped[f"unknown_{cid}"] += 1
 
 
+def preview_horizon_minutes() -> float:
+    """How old a board a READ-ONLY view may show for a game that has not reached its lock: the all-sports store horizon
+    (config/sports_catalog.json capture.store_horizon_hours, 36 h). Real bets never use it: they keep MAX_BOARD_AGE_MINUTES."""
+    try:
+        from src.sports import catalog
+        return float(catalog.capture_config()["store_horizon_hours"]) * 60.0
+    except Exception:  # noqa: BLE001 -- the default is the shipped config value
+        return 36 * 60.0
+
+
+def board_age_note(ages_minutes: Iterable) -> Optional[str]:
+    """One plain sentence when a shown pick rests on a board older than a bet may use; None when every board is fresh."""
+    ages = [a for a in ages_minutes if isinstance(a, (int, float))]
+    if not ages or max(ages) <= E.MAX_BOARD_AGE_MINUTES:
+        return None
+    hours = max(1, round(max(ages) / 60.0))
+    return (f"Prices are from {hours} {'hour' if hours == 1 else 'hours'} ago; "
+            "the hound decides at lock with the board as it stands then.")
+
+
 def rule_candidates(rule: Mapping, index: int, spec: Mapping, game: "E.GameBoards", market: str,
                     as_of: datetime, lock_utc: datetime, commence: datetime, date: str, seed: str, facts,
-                    game_pk, skipped) -> list:
+                    game_pk, skipped, relaxed: bool = False) -> list:
     """Every candidate one rule produces on one market of one game, at the board standing at `as_of`."""
     out: list = []
     if user_spec.is_gematria(spec):
@@ -303,6 +323,8 @@ def rule_candidates(rule: Mapping, index: int, spec: Mapping, game: "E.GameBoard
     else:
         found = game.board_at(market, as_of)
         max_age = game.board_max_age()
+        if relaxed:
+            max_age = max(max_age, preview_horizon_minutes())    # a read-only view of a game still before its lock
     live = game.board_floor is not None
     if live and kind == "prop":
         skipped["no_live_board"] += 1            # props are captured twice a game: there is no live prop price to bet
@@ -452,16 +474,20 @@ def _left_out_row(spec: Mapping, game: "E.GameBoards", event_id: str, commence: 
         found = game.board_at(m, as_of) if R.market_kind(m) != "prop" else None
         if found:
             break
+    age = None
     if code in ("board_too_old", "live_price_too_old") and found:
         age = round((as_of - found[0]).total_seconds() / 60.0)
         text = (f"the newest price for this game is {age} minutes old "
-                f"(read at {E._iso(as_of)}); a bet needs one at most {round(game.board_max_age())} minutes old")
+                f"(read at {E._iso(as_of)}); "
+                f"{'this view shows none older than' if as_of < lock_utc else 'a bet needs one at most'} "
+                f"{round(max(game.board_max_age(), preview_horizon_minutes()) if as_of < lock_utc else game.board_max_age())} minutes old")
     elif code == "too_few_books" and found:
         need = max(r["min_books"] for r in rules)
         text = f"only {found[1]['n_books']} books quote it and the rule needs {need}"
     return {"event_id": event_id, "sport": game.sport, "away_team": game.away_team, "home_team": game.home_team,
             "start_utc": E._iso(commence), "lock_utc": E._iso(lock_utc), "reason_code": code,
-            "reason": text[0].upper() + text[1:] + ".", "all_reasons": codes}
+            "reason": text[0].upper() + text[1:] + ".", "all_reasons": codes,
+            "board_age_minutes": age}
 
 
 def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, facts, date: str, *, mode: str,
@@ -525,7 +551,8 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, facts, date:
                 continue
             for market in rule["markets"]:
                 for cand in rule_candidates(rule, i, spec, game, market, as_of, lock_utc, commence, date, seed,
-                                            facts, game_pk, skipped):
+                                            facts, game_pk, skipped,
+                                            relaxed=preview_now is not None and preview_now < lock_utc):
                     yielded = True
                     key = market if not cand["player"] else f"{market}|{R.fold_player(cand['player'])}"
                     bet_id = E.bet_id_for(hound["id"], event_id, key)
@@ -570,6 +597,7 @@ def preview(spec: Mapping, games: Mapping, facts, date: str, now: datetime, *,
             "locked": now >= lock_utc, "selection": cand["selection"], "side": cand["side"],
             "line": cand["line"], "player": cand["player"], "price": cand["price"],
             "best_price": cand["best_price"], "n_books": cand["n_books"], "rule_index": cand["rule_index"],
+            "board_observed_utc": cand["board_observed_utc"], "board_age_minutes": cand["board_age_minutes"],
             "would_bet": position < spec["max_bets_per_day"], "rank": position + 1})
     # "{n} of {m} games fit" (the reveal): n is the number of DIFFERENT games with at least one qualifying
     # pick, so a game that fits on a moneyline and on a total counts once. `qualifying` stays the number of
@@ -578,7 +606,8 @@ def preview(spec: Mapping, games: Mapping, facts, date: str, now: datetime, *,
             "games_fit": len({p["event_id"] for p in picks}),
             "qualifying": len(picks), "would_bet": min(len(picks), spec["max_bets_per_day"]),
             "max_bets_per_day": spec["max_bets_per_day"], "picks": picks,
-            "skipped": dict(skipped), "skipped_games": left_out}
+            "skipped": dict(skipped), "skipped_games": left_out,
+            "board_age_note": board_age_note(p["board_age_minutes"] for p in picks)}
 
 
 # ---------------------------------------------------------------------------

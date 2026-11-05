@@ -268,6 +268,11 @@ def closest_view(payload: Mapping, held: Optional[list], now: datetime, *, in_pl
     return out
 
 
+def _age_note(candidates: list) -> Optional[str]:
+    from src.hounds import user_engine_v2
+    return user_engine_v2.board_age_note(c.get("board_age_minutes") for c in candidates)
+
+
 def view_from_payload(payload: Mapping, *, dog_id: str, dog_name: str, kind: str, spec: Optional[Mapping],
                       persona: Optional[Mapping], held: Optional[list], now: datetime) -> dict:
     """The answer for one hound from a Fire-now payload. Pure: no disk, no clock but ``now``."""
@@ -290,6 +295,7 @@ def view_from_payload(payload: Mapping, *, dog_id: str, dog_name: str, kind: str
             "price_best": pick.get("price_best"), "best_book": pick.get("best_book"), "n_books": pick.get("n_books"),
             "start_utc": pick.get("start_utc"), "minutes_to_start": pick.get("minutes_to_start"),
             "day_label": pick.get("day_label"), "stale": bool(pick.get("stale")), "board_age_minutes": pick.get("board_age_minutes"),
+            "board_observed_utc": pick.get("board_observed_utc"),
             "in_play": bool(pick.get("in_play")), "over_daily_limit": bool(pick.get("over_daily_limit")),
             "stake_units": stake, "rank": index + 1, "of": total, "fit": fit,
             "fit_text": "The top of the board" if index == 0 else f"Number {index + 1} of {total} on its board",
@@ -306,6 +312,7 @@ def view_from_payload(payload: Mapping, *, dog_id: str, dog_name: str, kind: str
         "candidates": candidates, "nothing": not candidates, "games_considered": payload.get("games_considered", 0),
         "closest": [] if candidates else closest_view(payload, held, now, in_play_on=in_play_on),
         "stake_units": stake,
+        "board_age_note": _age_note(candidates),
         "bets_in_play": in_play_on, "viewer_is_owner": bool(payload.get("viewer_is_owner")),
         "manual_remaining_today": payload.get("manual_remaining_today"),
         "next_look": None if candidates else _next_look(payload, spec, now),

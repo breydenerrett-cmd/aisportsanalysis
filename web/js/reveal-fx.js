@@ -110,6 +110,15 @@ export function fitLine(name, fit, board) {
  * The count of games that fit comes from the server's `games_fit` and the board size from `board_size` (older answers: the number
  * of distinct events among the picks and `games_on_board`), never from anything typed here.
  */
+/** When a shown pick rests on a price older than a bet may use (75 minutes), one plain sentence about its age; else "". */
+export function ageNote(res, picks) {
+  const ages = (picks || []).map((p) => p && p.board_age_minutes).filter((a) => Number.isFinite(a));
+  if (!ages.length || Math.max(...ages) <= 75) return "";
+  if (res && typeof res.board_age_note === "string" && res.board_age_note) return res.board_age_note;
+  const hours = Math.max(1, Math.round(Math.max(...ages) / 60));
+  return `Prices are from ${hours} ${hours === 1 ? "hour" : "hours"} ago; the hound decides at lock with the board as it stands then.`;
+}
+
 export function previewState(res, name, err = null) {
   if (!res) {
     return { kind: "not_loaded", line: err && err.status === 503 ? "Today's board is not loaded right now." : "The preview is not available right now.",
@@ -120,6 +129,12 @@ export function previewState(res, name, err = null) {
   // the server's own count unless a pick had to be dropped here (a price at -200 or worse), when the count is recomputed from what is shown
   const fit = Number.isFinite(res.games_fit) && picks.length === (res.picks || []).length ? res.games_fit : new Set(picks.map((p) => p.event_id)).size;
   if (!board) return { kind: "empty", line: "No games on today's board yet.", retry: false };
+  const left = Array.isArray(res.skipped_games) ? res.skipped_games : [];
+  if (!picks.length && left.length && left.every((g) => g && g.reason_code === "board_too_old" && Number.isFinite(g.board_age_minutes))) {
+    // every game was left out only because its newest price is old: say so rather than "nothing fits"
+    const hours = Math.max(1, Math.round(Math.max(...left.map((g) => g.board_age_minutes)) / 60));
+    return { kind: "zero", line: `Tonight's prices are ${hours} ${hours === 1 ? "hour" : "hours"} old. It checks again at lock.`, sub: "", fit: 0, board, picks: [] };
+  }
   if (!picks.length) {
     return { kind: "zero", line: `${name} passes today. Nothing on the board fits its rule.`, sub: "A pass is a valid day for a hound.", fit: 0, board, picks: [] };
   }
@@ -127,5 +142,5 @@ export function previewState(res, name, err = null) {
   const cap = res.max_bets_per_day;
   return { kind: "picks", fit, board, picks, bets, cap,
     parts: fitParts(name, fit, board),
-    sub: `${name} would have bet ${bets.length}${cap ? `, with a cap of ${cap} a day` : ""}.` };
+    sub: `${name} would have bet ${bets.length}${cap ? `, with a cap of ${cap} a day` : ""}.${ageNote(res, picks) ? ` ${ageNote(res, picks)}` : ""}` };
 }

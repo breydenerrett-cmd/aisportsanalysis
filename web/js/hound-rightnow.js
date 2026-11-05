@@ -146,6 +146,9 @@ export function renderNow(body, ctx) {
       c.stale ? h("span", { class: "hn-flag hn-flag--warn", "data-hook": "now-stale", text: `Board is ${spanWords(c.board_age_minutes)} old` }) : null,
     ]),
   ]));
+  if (data && typeof data.board_age_note === "string" && data.board_age_note) {
+    body.appendChild(h("p", { class: "hn-fine", "data-hook": "now-age-note", text: data.board_age_note }));
+  }
   body.appendChild(meter(c, defId));
   body.appendChild(whyFold(c, data, defId));
   const status = h("p", { class: "hn-status", role: "status", "data-hook": "now-status" });

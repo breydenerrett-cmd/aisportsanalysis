@@ -406,8 +406,10 @@ def fire_v2(dog: common.Dog, *, now: Optional[datetime] = None, ledger: Optional
         notes.append(f"The daily limit is {spec['max_bets_per_day']} ticket(s) a day, so the engine would stop "
                      "before the ones marked over the limit.")
     elsewhere = fire.other_sports_live(other_live, sorted(wanted), now, started, upcoming, bool(picks))
-    return fire._payload(dog, now, picks, misses, tickets, miss_counts, looked, newest, notes, started, upcoming,
-                         elsewhere)
+    payload = fire._payload(dog, now, picks, misses, tickets, miss_counts, looked, newest, notes, started, upcoming,
+                            elsewhere)
+    payload["board_age_note"] = V2.board_age_note(p.get("board_age_minutes") for p in picks)
+    return payload
 
 
 # ---------------------------------------------------------------------------

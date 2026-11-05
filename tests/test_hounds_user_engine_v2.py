@@ -345,15 +345,31 @@ class PreviewOnAFullNhlBoard(_Base):
         self.assertGreater(out["qualifying"], 0)
         self.assertEqual(out["skipped_games"], [])
 
-    def test_a_stale_board_is_named_for_every_game_left_out(self):
-        out = self.run_preview(self.games("2026-11-05T17:00:00Z"))          # newest price is 4.5 hours old
+    def test_a_three_hour_old_board_still_shows_picks_for_games_before_their_lock(self):
+        out = self.run_preview(self.games("2026-11-05T18:30:00Z"))          # prod's usual gap between the 6h and 2h captures
+        self.assertGreater(out["qualifying"], 0)
+        self.assertEqual({p["board_age_minutes"] for p in out["picks"]}, {180.0})
+        self.assertEqual(out["picks"][0]["board_observed_utc"], "2026-11-05T18:30:00Z")
+        self.assertEqual(out["board_age_note"], "Prices are from 3 hours ago; the hound decides at lock with the board as it stands then.")
+        self.assertEqual(out["skipped_games"], [])
+
+    def test_a_fresh_board_carries_no_age_note(self):
+        self.assertIsNone(self.run_preview(self.games("2026-11-05T21:00:00Z"))["board_age_note"])
+
+    def test_a_board_older_than_the_store_horizon_never_shows(self):
+        out = self.run_preview(self.games("2026-11-04T00:00:00Z"))          # 45.5 hours old: a dead capture
+        self.assertEqual(out["qualifying"], 0)
+        self.assertEqual({g["reason_code"] for g in out["skipped_games"]}, {"board_too_old"})
+        self.assertIn("none older than 2160 minutes", out["skipped_games"][0]["reason"])
+
+    def test_a_locked_game_keeps_the_lock_time_read_and_the_75_minute_cap(self):
+        out = self.run_preview(self.games("2026-11-05T17:00:00Z"), now=F.utc("2026-11-05T23:50:00Z"))   # every lock has passed
         self.assertEqual(out["qualifying"], 0)
         self.assertEqual(len(out["skipped_games"]), 16)
         one = out["skipped_games"][0]
-        self.assertEqual(one["reason_code"], "board_too_old")
-        self.assertIn("270 minutes old", one["reason"])
-        self.assertIn("75", one["reason"])
-        self.assertEqual({g["event_id"] for g in out["skipped_games"]}, {f"nhl{i:02d}" for i in range(16)})
+        self.assertEqual((one["event_id"], one["reason_code"]), ("nhl00", "board_too_old"))
+        self.assertIn("310 minutes old", one["reason"])
+        self.assertIn("a bet needs one at most 75", one["reason"])
 
     def test_a_game_with_no_price_at_all_says_so(self):
         out = self.run_preview(self.games("2026-11-05T21:00:00Z"), now=F.utc("2026-11-05T10:00:00Z"))

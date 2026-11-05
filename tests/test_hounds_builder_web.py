@@ -435,6 +435,19 @@ class StepTwoCards(unittest.TestCase):
                       queries=[q("count", "[data-hook='preview-count']")])
             self.assertIn(text, o["final"]["count"])
 
+    def test_old_prices_are_named_under_the_picks_and_in_place_of_a_false_pass(self):
+        old = [{"event_id": "e0", "reason_code": "board_too_old", "board_age_minutes": 240}]
+        aged = preview_answer(qualifying=2, board_age_note="Prices are from 3 hours ago; the hound decides at lock with the board as it stands then.")
+        for p in aged["picks"]:
+            p["board_age_minutes"] = 180
+        o = build(base_routes(**{"POST /hounds/builder/preview": [200, aged]}), actions=[CLICK_BLANK, dict(do="fire_timers", wait=450)],
+                  queries=[q("sub", "[data-hook='preview-sub']")])
+        self.assertIn("Prices are from 3 hours ago", o["final"]["sub"])
+        o = build(base_routes(**{"POST /hounds/builder/preview": [200, preview_answer(qualifying=0, skipped_games=old)]}),
+                  actions=[CLICK_BLANK, dict(do="fire_timers", wait=450)], queries=[q("count", "[data-hook='preview-count']")])
+        self.assertIn("Tonight's prices are 4 hours old. It checks again at lock.", o["final"]["count"])
+        self.assertNotIn("passes today", o["final"]["count"])
+
     def test_the_preview_never_posts_to_a_route_that_writes(self):
         out = build(actions=[CLICK_BLANK, dict(do="set", sel="[data-hook='price-min']", value="100"), dict(do="fire_timers", wait=450)])
         self.assertEqual({p["url"] for p in out["posts"]}, {"/hounds/builder/preview"})
