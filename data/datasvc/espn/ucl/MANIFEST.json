@@ -2,22 +2,22 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2026.jsonl": {
-   "bytes": 114869,
-   "newest": "2026-11-04T21:34:59Z",
-   "records": 203,
-   "sha256": "cd80ccacf6ec92612adee4ecb0cdf2243462fca29cb57bc1419e8f97f891de9b"
+   "bytes": 118933,
+   "newest": "2026-11-05T00:43:19Z",
+   "records": 210,
+   "sha256": "a4322bb36a736602629caf2f5d2747ec27d848d91c55bb4cb85fece48855cfc9"
   },
   "standings_2026.jsonl": {
-   "bytes": 68788,
-   "newest": "2026-11-04T21:35:05Z",
-   "records": 157,
-   "sha256": "c5baf27acad5b2d6ba9fa194a9d4be823899f39f8296b70df7115fccd720a675"
+   "bytes": 80528,
+   "newest": "2026-11-05T00:43:27Z",
+   "records": 184,
+   "sha256": "c7daeb15e5d65a69855eab0b284135f5d919752c2342a6bac48fde4ce0dc390a"
   },
   "team_games_2026.jsonl": {
-   "bytes": 50234,
-   "newest": "2026-11-04T21:35:04Z",
-   "records": 59,
-   "sha256": "5d6fcf4a23816ee40290eb80f1370ee7c76e94c5183bd6ca79f7f069dc16799d"
+   "bytes": 62173,
+   "newest": "2026-11-05T00:43:27Z",
+   "records": 73,
+   "sha256": "8aa19255a6cb249cf303fa77dd760b6503c7dbc5cc5a30ac21ad779df8e22252"
   },
   "teams.jsonl": {
    "bytes": 12310,
@@ -26,8 +26,8 @@
    "sha256": "54ed546f3d23c7dc4f0fc708dfbab22e517d69558269031c016e2081bd1957e6"
   }
  },
- "generated_utc": "2026-11-04T21:35:05Z",
+ "generated_utc": "2026-11-05T00:43:27Z",
  "league": "ucl",
- "refreshed_utc": "2026-11-04T21:35:05Z",
+ "refreshed_utc": "2026-11-05T00:43:27Z",
  "title": "UEFA Champions League"
 }

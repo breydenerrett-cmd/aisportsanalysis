@@ -2,10 +2,10 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2026.jsonl": {
-   "bytes": 62421,
-   "newest": "2026-11-04T02:34:02Z",
-   "records": 106,
-   "sha256": "6ff8bbb0508c2ad2f89fea37fc3d477e313e6675aacd2cae8fcbf22256a97394"
+   "bytes": 65316,
+   "newest": "2026-11-05T00:43:11Z",
+   "records": 111,
+   "sha256": "85be1a1c64f11ce115b8927b0e8ce6772784f4edb69318f13b4cc919c99de24a"
   },
   "standings_2026.jsonl": {
    "bytes": 34596,
@@ -26,8 +26,8 @@
    "sha256": "36e121c2bf9112cd7479db3b823207256c0f36f95e2440b85afe3511f67dbc5d"
   }
  },
- "generated_utc": "2026-11-04T21:34:49Z",
+ "generated_utc": "2026-11-05T00:43:11Z",
  "league": "bundesliga",
- "refreshed_utc": "2026-11-04T21:34:49Z",
+ "refreshed_utc": "2026-11-05T00:43:11Z",
  "title": "Bundesliga"
 }
