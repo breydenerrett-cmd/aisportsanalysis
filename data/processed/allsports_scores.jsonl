@@ -8585,3 +8585,5 @@
 {"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-05T10:35:34.914552+00:00", "sport_key": "baseball_kbo"}
 {"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-05T10:35:34.914552+00:00", "sport_key": "cricket_odi"}
 {"credits": 2, "days_from": 3, "events": 45, "kind": "poll", "observed_utc": "2026-11-05T10:35:34.914552+00:00", "sport_key": "boxing_boxing"}
+{"away_score": null, "away_team": "West Indies", "commence_time": "2026-11-06T03:30:00Z", "completed": false, "event_id": "32a77d579cfa7c79980e22f1ec91ac92", "home_score": null, "home_team": "Bangladesh", "kind": "score", "last_update": null, "observed_utc": "2026-11-05T10:43:34.423160+00:00", "outcome": null, "scores": null, "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 3, "kind": "poll", "observed_utc": "2026-11-05T10:43:34.423160+00:00", "sport_key": "cricket_test_match"}
