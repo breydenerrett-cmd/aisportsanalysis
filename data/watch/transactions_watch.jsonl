@@ -7192,3 +7192,6 @@
 {"fetched_utc": "2026-11-06T16:31:01.341337+00:00", "game_date": "2026-11-06", "poll": true}
 {"fetched_utc": "2026-11-06T17:32:50.532523+00:00", "game_date": "2026-11-06", "poll": true}
 {"fetched_utc": "2026-11-06T18:32:33.188923+00:00", "game_date": "2026-11-06", "poll": true}
+{"fetched_utc": "2026-11-06T19:31:18.701798+00:00", "game_date": "2026-11-06", "poll": true}
+{"category": "traded", "date": "2026-11-06", "first_seen_utc": "2026-11-06T19:31:18.701798+00:00", "player": "Robert Cranz", "player_id": 801128, "team": "SF", "transaction_id": 949789}
+{"category": "designated", "date": "2026-11-06", "first_seen_utc": "2026-11-06T19:31:18.701798+00:00", "player": "Kyle Nicolas", "player_id": 693312, "team": "WSH", "transaction_id": 949790}
