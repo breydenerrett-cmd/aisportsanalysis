@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-06 16:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-06 21:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-06 (8:30 am PT run): Thursday's NFL brief (Jacksonville at Baltimore) graded: final JAX 33, BAL 10. All three calls were passes.
-- config/sample_brief.json now points at JAX@BAL 2026-11-05; production serves Chicago at Seattle until the next deploy.
-- No game in window today (MLB season over; no Friday NFL).
-- Production /health 200; tests green (02:27Z push). The site's newest odds are 18.5 h old. The scheduled daily loop failed again (10:10Z) on the post-season MLB slate.
+- 2026-11-06 (1:30 pm PT run): no game in window (MLB season over; no Friday NFL). Nothing new to grade.
+- Production still serves the Chicago at Seattle sample brief: no production deploy since 22:10Z on 11-05.
+- Cause: on game-free days the capture chain runs hourly at about :28 past the hour, and the production refresh only fires in minute 00-14, so it never fires.
+- Production /health 200; tests green (17:15Z). Site odds 23.5 h old. Daily loop red again (16:58Z) on the post-season MLB slate.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
