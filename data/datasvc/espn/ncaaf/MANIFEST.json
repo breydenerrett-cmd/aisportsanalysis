@@ -2,10 +2,10 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2026.jsonl": {
-   "bytes": 1646271,
-   "newest": "2026-11-06T18:34:05Z",
-   "records": 2624,
-   "sha256": "1d4b6823ea252a0331a1a965201484f62bca61c52c46b2fb6ddacf96ee6a3622"
+   "bytes": 1652532,
+   "newest": "2026-11-06T22:31:05Z",
+   "records": 2634,
+   "sha256": "b0a1d131ca66f7dee1d8f92496e42854f3ee6d14d0000cd9f3a6a2e077d2abdc"
   },
   "injuries.jsonl": {
    "bytes": 944,
@@ -32,8 +32,8 @@
    "sha256": "b7bff8bc0144de400a35309af2d60771216a75c588f95513d23a185cb954a23d"
   }
  },
- "generated_utc": "2026-11-06T18:34:08Z",
+ "generated_utc": "2026-11-06T22:31:08Z",
  "league": "ncaaf",
- "refreshed_utc": "2026-11-06T18:34:08Z",
+ "refreshed_utc": "2026-11-06T22:31:08Z",
  "title": "NCAA football (FBS)"
 }
