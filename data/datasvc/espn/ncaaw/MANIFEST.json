@@ -2,10 +2,10 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2027.jsonl": {
-   "bytes": 729911,
-   "newest": "2026-11-07T20:04:44Z",
-   "records": 1264,
-   "sha256": "ef3f3585923e6bcfbf7251d49fbe807991690e575d2dc0186fe7f9c02d917a11"
+   "bytes": 750777,
+   "newest": "2026-11-07T23:25:08Z",
+   "records": 1298,
+   "sha256": "28157cb7e1e666c40ea9295c8106db6081d8ae7a545514eeb0fd46404790d13c"
   },
   "standings_2026.jsonl": {
    "bytes": 218899,
@@ -14,26 +14,26 @@
    "sha256": "2cda4d2cc1055b8d82bcc940221995477c7669eaf5ddb78853f9585074beee67"
   },
   "standings_2027.jsonl": {
-   "bytes": 584061,
-   "newest": "2026-11-07T20:05:32Z",
-   "records": 996,
-   "sha256": "d416a4a4bd4a613e35695a5d59bae787bfe800e43e66e6dede19645b7aefe12b"
+   "bytes": 610443,
+   "newest": "2026-11-07T23:26:26Z",
+   "records": 1041,
+   "sha256": "f857db4efe765bed5f071d3a23e16d5a5c071ef2b44ab6ff2f18660d074d47ed"
   },
   "team_games_2027.jsonl": {
-   "bytes": 682357,
-   "newest": "2026-11-07T20:05:31Z",
-   "records": 785,
-   "sha256": "53b27747a552b44cb2edf0e124e05bcd0231168bbcc21d67ba22d82be46760e2"
+   "bytes": 724660,
+   "newest": "2026-11-07T23:26:25Z",
+   "records": 835,
+   "sha256": "bac7f56e8b1b5ee5d3ce94a86b7a1b856fb177b5bb5dfe3b3a8e14ec9fe581c0"
   },
   "teams.jsonl": {
-   "bytes": 122134,
-   "newest": "2026-10-21T03:09:48Z",
-   "records": 362,
-   "sha256": "b2dcce115965ba042b2681b801b253e4ab7dac88e7adef6873f0d8345b0c72dc"
+   "bytes": 122447,
+   "newest": "2026-11-07T23:25:07Z",
+   "records": 363,
+   "sha256": "9fc64db3b51ad8a0892d5ac1c32dbe1289d9c88cf9e49a3ee1c5508b79f9f5e8"
   }
  },
- "generated_utc": "2026-11-07T20:05:32Z",
+ "generated_utc": "2026-11-07T23:26:26Z",
  "league": "ncaaw",
- "refreshed_utc": "2026-11-07T20:05:32Z",
+ "refreshed_utc": "2026-11-07T23:26:26Z",
  "title": "NCAA women's basketball (D1)"
 }
