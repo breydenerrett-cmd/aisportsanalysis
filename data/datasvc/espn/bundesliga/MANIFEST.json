@@ -2,22 +2,22 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2026.jsonl": {
-   "bytes": 79297,
-   "newest": "2026-11-07T13:49:57Z",
-   "records": 135,
-   "sha256": "cc6341da3327a35c8c74c88b58b1578ebff360b3a6570554ed090dc305177b62"
+   "bytes": 83375,
+   "newest": "2026-11-07T17:02:48Z",
+   "records": 142,
+   "sha256": "5049d5f8918bb1304c96e949343c3df94c09d372312fbd1aca10c9f7d83718da"
   },
   "standings_2026.jsonl": {
-   "bytes": 38451,
-   "newest": "2026-11-07T00:29:02Z",
-   "records": 88,
-   "sha256": "568ed516442c6ed78c376c14723449a3612e95a5a401222aee3306717ec82e16"
+   "bytes": 44128,
+   "newest": "2026-11-07T17:02:51Z",
+   "records": 101,
+   "sha256": "5cdf8cef9c7f2125f7568560d67007505bb13df89d13c7822c8cc1eb52334cec"
   },
   "team_games_2026.jsonl": {
-   "bytes": 34359,
-   "newest": "2026-11-07T00:29:01Z",
-   "records": 40,
-   "sha256": "0f337e30d31c7ab27c0f5b5c9cfaa110e39d6626f3a3d2cca14dc07f13993493"
+   "bytes": 41241,
+   "newest": "2026-11-07T17:02:51Z",
+   "records": 48,
+   "sha256": "a776bab62cf982297144d621dc0b2d76a4bdaf9863c6dcf4a92c9ad66f98c06f"
   },
   "teams.jsonl": {
    "bytes": 6240,
@@ -26,8 +26,8 @@
    "sha256": "36e121c2bf9112cd7479db3b823207256c0f36f95e2440b85afe3511f67dbc5d"
   }
  },
- "generated_utc": "2026-11-07T13:49:59Z",
+ "generated_utc": "2026-11-07T17:02:51Z",
  "league": "bundesliga",
- "refreshed_utc": "2026-11-07T13:49:59Z",
+ "refreshed_utc": "2026-11-07T17:02:51Z",
  "title": "Bundesliga"
 }
