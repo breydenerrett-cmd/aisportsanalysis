@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-06 21:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-07 16:48Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-6** |
+| Days until 2026-10-31 | **-7** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-06 (1:30 pm PT run): no game in window (MLB season over; no Friday NFL). Nothing new to grade.
-- Production still serves the Chicago at Seattle sample brief: no production deploy since 22:10Z on 11-05.
-- Cause: on game-free days the capture chain runs hourly at about :28 past the hour, and the production refresh only fires in minute 00-14, so it never fires.
-- Production /health 200; tests green (17:15Z). Site odds 23.5 h old. Daily loop red again (16:58Z) on the post-season MLB slate.
+- 2026-11-07 (8:30 am PT run): no game in window (no Saturday NFL; MLB season over). Nothing new to grade.
+- Production deploys resumed: three successful deploy-prod runs 14:11Z to 16:17Z; the 16:17Z one passed its health check.
+- Production /health returned 503 from 16:42Z through 16:50Z (three probes, about 37 s each). Owner check needed.
+- Tests green (23:41Z 11-06). Daily loop red again (15:57Z) on the post-season MLB slate.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
