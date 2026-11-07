@@ -20675,3 +20675,5 @@
 {"commence_utc": "2026-11-08T01:10:00Z", "event_id": "1f21bf798afede04880e7a391f3990ed", "kind": "phase", "observed_utc": "2026-11-07T19:33:07.106161Z", "phase": "t6h", "rows": 33, "sport_key": "icehockey_nhl"}
 {"commence_utc": "2026-11-08T01:10:00Z", "event_id": "b5934d2ce05af5dac632f1e8b7ce5fb6", "kind": "phase", "observed_utc": "2026-11-07T19:33:07.106161Z", "phase": "t6h", "rows": 33, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 18, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-07T19:33:07.106161Z", "regions": ["us"], "rows": 507, "sport_key": "icehockey_nhl", "stored": 507}
+{"events": 5, "kind": "peek", "next_check_utc": "2026-11-08T01:42:33.062076Z", "observed_utc": "2026-11-07T19:42:33.062076Z", "sport_key": "soccer_brazil_campeonato"}
+{"events": 0, "kind": "peek", "next_check_utc": "2026-11-08T01:42:33.062076Z", "observed_utc": "2026-11-07T19:42:33.062076Z", "sport_key": "soccer_league_of_ireland"}
