@@ -131,10 +131,10 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-11-07 (8:30 am PT run): no game in window (no Saturday NFL; MLB season over). Nothing new to grade.",
-    "Production deploys resumed: three successful deploy-prod runs 14:11Z to 16:17Z; the 16:17Z one passed its health check.",
-    "Production /health returned 503 from 16:42Z to at least 16:49Z, then 200 again at 17:15Z. Cause not verified.",
-    "Tests green (23:41Z 11-06). Daily loop red again (15:57Z) on the post-season MLB slate.",
+    "2026-11-07 (1:30 pm PT run): no game in window (no Saturday NFL; no MLB games scheduled). Nothing new to grade.",
+    "Production up at 21:42Z: /health 200, memory peak 683.7 MB of 850, odds 0.6 h old, capture 5 min ago.",
+    "Production process restarted at 21:37Z, about 19 minutes after the last deploy finished; cause not verified.",
+    "Deploy-prod succeeded three times 19:12Z to 21:18Z. Tests green. Daily loop still red (15:57Z, post-season MLB slate).",
     "Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at."
   ],
   "next_customer_action": "Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.",
