@@ -19168,3 +19168,4 @@
 {"call_kind": "inplay", "credits": 1, "events": 67, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-07T06:32:08.794163Z", "regions": ["us"], "rows": 565, "sport_key": "americanfootball_ncaaf", "stored": 544}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-07T06:32:08.794163Z", "regions": ["us"], "rows": 7, "sport_key": "baseball_kbo", "stored": 7}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-07T06:32:08.794163Z", "regions": ["au"], "rows": 18, "sport_key": "cricket_odi", "stored": 5}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-07T12:39:24.687060Z", "observed_utc": "2026-11-07T06:39:24.687060Z", "sport_key": "soccer_uefa_champs_league_women"}

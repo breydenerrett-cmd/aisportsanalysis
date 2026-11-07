@@ -2,10 +2,10 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2026.jsonl": {
-   "bytes": 87511,
-   "newest": "2026-11-07T00:28:55Z",
-   "records": 154,
-   "sha256": "dc33cfecff03f49cefe6fdb123fa32f2421a9d47859c8b3a197dddc87ba7fb94"
+   "bytes": 88621,
+   "newest": "2026-11-07T06:40:29Z",
+   "records": 156,
+   "sha256": "9adbfe2c12d9eff69f20ce80da5c67df0e30fc19112de53ef189ea3af1609903"
   },
   "standings_2026.jsonl": {
    "bytes": 49662,
@@ -26,8 +26,8 @@
    "sha256": "6ab9c94da745cdafcb8857703920a1f4f9330bec177d98ee4180ba29628d8246"
   }
  },
- "generated_utc": "2026-11-07T03:34:53Z",
+ "generated_utc": "2026-11-07T06:40:31Z",
  "league": "laliga",
- "refreshed_utc": "2026-11-07T03:34:53Z",
+ "refreshed_utc": "2026-11-07T06:40:31Z",
  "title": "La Liga"
 }
