@@ -7202,3 +7202,7 @@
 {"fetched_utc": "2026-11-06T23:27:47.057415+00:00", "game_date": "2026-11-06", "poll": true}
 {"fetched_utc": "2026-11-07T00:27:16.556721+00:00", "game_date": "2026-11-06", "poll": true}
 {"fetched_utc": "2026-11-07T00:37:34.007665+00:00", "game_date": "2026-11-06", "poll": true}
+{"fetched_utc": "2026-11-07T01:31:01.924754+00:00", "game_date": "2026-11-06", "poll": true}
+{"category": "other", "date": "2026-11-06", "first_seen_utc": "2026-11-07T01:31:01.924754+00:00", "player": "Zack Kelly", "player_id": 677161, "team": "BOS", "transaction_id": 949807}
+{"category": "other", "date": "2026-11-06", "first_seen_utc": "2026-11-07T01:31:01.924754+00:00", "player": "Jos\u00e9 Tena", "player_id": 677588, "team": "CLE", "transaction_id": 949808}
+{"category": "other", "date": "2026-11-06", "first_seen_utc": "2026-11-07T01:31:01.924754+00:00", "player": "Yilber D\u00edaz", "player_id": 700270, "team": "DET", "transaction_id": 949809}
