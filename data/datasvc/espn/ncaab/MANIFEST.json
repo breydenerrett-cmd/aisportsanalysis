@@ -2,10 +2,10 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2027.jsonl": {
-   "bytes": 1982284,
-   "newest": "2026-11-07T18:44:27Z",
-   "records": 3207,
-   "sha256": "a9d81e622201788e06d388884dbd9507a401d270e9bc446d6eb69a92c82f18f7"
+   "bytes": 2003683,
+   "newest": "2026-11-07T21:48:15Z",
+   "records": 3242,
+   "sha256": "6f9196268a97f8ed872bfb977b34946ba9afbdc6ddc68786e6a89de2a8214fba"
   },
   "standings_2026.jsonl": {
    "bytes": 219996,
@@ -14,26 +14,26 @@
    "sha256": "e8b41bb0b657aa1da67660224f471abf0b7555b6702ff3ac4c6a2eb1ae560be9"
   },
   "standings_2027.jsonl": {
-   "bytes": 586114,
-   "newest": "2026-11-07T08:33:28Z",
-   "records": 1000,
-   "sha256": "351653c1ddfee0c2004ea7aa6d3ee6e292de6307df27bfb48f2fd7914af2a85e"
+   "bytes": 597856,
+   "newest": "2026-11-07T21:48:48Z",
+   "records": 1020,
+   "sha256": "d67da1845f33a008d1ed53d94adc4f427f9f7145c689919ef7dc6486700b8f48"
   },
   "team_games_2027.jsonl": {
-   "bytes": 686883,
-   "newest": "2026-11-07T08:33:27Z",
-   "records": 769,
-   "sha256": "c22891936b5ad41ffd82ee88c0f1e921892f7f23960215ee4805d2c2b4069593"
+   "bytes": 708324,
+   "newest": "2026-11-07T21:48:47Z",
+   "records": 793,
+   "sha256": "302b5885aca4c902d93e9ff52438761ef300ac5c5bd56707dd8b57113e8579d5"
   },
   "teams.jsonl": {
-   "bytes": 121922,
-   "newest": "2026-10-20T18:02:51Z",
-   "records": 362,
-   "sha256": "364bf31c7d107e3d459b165699cd843c1ba7f47ec22c866e8cf385ccc1d067e3"
+   "bytes": 311864,
+   "newest": "2026-11-07T21:48:13Z",
+   "records": 1011,
+   "sha256": "a6ed3267a6e8cf7974b9f80d5af89a237540947ef98353c36c0ffcd2d7566f4b"
   }
  },
- "generated_utc": "2026-11-07T18:44:54Z",
+ "generated_utc": "2026-11-07T21:48:48Z",
  "league": "ncaab",
- "refreshed_utc": "2026-11-07T18:44:54Z",
+ "refreshed_utc": "2026-11-07T21:48:48Z",
  "title": "NCAA men's basketball (D1)"
 }
