@@ -9747,3 +9747,15 @@
 {"credits": 2, "days_from": 3, "events": 7, "kind": "poll", "observed_utc": "2026-11-07T07:32:15.774380+00:00", "sport_key": "basketball_nbl"}
 {"away_score": 0.0, "away_team": "Wellington Phoenix FC", "commence_time": "2026-11-07T05:00:00Z", "completed": true, "event_id": "deb167291e30fad7203968083b27bfb6", "home_score": 0.0, "home_team": "Auckland FC", "kind": "score", "last_update": "2026-11-07T07:32:16Z", "observed_utc": "2026-11-07T07:32:15.774380+00:00", "outcome": "draw", "scores": [{"name": "Auckland FC", "score": "0"}, {"name": "Wellington Phoenix FC", "score": "0"}], "sport_key": "soccer_australia_aleague"}
 {"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-07T07:32:15.774380+00:00", "sport_key": "soccer_australia_aleague"}
+{"credits": 2, "days_from": 3, "events": 15, "kind": "poll", "observed_utc": "2026-11-07T08:32:24.885696+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-07T08:32:24.885696+00:00", "sport_key": "soccer_spain_copa_del_rey"}
+{"credits": 2, "days_from": 3, "events": 56, "kind": "poll", "observed_utc": "2026-11-07T08:32:24.885696+00:00", "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 3, "kind": "poll", "observed_utc": "2026-11-07T08:32:24.885696+00:00", "sport_key": "cricket_test_match"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-07T08:32:24.885696+00:00", "sport_key": "baseball_kbo"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-07T08:32:24.885696+00:00", "sport_key": "aussierules_aflw"}
+{"credits": 2, "days_from": 3, "events": 5, "kind": "poll", "observed_utc": "2026-11-07T08:32:24.885696+00:00", "sport_key": "soccer_korea_kleague1"}
+{"away_score": 28.0, "away_team": "TCU Horned Frogs", "commence_time": "2026-11-07T03:30:00Z", "completed": true, "event_id": "722ed661705df150a38e7786949ce241", "home_score": 29.0, "home_team": "Arizona Wildcats", "kind": "score", "last_update": "2026-11-07T08:32:26Z", "observed_utc": "2026-11-07T08:32:24.885696+00:00", "outcome": "home", "scores": [{"name": "Arizona Wildcats", "score": "29"}, {"name": "TCU Horned Frogs", "score": "28"}], "sport_key": "americanfootball_ncaaf"}
+{"credits": 2, "days_from": 3, "events": 76, "kind": "poll", "observed_utc": "2026-11-07T08:32:24.885696+00:00", "sport_key": "americanfootball_ncaaf"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-07T08:32:24.885696+00:00", "sport_key": "cricket_odi"}
+{"credits": 2, "days_from": 3, "events": 11, "kind": "poll", "observed_utc": "2026-11-07T08:32:24.885696+00:00", "sport_key": "soccer_spain_segunda_division"}
+{"errors": [], "events": 1, "family": "MMA", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-07T08:32:28.309870Z", "source": "espn_mma", "unmatched": 1, "unmatched_ids": ["993483a26dc2df2e593200a0d3c9dee9"], "void": 0, "written": 0}
