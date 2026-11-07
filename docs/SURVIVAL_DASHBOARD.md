@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-07 16:48Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-07 17:15Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -153,7 +153,7 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 - 2026-11-07 (8:30 am PT run): no game in window (no Saturday NFL; MLB season over). Nothing new to grade.
 - Production deploys resumed: three successful deploy-prod runs 14:11Z to 16:17Z; the 16:17Z one passed its health check.
-- Production /health returned 503 from 16:42Z through 16:50Z (three probes, about 37 s each). Owner check needed.
+- Production /health returned 503 from 16:42Z to at least 16:49Z, then 200 again at 17:15Z. Cause not verified.
 - Tests green (23:41Z 11-06). Daily loop red again (15:57Z) on the post-season MLB slate.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
