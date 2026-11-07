@@ -30940,3 +30940,13 @@
 {"budget_band": "allsports_props", "caller": "allsports_props.t30m", "credits_remaining": 90992, "credits_used_last": 4, "utc": "2026-11-07T20:04:39.927348Z"}
 {"budget_band": "allsports_props", "caller": "allsports_props.t30m", "credits_remaining": 90991, "credits_used_last": 1, "utc": "2026-11-07T20:04:39.927348Z"}
 {"budget_band": "allsports_props", "caller": "allsports_props.t2h", "credits_remaining": 90990, "credits_used_last": 1, "utc": "2026-11-07T20:04:39.927348Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 90990, "credits_used_last": 0, "utc": "2026-11-07T20:15:56.860680Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 90990, "credits_used_last": 0, "utc": "2026-11-07T20:15:59.684751Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 90990, "credits_used_last": 0, "utc": "2026-11-07T20:16:00.026038Z"}
+{"budget_band": "live_capture", "caller": "mma_capture.run", "credits_remaining": 90989, "credits_used_last": 0, "utc": "2026-11-07T20:17:18.550375Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t30m", "credits_remaining": 90985, "credits_used_last": 4, "utc": "2026-11-07T20:17:36.554855Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t2h", "credits_remaining": 90980, "credits_used_last": 5, "utc": "2026-11-07T20:17:36.554855Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t2h", "credits_remaining": 90975, "credits_used_last": 5, "utc": "2026-11-07T20:17:36.554855Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t6h", "credits_remaining": 90970, "credits_used_last": 5, "utc": "2026-11-07T20:17:36.554855Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t6h", "credits_remaining": 90965, "credits_used_last": 5, "utc": "2026-11-07T20:17:36.554855Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t6h", "credits_remaining": 90960, "credits_used_last": 5, "utc": "2026-11-07T20:17:36.554855Z"}
