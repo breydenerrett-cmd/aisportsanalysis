@@ -80,6 +80,23 @@ class TheSplit(unittest.TestCase):
         self.assertEqual(board_split._sport_of('{"sport": "nhl"}'), board_split.ANY)       # spaced key: the reader decides
         self.assertEqual(board_split._sport_of('{"sport":"../etc"}'), board_split.ANY)
 
+    def test_the_child_process_writes_the_same_split_as_the_pass_in_process(self):
+        lo, hi = "2026-11-04", "2026-11-08"
+        here = board_split.ensure(lo, hi)
+        want = {p.name: p.read_text(encoding="utf-8") for p in here.iterdir()}
+        import shutil
+        shutil.rmtree(here)
+        with mock.patch.object(board_split.subprocess, "run", wraps=board_split.subprocess.run) as ran:
+            child = board_split.ensure(lo, hi, child=True)
+        self.assertEqual(ran.call_count, 1)
+        self.assertEqual({p.name: p.read_text(encoding="utf-8") for p in child.iterdir()}, want)
+
+    def test_a_failed_child_is_an_error_not_a_missing_split(self):
+        with mock.patch.object(board_split, "_run_child", side_effect=OSError("board split child exited 1: boom")):
+            with self.assertRaises(OSError):
+                board_split.ensure("2026-11-04", "2026-11-08", child=True)
+        self.assertFalse(board_split.ready("2026-11-04", "2026-11-08"))
+
     def test_start_runs_in_the_background_and_reports_ready(self):
         lo, hi = "2026-11-04", "2026-11-08"
         self.assertFalse(board_split.start(lo, hi))

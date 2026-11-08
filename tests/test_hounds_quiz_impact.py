@@ -206,3 +206,28 @@ class TheReplayNeverRunsInsideTheRequest(unittest.TestCase):
             self.assertEqual(again.exception.code, "impact_failed")
         self.assertIn("OSError", drill.impact_stats["last_error"])
 
+
+
+try:
+    import fastapi  # noqa: F401
+    HAS_FASTAPI_FOR_WARM = True
+except ImportError:
+    HAS_FASTAPI_FOR_WARM = False
+
+
+@unittest.skipUnless(HAS_FASTAPI_FOR_WARM, "fastapi not installed")
+class ThePreviewWarmerLeavesRoom(unittest.TestCase):
+    """2026-11-08: production restarted for memory twice in a row while the preview board was being warmed on top of its own warm-up."""
+
+    def test_it_skips_when_the_process_is_already_large_and_builds_when_there_is_room(self):
+        from api import health, hounds_create
+        built = []
+        with mock.patch.object(hounds_create, "_slate_for", lambda d, p: built.append(d)):
+            with mock.patch.object(health, "_memory_mb", lambda: {"rss_mb": hounds_create.PREVIEW_WARM_MAX_RSS_MB + 1}):
+                self.assertFalse(hounds_create.warm_preview_slate())
+            self.assertEqual(built, [])
+            with mock.patch.object(health, "_memory_mb", lambda: {"rss_mb": 300.0}):
+                self.assertTrue(hounds_create.warm_preview_slate())
+            with mock.patch.object(health, "_memory_mb", lambda: {"rss_mb": None}):      # no /proc (a laptop): build
+                self.assertTrue(hounds_create.warm_preview_slate())
+        self.assertEqual(len(built), 2)

@@ -705,7 +705,7 @@ def _impact_loop() -> None:
         try:
             from src.hounds.interact import board_split
             first, last = _span(7, now)
-            board_split.ensure(_shift(first, -1), _shift(last, 1))     # blocking here is fine: this is the worker, not a request
+            board_split.ensure(_shift(first, -1), _shift(last, 1), child=True)   # blocking is fine here (the worker); the pass is a child process
             _replay_impact(todo, now, [None] * (max(t[0] for t in todo) + 1), {})
         except Exception as exc:  # noqa: BLE001 -- reported to the page as "not available", tried again after a minute
             err = f"{type(exc).__name__}: {exc}"[:200]
