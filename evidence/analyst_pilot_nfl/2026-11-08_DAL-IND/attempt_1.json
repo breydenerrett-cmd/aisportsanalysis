@@ -1,0 +1,128 @@
+{
+  "summary": "Dallas is the better side on the numbers we have, but I pass on all three markets. Indianapolis has lost four straight, its last three games came by a margin of -15.6667 per game, and its season turnover margin is -1.375 per game. Dallas scores 27.375 points per game. Even so, the moneyline on Dallas is -218 at best, which I will not take, and the books' own number for Indianapolis is 0.3277, so +203 is a fair price for a team in this form, not a bargain. The spread of Dallas -4.5 has not moved from where it was first captured, and the books split it almost exactly even at 0.501, so I see no reason in points that the number is wrong. The total of 51.5 is up from 51.0 when first captured. Dallas allows 26.625 points per game and Indianapolis allows 27.75, but Indianapolis scores only 20.125, and the price already holds that. Missing from what we have: weather, the roof, and any quarterback news after the schedule's projections.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "DAL",
+      "verdict": "PASS",
+      "price": -218,
+      "book": "draftkings",
+      "fair_estimate": 0.67,
+      "confidence": "medium",
+      "reasons": [
+        {
+          "claim": "Dallas is the clear favourite, but its best price is -218, which is past the -200 limit, so it cannot be taken at any quote we have.",
+          "evidence": [
+            { "path": "markets.moneyline.options[0].best.price", "value": -218 },
+            { "path": "markets.moneyline.options[0].fair_probability", "value": 0.6723 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Indianapolis is in poor form: lost four straight and a margin of -15.6667 per game over the last 3 games, so the books making Dallas the favourite looks right.",
+          "evidence": [
+            { "path": "sections.home.values.form.last_3.margin_per_game", "value": -15.6667 },
+            { "path": "sections.home.values.streak.length", "value": 4 },
+            { "path": "sections.home.values.streak.type", "value": "L" }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The other side, Indianapolis at +203, is the books' 0.3277 chance for a team with a season turnover margin of -1.375 per game, so I see nothing that says the price is too long.",
+          "evidence": [
+            { "path": "markets.moneyline.options[1].best.price", "value": 203 },
+            { "path": "markets.moneyline.options[1].fair_probability", "value": 0.3277 },
+            { "path": "sections.home.values.form.season_to_date.turnover_margin.value", "value": -1.375 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A quarterback change for Dallas away from Dak Prescott, or Indianapolis moving to +205 or better with no new bad news, would make Indianapolis worth a look.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "DAL -4.5",
+      "verdict": "PASS",
+      "price": 100,
+      "book": "lowvig",
+      "fair_estimate": 0.49,
+      "confidence": "medium",
+      "reasons": [
+        {
+          "claim": "The books split Dallas -4.5 almost exactly even, and the number has not moved from the -4.5 first captured, so the market is probably right about the margin.",
+          "evidence": [
+            { "path": "markets.spread.options[0].fair_probability", "value": 0.501 },
+            { "path": "markets.spread.context.away_number_first_captured", "value": -4.5 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Dallas is better on the season margin per game of 0.75 against Indianapolis at -7.625, but that gap is what a number near the key number of 6 already prices, so it is not a reason the number is wrong in points.",
+          "evidence": [
+            { "path": "sections.away.values.form.season_to_date.margin_per_game", "value": 0.75 },
+            { "path": "sections.home.values.form.season_to_date.margin_per_game", "value": -7.625 },
+            { "path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": -8.375 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Dallas also has a long injury list of 15 players and a wide receiver out, and travels 777.2 miles, so the case for laying the points is not clean either.",
+          "evidence": [
+            { "path": "sections.away.values.injuries.players_listed", "value": 15 },
+            { "path": "sections.away.values.travel.miles_from_home_base", "value": 777.2 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 104,
+      "what_would_change_it": "Dallas dropping to -3.5 with the same quarterback, or Dallas -4.5 offered at +104 or better, would be worth taking another look.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 51.5",
+      "verdict": "PASS",
+      "price": -108,
+      "book": "draftkings",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books have Over and Under about even at 0.5013, and the total sits at 51.5 after first being captured at 51.0, so the price has moved a little towards Over without any clear reason in what we have.",
+          "evidence": [
+            { "path": "markets.total.options[0].fair_probability", "value": 0.5013 },
+            { "path": "markets.total.context.number_first_captured", "value": 51.0 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both defences allow a lot, 26.625 points per game for Dallas and 27.75 for Indianapolis, but Indianapolis scores only 20.125 per game with 4.4875 yards per play, so the price already holds both sides of the argument.",
+          "evidence": [
+            { "path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 26.625 },
+            { "path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 27.75 },
+            { "path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 20.125 },
+            { "path": "sections.home.values.form.season_to_date.yards_per_play.value", "value": 4.4875 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We cannot see the weather or the roof for this outdoor-or-indoor question, and a quarterback change could move the total, so I do not lean either way.",
+          "evidence": [
+            { "path": "missing[2].item", "value": "weather" },
+            { "path": "missing[1].item", "value": "venue.roof" }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A weather report showing strong wind or cold, or a quarterback ruled out for either team, would give a reason to lean on the total.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

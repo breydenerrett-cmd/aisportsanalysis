@@ -1,0 +1,23 @@
+{
+  "sport": "nfl",
+  "game_id": "2026_09_DET_MIA",
+  "date": "2026-11-08",
+  "away": "DET",
+  "home": "MIA",
+  "kickoff_utc": "2026-11-08T18:00:00Z",
+  "built_at": "2026-11-08T16:41:21Z",
+  "packet_hash": "7f629e0dcb176250611fadedf3aa8da2e778accfacbf9f26c9508948f79cec98",
+  "prompt_version": "analyst_prompt_nfl_v1",
+  "prompt_hash": "8b80fc0cc2622da7497bed03b851d3934b8d687a6ca9c5a17d3eeb2d1c56ea7b",
+  "token_estimate": 9682,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "spread",
+    "total"
+  ],
+  "missing_items": 2,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "nfl_store+odds_multibook"
+}

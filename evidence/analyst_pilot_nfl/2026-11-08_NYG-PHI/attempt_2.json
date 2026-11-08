@@ -1,0 +1,120 @@
+{
+  "summary": "I lean New York on the moneyline at -155 and pass on the spread and the total. Philadelphia has lost six straight, has two wins and six losses, and scores 17.125 points per game while allowing 25.25. Joe Milton III is projected to start with one prior start in the data, replacing Tanner McKee, and three wide receivers, including DeVonta Smith, are listed out. New York comes off a bye with a season margin of 0.2857 per game. The books already make New York the favorite, with a fair probability of 0.59, so my own number of 0.63 is a small step away that rests on the quarterback change and the receiver absences, which the price may already hold. New York's own turnover margin and a quarterback with one start for the team keep my confidence low. The spread sits on 3, a key number, with Philadelphia plus 3 at a fair probability of 0.5108, which is close to even, so I pass. The total of 37.5 has fair probability 0.5027 on the Over and the scoring numbers point both ways, so I pass. We cannot see weather for an outdoor game.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "NYG",
+      "verdict": "TAKE",
+      "price": -155,
+      "book": "lowvig",
+      "fair_estimate": 0.63,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Philadelphia has lost six in a row and its season margin is well below New York's, so the home side is the weaker team on the season numbers.",
+          "evidence": [
+            {"path": "sections.home.values.streak.length", "value": 6},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": -8.125},
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 0.2857}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Philadelphia projects a changed quarterback, Joe Milton III with one prior start in the data, and three of its wide receivers are listed out.",
+          "evidence": [
+            {"path": "sections.home.values.qb.listed_for_this_game.name", "value": "Joe Milton III"},
+            {"path": "sections.home.values.qb.listed_for_this_game.prior_starts_in_store", "value": 1},
+            {"path": "sections.home.values.injuries.by_position_group.WR.out", "value": 3}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "New York comes off a bye with 14 days since its last game, against 7 for Philadelphia, and is moving only a short distance.",
+          "evidence": [
+            {"path": "sections.away.values.rest.days_since_last_game", "value": 14},
+            {"path": "sections.home.values.rest.days_since_last_game", "value": 7}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -170,
+      "what_would_change_it": "Tanner McKee, who is listed questionable, being confirmed as Philadelphia's starter would flip this to a pass, as would the price moving to -170.",
+      "case_against": {
+        "claim": "Philadelphia has beaten New York in 8 of 11 meetings in the data, the quarterback New York projects has only one start with the team, and New York's turnover margin over the last three games is poor.",
+        "evidence": [
+          {"path": "sections.matchup.values.head_to_head.home_team_wins", "value": 8},
+          {"path": "sections.away.values.qb.listed_for_this_game.prior_starts_with_team", "value": 1},
+          {"path": "sections.away.values.form.last_3.turnover_margin.value", "value": -1.6667}
+        ],
+        "derived": []
+      }
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "PHI +3",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "williamhill_us",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The number is 3, a key number, and the books split almost evenly on the two sides, so the market looks close to right and I see no reason in the data that the number is off by a clear number of points.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5108},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4892},
+            {"path": "sections.reference.values.key_numbers", "value": "3,6,7,10,14"}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number has moved toward New York since it was first captured, so the books have already priced in some of the Philadelphia problems.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": -1.5},
+            {"path": "markets.spread.options[1].line", "value": -3.0}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed quarterback change for Philadelphia or the number moving off 3 would change how I see this market.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 37.5",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total opened higher and has come down to 37.5, and the books split almost evenly on Over and Under, so the price already holds the weak Philadelphia offense.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 39.5},
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5027},
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 17.125}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The scoring numbers point both ways: Philadelphia allows 25.25 points per game, which argues for the Over, while its offense gains only 4.4208 yards per play, which argues for the Under. Weather is missing for an outdoor game.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 25.25},
+            {"path": "sections.home.values.form.season_to_date.yards_per_play.value", "value": 4.4208},
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A forecast showing wind or cold, which the data does not hold, or a change at quarterback on either side would change this view.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

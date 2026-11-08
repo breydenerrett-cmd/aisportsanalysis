@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-07 21:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-08 16:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-7** |
+| Days until 2026-10-31 | **-8** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-07 (1:30 pm PT run): no game in window (no Saturday NFL; no MLB games scheduled). Nothing new to grade.
-- Production up at 21:42Z: /health 200, memory peak 683.7 MB of 850, odds 0.6 h old, capture 5 min ago.
-- Production process restarted at 21:37Z, about 19 minutes after the last deploy finished; cause not verified.
-- Deploy-prod succeeded three times 19:12Z to 21:18Z. Tests green. Daily loop still red (15:57Z, post-season MLB slate).
+- 2026-11-08 (8:30 am PT run): NFL briefs prepared for DAL@IND, NYG@PHI, DET@MIA (10:00 am PT kickoffs); DET@MIA published clean on attempt 1.
+- Production up at 16:41Z: /health 200, memory peak 670.5 MB of 850, odds 0.5 h old, capture 12 min ago.
+- Deploy-prod 16:11Z failed its health check (app stopped answering after a page request; the check says likely out of memory); process restarted 16:23Z.
+- Tests green (newest push 22:15Z 11-07). Daily loop still red (post-season MLB slate step on the cowork branch).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
