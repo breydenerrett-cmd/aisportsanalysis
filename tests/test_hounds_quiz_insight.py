@@ -155,6 +155,9 @@ class TheChecks(unittest.TestCase):
         none = insight.analyse(res, {}, None)
         self.assertIn("could not replay", none["will_do"][1])
         self.assertFalse(none["replay"])
+        # 2026-11-08 live: with no replay it also said it had checked the last 7 days of boards. It must not claim a check it skipped.
+        if not none["watch_out"]:
+            self.assertNotIn("against the last 7 days", " ".join(none["will_do"]))
 
     def test_all_the_copy_follows_the_member_facing_rules(self):
         res = composed({"sports": ["NHL"], "personality": "stats_nerd", "markets": ["moneyline", "total"], "bets_per_day": 5, "tagline": "NFL house"})

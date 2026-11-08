@@ -105,7 +105,9 @@ MAX_CALLBACK_BYTES = 64 * 1024
 # One slate (the day's boards, facts and game keys) shared by every preview of that date. Building it
 # holds the process-wide build gate (SingleFlightTTLCache does), so a preview is never the second heavy
 # thing running on the 1 GB machine.
-_slate_cache = freshness.SingleFlightTTLCache(ttl_s=120.0, stale_while_revalidate_s=300.0)
+# The preview's board. The odds store changes only at a deploy (production makes no odds calls), so a built board is served for up to
+# 12 hours past its 15-minute TTL while ONE background rebuild runs; warm_preview_slate (api/app.py) keeps today's ready.
+_slate_cache = freshness.SingleFlightTTLCache(ttl_s=900.0, stale_while_revalidate_s=12 * 3600.0)
 
 
 # ---------------------------------------------------------------------------
@@ -568,6 +570,14 @@ def _slate_for(date: str, with_props: bool) -> "user_engine_v2.Slate":
         ("slate", date, with_props),
         lambda: user_engine_v2.build_slate(date, user_spec.SPORTS, with_props=with_props))
     return slate
+
+
+def warm_preview_slate() -> None:
+    """Build (or refresh in the background) today's preview board. Never raises."""
+    try:
+        _slate_for(_eastern_today(_now()), False)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 @router.post("/hounds/builder/preview")

@@ -601,11 +601,12 @@ def warm_impact_boards(now: Optional[datetime] = None) -> bool:
         return False
 
 
-def impact_windows(specs: list, *, now: Optional[datetime] = None, **inject) -> list:
+def impact_windows(specs: list, *, now: Optional[datetime] = None, wait_s: Optional[float] = None, **inject) -> list:
     """For each spec, its 1/3/7-day windows (``{1: {...}, 3: {...}, 7: {...}}``), or None for a spec that cannot be replayed (a Gematria
     hound is forward-only). Everything not remembered is replayed in ONE 7-day pass under ONE take of the process-wide slot, so the
     meter costs one pass whether it shows one spec or the spec and the one before it. Read-only: nothing is written or counted.
-    Raises ``DrillError('drill_busy')`` when another drill holds the slot."""
+    Outside tests the replay runs on one background worker: the call waits up to ``wait_s`` (default ``IMPACT_WAIT_S``) and then raises
+    ``DrillError('board_warming')`` (503, retry in a few seconds) until the answer is remembered, or ``'impact_failed'`` when it failed."""
     now = now or common.now_utc()
     today = common.eastern_date(now)
     norms = [spec_from_request(raw) for raw in specs]
@@ -623,16 +624,113 @@ def impact_windows(specs: list, *, now: Optional[datetime] = None, **inject) -> 
         todo.append((i, key, {"id": f"impact-{i}-" + user_spec.spec_hash(norm)[:8], "spec": norm}))
     if not todo:
         return out
+    if inject:                                    # tests hand in their boards: replay here, synchronously
+        _replay_impact(todo, now, out, inject)
+        return out
+    # Production never replays inside the request (2026-11-08: on the 2-CPU machine the replay outlasted the page's 45 s wait even
+    # over the split boards). The replay runs on the one impact worker; the request waits a little for it, then says "still checking"
+    # (503 board_warming with the seconds to wait) and the page asks again, by which time the answer is remembered.
+    events = _enqueue_impact(todo, now)
+    deadline = time.monotonic() + max(0.0, wait_s if wait_s is not None else IMPACT_WAIT_S)
+    for ev in events:
+        ev.wait(max(0.0, deadline - time.monotonic()))
+    missing = False
+    failed = False
+    with _cache_lock:
+        for i, key, _hound in todo:
+            hit = _impact_cache.get(key)
+            if hit:
+                out[i] = hit[1]
+                continue
+            state = _impact_jobs.get(key)
+            if state and state.get("failed"):
+                failed = True
+            missing = True
+    if failed:
+        raise DrillError("impact_failed", "last week's boards could not be replayed right now", 503)
+    if missing:
+        raise DrillError("board_warming", "replaying last week's boards; try again in a moment", 503, retry_after=IMPACT_RETRY_AFTER_S)
+    return out
+
+
+IMPACT_WAIT_S = 10.0              # how long the meter's request waits for the impact worker before saying "still checking"
+IMPACT_RETRY_AFTER_S = 4          # the page's retry while the worker replays
+IMPACT_FAILED_TTL_S = 60.0        # a failed replay is reported for this long, then tried again
+IMPACT_QUEUE_MAX = 16
+_impact_jobs: dict = {}           # key -> {"event": Event, "failed": bool, "at": monotonic}
+_impact_queue: list = []          # pending jobs, oldest first: (todo, now)
+_impact_cv = threading.Condition(_cache_lock)
+_impact_worker: Optional[threading.Thread] = None
+impact_stats: dict = {"runs": 0, "failures": 0, "last_seconds": None, "last_error": None, "queued": 0}
+
+
+def _enqueue_impact(todo: list, now: datetime) -> list:
+    """Queue the specs not already being replayed; return the events that fire when each spec's replay is done."""
+    global _impact_worker
+    events, fresh = [], []
+    with _impact_cv:
+        for item in todo:
+            key = item[1]
+            state = _impact_jobs.get(key)
+            if state and state.get("failed") and time.monotonic() - state["at"] >= IMPACT_FAILED_TTL_S:
+                state = None
+            if state is None:
+                state = {"event": threading.Event(), "failed": False, "at": time.monotonic()}
+                _impact_jobs[key] = state
+                fresh.append(item)
+            events.append(state["event"])
+        if fresh:
+            if len(_impact_queue) >= IMPACT_QUEUE_MAX:
+                for item in fresh:
+                    _impact_jobs.pop(item[1], None)
+                raise DrillError("drill_busy", "many replays are waiting; try again in a moment", 429, retry_after=BUSY_RETRY_AFTER_S)
+            _impact_queue.append((fresh, now))
+            impact_stats["queued"] = len(_impact_queue)
+            _impact_cv.notify()
+        if _impact_worker is None or not _impact_worker.is_alive():
+            _impact_worker = threading.Thread(target=_impact_loop, name="impact-replay", daemon=True)
+            _impact_worker.start()
+    return events
+
+
+def _impact_loop() -> None:
+    while True:
+        with _impact_cv:
+            while not _impact_queue:
+                _impact_cv.wait()
+            todo, now = _impact_queue.pop(0)
+            impact_stats["queued"] = len(_impact_queue)
+        t0 = time.monotonic()
+        err = None
+        try:
+            from src.hounds.interact import board_split
+            first, last = _span(7, now)
+            board_split.ensure(_shift(first, -1), _shift(last, 1))     # blocking here is fine: this is the worker, not a request
+            _replay_impact(todo, now, [None] * (max(t[0] for t in todo) + 1), {})
+        except Exception as exc:  # noqa: BLE001 -- reported to the page as "not available", tried again after a minute
+            err = f"{type(exc).__name__}: {exc}"[:200]
+        with _impact_cv:
+            impact_stats["runs"] += 1
+            impact_stats["last_seconds"] = round(time.monotonic() - t0, 2)
+            if err:
+                impact_stats["failures"] += 1
+                impact_stats["last_error"] = err
+            for _i, key, _hound in todo:
+                state = _impact_jobs.get(key)
+                if state is None:
+                    continue
+                if err or key not in _impact_cache:
+                    state["failed"] = True
+                    state["at"] = time.monotonic()
+                else:
+                    _impact_jobs.pop(key, None)
+                state["event"].set()
+
+
+def _replay_impact(todo: list, now: datetime, out: list, inject: dict) -> None:
+    """ONE 7-day pass for every spec in ``todo`` under ONE take of the drill slot; fills ``out`` and (outside tests) the cache."""
     first, last = _span(7, now)
-    if not inject:
-        # The quiz never pays for a whole-store scan inside a request (2026-11-08: on production that scan outlasted the page's
-        # timeout and starved the quiz's other calls). Until the week's boards are split by sport, say so and start the split.
-        from src.hounds.interact import board_split
-        lo, hi = _shift(first, -1), _shift(last, 1)
-        if not board_split.ready(lo, hi) and not board_split.start(lo, hi):
-            raise DrillError("board_warming", "getting last week's boards ready; try again in a moment", 503,
-                             retry_after=WARMING_RETRY_AFTER_S)
-    if not _drill_slot.acquire(blocking=True, timeout=SLOT_WAIT_S):
+    if not _drill_slot.acquire(blocking=True, timeout=SLOT_WAIT_S if inject else 300.0):
         raise DrillError("drill_busy", "another drill is running; try again in a moment", 429, retry_after=BUSY_RETRY_AFTER_S)
     from src.hounds.quiz import boardstats
     stats = boardstats.BoardStats(first, last)
@@ -651,7 +749,6 @@ def impact_windows(specs: list, *, now: Optional[datetime] = None, **inject) -> 
                 if len(_impact_cache) >= CACHE_MAX:
                     _impact_cache.pop(next(iter(_impact_cache)))
                 _impact_cache[key] = (time.monotonic(), out[i])
-    return out
 
 
 def peek(dog: common.Dog, days: int, now: Optional[datetime] = None) -> Optional[dict]:

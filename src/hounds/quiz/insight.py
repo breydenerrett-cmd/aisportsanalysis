@@ -36,6 +36,7 @@ from src.hounds.quiz import impact as quiz_impact
 from src.hounds.quiz import library as lib_mod
 
 MAX_FINDINGS = 6
+INSIGHT_WAIT_S = 20.0             # the check waits this long for the week's replay (background worker), then speaks without it
 _GAME_MARKETS = ("moneyline", "spread", "total")
 _WORD = {"moneyline": "moneylines", "spread": "spreads", "total": "totals"}
 
@@ -220,8 +221,10 @@ def will_do(result: Mapping, windows: Optional[Mapping], findings: list) -> list
         sentences.append("We could not replay the last 7 days just now, so these notes come from its rules alone.")
     if findings:
         sentences.append(f"{_plural(len(findings), 'thing')} to watch {'is' if len(findings) == 1 else 'are'} listed below. Nothing blocks you from keeping it.")
-    else:
+    elif windows and windows.get(7) is not None:
         sentences.append("We checked its sports, markets, prices, books and daily cap against the last 7 days of boards and found nothing off.")
+    else:
+        sentences.append("Its rules read cleanly: nothing in its sports, markets, prices or daily cap needs a second look.")
     return sentences
 
 
@@ -262,7 +265,7 @@ def check(answers: Any, english_draft: Any = None, english_text: Any = None, *, 
     if spec and not user_spec.is_gematria(spec):
         replayed, _note = quiz_impact.capped(spec)
         try:
-            windows = drill.impact_windows([replayed], now=now, **inject)[0]
+            windows = drill.impact_windows([replayed], now=now, wait_s=INSIGHT_WAIT_S, **inject)[0]
         except drill.DrillError:
             windows = None
         except Exception:  # noqa: BLE001 -- boards that cannot be read: the check goes on without them

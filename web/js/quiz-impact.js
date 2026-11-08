@@ -19,7 +19,7 @@ export const DEBOUNCE_MS = 600;
 export const CHECKING_TEXT = "Checking the last 7 days...";
 export const STILL_TEXT = "Still checking the last 7 days...";
 export const UNAVAILABLE_TEXT = "The last 7 days are not available right now. Backtest this on the reveal instead.";
-export const MAX_RETRIES = 6;
+export const MAX_RETRIES = 12;        // each round is the server's ~10 s wait for its replay worker plus the retry_after it names
 
 /** Whether a payload has anything to measure: at least a sport or a style. */
 export function hasSomething(payload) {
