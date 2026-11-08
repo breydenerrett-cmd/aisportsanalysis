@@ -212,10 +212,12 @@ class TheQuizDoors(unittest.TestCase):
         self.assertEqual(self.client.post("/hounds/quiz/insight", json={"answers": {}, "english_text": "x" * 700}).status_code, 422)
         self.assertEqual(self.client.post("/hounds/quiz/insight", json={"answers": "nope"}).status_code, 422)
 
-    def test_impact_shares_the_builder_previews_allowance(self):
+    def test_impact_has_its_own_allowance(self):
         source = (REPO / "api" / "hounds_quiz.py").read_text(encoding="utf-8")
         self.assertIn("from api.hounds_create import _rate_limit_preview", source)
-        self.assertRegex(source, r"def quiz_impact_meter\([^)]*Depends\(_rate_limit_preview\)")
+        # its own allowance since 2026-11-08: the meter's retries must never use up the reveal preview's 20 a minute
+        self.assertRegex(source, r"def quiz_impact_meter\([^)]*Depends\(_rate_limit_impact\)")
+        self.assertNotRegex(source, r"def quiz_impact_meter\([^)]*Depends\(_rate_limit_preview\)")
 
 
 if __name__ == "__main__":

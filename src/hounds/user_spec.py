@@ -177,8 +177,13 @@ def _extra_blocklist() -> tuple:
     return ()
 
 
-def text_problem(text: str) -> Optional[str]:
-    """Why this text may not appear on a public page, or None. Name and tagline both use it."""
+_LEAGUE_WORDS = frozenset({"mlb", "nfl", "nba", "nhl", "ufc"})     # fine in a catchphrase ("Lives for NHL dogs"), never in a name
+
+
+def text_problem(text: str, *, allow_leagues: bool = False) -> Optional[str]:
+    """Why this text may not appear on a public page, or None. Name and tagline both use it. ``allow_leagues`` (the tagline,
+    2026-11-08): a league's abbreviation is a reserved word in a NAME, where "NHL Hound" reads as official, but a hockey hound's
+    catchphrase naming the NHL was being blanked, which read as a broken quiz."""
     squashed = _fold(text)
     words = _words(text)
     for bad in _BLOCK_SUBSTRINGS + _extra_blocklist():
@@ -189,8 +194,10 @@ def text_problem(text: str) -> Optional[str]:
     for brand in _RESERVED_SUBSTRINGS:
         if brand in squashed:
             return "uses a protected brand or book name"
-    if any(w in _RESERVED_WORDS for w in words):
-        return "uses a reserved word"
+    reserved = _RESERVED_WORDS - _LEAGUE_WORDS if allow_leagues else _RESERVED_WORDS
+    hit = next((w for w in words if w in reserved), None)
+    if hit:
+        return f'uses the reserved word "{hit}"'
     return None
 
 
@@ -324,7 +331,7 @@ def _check_tagline(raw: Mapping, errors: dict, key: str = "tagline", maximum: in
     elif not _TAGLINE_OK_RE.match(tagline):
         errors[key] = "uses characters that are not allowed"
     else:
-        problem = text_problem(tagline)
+        problem = text_problem(tagline, allow_leagues=True)
         if problem:
             errors[key] = problem
     return tagline

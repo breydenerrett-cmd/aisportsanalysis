@@ -67,6 +67,8 @@ _cache_lock = threading.Lock()
 # request does not queue behind it, because queued requests pile up in threads: it is told to come back.
 _drill_slot = threading.Lock()
 BUSY_RETRY_AFTER_S = 30
+WARMING_RETRY_AFTER_S = 15       # the quiz meter's retry while the week's boards are being split by sport (board_split)
+SLOT_WAIT_S = 8.0                # the quiz meter waits this long for the one-drill slot before saying busy (its replay is ~1 s once split)
 
 
 # A member's Gematria-style hound weighs a game once, at the lock, like the house Gematria Hound, and the house hound refuses a
@@ -160,10 +162,21 @@ def _window_rows(first: str, last: str, sports) -> dict:
         if hit is None:
             hit = stamps[text] = user_engine._utc(text)
         return hit
+    from src.hounds.interact import board_split
+
+    def rows_of(sport, since, until):
+        # The sport's own slice of the store when the split for this window is on disk (board_split: one sport's lines, read with
+        # the same exact filters), else the whole store as before.
+        try:
+            files = board_split.path_for(sport, first, last)
+        except Exception:  # noqa: BLE001
+            files = None
+        for src in (files if files is not None else [snapshots.DEFAULT_MULTIBOOK_PATH]):
+            yield from snapshots.iter_multibook(src, sport=sport, since=since, until=until)
     for sport in sorted({s.lower() for s in sports}):
         since = snapshots.window_for_date(first, sport)[0]
         until = snapshots.window_for_date(last, sport)[1]
-        for row in snapshots.iter_multibook(snapshots.DEFAULT_MULTIBOOK_PATH, sport=sport, since=since, until=until):
+        for row in rows_of(sport, since, until):
             raw = row.get("commence_time")
             start = parsed(raw)
             observed = parsed(row.get("observed_utc"))
@@ -184,12 +197,32 @@ def _shift(day: str, n: int) -> str:
     return (datetime.fromisoformat(day) + timedelta(days=n)).date().isoformat()
 
 
+_nfl_results_memo: dict = {}
+
+
 def _local_nfl_results():
-    """date -> {(away_code, home_code): scores} from the local games store (no network)."""
+    """date -> {(away_code, home_code): scores} from the local games store (no network). Remembered per file size and mtime: it was
+    0.8 s of every replay (2026-11-08 profile) and the file changes once a capture lands."""
     from src import paths
+    path = os.path.join(str(paths.repo_root()), "data", "datasvc", "nfl", "games.jsonl")
+    try:
+        st = os.stat(path)
+        stamp = (path, st.st_size, st.st_mtime)
+    except OSError:
+        stamp = None
+    hit = _nfl_results_memo.get("v")
+    if stamp is not None and hit and hit[0] == stamp:
+        return hit[1]
+    fn = _build_local_nfl_results(path)
+    if stamp is not None:
+        _nfl_results_memo["v"] = (stamp, fn)
+    return fn
+
+
+def _build_local_nfl_results(path):
     from src.hounds.pack import base
-    from src.sports import nfl_teams
-    rows = base.read_nfl_games(os.path.join(str(paths.repo_root()), "data", "datasvc", "nfl", "games.jsonl"))
+    from src.sports import nfl_teams  # noqa: F401
+    rows = base.read_nfl_games(path)
     by_date: dict = {}
     for g in rows:
         if g.get("status") != "final" or g.get("home_score") is None or g.get("away_score") is None:
@@ -557,6 +590,17 @@ def _windows_of(summary: dict, now: datetime) -> dict:
     return out
 
 
+def warm_impact_boards(now: Optional[datetime] = None) -> bool:
+    """Start splitting the impact meter's week of boards by sport (board_split) in the background, unless it is done or running.
+    True when it is ready now. Never raises: the quiz page and the server's startup call it on their way past."""
+    try:
+        from src.hounds.interact import board_split
+        first, last = _span(7, now or common.now_utc())
+        return board_split.start(_shift(first, -1), _shift(last, 1))
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def impact_windows(specs: list, *, now: Optional[datetime] = None, **inject) -> list:
     """For each spec, its 1/3/7-day windows (``{1: {...}, 3: {...}, 7: {...}}``), or None for a spec that cannot be replayed (a Gematria
     hound is forward-only). Everything not remembered is replayed in ONE 7-day pass under ONE take of the process-wide slot, so the
@@ -579,10 +623,18 @@ def impact_windows(specs: list, *, now: Optional[datetime] = None, **inject) -> 
         todo.append((i, key, {"id": f"impact-{i}-" + user_spec.spec_hash(norm)[:8], "spec": norm}))
     if not todo:
         return out
-    if not _drill_slot.acquire(blocking=False):
+    first, last = _span(7, now)
+    if not inject:
+        # The quiz never pays for a whole-store scan inside a request (2026-11-08: on production that scan outlasted the page's
+        # timeout and starved the quiz's other calls). Until the week's boards are split by sport, say so and start the split.
+        from src.hounds.interact import board_split
+        lo, hi = _shift(first, -1), _shift(last, 1)
+        if not board_split.ready(lo, hi) and not board_split.start(lo, hi):
+            raise DrillError("board_warming", "getting last week's boards ready; try again in a moment", 503,
+                             retry_after=WARMING_RETRY_AFTER_S)
+    if not _drill_slot.acquire(blocking=True, timeout=SLOT_WAIT_S):
         raise DrillError("drill_busy", "another drill is running; try again in a moment", 429, retry_after=BUSY_RETRY_AFTER_S)
     from src.hounds.quiz import boardstats
-    first, last = _span(7, now)
     stats = boardstats.BoardStats(first, last)
     try:
         got = run_user_many([t[2] for t in todo], 7, now=now, collector=stats, **inject)

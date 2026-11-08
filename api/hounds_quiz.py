@@ -12,7 +12,7 @@
                                 sentences) and "watch out" (findings, each a sentence and a fix action). Read-only; nothing blocks Keep.
     POST /hounds/quiz/impact    {answers, previous_answers?, english_draft?} -> what the answers so far would have done over the last 1, 3
                                 and 7 days of stored boards (one line each), and what this answer changed over 7 days. Open to
-                                signed-out visitors: read-only, nothing saved. Shares the builder preview's allowance.
+                                signed-out visitors: read-only, nothing saved. Its own allowance (40 a minute).
     POST /hounds/quiz/describe  {text} -> the "Describe it first" door: a draft from one sentence, what cannot be checked yet, and
                                 the follow-up questions the draft leaves open (src/hounds/quiz/describe.py)
 
@@ -100,6 +100,7 @@ def _taken_names() -> list:
 @router.get("/hounds/quiz/library")
 def quiz_library_read(response: Response, _rl: None = Depends(_rl_library)) -> dict:
     response.headers["Cache-Control"] = "public, max-age=300"
+    drill_mod.warm_impact_boards()          # someone opened the quiz: have last week's boards split by sport before the first answer
     try:
         out = quiz_library.public_library()
     except (OSError, ValueError, KeyError) as exc:
@@ -188,10 +189,18 @@ def quiz_pre_build_check(body: ComposeRequest, response: Response, _rl: None = D
     return out
 
 
+# The meter's own allowance (2026-11-08): it used the builder preview's 20 a minute, so a member tapping through the quiz (and the
+# meter's retries while the boards warm) could leave the reveal's "Would have bet today" refused.
+IMPACT_RATE_LIMIT_PER_MIN = 40
+_impact_limiter = ratelimit.FixedWindowLimiter(limit=IMPACT_RATE_LIMIT_PER_MIN, window_s=60.0)
+_rate_limit_impact = ratelimit.limiter_dependency(_impact_limiter)
+
+
 @router.post("/hounds/quiz/impact")
-def quiz_impact_meter(body: ImpactRequest, response: Response, _rl: None = Depends(_rate_limit_preview)) -> dict:
-    """The impact meter. The allowance is the builder preview's own (one shared bucket per address), the replay takes the drill's
-    one process-wide slot, and a busy slot is a plain 429 with the seconds to wait, never a failed quiz."""
+def quiz_impact_meter(body: ImpactRequest, response: Response, _rl: None = Depends(_rate_limit_impact)) -> dict:
+    """The impact meter. Its own allowance; the replay takes the drill's one process-wide slot (waiting a few seconds for it), reads
+    the week's boards split by sport (board_split), and while that split is being made answers 503 ``board_warming`` with the seconds
+    to wait. A busy slot is a 429 with the seconds to wait. Neither is a failed quiz: the page says it is still checking."""
     response.headers["Cache-Control"] = "no-store"
     try:
         out = quiz_impact.measure(body.answers, body.previous_answers, english_draft=body.english_draft)

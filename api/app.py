@@ -323,6 +323,20 @@ def _start_right_now_warmup() -> None:
     right_now.start_background_warmup()
 
 
+# The quiz's impact meter reads last week's boards split by sport (src/hounds/interact/board_split.py). Start that one streaming
+# pass after the cache warm-up has had its turn, so the first quiz answer after a deploy is not "still checking".
+@app.on_event("startup")
+def _start_impact_board_split() -> None:
+    import threading as _threading
+
+    def _later():
+        import time as _time
+        _time.sleep(90)
+        from src.hounds.interact import drill as _drill
+        _drill.warm_impact_boards()
+    _threading.Thread(target=_later, name="impact-board-split", daemon=True).start()
+
+
 # -- background data refresh -------------------------------------------------
 #
 # The pages read results / pitcher / bullpen / standings files in the image at
