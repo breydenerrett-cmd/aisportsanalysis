@@ -21412,3 +21412,11 @@
 {"commence_utc": "2026-11-09T03:30:00Z", "event_id": "4ae099679418665785677250529e9f9f", "kind": "phase", "observed_utc": "2026-11-08T11:00:46.836876Z", "phase": "t24h", "rows": 3, "sport_key": "cricket_test_match"}
 {"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T11:00:46.836876Z", "regions": ["au"], "rows": 16, "sport_key": "cricket_test_match", "stored": 13}
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T11:00:46.836876Z", "regions": ["us"], "rows": 8, "sport_key": "soccer_russia_premier_league", "stored": 8}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-08T17:16:17.243987Z", "observed_utc": "2026-11-08T11:16:17.243987Z", "sport_key": "basketball_euroleague"}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-11-08T17:16:17.243987Z", "observed_utc": "2026-11-08T11:16:17.243987Z", "sport_key": "cricket_odi"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-11-08T17:16:17.243987Z", "observed_utc": "2026-11-08T11:16:17.243987Z", "sport_key": "soccer_england_league1"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-08T17:16:17.243987Z", "observed_utc": "2026-11-08T11:16:17.243987Z", "sport_key": "soccer_england_league2"}
+{"commence_utc": "2026-11-08T13:15:00Z", "event_id": "2a545a674edbdb2648dff3becd841e0b", "kind": "phase", "observed_utc": "2026-11-08T11:16:17.243987Z", "phase": "t2h", "rows": 4, "sport_key": "soccer_russia_premier_league"}
+{"call_kind": "pregame", "credits": 2, "events": 4, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-08T11:16:17.243987Z", "regions": ["us"], "rows": 12, "sport_key": "soccer_russia_premier_league", "stored": 12}
+{"commence_utc": "2026-11-08T17:15:00Z", "event_id": "1564b836c58a5d41b3b07681dcda2a45", "kind": "phase", "observed_utc": "2026-11-08T11:16:17.243987Z", "phase": "t6h", "rows": 11, "sport_key": "soccer_fa_cup"}
+{"call_kind": "pregame", "credits": 2, "events": 5, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-08T11:16:17.243987Z", "regions": ["us"], "rows": 50, "sport_key": "soccer_fa_cup", "stored": 50}
