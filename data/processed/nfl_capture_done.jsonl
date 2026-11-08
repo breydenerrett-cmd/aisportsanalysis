@@ -599,3 +599,5 @@
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-08T13:51:27.386992Z", "phase": "refresh"}
 {"game_id": "2026_09_CIN_ATL", "observed_utc": "2026-11-08T14:17:38.450634Z", "phase": "t30m"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-08T14:47:08.609052Z", "phase": "refresh"}
+{"game_id": "2026_09_HOU_LAC", "observed_utc": "2026-11-08T15:06:54.684371Z", "phase": "t6h"}
+{"game_id": "2026_09_LV_SF", "observed_utc": "2026-11-08T15:06:54.684371Z", "phase": "t6h"}
