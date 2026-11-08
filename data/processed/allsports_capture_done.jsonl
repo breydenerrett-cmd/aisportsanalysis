@@ -22224,3 +22224,4 @@
 {"events": 0, "kind": "peek", "next_check_utc": "2026-11-09T03:49:36.443918Z", "observed_utc": "2026-11-08T21:49:36.443918Z", "sport_key": "soccer_poland_ekstraklasa"}
 {"events": 9, "kind": "peek", "next_check_utc": "2026-11-09T03:59:39.207986Z", "observed_utc": "2026-11-08T21:59:39.207986Z", "sport_key": "soccer_france_ligue_one"}
 {"events": 10, "kind": "peek", "next_check_utc": "2026-11-09T03:59:39.207986Z", "observed_utc": "2026-11-08T21:59:39.207986Z", "sport_key": "soccer_italy_serie_a"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-09T04:17:52.160563Z", "observed_utc": "2026-11-08T22:17:52.160563Z", "sport_key": "soccer_spain_la_liga"}
