@@ -624,3 +624,5 @@
 {"game_id": "2026_09_HOU_LAC", "observed_utc": "2026-11-08T19:10:40.876721Z", "phase": "t2h"}
 {"game_id": "2026_09_LV_SF", "observed_utc": "2026-11-08T19:10:40.876721Z", "phase": "t2h"}
 {"game_id": "2026_09_TB_CHI", "observed_utc": "2026-11-08T19:22:21.475356Z", "phase": "t6h"}
+{"game_id": "2026_09_GB_NE", "observed_utc": "2026-11-08T19:35:17.494674Z", "phase": "t2h"}
+{"game_id": "2026_09_ARI_SEA", "observed_utc": "2026-11-08T19:35:17.494674Z", "phase": "t2h"}
