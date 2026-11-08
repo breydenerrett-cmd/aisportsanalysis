@@ -2,10 +2,10 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2026.jsonl": {
-   "bytes": 92386,
-   "newest": "2026-11-08T08:37:38Z",
-   "records": 163,
-   "sha256": "43d33ce7b6c41444ecfefeb49365b939d2c0ab9257ff515a92594baa271e5829"
+   "bytes": 94060,
+   "newest": "2026-11-08T11:40:10Z",
+   "records": 166,
+   "sha256": "dda4a981eb7189b99ef305a648677aa6ad4c1c86f2c748f87d176bda6d915f21"
   },
   "standings_2026.jsonl": {
    "bytes": 42888,
@@ -26,8 +26,8 @@
    "sha256": "ca00410ccb3ed6fe7d987ec9eec7751148b99c6f09298290642c8dc2aa235e60"
   }
  },
- "generated_utc": "2026-11-08T08:37:39Z",
+ "generated_utc": "2026-11-08T11:40:12Z",
  "league": "ligue1",
- "refreshed_utc": "2026-11-08T08:37:39Z",
+ "refreshed_utc": "2026-11-08T11:40:12Z",
  "title": "Ligue 1"
 }
