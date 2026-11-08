@@ -119,9 +119,13 @@ def _tagline_findings(result: Mapping, answers: Mapping, out: list) -> None:
         noun = "catchphrase" if field == "tagline" else "name"
         typed = answers.get(field) if isinstance(answers, Mapping) else None
         terms = reserved_terms(typed)
+        if field == "tagline":
+            terms = [t for t in terms if t not in user_spec._LEAGUE_WORDS]      # a league name is fine in a catchphrase (user_spec)
+        kept = ((result.get("spec") or {}).get("tagline") or "") if field == "tagline" else ""
         if terms:
             quoted = " and ".join(f'"{t}"' for t in terms[:2])
-            text = (f"The {noun} uses {quoted}, which is reserved for the sites and leagues themselves, so it was left blank."
+            after = (f"its style" + chr(39) + f"s line \"{kept}\" is used instead.") if kept else "it was left blank."
+            text = (f"The {noun} uses {quoted}, which is reserved for the sites and leagues themselves, so {after}"
                     if field == "tagline" else f"The name uses {quoted}, which is reserved for the sites and leagues themselves, so a suggested name was used.")
         else:
             text = w["message"]

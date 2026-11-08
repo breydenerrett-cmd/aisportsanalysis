@@ -328,7 +328,7 @@ class NamesAndLooks(unittest.TestCase):
         self.assertEqual(C.compose({"personality": "chalk_eater"})["spec"]["tagline"], "Eats the chalk. Never -200 or worse.")
         bad = C.compose({"tagline": "fuck this"})
         self.assertIn("tagline_rejected", codes(bad))
-        self.assertEqual(bad["spec"]["tagline"], "")
+        self.assertEqual(bad["spec"]["tagline"], "Hunts plus-money underdogs.")    # the style's own line, never a blank (2026-11-08)
         self.assertEqual(C.compose({"tagline": "Good dog."})["spec"]["tagline"], "Good dog.")
 
     def test_the_look_follows_the_picks_and_stays_on_the_whitelist(self):

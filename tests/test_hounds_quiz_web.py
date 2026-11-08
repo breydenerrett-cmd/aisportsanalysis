@@ -888,15 +888,29 @@ class TheImpactMeter(unittest.TestCase):
         self.assertEqual(sent[1]["body"]["answers"]["sports"], ["MLB", "NBA"])
         self.assertEqual(sent[1]["body"]["previous_answers"]["sports"], ["MLB"])
 
-    def test_nothing_is_asked_before_the_first_answer_and_a_failing_meter_is_silent(self):
+    def test_nothing_is_asked_before_the_first_answer(self):
         out = quiz(self.routes(), actions=[TAKE], queries=[q("hidden", hook("quiz-impact"), "hidden")])
         self.assertEqual(posts_to(out, "/hounds/quiz/impact"), [])
         self.assertTrue(out["final"]["hidden"])
-        out = quiz(self.routes(**{"POST /hounds/quiz/impact": [429, {"detail": {"error": "drill_busy"}}]}),
+
+    def test_a_warming_or_busy_server_is_still_checking_never_a_blank(self):
+        # 2026-11-08 live check: the meter vanished on every refusal, so on production it never showed at all
+        for status, error in ((503, "board_warming"), (429, "drill_busy")):
+            out = quiz(self.routes(**{"POST /hounds/quiz/impact": [status, {"detail": {"error": error, "retry_after": 15}}]}),
+                       actions=[TAKE, dict(click(card("sports", "MLB")), wait=1000, label="m",
+                                           capture=IMPACT_Q + [q("wait", ".qz-impact__line--wait")])])
+            m = out["captures"]["m"]
+            self.assertEqual(m["lines"], [], error)
+            self.assertFalse(m["hidden"], error)
+            self.assertEqual(m["wait"], "Still checking the last 7 days...", error)
+
+    def test_a_meter_that_cannot_answer_says_so_plainly(self):
+        out = quiz(self.routes(**{"POST /hounds/quiz/impact": [500, {"detail": {"error": "impact_unavailable"}}]}),
                    actions=[TAKE, dict(click(card("sports", "MLB")), wait=1000, label="m", capture=IMPACT_Q)])
-        self.assertEqual(out["captures"]["m"]["lines"], [])
-        self.assertTrue(out["captures"]["m"]["hidden"])
-        self.assertFalse(out["crashed"] if "crashed" in out else False)
+        m = out["captures"]["m"]
+        self.assertEqual(m["lines"], [])
+        self.assertFalse(m["hidden"])
+        self.assertEqual(m["note"], "The last 7 days are not available right now. Backtest this on the reveal instead.")
 
     def test_going_back_to_an_answered_step_costs_no_new_request(self):
         out = quiz(self.routes(), actions=[TAKE, dict(click(card("sports", "MLB")), wait=1000), NEXT, dict(BACK, wait=300)])

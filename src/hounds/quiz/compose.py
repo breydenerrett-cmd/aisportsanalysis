@@ -583,9 +583,14 @@ def compose(answers: Any, *, taken_names: Iterable[str] = (), english_draft: Any
     tagline_errors: dict = {}
     user_spec._check_tagline({"tagline": tagline}, tagline_errors)
     if tagline_errors:
+        fallback = (pers or {}).get("tagline") or ""
+        fallback_errors: dict = {}
+        user_spec._check_tagline({"tagline": fallback}, fallback_errors)
+        fallback = "" if fallback_errors else fallback
         if ans.get("tagline"):
-            _warn(warnings, "tagline_rejected", f"The catchphrase {tagline_errors['tagline']}, so it was left blank.")
-        tagline = ""
+            _warn(warnings, "tagline_rejected", f"The catchphrase {tagline_errors['tagline']}, so "
+                  + (f"its style" + chr(39) + f"s line \"{fallback}\" is used instead. Edit it above." if fallback else "it was left blank. Edit it above."))
+        tagline = fallback
 
     raw = {"version": user_spec.SPEC_VERSION_V2, "name": name, "tagline": tagline, "color": color, "badge": badge,
            "lock_minutes": settings["lock_minutes"], "max_bets_per_day": settings["max_bets_per_day"],

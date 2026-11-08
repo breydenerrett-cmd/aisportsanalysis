@@ -692,7 +692,8 @@ function renderStep() {
 
 /** Keep the pressed state of every card in step with the answers without rebuilding (so nothing re-animates). */
 /** The impact meter (web/js/quiz-impact.js): what the answers so far would have done over the last 1, 3 and 7 days. */
-const meter = createMeter({ post: apiPost, getHost: () => q("quiz-impact") });
+const IMPACT_MS = 45000;                 // a replay waits a few seconds for the one-drill slot, then takes a few more on a small machine
+const meter = createMeter({ post: (path, body) => post(path, body, IMPACT_MS), getHost: () => q("quiz-impact") });
 
 function refreshImpact() {
   if (S.stage !== "quiz" || !q("quiz-impact")) return;
@@ -984,17 +985,29 @@ function renderResult() {
   }
   const globals = clearNode(q("reveal-globals"));
   for (const t of res.global_sentences || []) globals.appendChild(h("li", { "data-hook": "reveal-global", text: t }));
-  const warn = clearNode(q("reveal-warnings"));
-  const heads = (res.warnings || []).filter((w) => w.level !== "note");
-  const notes = (res.warnings || []).filter((w) => w.level === "note");
+  renderWarnings();
+  renderChosen();
+  if (S.saved) renderSaved();
+  syncKeep();
+}
+
+// Compose warnings the pre-build check already says, with a fix button, under "Watch out": once that check has answered they are
+// not repeated in the "Heads up" list (2026-11-08: the reveal said the catchphrase and the Stats Nerd line twice).
+export const INSIGHT_COVERS = new Set(["base_generic", "move_generic", "market_unavailable", "base_narrowed", "tagline_rejected", "name_rejected"]);
+
+function renderWarnings() {
+  const warn = q("reveal-warnings");
+  if (!warn || !S.result) return;
+  clearNode(warn);
+  const covered = S.insight && Array.isArray(S.insight.will_do);
+  const all = (S.result.warnings || []).filter((w) => !(covered && INSIGHT_COVERS.has(w.code)));
+  const heads = all.filter((w) => w.level !== "note");
+  const notes = all.filter((w) => w.level === "note");
   if (heads.length || notes.length) {
     warn.appendChild(h("p", { class: "qz-eyebrow", text: heads.length ? "Heads up" : "Worth knowing" }));
     warn.appendChild(h("ul", { class: "qz-list qz-list--warn", "data-hook": "reveal-warning-list" },
       heads.concat(notes).map((w) => h("li", { "data-hook": "reveal-warning", "data-code": w.code, text: w.message }))));
   }
-  renderChosen();
-  if (S.saved) renderSaved();
-  syncKeep();
 }
 
 /** The answers the member did not pick: "Sports: MLB (chosen for you)", "How bold: the middle level (skipped, using the default)". */
@@ -1047,13 +1060,14 @@ async function loadInsight() {
   if (S.english.draft) body.english_draft = S.english.draft;
   let res = null;
   try {
-    res = await apiPost("/hounds/quiz/insight", body);
+    res = await post("/hounds/quiz/insight", body, IMPACT_MS);
   } catch (err) {
     res = null;                                         // the check is an extra: without it the reveal is the reveal
   }
   if (seq !== insightSeq) return;
   S.insight = res;
   renderInsight();
+  renderWarnings();
 }
 
 /** Run one fix action. Nothing here saves a hound: each one changes an answer and re-reads the reveal, or moves the person to the place to edit. */

@@ -81,7 +81,8 @@ class TheMeter(unittest.TestCase):
         def fake(hounds, days, **kw):
             counted.append(len(hounds))
             return {h["id"]: {"record_by_day": []} for h in hounds}
-        with mock.patch.object(drill, "run_user_many", fake):
+        from src.hounds.interact import board_split
+        with mock.patch.object(drill, "run_user_many", fake), mock.patch.object(board_split, "ready", lambda *a, **k: True):
             impact.measure(DOGS, None, now=NOW)
             impact.measure(DOGS, None, now=NOW)
         self.assertEqual(counted, [1])
@@ -89,7 +90,7 @@ class TheMeter(unittest.TestCase):
     def test_a_busy_replay_slot_is_a_busy_error_not_a_hang(self):
         self.assertTrue(drill._drill_slot.acquire(blocking=False))
         try:
-            with self.assertRaises(drill.DrillError) as ctx:
+            with self.assertRaises(drill.DrillError) as ctx, mock.patch.object(drill, "SLOT_WAIT_S", 0.05):
                 self.measure(DOGS)
             self.assertEqual(ctx.exception.code, "drill_busy")
         finally:
@@ -144,3 +145,21 @@ class TheLineText(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TheBoardsAreNeverScannedWholeInsideTheQuiz(unittest.TestCase):
+    """2026-11-08 live check: the meter's whole-store scan outlasted the page's timeout on production and starved the quiz's other
+    calls. Until the week's boards are split by sport (board_split) the meter says "warming" and starts the split; it never scans."""
+
+    def test_not_ready_is_a_warming_answer_that_starts_the_split_and_never_replays(self):
+        from src.hounds.interact import board_split
+        drill.clear_cache()
+        started, replayed = [], []
+        with mock.patch.object(board_split, "ready", lambda *a, **k: False),                 mock.patch.object(board_split, "start", lambda lo, hi, *a, **k: started.append((lo, hi)) or False),                 mock.patch.object(drill, "run_user_many", lambda *a, **k: replayed.append(1) or {}):
+            with self.assertRaises(drill.DrillError) as ctx:
+                impact.measure(DOGS, None, now=NOW)
+        self.assertEqual(ctx.exception.code, "board_warming")
+        self.assertEqual(ctx.exception.status, 503)
+        self.assertEqual(ctx.exception.retry_after, drill.WARMING_RETRY_AFTER_S)
+        self.assertEqual(started, [("2026-10-14", "2026-10-22")])          # the 7-day window 10-15..10-21, a day either side
+        self.assertEqual(replayed, [])
