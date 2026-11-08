@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-08 16:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-08 21:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-08 (8:30 am PT run): NFL briefs prepared for DAL@IND, NYG@PHI, DET@MIA (10:00 am PT kickoffs); DET@MIA published clean on attempt 1.
-- Production up at 16:41Z: /health 200, memory peak 670.5 MB of 850, odds 0.5 h old, capture 12 min ago.
-- Deploy-prod 16:11Z failed its health check (app stopped answering after a page request; the check says likely out of memory); process restarted 16:23Z.
-- Tests green (newest push 22:15Z 11-07). Daily loop still red (post-season MLB slate step on the cowork branch).
+- 2026-11-08 (1:30 pm PT run): the three 10:00 am PT NFL briefs (DAL@IND, DET@MIA, NYG@PHI) are graded; public sample now DET@MIA 11-08.
+- TB@CHI (5:20 pm PT) NFL brief published clean on attempt 2 at ~21:43Z; the 1:05/1:25 pm PT games were already live and were not briefed.
+- Production up at 21:40Z: /health 200, memory peak 752.7 MB of 850, odds 0.6 h old, capture 11 min ago.
+- Deploy-prod 21:08Z failed its health check (app stopped answering after a page request; likely out of memory); process restarted 21:20Z. Second such failure today.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
