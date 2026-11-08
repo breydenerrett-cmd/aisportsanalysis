@@ -21288,3 +21288,4 @@
 {"call_kind": "pregame", "credits": 2, "events": 4, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-08T08:36:56.599278Z", "regions": ["us"], "rows": 52, "sport_key": "soccer_turkey_super_league", "stored": 52}
 {"commence_utc": "2026-11-08T14:30:00Z", "event_id": "c70f9f21f48464daa93973147502e183", "kind": "phase", "observed_utc": "2026-11-08T08:36:56.599278Z", "phase": "t6h", "rows": 16, "sport_key": "soccer_germany_bundesliga"}
 {"call_kind": "pregame", "credits": 2, "events": 12, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-08T08:36:56.599278Z", "regions": ["us"], "rows": 102, "sport_key": "soccer_germany_bundesliga", "stored": 48}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T08:47:51.910968Z", "regions": ["au"], "rows": 17, "sport_key": "cricket_test_match", "stored": 14}
