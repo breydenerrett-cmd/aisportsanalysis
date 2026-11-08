@@ -1,0 +1,128 @@
+{
+  "summary": "Chicago is the better team on the season numbers: 26.75 points per game against 22.25 for Tampa Bay, and a season margin of 6.75 against 3.375, each over 8 games. But the price already knows it. The books' fair number for Chicago to win is 0.697 and the best quote is -250, so I cannot take the moneyline at that price, and Tampa Bay at +225 only matches the books' own 0.303. The spread sits at 6, where it was first captured, and the two sides are priced as a coin flip. Nothing in what we have shows the number is wrong in points. Chicago allows 6.0098 yards per play, which is a worry for a team laying 6, but Tampa Bay's own 4.829 yards per play gives it little to exploit. On the total, the number has come down from 48.5 to 47.5 and both sides quote near even. Weather is missing for an outdoor grass game, and both quarterbacks are projections, not confirmed starters. I pass on all three markets.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "CHI",
+      "verdict": "PASS",
+      "price": -250,
+      "book": "betus",
+      "fair_estimate": 0.69,
+      "confidence": "medium",
+      "reasons": [
+        {
+          "claim": "Chicago is the favourite and the books' fair number already says so, around 0.697. Our own read of the season numbers lands in the same place, so the market looks about right.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.697},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 6.75},
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 3.375}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The best Chicago quote is -250, which is too short a price for us to ever take, so Chicago cannot be taken at any quote we have.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].best.price", "value": -250}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Tampa Bay at +225 pays about what the books' own 0.303 asks for, and nothing in the data shows the books are missing something about Tampa Bay.",
+          "evidence": [
+            {"path": "markets.moneyline.options[1].best.price", "value": 225},
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.303}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A quarterback change from the projected starters, Caleb Williams for Chicago and Baker Mayfield for Tampa Bay, would make me look again at Tampa Bay on the moneyline.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "TB +6",
+      "verdict": "PASS",
+      "price": -105,
+      "book": "lowvig",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books price the two sides of 6 as a coin flip, and the number has not moved from where it was first captured, so there is no line movement to read.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5001},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4999},
+            {"path": "markets.spread.context.away_number_first_captured", "value": 6.0}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Chicago has the better points for and against per game over the season, but its yards per play allowed is the weaker figure, so the numbers point both ways on whether 6 is too many or too few.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.yards_per_play_allowed.value", "value": 6.0098},
+            {"path": "sections.away.values.form.season_to_date.yards_per_play_allowed.value", "value": 4.9183},
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 26.75},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 22.25}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Six is one of the scoring key numbers, so a Chicago win by exactly 6 would return the stake on either side. That does not give a reason to prefer one side.",
+          "evidence": [
+            {"path": "sections.reference.values.key_numbers[1]", "value": 6}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -100,
+      "what_would_change_it": "A move of the number off 6, or a quarterback change from the projected starters, would make me look at this spread again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 47.5",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Both sides of 47.5 are priced as a coin flip, and the number has come down from 48.5 when first captured, so the market has already moved toward the Under.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5013},
+            {"path": "markets.total.options[1].fair_probability", "value": 0.4987},
+            {"path": "markets.total.context.number_first_captured", "value": 48.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Chicago scores 26.75 and Tampa Bay 22.25 per game, while Tampa Bay allows 18.875 and Chicago 20. The scoring figures and the defensive figures do not clearly favour either side of the number, and the price already holds them.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 26.75},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 22.25},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 18.875},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 20}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We cannot see the weather for an outdoor game on grass, and both quarterbacks are projections, so a total that wind, cold or a quarterback change could move is a reason to stay out.",
+          "evidence": [
+            {"path": "missing[1].item", "value": "weather"},
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -100,
+      "what_would_change_it": "A weather forecast showing wind or cold at Soldier Field, or a quarterback change from the projected starters, would make me look at the total again.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
