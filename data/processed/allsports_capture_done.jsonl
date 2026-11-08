@@ -21124,3 +21124,4 @@
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T04:38:16.991028Z", "regions": ["us"], "rows": 1, "sport_key": "basketball_nbl", "stored": 1}
 {"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T04:38:16.991028Z", "regions": ["us"], "rows": 11, "sport_key": "soccer_australia_aleague", "stored": 11}
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T04:38:16.991028Z", "regions": ["us"], "rows": 20, "sport_key": "soccer_mexico_ligamx", "stored": 19}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T04:57:00.972573Z", "regions": ["au"], "rows": 5, "sport_key": "aussierules_aflw", "stored": 4}
