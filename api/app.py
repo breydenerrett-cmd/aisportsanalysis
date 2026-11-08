@@ -334,6 +334,12 @@ def _start_impact_board_split() -> None:
         _time.sleep(90)
         from src.hounds.interact import drill as _drill
         _drill.warm_impact_boards()
+        # The builder preview's board for today (2026-11-08: 5 s on a laptop, past the page's 20 s on production when built inside
+        # the request). Touched every 10 minutes so a visitor always gets a ready board; a new day or a stale one rebuilds here.
+        from api import hounds_create as _hc
+        while True:
+            _hc.warm_preview_slate()
+            _time.sleep(600)
     _threading.Thread(target=_later, name="impact-board-split", daemon=True).start()
 
 

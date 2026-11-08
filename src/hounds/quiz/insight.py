@@ -221,8 +221,10 @@ def will_do(result: Mapping, windows: Optional[Mapping], findings: list) -> list
         sentences.append("We could not replay the last 7 days just now, so these notes come from its rules alone.")
     if findings:
         sentences.append(f"{_plural(len(findings), 'thing')} to watch {'is' if len(findings) == 1 else 'are'} listed below. Nothing blocks you from keeping it.")
-    else:
+    elif windows and windows.get(7) is not None:
         sentences.append("We checked its sports, markets, prices, books and daily cap against the last 7 days of boards and found nothing off.")
+    else:
+        sentences.append("Its rules read cleanly: nothing in its sports, markets, prices or daily cap needs a second look.")
     return sentences
 
 
