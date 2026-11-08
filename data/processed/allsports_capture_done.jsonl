@@ -21026,3 +21026,6 @@
 {"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T02:17:27.779305Z", "regions": ["us"], "rows": 31, "sport_key": "soccer_usa_mls", "stored": 31}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T02:17:27.779305Z", "regions": ["us"], "rows": 4, "sport_key": "americanfootball_cfl", "stored": 4}
 {"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T02:17:27.779305Z", "regions": ["us"], "rows": 29, "sport_key": "soccer_brazil_serie_b", "stored": 22}
+{"events": 0, "kind": "peek", "next_check_utc": "2026-11-08T08:27:17.121249Z", "observed_utc": "2026-11-08T02:27:17.121249Z", "sport_key": "soccer_usa_mls"}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T02:27:17.121249Z", "regions": ["us"], "rows": 2, "sport_key": "basketball_wncaab", "stored": 2}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T02:27:17.121249Z", "regions": ["us"], "rows": 12, "sport_key": "soccer_argentina_primera_division", "stored": 12}
