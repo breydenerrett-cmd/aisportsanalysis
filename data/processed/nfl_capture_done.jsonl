@@ -585,3 +585,4 @@
 {"game_id": "2026_09_ARI_SEA", "observed_utc": "2026-11-07T21:36:27.402032Z", "phase": "t24h"}
 {"game_id": "2026_09_TB_CHI", "observed_utc": "2026-11-08T01:25:45.023210Z", "phase": "t24h"}
 {"game_id": "2026_09_CIN_ATL", "observed_utc": "2026-11-08T08:36:50.907318Z", "phase": "t6h"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-11-08T11:24:05.690623Z", "phase": "refresh"}
