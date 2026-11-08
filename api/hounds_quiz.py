@@ -196,11 +196,19 @@ _impact_limiter = ratelimit.FixedWindowLimiter(limit=IMPACT_RATE_LIMIT_PER_MIN, 
 _rate_limit_impact = ratelimit.limiter_dependency(_impact_limiter)
 
 
+@router.get("/hounds/quiz/impact/status")
+def quiz_impact_status(response: Response, _rl: None = Depends(_rate_limit_impact)) -> dict:
+    """How the meter's background replay is doing (runs, failures, the last replay's seconds, queue length). No member data."""
+    response.headers["Cache-Control"] = "no-store"
+    with drill_mod._cache_lock:
+        return dict(drill_mod.impact_stats)
+
+
 @router.post("/hounds/quiz/impact")
 def quiz_impact_meter(body: ImpactRequest, response: Response, _rl: None = Depends(_rate_limit_impact)) -> dict:
-    """The impact meter. Its own allowance; the replay takes the drill's one process-wide slot (waiting a few seconds for it), reads
-    the week's boards split by sport (board_split), and while that split is being made answers 503 ``board_warming`` with the seconds
-    to wait. A busy slot is a 429 with the seconds to wait. Neither is a failed quiz: the page says it is still checking."""
+    """The impact meter. Its own allowance. The replay runs on drill's one background worker over the week's boards split by sport
+    (board_split); the request waits a few seconds for it and otherwise answers 503 ``board_warming`` with the seconds to wait, and the
+    page asks again. A full queue is a 429 with the seconds to wait. Neither is a failed quiz: the page says it is still checking."""
     response.headers["Cache-Control"] = "no-store"
     try:
         out = quiz_impact.measure(body.answers, body.previous_answers, english_draft=body.english_draft)

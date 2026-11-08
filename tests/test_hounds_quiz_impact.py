@@ -82,7 +82,7 @@ class TheMeter(unittest.TestCase):
             counted.append(len(hounds))
             return {h["id"]: {"record_by_day": []} for h in hounds}
         from src.hounds.interact import board_split
-        with mock.patch.object(drill, "run_user_many", fake), mock.patch.object(board_split, "ready", lambda *a, **k: True):
+        with mock.patch.object(drill, "run_user_many", fake), mock.patch.object(board_split, "ensure", lambda *a, **k: None):
             impact.measure(DOGS, None, now=NOW)
             impact.measure(DOGS, None, now=NOW)
         self.assertEqual(counted, [1])
@@ -147,19 +147,62 @@ if __name__ == "__main__":
     unittest.main()
 
 
-class TheBoardsAreNeverScannedWholeInsideTheQuiz(unittest.TestCase):
-    """2026-11-08 live check: the meter's whole-store scan outlasted the page's timeout on production and starved the quiz's other
-    calls. Until the week's boards are split by sport (board_split) the meter says "warming" and starts the split; it never scans."""
+class TheReplayNeverRunsInsideTheRequest(unittest.TestCase):
+    """2026-11-08 live check: on production the meter's replay outlasted the page's 45 s wait even over the split boards. The replay
+    runs on one background worker; the request waits a little, then says "still checking" (503 board_warming) until it is remembered."""
 
-    def test_not_ready_is_a_warming_answer_that_starts_the_split_and_never_replays(self):
+    def setUp(self):
         from src.hounds.interact import board_split
         drill.clear_cache()
-        started, replayed = [], []
-        with mock.patch.object(board_split, "ready", lambda *a, **k: False),                 mock.patch.object(board_split, "start", lambda lo, hi, *a, **k: started.append((lo, hi)) or False),                 mock.patch.object(drill, "run_user_many", lambda *a, **k: replayed.append(1) or {}):
+        with drill._cache_lock:
+            drill._impact_jobs.clear()
+        self.ensure = mock.patch.object(board_split, "ensure", lambda *a, **k: None)
+        self.ensure.start()
+
+    def tearDown(self):
+        self.ensure.stop()
+
+    def test_a_slow_replay_is_still_checking_then_the_answer(self):
+        import threading
+        gate = threading.Event()
+        threads = []
+
+        def slow(hounds, days, **kw):
+            threads.append(threading.current_thread().name)
+            gate.wait(5)
+            return {h["id"]: {"record_by_day": []} for h in hounds}
+        with mock.patch.object(drill, "run_user_many", slow), mock.patch.object(drill, "IMPACT_WAIT_S", 0.05):
             with self.assertRaises(drill.DrillError) as ctx:
                 impact.measure(DOGS, None, now=NOW)
-        self.assertEqual(ctx.exception.code, "board_warming")
-        self.assertEqual(ctx.exception.status, 503)
-        self.assertEqual(ctx.exception.retry_after, drill.WARMING_RETRY_AFTER_S)
-        self.assertEqual(started, [("2026-10-14", "2026-10-22")])          # the 7-day window 10-15..10-21, a day either side
-        self.assertEqual(replayed, [])
+            self.assertEqual((ctx.exception.code, ctx.exception.status), ("board_warming", 503))
+            self.assertEqual(ctx.exception.retry_after, drill.IMPACT_RETRY_AFTER_S)
+            with self.assertRaises(drill.DrillError):                        # asking again does not queue a second replay
+                impact.measure(DOGS, None, now=NOW)
+            gate.set()
+            for _ in range(100):
+                with drill._cache_lock:
+                    if not drill._impact_jobs:
+                        break
+                import time as _t
+                _t.sleep(0.02)
+            out = impact.measure(DOGS, None, now=NOW)
+        self.assertTrue(out["available"])
+        self.assertEqual(threads, ["impact-replay"])                         # one replay, on the worker, never the request's thread
+
+    def test_a_fast_replay_answers_in_the_same_request(self):
+        fake = lambda hounds, days, **kw: {h["id"]: {"record_by_day": []} for h in hounds}
+        with mock.patch.object(drill, "run_user_many", fake):
+            self.assertTrue(impact.measure(DOGS, None, now=NOW)["available"])
+
+    def test_a_failed_replay_says_so_instead_of_checking_forever(self):
+        def broken(hounds, days, **kw):
+            raise OSError("boards unreadable")
+        with mock.patch.object(drill, "run_user_many", broken):
+            with self.assertRaises(drill.DrillError) as ctx:
+                impact.measure(DOGS, None, now=NOW)
+            self.assertEqual(ctx.exception.code, "impact_failed")
+            with self.assertRaises(drill.DrillError) as again:               # remembered for a minute, not replayed on every ask
+                impact.measure(DOGS, None, now=NOW)
+            self.assertEqual(again.exception.code, "impact_failed")
+        self.assertIn("OSError", drill.impact_stats["last_error"])
+
