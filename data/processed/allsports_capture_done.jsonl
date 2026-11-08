@@ -21173,3 +21173,9 @@
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T05:43:36.824375Z", "regions": ["us"], "rows": 8, "sport_key": "baseball_kbo", "stored": 8}
 {"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T05:43:36.824375Z", "regions": ["us"], "rows": 79, "sport_key": "basketball_nba", "stored": 72}
 {"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T05:43:36.824375Z", "regions": ["us"], "rows": 70, "sport_key": "icehockey_nhl", "stored": 70}
+{"events": 0, "kind": "peek", "next_check_utc": "2026-11-08T12:00:41.584633Z", "observed_utc": "2026-11-08T06:00:41.584633Z", "sport_key": "aussierules_aflw"}
+{"events": 11, "kind": "peek", "next_check_utc": "2026-11-08T12:00:41.584633Z", "observed_utc": "2026-11-08T06:00:41.584633Z", "sport_key": "soccer_efl_champ"}
+{"commence_utc": "2026-11-08T08:00:00Z", "event_id": "75f6d790b41b54226cfebd3a4677531a", "kind": "phase", "observed_utc": "2026-11-08T06:00:41.584633Z", "phase": "t2h", "rows": 13, "sport_key": "soccer_japan_j_league"}
+{"call_kind": "pregame", "credits": 2, "events": 4, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-08T06:00:41.584633Z", "regions": ["us"], "rows": 38, "sport_key": "soccer_japan_j_league", "stored": 38}
+{"commence_utc": "2026-11-08T12:00:00Z", "event_id": "c9e63cacd0dd6905393db92fe2a98672", "kind": "phase", "observed_utc": "2026-11-08T06:00:41.584633Z", "phase": "t6h", "rows": 11, "sport_key": "soccer_fa_cup"}
+{"call_kind": "pregame", "credits": 2, "events": 5, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-08T06:00:41.584633Z", "regions": ["us"], "rows": 46, "sport_key": "soccer_fa_cup", "stored": 40}
