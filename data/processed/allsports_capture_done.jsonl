@@ -21255,3 +21255,7 @@
 {"call_kind": "pregame", "credits": 2, "events": 7, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-08T07:40:35.434096Z", "regions": ["us"], "rows": 102, "sport_key": "soccer_norway_eliteserien", "stored": 102}
 {"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 8, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T07:40:35.434096Z", "regions": ["us"], "rows": 48, "sport_key": "soccer_china_superleague", "stored": 48}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T07:40:35.434096Z", "regions": ["us"], "rows": 11, "sport_key": "soccer_korea_kleague1", "stored": 11}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-08T13:49:50.478341Z", "observed_utc": "2026-11-08T07:49:50.478341Z", "sport_key": "soccer_brazil_campeonato"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-08T13:49:50.478341Z", "observed_utc": "2026-11-08T07:49:50.478341Z", "sport_key": "soccer_uefa_champs_league_women"}
+{"commence_utc": "2026-11-08T13:45:00Z", "event_id": "2e75cd12ab05b84b90db6fcc1c9b9cb5", "kind": "phase", "observed_utc": "2026-11-08T07:49:50.478341Z", "phase": "t6h", "rows": 15, "sport_key": "soccer_poland_ekstraklasa"}
+{"call_kind": "pregame", "credits": 2, "events": 3, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-08T07:49:50.478341Z", "regions": ["us"], "rows": 45, "sport_key": "soccer_poland_ekstraklasa", "stored": 45}
