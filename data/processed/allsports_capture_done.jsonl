@@ -21144,3 +21144,5 @@
 {"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T05:08:45.122146Z", "regions": ["us"], "rows": 72, "sport_key": "icehockey_nhl", "stored": 72}
 {"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T05:08:45.122146Z", "regions": ["us"], "rows": 11, "sport_key": "soccer_australia_aleague", "stored": 11}
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-08T05:08:45.122146Z", "regions": ["us"], "rows": 20, "sport_key": "soccer_mexico_ligamx", "stored": 19}
+{"commence_utc": "2026-11-08T11:15:00Z", "event_id": "019e9d824f3f2251e5b777623d34a9df", "kind": "phase", "observed_utc": "2026-11-08T05:21:26.575948Z", "phase": "t6h", "rows": 15, "sport_key": "soccer_netherlands_eredivisie"}
+{"call_kind": "pregame", "credits": 2, "events": 7, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-08T05:21:26.575948Z", "regions": ["us"], "rows": 75, "sport_key": "soccer_netherlands_eredivisie", "stored": 73}
