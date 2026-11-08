@@ -22222,3 +22222,5 @@
 {"commence_utc": "2026-11-09T01:10:00Z", "event_id": "41a3f4e9221afae1081031d9f6af0db4", "kind": "phase", "observed_utc": "2026-11-08T21:29:16.654893Z", "phase": "lock180", "rows": 33, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 8, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-08T21:29:16.654893Z", "regions": ["us"], "rows": 225, "sport_key": "icehockey_nhl", "stored": 225}
 {"events": 0, "kind": "peek", "next_check_utc": "2026-11-09T03:49:36.443918Z", "observed_utc": "2026-11-08T21:49:36.443918Z", "sport_key": "soccer_poland_ekstraklasa"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-09T03:59:39.207986Z", "observed_utc": "2026-11-08T21:59:39.207986Z", "sport_key": "soccer_france_ligue_one"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-09T03:59:39.207986Z", "observed_utc": "2026-11-08T21:59:39.207986Z", "sport_key": "soccer_italy_serie_a"}
