@@ -22442,3 +22442,12 @@
 {"events": 7, "kind": "peek", "next_check_utc": "2026-11-09T12:54:03.313704Z", "observed_utc": "2026-11-09T06:54:03.313704Z", "sport_key": "soccer_spl"}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-09T06:54:03.313704Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_test_match", "stored": 11}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-09T07:33:07.709476Z", "regions": ["au"], "rows": 11, "sport_key": "cricket_test_match", "stored": 9}
+{"events": 67, "kind": "peek", "next_check_utc": "2026-11-09T14:32:47.031038Z", "observed_utc": "2026-11-09T08:32:47.031038Z", "sport_key": "americanfootball_ncaaf"}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-09T14:32:47.031038Z", "observed_utc": "2026-11-09T08:32:47.031038Z", "sport_key": "cricket_big_bash"}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-09T14:32:47.031038Z", "observed_utc": "2026-11-09T08:32:47.031038Z", "sport_key": "icehockey_sweden_hockey_league"}
+{"events": 11, "kind": "peek", "next_check_utc": "2026-11-09T14:32:47.031038Z", "observed_utc": "2026-11-09T08:32:47.031038Z", "sport_key": "soccer_brazil_campeonato"}
+{"events": 5, "kind": "peek", "next_check_utc": "2026-11-09T14:32:47.031038Z", "observed_utc": "2026-11-09T08:32:47.031038Z", "sport_key": "soccer_spain_copa_del_rey"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-09T14:32:47.031038Z", "observed_utc": "2026-11-09T08:32:47.031038Z", "sport_key": "soccer_uefa_champs_league"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-09T14:32:47.031038Z", "observed_utc": "2026-11-09T08:32:47.031038Z", "sport_key": "soccer_uefa_champs_league_women"}
+{"events": 27, "kind": "peek", "next_check_utc": "2026-11-09T14:32:47.031038Z", "observed_utc": "2026-11-09T08:32:47.031038Z", "sport_key": "soccer_uefa_nations_league"}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-09T08:32:47.031038Z", "regions": ["au"], "rows": 4, "sport_key": "cricket_test_match", "stored": 3}
