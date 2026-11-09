@@ -1,0 +1,126 @@
+{
+  "summary": "Buffalo is the better team on the numbers: six wins and one loss, 33.2857 points per game for the season and 6.3264 yards per play against Minnesota's 4.7361. But the books already see it, giving Buffalo a fair probability of 0.6344 to win, and the spread has moved from Buffalo laying 2.5 to 3.5, so the market has priced in much of that gap. The big unknown is Minnesota's quarterback. The schedule projects Kyler Murray, yet the weekly injury report lists him out with a hamstring injury, and nothing in what we have settles it. Until that is clear, I pass on the moneyline, where Buffalo is a heavy price, and on the spread at 3.5, which sits half a point off the listed key number of 3. I also pass on the total of 45, down from 47.5 when first captured. Minnesota allows 13.2857 points per game while Buffalo scores a lot, so the two sides pull against each other and the price already holds both. The game is in a dome, and a quarterback change could move every number here.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "BUF",
+      "verdict": "PASS",
+      "price": -186,
+      "book": "betrivers",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books already make Buffalo the clear favourite, and their de-vigged number is the best starting point we have. Nothing in the data shows Buffalo being underpriced.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.6344},
+            {"path": "markets.moneyline.options[0].best.price", "value": -186}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Minnesota's quarterback is unresolved. The schedule projects Kyler Murray, but the weekly report lists him out, so the win probability could change sharply and we cannot see which way it resolves.",
+          "evidence": [
+            {"path": "sections.home.values.qb.listed_for_this_game.projected", "value": true},
+            {"path": "sections.home.values.injuries.skill_players_listed[0].report_status", "value": "out"}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Buffalo has the stronger season numbers, but Minnesota has the better turnover margin and a much lower points allowed figure, so the gap is not one-sided.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 7.4286},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 6.7143},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 13.2857}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Confirmation of who starts at quarterback for Minnesota, either way, would let us re-price this moneyline.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "MIN +3.5",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "mybookieag",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The number is close to a coin flip by the books' own de-vigged figure, and the line has moved from Buffalo laying 2.5 to 3.5, so the market has already moved toward Buffalo.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5118},
+            {"path": "markets.spread.context.away_number_first_captured", "value": -2.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The two teams' season margins per game are close, which fits a spread this tight. We have no reason in points that the number is wrong.",
+          "evidence": [
+            {"path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": -0.7143},
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 7.4286},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 6.7143}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number sits half a point off the key number of 3, but without knowing who plays quarterback for Minnesota we cannot say which side that favours.",
+          "evidence": [
+            {"path": "sections.reference.values.key_numbers[0]", "value": 3},
+            {"path": "sections.home.values.injuries.skill_players_listed[0].report_status", "value": "out"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed Minnesota quarterback, or the number moving onto or off the key number of 3, would change this call.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 45",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books split the over and under almost exactly, and the number has dropped from 47.5 when first captured, so the market has already adjusted downward.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.501},
+            {"path": "markets.total.context.number_first_captured", "value": 47.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The scoring facts pull in opposite directions: Buffalo scores a lot per game, while Minnesota allows few points and scores little itself. The price already holds both.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 33.2857},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 13.2857},
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 20}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The game is indoors, so weather is not a concern, but the quarterback question for Minnesota could move this total in either direction.",
+          "evidence": [
+            {"path": "sections.schedule.values.venue.roof", "value": "dome"},
+            {"path": "sections.home.values.qb.listed_for_this_game.projected", "value": true}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed Minnesota quarterback or a move of the total away from 45 would change this call.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
