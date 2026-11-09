@@ -22557,3 +22557,6 @@
 {"call_kind": "pregame", "credits": 3, "events": 6, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-09T16:07:42.679193Z", "regions": ["us"], "rows": 36, "sport_key": "icehockey_liiga", "stored": 6}
 {"commence_utc": "2026-11-09T18:00:00Z", "event_id": "a878bfc5e7eae6808debf217c23c93f5", "kind": "phase", "observed_utc": "2026-11-09T16:07:42.679193Z", "phase": "t2h", "rows": 15, "sport_key": "soccer_norway_eliteserien"}
 {"call_kind": "pregame", "credits": 2, "events": 1, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-09T16:07:42.679193Z", "regions": ["us"], "rows": 15, "sport_key": "soccer_norway_eliteserien", "stored": 15}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-09T22:18:58.284019Z", "observed_utc": "2026-11-09T16:18:58.284019Z", "sport_key": "soccer_france_ligue_one"}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-11-09T22:18:58.284019Z", "observed_utc": "2026-11-09T16:18:58.284019Z", "sport_key": "soccer_italy_serie_a"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-09T22:18:58.284019Z", "observed_utc": "2026-11-09T16:18:58.284019Z", "sport_key": "soccer_sweden_allsvenskan"}
