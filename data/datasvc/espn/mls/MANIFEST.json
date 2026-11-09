@@ -20,14 +20,14 @@
    "sha256": "d05d0e0f6f83a8f4916ca2e380ab47c18b1e2c961affd7a4c42202342f0206d1"
   },
   "teams.jsonl": {
-   "bytes": 10321,
-   "newest": "2026-10-21T03:10:06Z",
-   "records": 30,
-   "sha256": "d7cc532ba0b90fdc4986b7343efac06805a718273e25d98931ea82c9eecd55a8"
+   "bytes": 10853,
+   "newest": "2026-11-09T09:57:22Z",
+   "records": 32,
+   "sha256": "2ec903e1fdfc2aecd52f1f32e461c9762dcd5d1f4de66a27d7d31c222e617b0e"
   }
  },
- "generated_utc": "2026-11-09T06:55:54Z",
+ "generated_utc": "2026-11-09T09:57:30Z",
  "league": "mls",
- "refreshed_utc": "2026-11-09T06:55:54Z",
+ "refreshed_utc": "2026-11-09T09:57:30Z",
  "title": "MLS"
 }
