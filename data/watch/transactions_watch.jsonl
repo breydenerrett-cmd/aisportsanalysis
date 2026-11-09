@@ -7436,3 +7436,5 @@
 {"fetched_utc": "2026-11-09T21:02:47.686077+00:00", "game_date": "2026-11-09", "poll": true}
 {"fetched_utc": "2026-11-09T21:11:08.746652+00:00", "game_date": "2026-11-09", "poll": true}
 {"fetched_utc": "2026-11-09T21:29:12.303738+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-09T21:41:02.597719+00:00", "game_date": "2026-11-09", "poll": true}
+{"category": "other", "date": "2026-11-09", "first_seen_utc": "2026-11-09T21:41:02.597719+00:00", "player": "Christian Cairo", "player_id": 686551, "team": "LAD", "transaction_id": 949929}
