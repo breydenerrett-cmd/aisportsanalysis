@@ -22441,3 +22441,4 @@
 {"events": 10, "kind": "peek", "next_check_utc": "2026-11-09T12:54:03.313704Z", "observed_utc": "2026-11-09T06:54:03.313704Z", "sport_key": "soccer_epl"}
 {"events": 7, "kind": "peek", "next_check_utc": "2026-11-09T12:54:03.313704Z", "observed_utc": "2026-11-09T06:54:03.313704Z", "sport_key": "soccer_spl"}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-09T06:54:03.313704Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_test_match", "stored": 11}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-09T07:33:07.709476Z", "regions": ["au"], "rows": 11, "sport_key": "cricket_test_match", "stored": 9}
