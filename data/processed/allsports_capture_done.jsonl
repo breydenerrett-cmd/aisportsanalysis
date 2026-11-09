@@ -22456,3 +22456,4 @@
 {"events": 7, "kind": "peek", "next_check_utc": "2026-11-09T14:47:20.670853Z", "observed_utc": "2026-11-09T08:47:20.670853Z", "sport_key": "icehockey_sweden_allsvenskan"}
 {"events": 5, "kind": "peek", "next_check_utc": "2026-11-09T14:47:20.670853Z", "observed_utc": "2026-11-09T08:47:20.670853Z", "sport_key": "soccer_australia_aleague"}
 {"events": 20, "kind": "peek", "next_check_utc": "2026-11-09T14:47:20.670853Z", "observed_utc": "2026-11-09T08:47:20.670853Z", "sport_key": "soccer_germany_liga3"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-09T15:08:37.377933Z", "observed_utc": "2026-11-09T09:08:37.377933Z", "sport_key": "soccer_germany_bundesliga"}
