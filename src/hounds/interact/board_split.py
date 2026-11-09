@@ -23,6 +23,8 @@ import hashlib
 import logging
 import os
 import shutil
+import subprocess
+import sys
 import tempfile
 import threading
 from datetime import datetime, timedelta
@@ -91,9 +93,27 @@ def _sport_of(line: str) -> str:
     return value
 
 
-def ensure(first: str, last: str, store=None) -> Path:
+CHILD_TIMEOUT_S = 900.0
+
+
+def _run_child(first: str, last: str, store) -> None:
+    """The pass in a child process at low priority (2026-11-08): two million lines of pure Python inside the API process held the
+    interpreter long enough that production stopped answering its own health check mid-deploy. The child writes the same files the
+    same atomic way; the parent only waits."""
+    cmd = [sys.executable, "-m", "src.hounds.interact.board_split", first, last, str(store)]
+    kwargs: dict = {"cwd": str(Path(__file__).resolve().parents[3]), "timeout": CHILD_TIMEOUT_S,
+                    "stdout": subprocess.DEVNULL, "stderr": subprocess.PIPE}
+    if hasattr(os, "nice"):
+        kwargs["preexec_fn"] = lambda: os.nice(10)
+    done = subprocess.run(cmd, **kwargs)
+    if done.returncode != 0:
+        tail = (done.stderr or b"").decode("utf-8", "replace").strip().splitlines()[-1:] or [""]
+        raise OSError(f"board split child exited {done.returncode}: {tail[0][:160]}")
+
+
+def ensure(first: str, last: str, store=None, *, child: bool = False) -> Path:
     """Build the split for ``first..last`` (slate dates) if it is not there; return its directory. Blocking: callers in a request
-    should use ``start`` and ``ready`` instead."""
+    should use ``start`` and ``ready`` instead. ``child=True`` (the server's callers) does the pass in a low-priority child process."""
     from src.pipeline import snapshots, store_archive
     store = store or _store_path()
     key = _key(first, last, store)
@@ -102,6 +122,11 @@ def ensure(first: str, last: str, store=None) -> Path:
         return out
     with _lock:
         if (out / _DONE).exists():
+            return out
+        if child:
+            _run_child(first, last, store)
+            if not (out / _DONE).exists():
+                raise OSError("board split child finished without a split")
             return out
         since = (datetime.fromisoformat(first) - timedelta(days=SINCE_SLACK_DAYS)).date().isoformat()
         until = snapshots.window_for_date(last, None)[1]
@@ -150,7 +175,7 @@ def start(first: str, last: str, store=None) -> bool:
 
     def run():
         try:
-            ensure(first, last, store)
+            ensure(first, last, store, child=True)
         except Exception:  # noqa: BLE001
             log.exception("board split %s failed", key)
         finally:
@@ -166,3 +191,7 @@ def path_for(sport: str, first: str, last: str, store=None) -> Optional[list]:
     if not (d / _DONE).exists():
         return None
     return [p for p in (d / f"{sport}.jsonl", d / f"{ANY}.jsonl") if p.exists()]
+
+
+if __name__ == "__main__":                                 # the child process ``ensure(child=True)`` starts
+    ensure(sys.argv[1], sys.argv[2], Path(sys.argv[3]))

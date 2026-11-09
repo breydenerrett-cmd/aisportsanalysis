@@ -106,8 +106,10 @@ MAX_CALLBACK_BYTES = 64 * 1024
 # holds the process-wide build gate (SingleFlightTTLCache does), so a preview is never the second heavy
 # thing running on the 1 GB machine.
 # The preview's board. The odds store changes only at a deploy (production makes no odds calls), so a built board is served for up to
-# 12 hours past its 15-minute TTL while ONE background rebuild runs; warm_preview_slate (api/app.py) keeps today's ready.
-_slate_cache = freshness.SingleFlightTTLCache(ttl_s=900.0, stale_while_revalidate_s=12 * 3600.0)
+# 12 hours past its TTL while ONE background rebuild runs; warm_preview_slate (api/app.py) keeps today's ready. The TTL is an hour,
+# not 15 minutes (2026-11-08): each rebuild is tens of seconds of pure Python on the 2-CPU machine, and only the facts (lineups,
+# probables) move between deploys.
+_slate_cache = freshness.SingleFlightTTLCache(ttl_s=3600.0, stale_while_revalidate_s=12 * 3600.0)
 
 
 # ---------------------------------------------------------------------------
@@ -572,12 +574,22 @@ def _slate_for(date: str, with_props: bool) -> "user_engine_v2.Slate":
     return slate
 
 
-def warm_preview_slate() -> None:
-    """Build (or refresh in the background) today's preview board. Never raises."""
+# The board holds ~150 MB while it is built (641 games with their quote history, measured 2026-11-08). Production has 1 GB and its
+# own warm-up peaks near 750 MB, so the warmer builds only with room to spare: a request still builds it when a visitor asks.
+PREVIEW_WARM_MAX_RSS_MB = 550.0
+
+
+def warm_preview_slate() -> bool:
+    """Build (or refresh in the background) today's preview board when the process has room for it. True when it ran. Never raises."""
     try:
+        from api import health
+        rss = health._memory_mb().get("rss_mb")
+        if rss is not None and rss > PREVIEW_WARM_MAX_RSS_MB:
+            return False
         _slate_for(_eastern_today(_now()), False)
+        return True
     except Exception:  # noqa: BLE001
-        pass
+        return False
 
 
 @router.post("/hounds/builder/preview")

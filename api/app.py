@@ -325,6 +325,9 @@ def _start_right_now_warmup() -> None:
 
 # The quiz's impact meter reads last week's boards split by sport (src/hounds/interact/board_split.py). Start that one streaming
 # pass after the cache warm-up has had its turn, so the first quiz answer after a deploy is not "still checking".
+PREVIEW_WARM_DELAY_S = 600
+
+
 @app.on_event("startup")
 def _start_impact_board_split() -> None:
     import threading as _threading
@@ -333,9 +336,12 @@ def _start_impact_board_split() -> None:
         import time as _time
         _time.sleep(90)
         from src.hounds.interact import drill as _drill
-        _drill.warm_impact_boards()
-        # The builder preview's board for today (2026-11-08: 5 s on a laptop, past the page's 20 s on production when built inside
+        _drill.warm_impact_boards()            # a low-priority child process (board_split): the API keeps answering
+        # The builder preview's board for today (2026-11-08: 5-17 s on a laptop, past the page's 20 s on production when built inside
         # the request). Touched every 10 minutes so a visitor always gets a ready board; a new day or a stale one rebuilds here.
+        # The first build waits until the deploy's health check is over: built at 90 s it held the interpreter while the check ran,
+        # and two deploys in a row were marked "stopped responding" (21:08Z and 22:00Z).
+        _time.sleep(PREVIEW_WARM_DELAY_S)
         from api import hounds_create as _hc
         while True:
             _hc.warm_preview_slate()
