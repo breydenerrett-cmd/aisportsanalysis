@@ -22505,3 +22505,6 @@
 {"commence_utc": "2026-11-09T19:30:00Z", "event_id": "7bfc2afc162934f011a8425159e340da", "kind": "phase", "observed_utc": "2026-11-09T13:45:05.296246Z", "phase": "t6h", "rows": 7, "sport_key": "soccer_spain_segunda_division"}
 {"commence_utc": "2026-11-09T19:30:00Z", "event_id": "f52b83a74c511828f6155889d751d191", "kind": "phase", "observed_utc": "2026-11-09T13:45:05.296246Z", "phase": "t6h", "rows": 9, "sport_key": "soccer_spain_segunda_division"}
 {"call_kind": "pregame", "credits": 2, "events": 12, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-09T13:45:05.296246Z", "regions": ["us"], "rows": 81, "sport_key": "soccer_spain_segunda_division", "stored": 16}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-09T19:57:46.712846Z", "observed_utc": "2026-11-09T13:57:46.712846Z", "sport_key": "soccer_france_ligue_two"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-09T19:57:46.712846Z", "observed_utc": "2026-11-09T13:57:46.712846Z", "sport_key": "soccer_germany_bundesliga2"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-09T19:57:46.712846Z", "observed_utc": "2026-11-09T13:57:46.712846Z", "sport_key": "soccer_italy_serie_b"}
