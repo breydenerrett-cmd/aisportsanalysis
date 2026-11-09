@@ -22713,3 +22713,12 @@
 {"call_kind": "inplay", "credits": 1, "events": 13, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-09T20:44:59.626795Z", "regions": ["us"], "rows": 66, "sport_key": "soccer_spain_segunda_division", "stored": 8}
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-09T20:44:59.626795Z", "regions": ["us"], "rows": 6, "sport_key": "basketball_wncaab", "stored": 6}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-09T20:44:59.626795Z", "regions": ["us"], "rows": 3, "sport_key": "soccer_fa_cup", "stored": 3}
+{"events": 5, "kind": "peek", "next_check_utc": "2026-11-10T03:03:53.035754Z", "observed_utc": "2026-11-09T21:03:53.035754Z", "sport_key": "basketball_nbl"}
+{"events": 5, "kind": "peek", "next_check_utc": "2026-11-10T03:03:53.035754Z", "observed_utc": "2026-11-09T21:03:53.035754Z", "sport_key": "soccer_australia_aleague"}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-11-10T03:03:53.035754Z", "observed_utc": "2026-11-09T21:03:53.035754Z", "sport_key": "soccer_germany_liga3"}
+{"commence_utc": "2026-11-09T23:00:00Z", "event_id": "8a669cc3faabd6f315dddb8e2c261ebd", "kind": "phase", "observed_utc": "2026-11-09T21:03:53.035754Z", "phase": "t2h", "rows": 23, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-10T03:00:00Z", "event_id": "4bdacc47ecdf733ea056e514e387daef", "kind": "phase", "observed_utc": "2026-11-09T21:03:53.035754Z", "phase": "t6h", "rows": 19, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-10T03:00:00Z", "event_id": "2a80dd8061cc9e506c15bafdfb0f7839", "kind": "phase", "observed_utc": "2026-11-09T21:03:53.035754Z", "phase": "t6h", "rows": 29, "sport_key": "basketball_ncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 71, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-09T21:03:53.035754Z", "regions": ["us"], "rows": 1075, "sport_key": "basketball_ncaab", "stored": 1075}
+{"commence_utc": "2026-11-10T03:00:00Z", "event_id": "56281861e76193d706523aaeb3104fc4", "kind": "phase", "observed_utc": "2026-11-09T21:03:53.035754Z", "phase": "t6h", "rows": 18, "sport_key": "basketball_wncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 5, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-09T21:03:53.035754Z", "regions": ["us"], "rows": 40, "sport_key": "basketball_wncaab", "stored": 40}
