@@ -22457,3 +22457,11 @@
 {"events": 5, "kind": "peek", "next_check_utc": "2026-11-09T14:47:20.670853Z", "observed_utc": "2026-11-09T08:47:20.670853Z", "sport_key": "soccer_australia_aleague"}
 {"events": 20, "kind": "peek", "next_check_utc": "2026-11-09T14:47:20.670853Z", "observed_utc": "2026-11-09T08:47:20.670853Z", "sport_key": "soccer_germany_liga3"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-09T15:08:37.377933Z", "observed_utc": "2026-11-09T09:08:37.377933Z", "sport_key": "soccer_germany_bundesliga"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-09T15:25:19.308978Z", "observed_utc": "2026-11-09T09:25:19.308978Z", "sport_key": "americanfootball_cfl"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-09T15:25:19.308978Z", "observed_utc": "2026-11-09T09:25:19.308978Z", "sport_key": "aussierules_afl"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-09T15:25:19.308978Z", "observed_utc": "2026-11-09T09:25:19.308978Z", "sport_key": "soccer_conmebol_copa_libertadores"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-09T15:25:19.308978Z", "observed_utc": "2026-11-09T09:25:19.308978Z", "sport_key": "soccer_conmebol_copa_sudamericana"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-09T15:25:19.308978Z", "observed_utc": "2026-11-09T09:25:19.308978Z", "sport_key": "soccer_england_efl_cup"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-09T15:25:19.308978Z", "observed_utc": "2026-11-09T09:25:19.308978Z", "sport_key": "soccer_germany_dfb_pokal"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-09T15:25:19.308978Z", "observed_utc": "2026-11-09T09:25:19.308978Z", "sport_key": "soccer_uefa_europa_league"}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-11-09T15:25:19.308978Z", "observed_utc": "2026-11-09T09:25:19.308978Z", "sport_key": "soccer_usa_mls"}
