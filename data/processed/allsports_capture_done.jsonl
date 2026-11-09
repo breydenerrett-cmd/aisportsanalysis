@@ -22296,3 +22296,4 @@
 {"commence_utc": "2026-11-09T01:10:00Z", "event_id": "41a3f4e9221afae1081031d9f6af0db4", "kind": "phase", "observed_utc": "2026-11-09T00:44:35.450309Z", "phase": "t30m", "rows": 33, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 7, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-09T00:44:35.450309Z", "regions": ["us"], "rows": 168, "sport_key": "icehockey_nhl", "stored": 168}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-09T00:44:35.450309Z", "regions": ["us"], "rows": 5, "sport_key": "soccer_chile_campeonato", "stored": 5}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-09T06:51:22.881780Z", "observed_utc": "2026-11-09T00:51:22.881780Z", "sport_key": "soccer_epl"}
