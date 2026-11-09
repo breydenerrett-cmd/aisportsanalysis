@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-08 21:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-09 16:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-8** |
+| Days until 2026-10-31 | **-9** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-08 (1:30 pm PT run): the three 10:00 am PT NFL briefs (DAL@IND, DET@MIA, NYG@PHI) are graded; public sample now DET@MIA 11-08.
-- TB@CHI (5:20 pm PT) NFL brief published clean on attempt 2 at ~21:43Z; the 1:05/1:25 pm PT games were already live and were not briefed.
-- Production up at 21:40Z: /health 200, memory peak 752.7 MB of 850, odds 0.6 h old, capture 11 min ago.
-- Deploy-prod 21:08Z failed its health check (app stopped answering after a page request; likely out of memory); process restarted 21:20Z. Second such failure today.
+- 2026-11-09 (8:30 am PT run): NFL TB@CHI (11-08) brief graded complete; all four 11-08 NFL briefs now graded. Public sample stays DET@MIA 11-08.
+- No MLB games (postseason over). Monday night BUF@MIN (5:15 pm PT) is due for a brief in the 1:30 pm PT run.
+- Production up at 16:41Z: /health 200, memory peak 832.6 MB of 850, capture 6 min ago; site odds 16.6 h old because no deploy has run since 00:05Z.
+- Tests run 42535046987 red on one Python 3.10 phone-width Chrome test (passed on 3.11/3.12 and locally); unexplained restart at 09:24Z.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
