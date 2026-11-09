@@ -22425,3 +22425,4 @@
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-09T04:44:44.522417Z", "regions": ["au"], "rows": 20, "sport_key": "cricket_test_match", "stored": 17}
 {"commence_utc": "2026-11-10T04:59:00Z", "event_id": "c3059edfb2a6c5df3aad474b927e0198", "kind": "phase", "observed_utc": "2026-11-09T05:02:09.002405Z", "phase": "t24h", "rows": 24, "sport_key": "basketball_ncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 39, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-09T05:02:09.002405Z", "regions": ["us"], "rows": 739, "sport_key": "basketball_ncaab", "stored": 723}
+{"events": 31, "kind": "peek", "next_check_utc": "2026-11-09T11:12:44.792467Z", "observed_utc": "2026-11-09T05:12:44.792467Z", "sport_key": "boxing_boxing"}
