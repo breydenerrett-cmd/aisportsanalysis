@@ -22553,3 +22553,7 @@
 {"commence_utc": "2026-11-10T00:30:00Z", "event_id": "5eb2876e3072a9935e3b94e2daaeb0ff", "kind": "phase", "observed_utc": "2026-11-09T15:51:36.372798Z", "phase": "t24h", "rows": 2, "sport_key": "basketball_wncaab"}
 {"commence_utc": "2026-11-10T03:00:00Z", "event_id": "56281861e76193d706523aaeb3104fc4", "kind": "phase", "observed_utc": "2026-11-09T15:51:36.372798Z", "phase": "t24h", "rows": 3, "sport_key": "basketball_wncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 5, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-09T15:51:36.372798Z", "regions": ["us"], "rows": 12, "sport_key": "basketball_wncaab", "stored": 12}
+{"commence_utc": "2026-11-09T16:30:00Z", "event_id": "cc67d1126281e6cf78f470ed4440055c", "kind": "phase", "observed_utc": "2026-11-09T16:07:42.679193Z", "phase": "t30m", "rows": 6, "sport_key": "icehockey_liiga"}
+{"call_kind": "pregame", "credits": 3, "events": 6, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-09T16:07:42.679193Z", "regions": ["us"], "rows": 36, "sport_key": "icehockey_liiga", "stored": 6}
+{"commence_utc": "2026-11-09T18:00:00Z", "event_id": "a878bfc5e7eae6808debf217c23c93f5", "kind": "phase", "observed_utc": "2026-11-09T16:07:42.679193Z", "phase": "t2h", "rows": 15, "sport_key": "soccer_norway_eliteserien"}
+{"call_kind": "pregame", "credits": 2, "events": 1, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-09T16:07:42.679193Z", "regions": ["us"], "rows": 15, "sport_key": "soccer_norway_eliteserien", "stored": 15}
