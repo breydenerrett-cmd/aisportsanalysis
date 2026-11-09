@@ -22396,3 +22396,10 @@
 {"call_kind": "pregame", "credits": 3, "events": 41, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-09T03:18:45.468092Z", "regions": ["us"], "rows": 758, "sport_key": "basketball_ncaab", "stored": 742}
 {"commence_utc": "2026-11-10T03:00:00Z", "event_id": "4b345990c8a04ff88ce31d233a406011", "kind": "phase", "observed_utc": "2026-11-09T03:18:45.468092Z", "phase": "t24h", "rows": 30, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 4, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-09T03:18:45.468092Z", "regions": ["us"], "rows": 107, "sport_key": "icehockey_nhl", "stored": 107}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-09T09:31:33.345556Z", "observed_utc": "2026-11-09T03:31:33.345556Z", "sport_key": "soccer_greece_super_league"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-09T09:31:33.345556Z", "observed_utc": "2026-11-09T03:31:33.345556Z", "sport_key": "soccer_netherlands_eredivisie"}
+{"commence_utc": "2026-11-09T04:00:00Z", "event_id": "554104210813f386269d72536774eded", "kind": "phase", "observed_utc": "2026-11-09T03:31:33.345556Z", "phase": "t30m", "rows": 30, "sport_key": "basketball_ncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 41, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-09T03:31:33.345556Z", "regions": ["us"], "rows": 762, "sport_key": "basketball_ncaab", "stored": 746}
+{"commence_utc": "2026-11-10T00:10:00Z", "event_id": "07361a8381206817e27bd2697fad7479", "kind": "phase", "observed_utc": "2026-11-09T03:31:33.345556Z", "phase": "t24h", "rows": 6, "sport_key": "basketball_nba"}
+{"call_kind": "pregame", "credits": 3, "events": 13, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-09T03:31:33.345556Z", "regions": ["us"], "rows": 238, "sport_key": "basketball_nba", "stored": 203}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-09T03:31:33.345556Z", "regions": ["us"], "rows": 6, "sport_key": "soccer_mexico_ligamx", "stored": 4}
