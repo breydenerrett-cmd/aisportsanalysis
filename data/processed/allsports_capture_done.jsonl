@@ -22465,3 +22465,7 @@
 {"events": 8, "kind": "peek", "next_check_utc": "2026-11-09T15:25:19.308978Z", "observed_utc": "2026-11-09T09:25:19.308978Z", "sport_key": "soccer_germany_dfb_pokal"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-09T15:25:19.308978Z", "observed_utc": "2026-11-09T09:25:19.308978Z", "sport_key": "soccer_uefa_europa_league"}
 {"events": 2, "kind": "peek", "next_check_utc": "2026-11-09T15:25:19.308978Z", "observed_utc": "2026-11-09T09:25:19.308978Z", "sport_key": "soccer_usa_mls"}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-09T15:37:45.735920Z", "observed_utc": "2026-11-09T09:37:45.735920Z", "sport_key": "soccer_greece_super_league"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-09T15:37:45.735920Z", "observed_utc": "2026-11-09T09:37:45.735920Z", "sport_key": "soccer_netherlands_eredivisie"}
+{"commence_utc": "2026-11-09T19:30:00Z", "event_id": "7bfc2afc162934f011a8425159e340da", "kind": "phase", "observed_utc": "2026-11-09T09:37:45.735920Z", "phase": "t24h", "rows": 4, "sport_key": "soccer_spain_segunda_division"}
+{"call_kind": "pregame", "credits": 2, "events": 12, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-09T09:37:45.735920Z", "regions": ["us"], "rows": 78, "sport_key": "soccer_spain_segunda_division", "stored": 13}
