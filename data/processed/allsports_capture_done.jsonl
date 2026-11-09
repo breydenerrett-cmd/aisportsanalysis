@@ -22592,3 +22592,5 @@
 {"commence_utc": "2026-11-09T23:30:00Z", "event_id": "dba571eaa20f42408cc4687d047d445b", "kind": "phase", "observed_utc": "2026-11-09T17:37:35.806859Z", "phase": "t6h", "rows": 30, "sport_key": "basketball_ncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 37, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-09T17:37:35.806859Z", "regions": ["us"], "rows": 853, "sport_key": "basketball_ncaab", "stored": 853}
 {"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-09T17:37:35.806859Z", "regions": ["us"], "rows": 12, "sport_key": "icehockey_liiga", "stored": 2}
+{"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-09T17:44:49.017699Z", "regions": ["us"], "rows": 8, "sport_key": "basketball_wncaab", "stored": 8}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-09T17:44:49.017699Z", "regions": ["eu"], "rows": 5, "sport_key": "soccer_germany_bundesliga_women", "stored": 5}
