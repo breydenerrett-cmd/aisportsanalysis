@@ -22477,3 +22477,6 @@
 {"events": 20, "kind": "peek", "next_check_utc": "2026-11-09T16:46:20.199946Z", "observed_utc": "2026-11-09T10:46:20.199946Z", "sport_key": "soccer_spain_la_liga"}
 {"commence_utc": "2026-11-09T16:30:00Z", "event_id": "cc67d1126281e6cf78f470ed4440055c", "kind": "phase", "observed_utc": "2026-11-09T10:46:20.199946Z", "phase": "t6h", "rows": 6, "sport_key": "icehockey_liiga"}
 {"call_kind": "pregame", "credits": 3, "events": 6, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-09T10:46:20.199946Z", "regions": ["us"], "rows": 36, "sport_key": "icehockey_liiga", "stored": 6}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-09T17:09:03.117204Z", "observed_utc": "2026-11-09T11:09:03.117204Z", "sport_key": "soccer_russia_premier_league"}
+{"commence_utc": "2026-11-09T17:00:00Z", "event_id": "636e4d44986fc696854256557dcafc67", "kind": "phase", "observed_utc": "2026-11-09T11:09:03.117204Z", "phase": "t6h", "rows": 12, "sport_key": "soccer_germany_bundesliga_women"}
+{"call_kind": "pregame", "credits": 2, "events": 1, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-09T11:09:03.117204Z", "regions": ["eu"], "rows": 12, "sport_key": "soccer_germany_bundesliga_women", "stored": 12}
