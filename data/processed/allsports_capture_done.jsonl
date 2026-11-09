@@ -22525,3 +22525,5 @@
 {"events": 20, "kind": "peek", "next_check_utc": "2026-11-09T20:49:48.499232Z", "observed_utc": "2026-11-09T14:49:48.499232Z", "sport_key": "soccer_germany_liga3"}
 {"commence_utc": "2026-11-10T04:30:00Z", "event_id": "f514e21f4e57e6e3a2c1d0db84265166", "kind": "phase", "observed_utc": "2026-11-09T14:49:48.499232Z", "phase": "t24h", "rows": 6, "sport_key": "cricket_test_match"}
 {"call_kind": "pregame", "credits": 1, "events": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-09T14:49:48.499232Z", "regions": ["au"], "rows": 7, "sport_key": "cricket_test_match", "stored": 6}
+{"commence_utc": "2026-11-09T17:00:00Z", "event_id": "636e4d44986fc696854256557dcafc67", "kind": "phase", "observed_utc": "2026-11-09T15:03:00.980066Z", "phase": "t2h", "rows": 12, "sport_key": "soccer_germany_bundesliga_women"}
+{"call_kind": "pregame", "credits": 2, "events": 1, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-09T15:03:00.980066Z", "regions": ["eu"], "rows": 12, "sport_key": "soccer_germany_bundesliga_women", "stored": 12}

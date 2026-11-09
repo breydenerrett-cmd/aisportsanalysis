@@ -7411,3 +7411,5 @@
 {"fetched_utc": "2026-11-09T14:22:47.639948+00:00", "game_date": "2026-11-09", "poll": true}
 {"fetched_utc": "2026-11-09T14:32:07.262550+00:00", "game_date": "2026-11-09", "poll": true}
 {"fetched_utc": "2026-11-09T14:48:43.054833+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-09T15:01:55.468176+00:00", "game_date": "2026-11-09", "poll": true}
+{"category": "signed", "date": "2026-11-09", "first_seen_utc": "2026-11-09T15:01:55.468176+00:00", "player": "Antoine Kelly", "player_id": 681520, "team": "CLE", "transaction_id": 949904}
