@@ -11703,3 +11703,16 @@
 {"errors": [], "events": 2, "family": "MMA", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-10T12:31:50.635664Z", "source": "espn_mma", "unmatched": 2, "unmatched_ids": ["384ccf0b8844cfa404246d6a79071f31", "8e341c835f53e685f687de428a8704a9"], "void": 0, "written": 0}
 {"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-10T13:33:30.112650+00:00", "sport_key": "cricket_odi"}
 {"errors": [], "events": 2, "family": "MMA", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-10T13:33:30.657610Z", "source": "espn_mma", "unmatched": 2, "unmatched_ids": ["384ccf0b8844cfa404246d6a79071f31", "8e341c835f53e685f687de428a8704a9"], "void": 0, "written": 0}
+{"credits": 2, "days_from": 3, "events": 34, "kind": "poll", "observed_utc": "2026-11-10T15:30:44.587463+00:00", "sport_key": "boxing_boxing"}
+{"away_score": null, "away_team": "Manitoba Moose", "commence_time": "2026-11-12T01:00:00Z", "completed": false, "event_id": "4ee6854e254ef49fdaaaafac26768b14", "home_score": null, "home_team": "Texas Stars", "kind": "score", "last_update": null, "observed_utc": "2026-11-10T15:30:44.587463+00:00", "outcome": null, "scores": null, "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 12, "kind": "poll", "observed_utc": "2026-11-10T15:30:44.587463+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-10T15:30:44.587463+00:00", "sport_key": "cricket_test_match"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-10T15:30:44.587463+00:00", "sport_key": "soccer_korea_kleague1"}
+{"credits": 2, "days_from": 3, "events": 17, "kind": "poll", "observed_utc": "2026-11-10T15:30:44.587463+00:00", "sport_key": "soccer_spain_segunda_division"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-10T15:30:44.587463+00:00", "sport_key": "aussierules_aflw"}
+{"credits": 2, "days_from": 3, "events": 16, "kind": "poll", "observed_utc": "2026-11-10T15:30:44.587463+00:00", "sport_key": "soccer_portugal_primeira_liga"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-10T15:30:44.587463+00:00", "sport_key": "baseball_kbo"}
+{"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-10T15:30:44.587463+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 15, "kind": "poll", "observed_utc": "2026-11-10T15:30:44.587463+00:00", "sport_key": "soccer_chile_campeonato"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-10T15:30:44.587463+00:00", "sport_key": "soccer_league_of_ireland"}
+{"errors": [], "events": 2, "family": "MMA", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-10T15:30:47.816251Z", "source": "espn_mma", "unmatched": 2, "unmatched_ids": ["384ccf0b8844cfa404246d6a79071f31", "8e341c835f53e685f687de428a8704a9"], "void": 0, "written": 0}
