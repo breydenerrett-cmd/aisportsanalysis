@@ -23084,3 +23084,13 @@
 {"events": 9, "kind": "peek", "next_check_utc": "2026-11-10T14:32:03.499928Z", "observed_utc": "2026-11-10T08:32:03.499928Z", "sport_key": "soccer_germany_bundesliga2"}
 {"events": 10, "kind": "peek", "next_check_utc": "2026-11-10T14:32:03.499928Z", "observed_utc": "2026-11-10T08:32:03.499928Z", "sport_key": "soccer_italy_serie_b"}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-10T08:32:03.499928Z", "regions": ["au"], "rows": 12, "sport_key": "cricket_test_match", "stored": 4}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-10T15:29:42.702486Z", "observed_utc": "2026-11-10T09:29:42.702486Z", "sport_key": "cricket_big_bash"}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-10T15:29:42.702486Z", "observed_utc": "2026-11-10T09:29:42.702486Z", "sport_key": "icehockey_sweden_hockey_league"}
+{"events": 11, "kind": "peek", "next_check_utc": "2026-11-10T15:29:42.702486Z", "observed_utc": "2026-11-10T09:29:42.702486Z", "sport_key": "soccer_brazil_campeonato"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-10T15:29:42.702486Z", "observed_utc": "2026-11-10T09:29:42.702486Z", "sport_key": "soccer_poland_ekstraklasa"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-10T15:29:42.702486Z", "observed_utc": "2026-11-10T09:29:42.702486Z", "sport_key": "soccer_uefa_champs_league"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-10T15:29:42.702486Z", "observed_utc": "2026-11-10T09:29:42.702486Z", "sport_key": "soccer_uefa_europa_conference_league"}
+{"events": 29, "kind": "peek", "next_check_utc": "2026-11-10T15:29:42.702486Z", "observed_utc": "2026-11-10T09:29:42.702486Z", "sport_key": "soccer_uefa_nations_league"}
+{"commence_utc": "2026-11-11T08:36:00Z", "event_id": "248771f6813bd947f7e4174e9207c59b", "kind": "phase", "observed_utc": "2026-11-10T09:29:42.702486Z", "phase": "t24h", "rows": 0, "sport_key": "basketball_nbl"}
+{"call_kind": "pregame", "credits": 3, "events": 5, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-10T09:29:42.702486Z", "regions": ["us"], "rows": 0, "sport_key": "basketball_nbl", "stored": 0}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-10T09:29:42.702486Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_test_match", "stored": 4}
