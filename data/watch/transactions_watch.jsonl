@@ -7439,3 +7439,37 @@
 {"fetched_utc": "2026-11-09T21:41:02.597719+00:00", "game_date": "2026-11-09", "poll": true}
 {"category": "other", "date": "2026-11-09", "first_seen_utc": "2026-11-09T21:41:02.597719+00:00", "player": "Christian Cairo", "player_id": 686551, "team": "LAD", "transaction_id": 949929}
 {"fetched_utc": "2026-11-09T22:00:49.118253+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-09T22:15:47.396978+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-09T22:36:12.992231+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-09T23:00:10.187350+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-09T23:09:50.442981+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-09T23:27:37.128666+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-09T23:39:21.806106+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-10T00:12:16.018977+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-10T00:21:56.727962+00:00", "game_date": "2026-11-09", "poll": true}
+{"category": "other", "date": "2026-11-09", "first_seen_utc": "2026-11-10T00:21:56.727962+00:00", "player": "Kyren Paris", "player_id": 677347, "team": "NYM", "transaction_id": 949940}
+{"fetched_utc": "2026-11-10T00:43:30.131836+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-10T00:58:15.642317+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-10T01:23:00.756982+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-10T01:34:51.543635+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-10T02:30:44.560582+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-10T02:53:10.989702+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-10T03:32:17.413194+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-10T04:30:37.129453+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-10T05:26:54.210334+00:00", "game_date": "2026-11-10", "poll": true}
+{"fetched_utc": "2026-11-10T06:30:38.330606+00:00", "game_date": "2026-11-10", "poll": true}
+{"fetched_utc": "2026-11-10T07:30:42.830843+00:00", "game_date": "2026-11-10", "poll": true}
+{"fetched_utc": "2026-11-10T08:30:56.767388+00:00", "game_date": "2026-11-10", "poll": true}
+{"fetched_utc": "2026-11-10T09:28:48.945904+00:00", "game_date": "2026-11-10", "poll": true}
+{"fetched_utc": "2026-11-10T10:29:49.564996+00:00", "game_date": "2026-11-10", "poll": true}
+{"fetched_utc": "2026-11-10T10:42:47.860632+00:00", "game_date": "2026-11-10", "poll": true}
+{"fetched_utc": "2026-11-10T11:28:40.922373+00:00", "game_date": "2026-11-10", "poll": true}
+{"fetched_utc": "2026-11-10T12:30:38.194195+00:00", "game_date": "2026-11-10", "poll": true}
+{"fetched_utc": "2026-11-10T13:32:24.539526+00:00", "game_date": "2026-11-10", "poll": true}
+{"fetched_utc": "2026-11-10T14:28:49.906855+00:00", "game_date": "2026-11-10", "poll": true}
+{"fetched_utc": "2026-11-10T15:29:50.062691+00:00", "game_date": "2026-11-10", "poll": true}
+{"fetched_utc": "2026-11-10T16:31:58.437905+00:00", "game_date": "2026-11-10", "poll": true}
+{"category": "other", "date": "2026-11-10", "first_seen_utc": "2026-11-10T16:31:58.437905+00:00", "player": "Victor Arias", "player_id": 692478, "team": "TOR", "transaction_id": 949950}
+{"category": "other", "date": "2026-11-10", "first_seen_utc": "2026-11-10T16:31:58.437905+00:00", "player": "Lazaro Estrada", "player_id": 681751, "team": "TOR", "transaction_id": 949951}
+{"category": "signed", "date": "2026-11-10", "first_seen_utc": "2026-11-10T16:31:58.437905+00:00", "player": "Rudy Martin Jr.", "player_id": 657675, "team": "TOR", "transaction_id": 949952}
+{"category": "other", "date": "2026-11-10", "first_seen_utc": "2026-11-10T16:31:58.437905+00:00", "player": "Josh Stephan", "player_id": 695776, "team": "TOR", "transaction_id": 949954}
