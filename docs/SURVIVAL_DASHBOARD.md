@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-10 16:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-10 21:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-10 (8:30 am PT run): NFL BUF@MIN 11-09 graded (final BUF 23, MIN 6); public sample now points at it.
-- No briefs due today: no MLB games (postseason over), no NFL game on Tuesday. Next NFL brief window is Thursday night.
-- Production up at 16:41Z: /health 200, memory peak 837.5 MB of 850, unexplained restart at 05:10Z, site odds 15.7 h old (no deploy since 01:00Z).
-- Tests green on 609a32f64 (42710184238); daily-loop red on the cowork-session-migration branch (10:10Z).
+- 2026-11-10 (1:30 pm PT run): no briefs due (no MLB games, no NFL game Tuesday); NFL BUF@MIN 11-09 graded complete; next NFL brief window is Thursday night.
+- Production up at 21:41Z: /health 200, memory peak 844.8 MB of 850, same process since the 05:10Z restart.
+- Site odds 20.7 h old: no deploy since 01:00Z; the public sample still shows 11-08 until the next deploy picks up BUF@MIN.
+- Tests green on aa4654233 (42863231403); daily-loop red twice on the cowork-session-migration branch (10:10Z, 17:20Z).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
