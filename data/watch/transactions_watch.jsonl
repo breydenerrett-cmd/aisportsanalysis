@@ -7473,3 +7473,4 @@
 {"category": "other", "date": "2026-11-10", "first_seen_utc": "2026-11-10T16:31:58.437905+00:00", "player": "Lazaro Estrada", "player_id": 681751, "team": "TOR", "transaction_id": 949951}
 {"category": "signed", "date": "2026-11-10", "first_seen_utc": "2026-11-10T16:31:58.437905+00:00", "player": "Rudy Martin Jr.", "player_id": 657675, "team": "TOR", "transaction_id": 949952}
 {"category": "other", "date": "2026-11-10", "first_seen_utc": "2026-11-10T16:31:58.437905+00:00", "player": "Josh Stephan", "player_id": 695776, "team": "TOR", "transaction_id": 949954}
+{"fetched_utc": "2026-11-10T17:42:02.807822+00:00", "game_date": "2026-11-10", "poll": true}
