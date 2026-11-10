@@ -649,3 +649,4 @@
 {"game_id": "2026_09_BUF_MIN", "observed_utc": "2026-11-09T23:28:38.066006Z", "phase": "t2h"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-10T00:13:03.961857Z", "phase": "refresh"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-10T00:44:28.731220Z", "phase": "refresh"}
+{"game_id": "2026_09_BUF_MIN", "observed_utc": "2026-11-10T00:59:37.533369Z", "phase": "t30m"}
