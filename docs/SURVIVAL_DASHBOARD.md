@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-09 21:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-10 16:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-9** |
+| Days until 2026-10-31 | **-10** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-09 (1:30 pm PT run): Monday-night NFL brief BUF@MIN published at 21:42Z (3 calls, 0 struck, first attempt clean); kickoff 5:15 pm PT.
-- No MLB games (postseason over). NFL 11-08 briefs all graded; public sample stays DET@MIA 11-08 until BUF@MIN is graded.
-- Production up at 21:41Z: /health 200, memory peak 821.4 MB of 850, deploy at 21:15Z, site odds 0.5 h old, capture 10 min ago.
-- Tests green on 4684ddad7 (42662966172); daily-loop red on the cowork-session-migration branch (scheduled 20:13Z).
+- 2026-11-10 (8:30 am PT run): NFL BUF@MIN 11-09 graded (final BUF 23, MIN 6); public sample now points at it.
+- No briefs due today: no MLB games (postseason over), no NFL game on Tuesday. Next NFL brief window is Thursday night.
+- Production up at 16:41Z: /health 200, memory peak 837.5 MB of 850, unexplained restart at 05:10Z, site odds 15.7 h old (no deploy since 01:00Z).
+- Tests green on 609a32f64 (42710184238); daily-loop red on the cowork-session-migration branch (10:10Z).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
