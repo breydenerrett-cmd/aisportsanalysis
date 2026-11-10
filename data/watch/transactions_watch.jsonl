@@ -7446,3 +7446,5 @@
 {"fetched_utc": "2026-11-09T23:27:37.128666+00:00", "game_date": "2026-11-09", "poll": true}
 {"fetched_utc": "2026-11-09T23:39:21.806106+00:00", "game_date": "2026-11-09", "poll": true}
 {"fetched_utc": "2026-11-10T00:12:16.018977+00:00", "game_date": "2026-11-09", "poll": true}
+{"fetched_utc": "2026-11-10T00:21:56.727962+00:00", "game_date": "2026-11-09", "poll": true}
+{"category": "other", "date": "2026-11-09", "first_seen_utc": "2026-11-10T00:21:56.727962+00:00", "player": "Kyren Paris", "player_id": 677347, "team": "NYM", "transaction_id": 949940}
