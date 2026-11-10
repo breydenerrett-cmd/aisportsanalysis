@@ -23094,3 +23094,10 @@
 {"commence_utc": "2026-11-11T08:36:00Z", "event_id": "248771f6813bd947f7e4174e9207c59b", "kind": "phase", "observed_utc": "2026-11-10T09:29:42.702486Z", "phase": "t24h", "rows": 0, "sport_key": "basketball_nbl"}
 {"call_kind": "pregame", "credits": 3, "events": 5, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-10T09:29:42.702486Z", "regions": ["us"], "rows": 0, "sport_key": "basketball_nbl", "stored": 0}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-10T09:29:42.702486Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_test_match", "stored": 4}
+{"events": 5, "kind": "peek", "next_check_utc": "2026-11-10T16:30:31.312568Z", "observed_utc": "2026-11-10T10:30:31.312568Z", "sport_key": "soccer_australia_aleague"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-10T16:30:31.312568Z", "observed_utc": "2026-11-10T10:30:31.312568Z", "sport_key": "soccer_germany_bundesliga"}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-11-10T16:30:31.312568Z", "observed_utc": "2026-11-10T10:30:31.312568Z", "sport_key": "soccer_germany_liga3"}
+{"commence_utc": "2026-11-10T15:35:00Z", "event_id": "5e9d9a8f36cf7fb6d45f5b804d52c6a5", "kind": "phase", "observed_utc": "2026-11-10T10:30:31.312568Z", "phase": "t6h", "rows": 3, "sport_key": "icehockey_ahl"}
+{"commence_utc": "2026-11-10T16:30:00Z", "event_id": "2aa5166a866ab162f6ba128d8943216f", "kind": "phase", "observed_utc": "2026-11-10T10:30:31.312568Z", "phase": "t6h", "rows": 3, "sport_key": "icehockey_ahl"}
+{"call_kind": "pregame", "credits": 3, "events": 11, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-10T10:30:31.312568Z", "regions": ["us"], "rows": 33, "sport_key": "icehockey_ahl", "stored": 24}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-10T10:30:31.312568Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_test_match", "stored": 4}
