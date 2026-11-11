@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-11 16:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-11 21:41Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-11 (8:30 am PT run): no briefs due (no MLB games, no NFL game Wednesday); nothing new to grade (MLB 11-10 none published, NFL BUF@MIN 11-09 complete).
-- Production up at 16:41Z: /health 200, memory peak 852.4 MB over the 850 limit (now 639.2), same process since the 11-10 05:10Z restart.
-- Site odds 39.7 h old: no deploy since 11-10 01:00Z although tests went green twice since; the public sample still shows 11-08.
-- Tests green on e21769666 (42907691224); daily-loop red three times on the cowork-session-migration branch (latest 11-11 10:10Z).
+- 2026-11-11 (1:30 pm PT run): no briefs due (no MLB games, no NFL game Wednesday); nothing new to grade.
+- Production up at 21:41Z: /health 200, memory peak 852.4 MB over the 850 limit (now 632.1), same process since 11-10 05:10Z.
+- Site odds 44.7 h old: no deploy since 11-10 01:00Z although tests went green on ead947f85 (43066518871); the public sample still shows 11-08.
+- Daily-loop red four times on the cowork-session-migration branch (latest 43068719502, 11-11 17:29Z).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
