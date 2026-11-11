@@ -23890,3 +23890,5 @@
 {"commence_utc": "2026-11-11T16:30:00Z", "event_id": "e37e0aa0b1f563c4b978e4d46f7bbf9a", "kind": "phase", "observed_utc": "2026-11-11T10:30:51.119595Z", "phase": "t6h", "rows": 6, "sport_key": "icehockey_liiga"}
 {"call_kind": "pregame", "credits": 3, "events": 6, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-11T10:30:51.119595Z", "regions": ["us"], "rows": 36, "sport_key": "icehockey_liiga", "stored": 36}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-11T10:30:51.119595Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_test_match", "stored": 4}
+{"commence_utc": "2026-11-12T10:36:00Z", "event_id": "7ee63c7510601a977256cda9261dab62", "kind": "phase", "observed_utc": "2026-11-11T10:38:17.820662Z", "phase": "t24h", "rows": 3, "sport_key": "basketball_nbl"}
+{"call_kind": "pregame", "credits": 3, "events": 4, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-11T10:38:17.820662Z", "regions": ["us"], "rows": 12, "sport_key": "basketball_nbl", "stored": 6}
