@@ -12207,3 +12207,13 @@
 {"errors": [], "events": 2, "family": "MMA", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-11T10:30:55.009776Z", "source": "espn_mma", "unmatched": 2, "unmatched_ids": ["384ccf0b8844cfa404246d6a79071f31", "8e341c835f53e685f687de428a8704a9"], "void": 0, "written": 0}
 {"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-11T10:38:20.285306+00:00", "sport_key": "cricket_odi"}
 {"credits": 2, "days_from": 3, "events": 8, "kind": "poll", "observed_utc": "2026-11-11T10:38:20.285306+00:00", "sport_key": "soccer_spain_copa_del_rey"}
+{"credits": 2, "days_from": 3, "events": 8, "kind": "poll", "observed_utc": "2026-11-11T11:31:58.490204+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 45, "kind": "poll", "observed_utc": "2026-11-11T11:31:58.490204+00:00", "sport_key": "boxing_boxing"}
+{"away_score": null, "away_team": "Sri Lanka", "commence_time": "2026-11-12T04:30:00Z", "completed": false, "event_id": "b6c1094c6d34b16c0a3eaf1f8143c4a1", "home_score": null, "home_team": "Pakistan", "kind": "score", "last_update": null, "observed_utc": "2026-11-11T11:31:58.490204+00:00", "outcome": null, "scores": null, "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 3, "kind": "poll", "observed_utc": "2026-11-11T11:31:58.490204+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 18, "kind": "poll", "observed_utc": "2026-11-11T11:31:58.490204+00:00", "sport_key": "soccer_england_efl_trophy"}
+{"credits": 2, "days_from": 3, "events": 13, "kind": "poll", "observed_utc": "2026-11-11T11:31:58.490204+00:00", "sport_key": "soccer_portugal_primeira_liga"}
+{"credits": 2, "days_from": 3, "events": 15, "kind": "poll", "observed_utc": "2026-11-11T11:31:58.490204+00:00", "sport_key": "soccer_spain_segunda_division"}
+{"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-11T11:31:58.490204+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 13, "kind": "poll", "observed_utc": "2026-11-11T11:31:58.490204+00:00", "sport_key": "soccer_chile_campeonato"}
+{"errors": [], "events": 2, "family": "MMA", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-11T11:32:01.358206Z", "source": "espn_mma", "unmatched": 2, "unmatched_ids": ["384ccf0b8844cfa404246d6a79071f31", "8e341c835f53e685f687de428a8704a9"], "void": 0, "written": 0}
