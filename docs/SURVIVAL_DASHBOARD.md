@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-10 21:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-11 16:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-10** |
+| Days until 2026-10-31 | **-11** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-10 (1:30 pm PT run): no briefs due (no MLB games, no NFL game Tuesday); NFL BUF@MIN 11-09 graded complete; next NFL brief window is Thursday night.
-- Production up at 21:41Z: /health 200, memory peak 844.8 MB of 850, same process since the 05:10Z restart.
-- Site odds 20.7 h old: no deploy since 01:00Z; the public sample still shows 11-08 until the next deploy picks up BUF@MIN.
-- Tests green on aa4654233 (42863231403); daily-loop red twice on the cowork-session-migration branch (10:10Z, 17:20Z).
+- 2026-11-11 (8:30 am PT run): no briefs due (no MLB games, no NFL game Wednesday); nothing new to grade (MLB 11-10 none published, NFL BUF@MIN 11-09 complete).
+- Production up at 16:41Z: /health 200, memory peak 852.4 MB over the 850 limit (now 639.2), same process since the 11-10 05:10Z restart.
+- Site odds 39.7 h old: no deploy since 11-10 01:00Z although tests went green twice since; the public sample still shows 11-08.
+- Tests green on e21769666 (42907691224); daily-loop red three times on the cowork-session-migration branch (latest 11-11 10:10Z).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 

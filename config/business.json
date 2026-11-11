@@ -131,10 +131,10 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-11-10 (1:30 pm PT run): no briefs due (no MLB games, no NFL game Tuesday); NFL BUF@MIN 11-09 graded complete; next NFL brief window is Thursday night.",
-    "Production up at 21:41Z: /health 200, memory peak 844.8 MB of 850, same process since the 05:10Z restart.",
-    "Site odds 20.7 h old: no deploy since 01:00Z; the public sample still shows 11-08 until the next deploy picks up BUF@MIN.",
-    "Tests green on aa4654233 (42863231403); daily-loop red twice on the cowork-session-migration branch (10:10Z, 17:20Z).",
+    "2026-11-11 (8:30 am PT run): no briefs due (no MLB games, no NFL game Wednesday); nothing new to grade (MLB 11-10 none published, NFL BUF@MIN 11-09 complete).",
+    "Production up at 16:41Z: /health 200, memory peak 852.4 MB over the 850 limit (now 639.2), same process since the 11-10 05:10Z restart.",
+    "Site odds 39.7 h old: no deploy since 11-10 01:00Z although tests went green twice since; the public sample still shows 11-08.",
+    "Tests green on e21769666 (42907691224); daily-loop red three times on the cowork-session-migration branch (latest 11-11 10:10Z).",
     "Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at."
   ],
   "next_customer_action": "Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.",
