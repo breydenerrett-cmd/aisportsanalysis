@@ -3416,3 +3416,4 @@
 {"events": 9, "kind": "peek", "next_check_utc": "2026-11-11T06:29:42.315448Z", "observed_utc": "2026-11-11T03:29:42.315448Z", "sport_key": "icehockey_nhl"}
 {"events": 27, "kind": "peek", "next_check_utc": "2026-11-11T07:30:07.638964Z", "observed_utc": "2026-11-11T04:30:07.638964Z", "sport_key": "americanfootball_nfl"}
 {"events": 16, "kind": "peek", "next_check_utc": "2026-11-11T07:30:07.638964Z", "observed_utc": "2026-11-11T04:30:07.638964Z", "sport_key": "basketball_nba"}
+{"events": 64, "kind": "peek", "next_check_utc": "2026-11-11T08:29:47.751267Z", "observed_utc": "2026-11-11T05:29:47.751267Z", "sport_key": "americanfootball_ncaaf"}

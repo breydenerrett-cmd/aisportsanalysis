@@ -23811,3 +23811,24 @@
 {"call_kind": "inplay", "credits": 1, "events": 65, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-11T04:29:46.157698Z", "regions": ["us"], "rows": 698, "sport_key": "americanfootball_ncaaf", "stored": 35}
 {"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-11T04:29:46.157698Z", "regions": ["us"], "rows": 9, "sport_key": "icehockey_ahl", "stored": 9}
 {"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-11T04:29:46.157698Z", "regions": ["us"], "rows": 75, "sport_key": "icehockey_nhl", "stored": 73}
+{"events": 42, "kind": "peek", "next_check_utc": "2026-11-11T11:29:41.010080Z", "observed_utc": "2026-11-11T05:29:41.010080Z", "sport_key": "americanfootball_ncaaf_fcs"}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-11T11:29:41.010080Z", "observed_utc": "2026-11-11T05:29:41.010080Z", "sport_key": "cricket_big_bash"}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-11T11:29:41.010080Z", "observed_utc": "2026-11-11T05:29:41.010080Z", "sport_key": "icehockey_mestis"}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-11T11:29:41.010080Z", "observed_utc": "2026-11-11T05:29:41.010080Z", "sport_key": "icehockey_sweden_hockey_league"}
+{"events": 5, "kind": "peek", "next_check_utc": "2026-11-11T11:29:41.010080Z", "observed_utc": "2026-11-11T05:29:41.010080Z", "sport_key": "soccer_australia_aleague"}
+{"events": 11, "kind": "peek", "next_check_utc": "2026-11-11T11:29:41.010080Z", "observed_utc": "2026-11-11T05:29:41.010080Z", "sport_key": "soccer_brazil_campeonato"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-11T11:29:41.010080Z", "observed_utc": "2026-11-11T05:29:41.010080Z", "sport_key": "soccer_france_ligue_two"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-11T11:29:41.010080Z", "observed_utc": "2026-11-11T05:29:41.010080Z", "sport_key": "soccer_germany_bundesliga"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-11T11:29:41.010080Z", "observed_utc": "2026-11-11T05:29:41.010080Z", "sport_key": "soccer_germany_bundesliga2"}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-11-11T11:29:41.010080Z", "observed_utc": "2026-11-11T05:29:41.010080Z", "sport_key": "soccer_germany_liga3"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-11T11:29:41.010080Z", "observed_utc": "2026-11-11T05:29:41.010080Z", "sport_key": "soccer_italy_serie_b"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-11T11:29:41.010080Z", "observed_utc": "2026-11-11T05:29:41.010080Z", "sport_key": "soccer_poland_ekstraklasa"}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-11T11:29:41.010080Z", "observed_utc": "2026-11-11T05:29:41.010080Z", "sport_key": "soccer_spain_copa_del_rey"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-11T11:29:41.010080Z", "observed_utc": "2026-11-11T05:29:41.010080Z", "sport_key": "soccer_uefa_champs_league"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-11T11:29:41.010080Z", "observed_utc": "2026-11-11T05:29:41.010080Z", "sport_key": "soccer_uefa_europa_conference_league"}
+{"events": 30, "kind": "peek", "next_check_utc": "2026-11-11T11:29:41.010080Z", "observed_utc": "2026-11-11T05:29:41.010080Z", "sport_key": "soccer_uefa_nations_league"}
+{"call_kind": "inplay", "credits": 1, "events": 14, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-11T05:29:41.010080Z", "regions": ["us"], "rows": 72, "sport_key": "basketball_nba", "stored": 65}
+{"call_kind": "inplay", "credits": 1, "events": 49, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-11T05:29:41.010080Z", "regions": ["us"], "rows": 204, "sport_key": "basketball_ncaab", "stored": 204}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-11T05:29:41.010080Z", "regions": ["us"], "rows": 0, "sport_key": "basketball_wncaab", "stored": 0}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-11T05:29:41.010080Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_test_match", "stored": 4}
+{"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-11T05:29:41.010080Z", "regions": ["us"], "rows": 73, "sport_key": "icehockey_nhl", "stored": 73}
