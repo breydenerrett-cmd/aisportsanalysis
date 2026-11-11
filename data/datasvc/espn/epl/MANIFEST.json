@@ -14,10 +14,10 @@
    "sha256": "22aed11d886f1fc91b596a968e53152014164ba6b0fef4867ac614b1faa3194f"
   },
   "players.jsonl": {
-   "bytes": 159355,
-   "newest": "2026-11-03T23:26:14Z",
-   "records": 635,
-   "sha256": "b23c563937f3e23f7fc7e94e5d79f5cb7fd4f1e6c6e74942852564f6ecb3a0dc"
+   "bytes": 165241,
+   "newest": "2026-11-11T00:35:22Z",
+   "records": 660,
+   "sha256": "962400a7b949927656125242a2b3a3f6a38a8f9259ed7feee681fc97d371114f"
   },
   "standings_2026.jsonl": {
    "bytes": 64852,
@@ -38,8 +38,8 @@
    "sha256": "31a822285c09938918e5febc59a007bab97be4672232d2910da1b694ee3a9cc4"
   }
  },
- "generated_utc": "2026-11-10T21:31:03Z",
+ "generated_utc": "2026-11-11T16:28:43Z",
  "league": "epl",
- "refreshed_utc": "2026-11-10T21:31:03Z",
+ "refreshed_utc": "2026-11-11T16:28:43Z",
  "title": "English Premier League"
 }

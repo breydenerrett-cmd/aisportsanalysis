@@ -22,43 +22,43 @@
  },
  "files": {
   "games.jsonl": {
-   "bytes": 1787897,
+   "bytes": 1788356,
    "newest": "2026-11-10T01:15:00Z",
    "records": 1696,
-   "sha256": "14aa65e3c890546a36ca8b370d31a3f430ac09565336eb8f2c361eb4b93b98a2"
+   "sha256": "593c20015c0ddcd51bb79bd5678981631291852cf51b9cb7d41876bb1406cfaa"
   },
   "injuries.jsonl": {
-   "bytes": 9020617,
-   "newest": "2026-11-08T16:43:07Z",
-   "records": 19436,
-   "sha256": "85fe330ad6254831dd1fc9c766d77e4bc19e4d28ae98d78400d0bba2151c9ab7"
+   "bytes": 9023264,
+   "newest": "2026-11-11T10:19:51Z",
+   "records": 19442,
+   "sha256": "a285ba6f6ee8aa1d5234e4467767c25f78375fd1efd2e465bbf6d710aeb4049b"
   },
   "player_games.jsonl": {
-   "bytes": 9749179,
+   "bytes": 9749177,
    "newest": "2026-11-10T01:15:00Z",
    "records": 15782,
-   "sha256": "61abfcfc8b758762378cfab384c33586711a4b720ecf9aaa0c71027f2faaa8f2"
+   "sha256": "0bcae3f6131a20e3e3ed16cefd84196d6737620452f46879d1c3403305750d18"
   },
   "team_games.jsonl": {
-   "bytes": 3345074,
+   "bytes": 3345552,
    "newest": "2026-11-10T01:15:00Z",
    "records": 3392,
-   "sha256": "ee34d3fad8ca101344656999ab82d25107bcf1974916b6fbec7da7c87d857f5a"
+   "sha256": "ceb55d411a519711aa60b22288d91fc2137aee1e6834e73ab1d3927ef0db90fd"
   }
  },
- "generated_utc": "2026-11-10T17:30:04Z",
+ "generated_utc": "2026-11-11T10:19:52Z",
  "last_run": {
-  "finished_utc": "2026-11-10T17:30:04Z",
-  "games": 10,
-  "injuries": 0,
+  "finished_utc": "2026-11-11T10:19:52Z",
+  "games": 28,
+  "injuries": 6,
   "kind": "update",
   "missing_files": [],
   "per_season": {
    "2026": {
     "injuries": {
-     "dropped_full_participation_only": 1274,
-     "kept": 1547,
-     "rows": 2821
+     "dropped_full_participation_only": 1288,
+     "kept": 1553,
+     "rows": 2841
     },
     "player_stats": {
      "dropped_no_player_id": 9,
@@ -71,13 +71,13 @@
     "team_stats_unmatched": []
    }
   },
-  "player_games": 0,
+  "player_games": 34,
   "seasons": [
    2026
   ],
-  "started_utc": "2026-11-10T17:30:02Z",
+  "started_utc": "2026-11-11T10:19:49Z",
   "stopped": null,
-  "team_games": 0
+  "team_games": 31
  },
  "last_run_errors": 0,
  "sources": {
