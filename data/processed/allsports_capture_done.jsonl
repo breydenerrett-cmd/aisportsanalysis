@@ -24664,3 +24664,4 @@
 {"commence_utc": "2026-11-12T10:36:00Z", "event_id": "7ee63c7510601a977256cda9261dab62", "kind": "phase", "observed_utc": "2026-11-12T08:46:24.318348Z", "phase": "t2h", "rows": 3, "sport_key": "basketball_nbl"}
 {"commence_utc": "2026-11-13T08:36:00Z", "event_id": "5a6598501b9f244d3e807b7ef08ff3be", "kind": "phase", "observed_utc": "2026-11-12T08:46:24.318348Z", "phase": "t24h", "rows": 3, "sport_key": "basketball_nbl"}
 {"call_kind": "pregame", "credits": 3, "events": 4, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-12T08:46:24.318348Z", "regions": ["us"], "rows": 9, "sport_key": "basketball_nbl", "stored": 9}
+{"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-12T09:26:09.623153Z", "regions": ["us"], "rows": 3, "sport_key": "basketball_nbl", "stored": 3}
