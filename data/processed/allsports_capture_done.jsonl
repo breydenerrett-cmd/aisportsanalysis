@@ -24630,3 +24630,4 @@
 {"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-12T06:02:27.230488Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_test_match", "stored": 12}
 {"call_kind": "inplay", "credits": 1, "events": 25, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-12T06:02:27.230488Z", "regions": ["us"], "rows": 127, "sport_key": "basketball_ncaab", "stored": 127}
 {"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-12T06:02:27.230488Z", "regions": ["us"], "rows": 128, "sport_key": "icehockey_nhl", "stored": 128}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-12T12:12:57.263562Z", "observed_utc": "2026-11-12T06:12:57.263562Z", "sport_key": "icehockey_sweden_allsvenskan"}
