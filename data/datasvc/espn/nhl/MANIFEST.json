@@ -2,22 +2,22 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2027.jsonl": {
-   "bytes": 935654,
-   "newest": "2026-11-11T22:35:14Z",
-   "records": 1559,
-   "sha256": "c7a94933ba78f16436f00984fff502b34209fbe11658b58b9b638fbc528013ec"
+   "bytes": 946453,
+   "newest": "2026-11-12T01:42:21Z",
+   "records": 1579,
+   "sha256": "c22c6b04c8a7a133f948f8ab9c33e9f056d48715a229706e9e95e61dfa43a754"
   },
   "injuries.jsonl": {
-   "bytes": 298186,
-   "newest": "2026-11-11T22:35:16Z",
-   "records": 931,
-   "sha256": "e29bb3bfaab156a2e9a44d4ed175d2e178dbae73c3e2a945dca3eba6f1c045fe"
+   "bytes": 299859,
+   "newest": "2026-11-12T01:42:25Z",
+   "records": 937,
+   "sha256": "279a91556283ab121d8fb339f5f5c7ddad5379e68266f109182759ad7ce57217"
   },
   "player_games_2027.jsonl": {
-   "bytes": 7514543,
-   "newest": "2026-11-11T08:32:32Z",
-   "records": 11105,
-   "sha256": "4e59ef18a9ad28c05164ebb1ac2a55f056ec4f0deef2092b76a7e7ffc61f4c6f"
+   "bytes": 7520022,
+   "newest": "2026-11-12T01:42:24Z",
+   "records": 11114,
+   "sha256": "0353e5b03e5eaa520cde7ce33417ec0c55719bcfd1bc24b94b7facb9a30d19d9"
   },
   "players.jsonl": {
    "bytes": 306292,
@@ -32,10 +32,10 @@
    "sha256": "63823c509ec06f84e5112add8211f03252ed3a8dc9e7f94c7014557ffb325b2d"
   },
   "team_games_2027.jsonl": {
-   "bytes": 353383,
-   "newest": "2026-11-11T08:32:32Z",
-   "records": 650,
-   "sha256": "f21fbcb9ba971f5f3ff89b8cd5926625ffcbe9e8a24e19aa189fc1b6b3db1eb7"
+   "bytes": 356099,
+   "newest": "2026-11-12T01:42:24Z",
+   "records": 655,
+   "sha256": "29b748c8296c31513b32be8a9032b16e41a2db57d3eeed51a59af4d3e26e274e"
   },
   "teams.jsonl": {
    "bytes": 10403,
@@ -44,8 +44,8 @@
    "sha256": "1928b4b55c69e86bf9792f0aed91f29809a2b352a10785add1ef223599ec7cf6"
   }
  },
- "generated_utc": "2026-11-11T22:35:17Z",
+ "generated_utc": "2026-11-12T01:42:25Z",
  "league": "nhl",
- "refreshed_utc": "2026-11-11T22:35:16Z",
+ "refreshed_utc": "2026-11-12T01:42:25Z",
  "title": "NHL"
 }
