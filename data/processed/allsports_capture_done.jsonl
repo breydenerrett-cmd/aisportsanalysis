@@ -25131,3 +25131,4 @@
 {"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-12T21:33:21.330599Z", "regions": ["us"], "rows": 34, "sport_key": "tennis_wta_finals", "stored": 34}
 {"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-12T21:33:21.330599Z", "regions": ["us"], "rows": 24, "sport_key": "basketball_euroleague", "stored": 24}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-12T21:33:21.330599Z", "regions": ["us"], "rows": 2, "sport_key": "soccer_uefa_champs_league_women", "stored": 2}
+{"call_kind": "inplay", "credits": 1, "events": 33, "events_live": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-12T21:42:31.793775Z", "regions": ["us"], "rows": 149, "sport_key": "soccer_uefa_nations_league", "stored": 81}
