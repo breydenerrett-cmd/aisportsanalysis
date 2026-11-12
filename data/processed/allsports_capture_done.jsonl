@@ -24720,3 +24720,4 @@
 {"commence_utc": "2026-11-12T18:00:00Z", "event_id": "94d4d813b893bc3225657e0871329de0", "kind": "phase", "observed_utc": "2026-11-12T12:03:59.130948Z", "phase": "t6h", "rows": 14, "sport_key": "soccer_spain_copa_del_rey"}
 {"commence_utc": "2026-11-12T18:00:00Z", "event_id": "50cbb38b1ea64b2bcae091b4385bab04", "kind": "phase", "observed_utc": "2026-11-12T12:03:59.130948Z", "phase": "t6h", "rows": 16, "sport_key": "soccer_spain_copa_del_rey"}
 {"call_kind": "pregame", "credits": 2, "events": 5, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-12T12:03:59.130948Z", "regions": ["eu"], "rows": 56, "sport_key": "soccer_spain_copa_del_rey", "stored": 48}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-12T17:00:00Z", "observed_utc": "2026-11-12T12:17:32.194222Z", "sport_key": "icehockey_sweden_allsvenskan"}
