@@ -7536,3 +7536,4 @@
 {"category": "signed", "date": "2026-11-11", "first_seen_utc": "2026-11-12T04:56:03.865248+00:00", "player": "Ben Wereski", "player_id": 686844, "team": "CIN", "transaction_id": 950047}
 {"category": "signed", "date": "2026-11-11", "first_seen_utc": "2026-11-12T04:56:03.865248+00:00", "player": "Alec Marsh", "player_id": 679525, "team": "CWS", "transaction_id": 950049}
 {"fetched_utc": "2026-11-12T05:09:02.924754+00:00", "game_date": "2026-11-12", "poll": true}
+{"fetched_utc": "2026-11-12T05:17:48.580094+00:00", "game_date": "2026-11-12", "poll": true}
