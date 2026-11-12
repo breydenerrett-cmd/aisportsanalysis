@@ -1,0 +1,23 @@
+{
+  "sport": "nfl",
+  "game_id": "2026_10_WAS_NYG",
+  "date": "2026-11-12",
+  "away": "WAS",
+  "home": "NYG",
+  "kickoff_utc": "2026-11-13T01:15:00Z",
+  "built_at": "2026-11-12T21:41:59Z",
+  "packet_hash": "a3a0cba3e2917d47980487383ea1735c4655c73c508ec9d60cf1b84349467976",
+  "prompt_version": "analyst_prompt_nfl_v1",
+  "prompt_hash": "8b80fc0cc2622da7497bed03b851d3934b8d687a6ca9c5a17d3eeb2d1c56ea7b",
+  "token_estimate": 9409,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "spread",
+    "total"
+  ],
+  "missing_items": 2,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "nfl_store+odds_multibook"
+}

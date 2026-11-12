@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-12 16:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-12 21:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-12 (8:30 am PT run): no briefs due this morning; TNF WSH@NYG kicks off 5:15 pm PT (1:30 pm run). No MLB games.
-- Deploys resumed: deploy-prod succeeded 11-12 15:04Z and 16:10Z; site odds 0.7 h old at 16:41Z; /sample/brief now shows BUF@MIN 11-09, graded.
-- Production up at 16:41Z: /health 200, memory peak 826.0 MB (limit 850), now 505.7 MB.
-- Daily-loop red a fifth time on the cowork-session-migration branch (43197996177, 11-12 10:10Z).
+- 2026-11-12 (1:30 pm PT run): NFL TNF WSH@NYG brief published (row stamp 21:42:56Z), kickoff 5:15 pm PT; all three markets passed, checker clean on attempt 1.
+- Ledgers verify ok (NFL 53 rows, MLB 20). /sample/brief still shows BUF@MIN 11-09, graded. No MLB games.
+- Production up at 21:42Z: /health 200, memory peak 641.2 MB (limit 850); one restart 21:35Z with no deploy near it.
+- Daily-loop red a sixth time on the cowork-session-migration branch (43272932819, 11-12 17:46Z). Tests green on fe57f569c.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 

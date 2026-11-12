@@ -1,0 +1,104 @@
+{
+  "summary": "New York is the better team on the season numbers, with a margin per game of 1.25 against Washington's -3.75, but the books already price this as close to a coin flip and nothing we have shows what the number misses. The home side's listed quarterback has only 2 prior starts with the team, Washington has 2 players out on the injury report, and the recent form points in different directions on defense and turnovers, so the signals disagree. I pass on the moneyline, where the home price is short and the books' own fair view is barely off even. I pass on the spread at 1.5; it sits under the key number of 3, but that is not a reason to take either side. The total has come down from 45 when first captured to 41, so the market has already absorbed lower scoring, and we cannot see weather for an outdoor Thursday game. Both teams are on a short week. I pass on all three markets.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "NYG",
+      "verdict": "PASS",
+      "price": -122,
+      "book": "fanduel",
+      "fair_estimate": 0.53,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books' own de-vigged number has New York only slightly above even, so the market sees a near coin flip and the data gives no clear reason to disagree.",
+          "evidence": [
+            { "path": "markets.moneyline.options[0].fair_probability", "value": 0.5347 },
+            { "path": "markets.moneyline.options[1].fair_probability", "value": 0.4653 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "New York is better on the season margin, but its listed quarterback has few starts with the team and the projection is not confirmed.",
+          "evidence": [
+            { "path": "sections.home.values.form.season_to_date.margin_per_game", "value": 1.25 },
+            { "path": "sections.away.values.form.season_to_date.margin_per_game", "value": -3.75 },
+            { "path": "sections.home.values.qb.listed_for_this_game.prior_starts_with_team", "value": 2 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -113,
+      "what_would_change_it": "A price on New York near -113 or shorter, or a confirmed quarterback change on either side, would make me revisit this.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "NYG -1.5",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "mybookieag",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides of the spread are priced almost identically, so the market treats the number as even and we have no argument in points that it is wrong.",
+          "evidence": [
+            { "path": "markets.spread.options[0].fair_probability", "value": 0.5052 },
+            { "path": "markets.spread.options[1].fair_probability", "value": 0.4948 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number has moved from 1.5 for Washington when first captured to the current 1.5 with New York laying it, and it sits under the key number of 3, which is not by itself a reason to take a side.",
+          "evidence": [
+            { "path": "markets.spread.context.away_number_first_captured", "value": 1.5 },
+            { "path": "markets.spread.options[0].line", "value": -1.5 },
+            { "path": "sections.reference.values.key_numbers[0]", "value": 3 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A move of the number onto 3 or a quarterback change on either side would give me something concrete to weigh.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 41",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "betrivers",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides of the total are priced almost evenly, and the number has already come down from 45 when first captured, so the market has taken in the lower scoring.",
+          "evidence": [
+            { "path": "markets.total.options[0].fair_probability", "value": 0.5021 },
+            { "path": "markets.total.options[1].fair_probability", "value": 0.4979 },
+            { "path": "markets.total.context.number_first_captured", "value": 45.0 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The scoring numbers do not clearly favor either side of 41, and we cannot see weather for an outdoor game.",
+          "evidence": [
+            { "path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 22.75 },
+            { "path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 21.5 },
+            { "path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 21.5 },
+            { "path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 25.25 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A weather forecast showing wind or cold, or a quarterback change on either side, would give me a specific reason to move on the number.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
