@@ -12677,3 +12677,4 @@
 {"credits": 2, "days_from": 3, "events": 10, "kind": "poll", "observed_utc": "2026-11-12T16:02:53.809749+00:00", "sport_key": "soccer_spain_copa_del_rey"}
 {"credits": 2, "days_from": 3, "events": 12, "kind": "poll", "observed_utc": "2026-11-12T16:02:53.809749+00:00", "sport_key": "soccer_spain_segunda_division"}
 {"credits": 2, "days_from": 3, "events": 8, "kind": "poll", "observed_utc": "2026-11-12T16:02:53.809749+00:00", "sport_key": "soccer_uefa_champs_league_women"}
+{"errors": [], "events": 1, "family": "MMA", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-12T16:42:28.692760Z", "source": "espn_mma", "unmatched": 1, "unmatched_ids": ["995105426f97f584594b89320dc9f357"], "void": 0, "written": 0}
