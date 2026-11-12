@@ -24789,3 +24789,5 @@
 {"call_kind": "pregame", "credits": 2, "events": 5, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-12T15:38:24.856474Z", "regions": ["eu"], "rows": 60, "sport_key": "soccer_spain_copa_del_rey", "stored": 52}
 {"commence_utc": "2026-11-12T21:30:00Z", "event_id": "7d0fa680caf6f5718ca51b421754252d", "kind": "phase", "observed_utc": "2026-11-12T15:38:24.856474Z", "phase": "t6h", "rows": 9, "sport_key": "tennis_wta_finals"}
 {"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-12T15:38:24.856474Z", "regions": ["us"], "rows": 34, "sport_key": "tennis_wta_finals", "stored": 34}
+{"commence_utc": "2026-11-12T17:45:00Z", "event_id": "c3716b6adacbddc5e04bba2baba450aa", "kind": "phase", "observed_utc": "2026-11-12T15:46:15.836637Z", "phase": "t2h", "rows": 7, "sport_key": "soccer_uefa_champs_league_women"}
+{"call_kind": "pregame", "credits": 2, "events": 2, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-12T15:46:15.836637Z", "regions": ["us"], "rows": 14, "sport_key": "soccer_uefa_champs_league_women", "stored": 14}
