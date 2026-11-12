@@ -24692,3 +24692,17 @@
 {"commence_utc": "2026-11-12T17:00:00Z", "event_id": "d598d5e914a905ef70b01fd1b444aecb", "kind": "phase", "observed_utc": "2026-11-12T11:11:53.866011Z", "phase": "t6h", "rows": 13, "sport_key": "soccer_uefa_nations_league"}
 {"call_kind": "pregame", "credits": 2, "events": 35, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-12T11:11:53.866011Z", "regions": ["us"], "rows": 315, "sport_key": "soccer_uefa_nations_league", "stored": 207}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-12T11:11:53.866011Z", "regions": ["us"], "rows": 2, "sport_key": "basketball_nbl", "stored": 2}
+{"events": 59, "kind": "peek", "next_check_utc": "2026-11-12T17:40:12.605633Z", "observed_utc": "2026-11-12T11:40:12.605633Z", "sport_key": "americanfootball_ncaaf_fcs"}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-12T17:40:12.605633Z", "observed_utc": "2026-11-12T11:40:12.605633Z", "sport_key": "cricket_big_bash"}
+{"events": 5, "kind": "peek", "next_check_utc": "2026-11-12T17:40:12.605633Z", "observed_utc": "2026-11-12T11:40:12.605633Z", "sport_key": "soccer_australia_aleague"}
+{"events": 14, "kind": "peek", "next_check_utc": "2026-11-12T17:40:12.605633Z", "observed_utc": "2026-11-12T11:40:12.605633Z", "sport_key": "soccer_brazil_campeonato"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-12T17:40:12.605633Z", "observed_utc": "2026-11-12T11:40:12.605633Z", "sport_key": "soccer_france_ligue_two"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-12T17:40:12.605633Z", "observed_utc": "2026-11-12T11:40:12.605633Z", "sport_key": "soccer_germany_bundesliga"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-12T17:40:12.605633Z", "observed_utc": "2026-11-12T11:40:12.605633Z", "sport_key": "soccer_germany_bundesliga2"}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-11-12T17:40:12.605633Z", "observed_utc": "2026-11-12T11:40:12.605633Z", "sport_key": "soccer_germany_liga3"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-12T17:40:12.605633Z", "observed_utc": "2026-11-12T11:40:12.605633Z", "sport_key": "soccer_italy_serie_b"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-12T17:40:12.605633Z", "observed_utc": "2026-11-12T11:40:12.605633Z", "sport_key": "soccer_poland_ekstraklasa"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-12T17:40:12.605633Z", "observed_utc": "2026-11-12T11:40:12.605633Z", "sport_key": "soccer_uefa_champs_league"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-12T17:40:12.605633Z", "observed_utc": "2026-11-12T11:40:12.605633Z", "sport_key": "soccer_uefa_europa_conference_league"}
+{"commence_utc": "2026-11-12T17:30:00Z", "event_id": "c9cc536dc7a65c792381e54b431b50ee", "kind": "phase", "observed_utc": "2026-11-12T11:40:12.605633Z", "phase": "t6h", "rows": 5, "sport_key": "soccer_spain_copa_del_rey"}
+{"call_kind": "pregame", "credits": 2, "events": 5, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-12T11:40:12.605633Z", "regions": ["eu"], "rows": 56, "sport_key": "soccer_spain_copa_del_rey", "stored": 48}
