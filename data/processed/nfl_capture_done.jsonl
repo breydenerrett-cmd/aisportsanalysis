@@ -653,3 +653,17 @@
 {"game_id": "2026_10_WAS_NYG", "observed_utc": "2026-11-10T01:24:01.064883Z", "phase": "t72h"}
 {"game_id": "2026_10_WAS_NYG", "observed_utc": "2026-11-12T01:29:32.459235Z", "phase": "t24h"}
 {"game_id": "2026_10_NE_DET", "observed_utc": "2026-11-12T14:37:55.073867Z", "phase": "t72h"}
+{"game_id": "2026_10_KC_ATL", "observed_utc": "2026-11-12T18:17:29.514537Z", "phase": "t72h"}
+{"game_id": "2026_10_HOU_CLE", "observed_utc": "2026-11-12T18:17:29.514537Z", "phase": "t72h"}
+{"game_id": "2026_10_MIN_GB", "observed_utc": "2026-11-12T18:17:29.514537Z", "phase": "t72h"}
+{"game_id": "2026_10_MIA_IND", "observed_utc": "2026-11-12T18:17:29.514537Z", "phase": "t72h"}
+{"game_id": "2026_10_CAR_NO", "observed_utc": "2026-11-12T18:17:29.514537Z", "phase": "t72h"}
+{"game_id": "2026_10_BUF_NYJ", "observed_utc": "2026-11-12T18:17:29.514537Z", "phase": "t72h"}
+{"game_id": "2026_10_JAX_TEN", "observed_utc": "2026-11-12T18:17:29.514537Z", "phase": "t72h"}
+{"game_id": "2026_10_WAS_NYG", "observed_utc": "2026-11-12T19:34:50.563819Z", "phase": "t6h"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-11-12T20:04:22.005763Z", "phase": "refresh"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-11-12T20:34:20.495855Z", "phase": "refresh"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-11-12T21:04:52.507314Z", "phase": "refresh"}
+{"game_id": "2026_10_LA_ARI", "observed_utc": "2026-11-12T21:13:59.621403Z", "phase": "t72h"}
+{"game_id": "2026_10_SEA_LV", "observed_utc": "2026-11-12T21:13:59.621403Z", "phase": "t72h"}
+{"game_id": "2026_10_SF_DAL", "observed_utc": "2026-11-12T21:33:16.731842Z", "phase": "t72h"}
