@@ -7529,3 +7529,9 @@
 {"fetched_utc": "2026-11-12T04:15:17.578752+00:00", "game_date": "2026-11-11", "poll": true}
 {"fetched_utc": "2026-11-12T04:33:54.759420+00:00", "game_date": "2026-11-11", "poll": true}
 {"fetched_utc": "2026-11-12T04:45:47.917045+00:00", "game_date": "2026-11-11", "poll": true}
+{"fetched_utc": "2026-11-12T04:56:03.865248+00:00", "game_date": "2026-11-11", "poll": true}
+{"category": "signed", "date": "2026-11-11", "first_seen_utc": "2026-11-12T04:56:03.865248+00:00", "player": "Kohl Franklin", "player_id": 681673, "team": "ARI", "transaction_id": 950041}
+{"category": "signed", "date": "2026-11-11", "first_seen_utc": "2026-11-12T04:56:03.865248+00:00", "player": "Trevor Kuncl", "player_id": 805321, "team": "CIN", "transaction_id": 950043}
+{"category": "signed", "date": "2026-11-11", "first_seen_utc": "2026-11-12T04:56:03.865248+00:00", "player": "Shane Sasaki", "player_id": 687071, "team": "CIN", "transaction_id": 950045}
+{"category": "signed", "date": "2026-11-11", "first_seen_utc": "2026-11-12T04:56:03.865248+00:00", "player": "Ben Wereski", "player_id": 686844, "team": "CIN", "transaction_id": 950047}
+{"category": "signed", "date": "2026-11-11", "first_seen_utc": "2026-11-12T04:56:03.865248+00:00", "player": "Alec Marsh", "player_id": 679525, "team": "CWS", "transaction_id": 950049}
