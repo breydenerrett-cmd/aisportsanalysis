@@ -24723,3 +24723,5 @@
 {"events": 7, "kind": "peek", "next_check_utc": "2026-11-12T17:00:00Z", "observed_utc": "2026-11-12T12:17:32.194222Z", "sport_key": "icehockey_sweden_allsvenskan"}
 {"events": 2, "kind": "peek", "next_check_utc": "2026-11-12T18:00:00Z", "observed_utc": "2026-11-12T12:32:24.333811Z", "sport_key": "soccer_france_coupe_de_france"}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-12T12:32:24.333811Z", "regions": ["us"], "rows": 2, "sport_key": "basketball_nbl", "stored": 2}
+{"commence_utc": "2026-11-12T19:05:00Z", "event_id": "b09fb33b70c3456bcd7d9c834e1dfb97", "kind": "phase", "observed_utc": "2026-11-12T13:11:49.366160Z", "phase": "t6h", "rows": 27, "sport_key": "basketball_euroleague"}
+{"call_kind": "pregame", "credits": 3, "events": 8, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-12T13:11:49.366160Z", "regions": ["us"], "rows": 176, "sport_key": "basketball_euroleague", "stored": 176}
