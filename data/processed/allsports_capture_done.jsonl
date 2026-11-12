@@ -25179,3 +25179,6 @@
 {"commence_utc": "2026-11-13T02:10:00Z", "event_id": "7785f669a86814b552e0979e06e4d202", "kind": "phase", "observed_utc": "2026-11-12T22:31:23.318615Z", "phase": "lock180", "rows": 33, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 12, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-12T22:31:23.318615Z", "regions": ["us"], "rows": 390, "sport_key": "icehockey_nhl", "stored": 390}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-12T22:31:23.318615Z", "regions": ["us"], "rows": 27, "sport_key": "tennis_wta_finals", "stored": 27}
+{"commence_utc": "2026-11-13T00:40:00Z", "event_id": "f269492a367221a7a50738844eda8469", "kind": "phase", "observed_utc": "2026-11-12T22:55:10.320481Z", "phase": "t2h", "rows": 33, "sport_key": "icehockey_nhl"}
+{"commence_utc": "2026-11-13T00:40:00Z", "event_id": "f269492a367221a7a50738844eda8469", "kind": "phase", "observed_utc": "2026-11-12T22:55:10.320481Z", "phase": "lock60", "rows": 33, "sport_key": "icehockey_nhl"}
+{"call_kind": "pregame", "credits": 3, "events": 12, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-12T22:55:10.320481Z", "regions": ["us"], "rows": 390, "sport_key": "icehockey_nhl", "stored": 390}
