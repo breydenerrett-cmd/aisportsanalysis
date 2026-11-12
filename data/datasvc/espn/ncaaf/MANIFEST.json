@@ -2,10 +2,10 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2026.jsonl": {
-   "bytes": 1958697,
-   "newest": "2026-11-11T19:33:47Z",
-   "records": 3127,
-   "sha256": "844875b9c525348c6dc4d8c6199a7e2154ac43242a726dca835d4d974268e806"
+   "bytes": 2012712,
+   "newest": "2026-11-12T14:14:22Z",
+   "records": 3213,
+   "sha256": "6633f9d67224cce8e6dc260c70d0c773ed2e0444c65c04d383f87b514fa969b9"
   },
   "injuries.jsonl": {
    "bytes": 944,
@@ -14,26 +14,26 @@
    "sha256": "8d020ea926694f49948a7910665c2258a69d1a6a81acbda3dd3ed846ca5ea1cc"
   },
   "standings_2026.jsonl": {
-   "bytes": 356548,
-   "newest": "2026-11-11T08:32:36Z",
-   "records": 593,
-   "sha256": "bb55b88b8c50b5de0f3c2e11d46dbc65a8ef07ab5622531925c617b558a04190"
+   "bytes": 360168,
+   "newest": "2026-11-12T04:47:43Z",
+   "records": 599,
+   "sha256": "5ac906f3e4d4e88dafc8e0211407c5a26bdd8666f466d4aee989cbba4ebd0d61"
   },
   "team_games_2026.jsonl": {
-   "bytes": 843740,
-   "newest": "2026-11-11T08:32:35Z",
-   "records": 1386,
-   "sha256": "b38f89078c90e2513a48443663e0e422cc49fa242efef1df2851fe44acd453a6"
+   "bytes": 847393,
+   "newest": "2026-11-12T04:47:42Z",
+   "records": 1392,
+   "sha256": "1285b79cb9a576ad2cb2cd199afca9ebe155993291be5bf380d4e887954f00a0"
   },
   "teams.jsonl": {
-   "bytes": 244616,
-   "newest": "2026-11-05T12:09:51Z",
-   "records": 763,
-   "sha256": "b7bff8bc0144de400a35309af2d60771216a75c588f95513d23a185cb954a23d"
+   "bytes": 246982,
+   "newest": "2026-11-12T14:14:19Z",
+   "records": 771,
+   "sha256": "4923be59057aa775a811747f187ec7cf08344431b692541e22eb4bb65a78eafd"
   }
  },
- "generated_utc": "2026-11-11T19:33:49Z",
+ "generated_utc": "2026-11-12T14:14:24Z",
  "league": "ncaaf",
- "refreshed_utc": "2026-11-11T19:33:49Z",
+ "refreshed_utc": "2026-11-12T14:14:24Z",
  "title": "NCAA football (FBS)"
 }
