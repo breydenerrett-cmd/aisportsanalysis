@@ -12668,3 +12668,12 @@
 {"credits": 2, "days_from": 3, "events": 5, "kind": "poll", "observed_utc": "2026-11-12T14:03:21.938877+00:00", "sport_key": "basketball_nbl"}
 {"errors": [], "events": 1, "family": "MMA", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-12T14:38:02.045924Z", "source": "espn_mma", "unmatched": 1, "unmatched_ids": ["995105426f97f584594b89320dc9f357"], "void": 0, "written": 0}
 {"errors": [], "events": 1, "family": "MMA", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-12T15:38:28.170146Z", "source": "espn_mma", "unmatched": 1, "unmatched_ids": ["995105426f97f584594b89320dc9f357"], "void": 0, "written": 0}
+{"away_score": null, "away_team": "San Diego Gulls", "commence_time": "2026-11-14T03:10:00Z", "completed": false, "event_id": "3632a5091bca5861ba540582b689057f", "home_score": null, "home_team": "Bakersfield Condors", "kind": "score", "last_update": null, "observed_utc": "2026-11-12T16:02:53.809749+00:00", "outcome": null, "scores": null, "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 10, "kind": "poll", "observed_utc": "2026-11-12T16:02:53.809749+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 7, "kind": "poll", "observed_utc": "2026-11-12T16:02:53.809749+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-12T16:02:53.809749+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 20, "kind": "poll", "observed_utc": "2026-11-12T16:02:53.809749+00:00", "sport_key": "soccer_england_efl_trophy"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-12T16:02:53.809749+00:00", "sport_key": "cricket_odi"}
+{"credits": 2, "days_from": 3, "events": 10, "kind": "poll", "observed_utc": "2026-11-12T16:02:53.809749+00:00", "sport_key": "soccer_spain_copa_del_rey"}
+{"credits": 2, "days_from": 3, "events": 12, "kind": "poll", "observed_utc": "2026-11-12T16:02:53.809749+00:00", "sport_key": "soccer_spain_segunda_division"}
+{"credits": 2, "days_from": 3, "events": 8, "kind": "poll", "observed_utc": "2026-11-12T16:02:53.809749+00:00", "sport_key": "soccer_uefa_champs_league_women"}
