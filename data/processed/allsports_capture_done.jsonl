@@ -25505,3 +25505,8 @@
 {"call_kind": "pregame", "credits": 3, "events": 4, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-13T06:28:21.778715Z", "regions": ["us"], "rows": 12, "sport_key": "basketball_nbl", "stored": 12}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-13T06:28:21.778715Z", "regions": ["au"], "rows": 13, "sport_key": "cricket_odi", "stored": 11}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-13T06:28:21.778715Z", "regions": ["au"], "rows": 16, "sport_key": "cricket_test_match", "stored": 7}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-13T13:30:13.157340Z", "observed_utc": "2026-11-13T07:30:13.157340Z", "sport_key": "soccer_brazil_serie_b"}
+{"commence_utc": "2026-11-13T08:30:00Z", "event_id": "5a6598501b9f244d3e807b7ef08ff3be", "kind": "phase", "observed_utc": "2026-11-13T07:30:13.157340Z", "phase": "t2h", "rows": 3, "sport_key": "basketball_nbl"}
+{"call_kind": "pregame", "credits": 3, "events": 4, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-13T07:30:13.157340Z", "regions": ["us"], "rows": 9, "sport_key": "basketball_nbl", "stored": 9}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-13T07:30:13.157340Z", "regions": ["au"], "rows": 10, "sport_key": "cricket_odi", "stored": 8}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-13T07:30:13.157340Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_test_match", "stored": 6}
