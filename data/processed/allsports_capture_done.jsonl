@@ -25533,3 +25533,8 @@
 {"commence_utc": "2026-11-14T08:15:00Z", "event_id": "b3ac8052fa98767aff2856601e514d3d", "kind": "phase", "observed_utc": "2026-11-13T08:32:50.282170Z", "phase": "t24h", "rows": 20, "sport_key": "aussierules_aflw"}
 {"call_kind": "pregame", "credits": 3, "events": 2, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-13T08:32:50.282170Z", "regions": ["au"], "rows": 42, "sport_key": "aussierules_aflw", "stored": 40}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-13T08:32:50.282170Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_test_match", "stored": 6}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-11-13T15:28:04.988231Z", "observed_utc": "2026-11-13T09:28:04.988231Z", "sport_key": "cricket_odi"}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-13T13:15:00Z", "observed_utc": "2026-11-13T09:28:04.988231Z", "sport_key": "icehockey_sweden_hockey_league"}
+{"commence_utc": "2026-11-14T08:36:00Z", "event_id": "62650b370c8d058cfb6d34d1ae65b9d3", "kind": "phase", "observed_utc": "2026-11-13T09:28:04.988231Z", "phase": "t24h", "rows": 3, "sport_key": "basketball_nbl"}
+{"call_kind": "pregame", "credits": 3, "events": 3, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-13T09:28:04.988231Z", "regions": ["us"], "rows": 6, "sport_key": "basketball_nbl", "stored": 6}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-13T09:28:04.988231Z", "regions": ["au"], "rows": 11, "sport_key": "cricket_test_match", "stored": 3}
