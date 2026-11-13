@@ -13089,3 +13089,4 @@
 {"away_score": 96.0, "away_team": "Charlotte Hornets", "commence_time": "2026-11-13T02:11:00Z", "completed": true, "event_id": "f3f429e773bfb2340ba2bb90f2b9dd1e", "home_score": 101.0, "home_team": "Phoenix Suns", "kind": "score", "last_update": "2026-11-13T05:34:47Z", "observed_utc": "2026-11-13T05:34:52.932913+00:00", "outcome": "home", "scores": [{"name": "Phoenix Suns", "score": "101"}, {"name": "Charlotte Hornets", "score": "96"}], "sport_key": "basketball_nba"}
 {"credits": 2, "days_from": 3, "events": 33, "kind": "poll", "observed_utc": "2026-11-13T05:34:52.932913+00:00", "sport_key": "basketball_nba"}
 {"credits": 2, "days_from": 3, "events": 9, "kind": "poll", "observed_utc": "2026-11-13T05:34:52.932913+00:00", "sport_key": "soccer_uefa_champs_league_women"}
+{"credits": 2, "days_from": 3, "events": 35, "kind": "poll", "observed_utc": "2026-11-13T06:28:27.398936+00:00", "sport_key": "soccer_uefa_nations_league"}
