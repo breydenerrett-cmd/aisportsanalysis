@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-13 16:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-13 21:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-13 (8:30 am PT run): graded NFL 11-12 WAS@NYG (final 24-21 WAS); all three calls were passes. /sample/brief config now points at it.
-- Ledgers verify ok (NFL 54 rows, MLB 20). No MLB games; no NFL game today.
-- Production up at 16:42Z: /health 200, memory peak 849.8 MB (limit 850); one restart 13:20Z with no deploy near it; newest site odds 15.6 h old.
-- Daily-loop red a seventh time on the cowork-session-migration branch (43407122884, 11-13 10:10Z). Tests green on e2619e1a8.
+- 2026-11-13 (1:30 pm PT run): no MLB games; no NFL game today. Grading re-run found nothing new (NFL 11-12 WAS@NYG already graded).
+- Production up at 21:41Z: /health 200, memory peak 851.3 MB (over the 850 limit), now 609.8; same process since 13:20Z.
+- No production deploy since 11-13 01:04Z, so /sample/brief still serves BUF@MIN 11-09 (graded); config points at WAS@NYG 11-12.
+- Daily-loop red an eighth time on the cowork-session-migration branch (43472468635, 17:24Z). Tests green on 3dbec82ae.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
