@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-12 21:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-13 16:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-12** |
+| Days until 2026-10-31 | **-13** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-12 (1:30 pm PT run): NFL TNF WSH@NYG brief published (row stamp 21:42:56Z), kickoff 5:15 pm PT; all three markets passed, checker clean on attempt 1.
-- Ledgers verify ok (NFL 53 rows, MLB 20). /sample/brief still shows BUF@MIN 11-09, graded. No MLB games.
-- Production up at 21:42Z: /health 200, memory peak 641.2 MB (limit 850); one restart 21:35Z with no deploy near it.
-- Daily-loop red a sixth time on the cowork-session-migration branch (43272932819, 11-12 17:46Z). Tests green on fe57f569c.
+- 2026-11-13 (8:30 am PT run): graded NFL 11-12 WAS@NYG (final 24-21 WAS); all three calls were passes. /sample/brief config now points at it.
+- Ledgers verify ok (NFL 54 rows, MLB 20). No MLB games; no NFL game today.
+- Production up at 16:42Z: /health 200, memory peak 849.8 MB (limit 850); one restart 13:20Z with no deploy near it; newest site odds 15.6 h old.
+- Daily-loop red a seventh time on the cowork-session-migration branch (43407122884, 11-13 10:10Z). Tests green on e2619e1a8.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
