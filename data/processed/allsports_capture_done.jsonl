@@ -26500,3 +26500,5 @@
 {"commence_utc": "2026-11-15T03:31:00Z", "event_id": "1c17e2864e69e3f09213d415abb035fb", "kind": "phase", "observed_utc": "2026-11-14T03:32:29.584434Z", "phase": "t24h", "rows": 9, "sport_key": "americanfootball_ncaaf_fcs"}
 {"call_kind": "pregame", "credits": 3, "events": 60, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-14T03:32:29.584434Z", "regions": ["us"], "rows": 522, "sport_key": "americanfootball_ncaaf_fcs", "stored": 522}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-14T03:32:29.584434Z", "regions": ["us"], "rows": 2, "sport_key": "basketball_wncaab", "stored": 2}
+{"commence_utc": "2026-11-15T01:10:00Z", "event_id": "cb06267ae037a883ae6f71078d6e2aaa", "kind": "phase", "observed_utc": "2026-11-14T03:53:34.962007Z", "phase": "t24h", "rows": 12, "sport_key": "basketball_nba"}
+{"call_kind": "pregame", "credits": 3, "events": 7, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-14T03:53:34.962007Z", "regions": ["us"], "rows": 130, "sport_key": "basketball_nba", "stored": 130}
