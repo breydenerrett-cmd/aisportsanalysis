@@ -27092,3 +27092,5 @@
 {"call_kind": "pregame", "credits": 2, "events": 20, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-14T15:33:24.306591Z", "regions": ["us"], "rows": 171, "sport_key": "soccer_brazil_campeonato", "stored": 34}
 {"commence_utc": "2026-11-14T21:30:00Z", "event_id": "57cede457aa62785e8460c5b2a052ac6", "kind": "phase", "observed_utc": "2026-11-14T15:33:24.306591Z", "phase": "t6h", "rows": 9, "sport_key": "tennis_wta_finals"}
 {"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-14T15:33:24.306591Z", "regions": ["us"], "rows": 18, "sport_key": "tennis_wta_finals", "stored": 18}
+{"commence_utc": "2026-11-14T16:10:00Z", "event_id": "fe785f6f52799b7705cdb8a8641a4c54", "kind": "phase", "observed_utc": "2026-11-14T15:41:09.747604Z", "phase": "t30m", "rows": 4, "sport_key": "boxing_boxing"}
+{"call_kind": "pregame", "credits": 1, "events": 47, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-14T15:41:09.747604Z", "regions": ["us"], "rows": 174, "sport_key": "boxing_boxing", "stored": 79}
