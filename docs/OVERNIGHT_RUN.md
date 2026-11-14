@@ -10851,3 +10851,30 @@ end-to-end confirmation (above).
 - 2026-11-14T16:54Z afternoon_slate: engine slate --date 2026-11-14 exit=2
 - 2026-11-14T16:54Z afternoon_slate: card publish --date 2026-11-14 exit=0
 - 2026-11-14T16:54Z afternoon_slate: engine slip --date 2026-11-14
+- 2026-11-14T17:21Z afternoon_slate: engine slate --date 2026-11-14 exit=2
+- 2026-11-14T17:21Z afternoon_slate: card publish --date 2026-11-14 exit=0
+- 2026-11-14T17:21Z afternoon_slate: engine slip --date 2026-11-14
+- 2026-11-14T17:51Z afternoon_slate: engine slate --date 2026-11-14 exit=2
+- 2026-11-14T17:51Z afternoon_slate: card publish --date 2026-11-14 exit=0
+- 2026-11-14T17:51Z afternoon_slate: engine slip --date 2026-11-14
+- 2026-11-14T18:23Z afternoon_slate: engine slate --date 2026-11-14 exit=2
+- 2026-11-14T18:23Z afternoon_slate: card publish --date 2026-11-14 exit=0
+- 2026-11-14T18:23Z afternoon_slate: engine slip --date 2026-11-14
+- 2026-11-14T18:59Z afternoon_slate: engine slate --date 2026-11-14 exit=2
+- 2026-11-14T18:59Z afternoon_slate: card publish --date 2026-11-14 exit=0
+- 2026-11-14T18:59Z afternoon_slate: engine slip --date 2026-11-14
+- 2026-11-14T19:23Z afternoon_slate: engine slate --date 2026-11-14 exit=2
+- 2026-11-14T19:23Z afternoon_slate: card publish --date 2026-11-14 exit=0
+- 2026-11-14T19:23Z afternoon_slate: engine slip --date 2026-11-14
+- 2026-11-14T19:48Z afternoon_slate: engine slate --date 2026-11-14 exit=2
+- 2026-11-14T19:48Z afternoon_slate: card publish --date 2026-11-14 exit=0
+- 2026-11-14T19:48Z afternoon_slate: engine slip --date 2026-11-14
+- 2026-11-14T20:14Z afternoon_slate: engine slate --date 2026-11-14 exit=2
+- 2026-11-14T20:14Z afternoon_slate: card publish --date 2026-11-14 exit=0
+- 2026-11-14T20:14Z afternoon_slate: engine slip --date 2026-11-14
+- 2026-11-14T20:53Z afternoon_slate: engine slate --date 2026-11-14 exit=2
+- 2026-11-14T20:53Z afternoon_slate: card publish --date 2026-11-14 exit=0
+- 2026-11-14T20:53Z afternoon_slate: engine slip --date 2026-11-14
+- 2026-11-14T21:23Z afternoon_slate: engine slate --date 2026-11-14 exit=2
+- 2026-11-14T21:23Z afternoon_slate: card publish --date 2026-11-14 exit=0
+- 2026-11-14T21:23Z afternoon_slate: engine slip --date 2026-11-14
