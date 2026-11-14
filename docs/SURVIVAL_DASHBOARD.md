@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-13 21:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-14 16:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-13** |
+| Days until 2026-10-31 | **-14** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-13 (1:30 pm PT run): no MLB games; no NFL game today. Grading re-run found nothing new (NFL 11-12 WAS@NYG already graded).
-- Production up at 21:41Z: /health 200, memory peak 851.3 MB (over the 850 limit), now 609.8; same process since 13:20Z.
-- No production deploy since 11-13 01:04Z, so /sample/brief still serves BUF@MIN 11-09 (graded); config points at WAS@NYG 11-12.
-- Daily-loop red an eighth time on the cowork-session-migration branch (43472468635, 17:24Z). Tests green on 3dbec82ae.
+- 2026-11-14 (8:30 am PT run): no MLB games; no NFL game Saturday. Grading found nothing new (NFL 11-12 WAS@NYG already graded).
+- Production up at 16:41Z: /health 200, memory peak 711.4 MB, now 493.7 (limit 850); /sample/brief now serves WAS@NYG 11-12.
+- deploy-prod 16:14Z failed: health check saw the app stop responding after page requests (restart 16:26Z). The 15:14Z deploy succeeded.
+- Daily-loop red a ninth time on the cowork-session-migration branch (43614251106, 16:11Z). Tests green on 9b0cdd69d.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
