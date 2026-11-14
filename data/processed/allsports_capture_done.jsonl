@@ -27785,3 +27785,4 @@
 {"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-14T21:35:18.502937Z", "regions": ["us"], "rows": 11, "sport_key": "basketball_wncaab", "stored": 11}
 {"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-14T21:35:18.502937Z", "regions": ["us"], "rows": 43, "sport_key": "soccer_spain_segunda_division", "stored": 32}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-14T21:35:18.502937Z", "regions": ["us"], "rows": 15, "sport_key": "tennis_wta_finals", "stored": 15}
+{"call_kind": "inplay", "credits": 1, "events": 33, "events_live": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-14T21:47:53.361490Z", "regions": ["us"], "rows": 243, "sport_key": "soccer_uefa_nations_league", "stored": 100}
