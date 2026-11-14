@@ -131,10 +131,10 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-11-14 (8:30 am PT run): no MLB games; no NFL game Saturday. Grading found nothing new (NFL 11-12 WAS@NYG already graded).",
-    "Production up at 16:41Z: /health 200, memory peak 711.4 MB, now 493.7 (limit 850); /sample/brief now serves WAS@NYG 11-12.",
-    "deploy-prod 16:14Z failed: health check saw the app stop responding after page requests (restart 16:26Z). The 15:14Z deploy succeeded.",
-    "Daily-loop red a ninth time on the cowork-session-migration branch (43614251106, 16:11Z). Tests green on 9b0cdd69d.",
+    "2026-11-14 (1:30 pm PT run): no MLB games; no NFL game Saturday. Grading found nothing new.",
+    "Production up at 21:41Z: /health 200, memory peak 719.6 MB, now 570.6 (limit 850); restart 21:24Z was a deploy.",
+    "deploy-prod 21:01Z failed on the out-of-memory health check (second today); 21:14Z deploy succeeded.",
+    "Daily-loop still red on the cowork-session-migration branch (43614251106). Tests green on 4c30d82f7.",
     "Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at."
   ],
   "next_customer_action": "Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.",

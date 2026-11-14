@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-14 16:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-14 21:41Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-14 (8:30 am PT run): no MLB games; no NFL game Saturday. Grading found nothing new (NFL 11-12 WAS@NYG already graded).
-- Production up at 16:41Z: /health 200, memory peak 711.4 MB, now 493.7 (limit 850); /sample/brief now serves WAS@NYG 11-12.
-- deploy-prod 16:14Z failed: health check saw the app stop responding after page requests (restart 16:26Z). The 15:14Z deploy succeeded.
-- Daily-loop red a ninth time on the cowork-session-migration branch (43614251106, 16:11Z). Tests green on 9b0cdd69d.
+- 2026-11-14 (1:30 pm PT run): no MLB games; no NFL game Saturday. Grading found nothing new.
+- Production up at 21:41Z: /health 200, memory peak 719.6 MB, now 570.6 (limit 850); restart 21:24Z was a deploy.
+- deploy-prod 21:01Z failed on the out-of-memory health check (second today); 21:14Z deploy succeeded.
+- Daily-loop still red on the cowork-session-migration branch (43614251106). Tests green on 4c30d82f7.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
