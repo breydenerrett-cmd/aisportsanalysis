@@ -28325,3 +28325,4 @@
 {"commence_utc": "2026-11-15T17:00:00Z", "event_id": "b37cfed1f792e0804c4f1e6a1c951f65", "kind": "phase", "observed_utc": "2026-11-15T11:01:20.439651Z", "phase": "t6h", "rows": 16, "sport_key": "soccer_uefa_nations_league"}
 {"call_kind": "pregame", "credits": 2, "events": 26, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-15T11:01:20.439651Z", "regions": ["us"], "rows": 425, "sport_key": "soccer_uefa_nations_league", "stored": 305}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T11:14:13.616486Z", "regions": ["au"], "rows": 18, "sport_key": "cricket_test_match", "stored": 7}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-11-15T17:24:38.920011Z", "observed_utc": "2026-11-15T11:24:38.920011Z", "sport_key": "soccer_england_league1"}
