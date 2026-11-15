@@ -8,16 +8,16 @@
    "sha256": "3c5353c705ca71163372609eec1b5e54bf7eacbeb58a55f51ef638751782734f"
   },
   "injuries.jsonl": {
-   "bytes": 347933,
-   "newest": "2026-11-15T17:35:42Z",
-   "records": 1090,
-   "sha256": "897a209b7e1ee74c24c28e796754f0eb92c70b9b02a2285dad81a848a9ddc602"
+   "bytes": 350205,
+   "newest": "2026-11-15T20:37:41Z",
+   "records": 1097,
+   "sha256": "03792f86a536b7a9f7555a343850c68a9799d0f51265d12fc15fa41a3cdc12e3"
   },
   "player_games_2027.jsonl": {
-   "bytes": 8405193,
-   "newest": "2026-11-15T08:24:10Z",
-   "records": 12422,
-   "sha256": "821397cc3b1cdd0ef11457dd228ef79766101df6594d419f2474958b3a2d2bf5"
+   "bytes": 8407954,
+   "newest": "2026-11-15T20:37:40Z",
+   "records": 12426,
+   "sha256": "5b828be0ab551eaeec23dc7859d4d2e96840be9d381b5cb1d25cb5edcbfefd1e"
   },
   "players.jsonl": {
    "bytes": 306292,
@@ -32,10 +32,10 @@
    "sha256": "3266a7c4ee1c973078e29f079d31526beedcdf6f35c56c23bb4a90318347ba7f"
   },
   "team_games_2027.jsonl": {
-   "bytes": 399600,
-   "newest": "2026-11-15T08:24:10Z",
-   "records": 735,
-   "sha256": "1ac35b3020af47aca17600033dc36fd8e47d225828f9cffb09f3b9417a09685e"
+   "bytes": 400686,
+   "newest": "2026-11-15T20:37:40Z",
+   "records": 737,
+   "sha256": "d552d98d2ae3bcec3aadd9c3ee15f82b87b649885890cdfe69963c8006c53076"
   },
   "teams.jsonl": {
    "bytes": 10403,
@@ -44,8 +44,8 @@
    "sha256": "1928b4b55c69e86bf9792f0aed91f29809a2b352a10785add1ef223599ec7cf6"
   }
  },
- "generated_utc": "2026-11-15T17:35:42Z",
+ "generated_utc": "2026-11-15T20:37:41Z",
  "league": "nhl",
- "refreshed_utc": "2026-11-15T17:35:42Z",
+ "refreshed_utc": "2026-11-15T20:37:41Z",
  "title": "NHL"
 }
