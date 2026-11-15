@@ -28247,3 +28247,6 @@
 {"events": 9, "kind": "peek", "next_check_utc": "2026-11-15T13:29:11.361948Z", "observed_utc": "2026-11-15T07:29:11.361948Z", "sport_key": "soccer_mexico_ligamx"}
 {"commence_utc": "2026-11-15T08:00:00Z", "event_id": "3c3332478f03445e05c4936f42a92359", "kind": "phase", "observed_utc": "2026-11-15T07:42:38.566073Z", "phase": "t30m", "rows": 8, "sport_key": "cricket_test_match"}
 {"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T07:42:38.566073Z", "regions": ["au"], "rows": 19, "sport_key": "cricket_test_match", "stored": 10}
+{"events": 19, "kind": "peek", "next_check_utc": "2026-11-15T13:55:48.894046Z", "observed_utc": "2026-11-15T07:55:48.894046Z", "sport_key": "soccer_brazil_campeonato"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-11-15T13:55:48.894046Z", "observed_utc": "2026-11-15T07:55:48.894046Z", "sport_key": "soccer_england_league2"}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T07:55:48.894046Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_odi", "stored": 12}
