@@ -731,3 +731,4 @@
 {"game_id": "2026_10_SEA_LV", "observed_utc": "2026-11-15T19:14:52.930977Z", "phase": "t2h"}
 {"game_id": "2026_10_SF_DAL", "observed_utc": "2026-11-15T19:35:19.680628Z", "phase": "t2h"}
 {"game_id": "2026_10_PIT_CIN", "observed_utc": "2026-11-15T19:35:19.680628Z", "phase": "t6h"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-11-15T20:12:30.801600Z", "phase": "refresh"}
