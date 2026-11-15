@@ -1,22 +1,22 @@
 {
  "files": {
   "bouts.jsonl": {
-   "bytes": 1463986,
-   "newest": "2026-11-08T01:00Z",
+   "bytes": 1464235,
+   "newest": "2026-11-15T02:00Z",
    "records": 1732,
-   "sha256": "23684ad1b3e787812ddd855c9ae1bee12715a63337b809b2d9bada63677bc170"
+   "sha256": "f85fbaa093e684f42a531b1846d5da1e4ea056ec3114c90e86446ebf14e15820"
   },
   "events.jsonl": {
-   "bytes": 80887,
-   "newest": "2026-11-07T22:00Z",
+   "bytes": 80879,
+   "newest": "2026-11-14T22:00Z",
    "records": 157,
-   "sha256": "ca556224f7c36f66875373748341444766d034718195812a645d54fce46adbb2"
+   "sha256": "0246a27869008c84ca806a4099abe0c6e821379712489f86256a41a9ce0d0327"
   },
   "fight_stats.jsonl": {
-   "bytes": 5787666,
-   "newest": "2026-11-08T01:00Z",
-   "records": 3360,
-   "sha256": "abc9998434f5fcc42df6513694d4c49e51f480ae138e2040d601c7210f8ce487"
+   "bytes": 5832285,
+   "newest": "2026-11-15T02:00Z",
+   "records": 3386,
+   "sha256": "347c2cf606cbb54c51c289a3aed59a92a5e28310e5424b81a3b847e71bbf5bc7"
   },
   "fighters.jsonl": {
    "bytes": 610480,
@@ -25,10 +25,10 @@
    "sha256": "fe1cc56ee244c2c952d412e492a7015ff8ca23a6abc7c4751196ba3186064180"
   },
   "odds.jsonl": {
-   "bytes": 6267564,
-   "newest": "2026-11-14T16:28:22Z",
+   "bytes": 6268743,
+   "newest": "2026-11-15T10:32:07Z",
    "records": 4108,
-   "sha256": "165311b3bced461c960f8ac52f74ce5ec9cc7db07fdfac2bc7904ba1d3d6508e"
+   "sha256": "748cb2193f80fdd0b6f2d423d0fbe22d03e4c0a8dd3f0fe7012cdffed662ef3c"
   },
   "ufccom_profiles.jsonl": {
    "bytes": 1263862,
@@ -37,17 +37,17 @@
    "sha256": "f9d7f7ec8aa1bf8e6c6f556c4a324c4546537888cfff4654f15de97323098267"
   }
  },
- "generated_utc": "2026-11-14T16:28:26Z",
+ "generated_utc": "2026-11-15T10:32:12Z",
  "last_run": {
   "bouts": 66,
   "events": 5,
-  "fight_stats": 28,
+  "fight_stats": 54,
   "fighters": 0,
-  "finished_utc": "2026-11-14T16:28:26Z",
+  "finished_utc": "2026-11-15T10:32:12Z",
   "kind": "update",
   "odds": 50,
   "profiles": 0,
-  "started_utc": "2026-11-14T16:27:14Z",
+  "started_utc": "2026-11-15T10:30:24Z",
   "stopped": null
  },
  "last_run_errors": 0
