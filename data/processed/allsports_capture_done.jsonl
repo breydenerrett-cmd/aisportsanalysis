@@ -28217,3 +28217,9 @@
 {"call_kind": "inplay", "credits": 1, "events": 37, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T05:32:33.984635Z", "regions": ["us"], "rows": 105, "sport_key": "boxing_boxing", "stored": 3}
 {"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T05:47:52.937625Z", "regions": ["us"], "rows": 57, "sport_key": "icehockey_nhl", "stored": 57}
 {"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T05:47:52.937625Z", "regions": ["us"], "rows": 8, "sport_key": "icehockey_ahl", "stored": 8}
+{"events": 36, "kind": "peek", "next_check_utc": "2026-11-15T12:00:53.232193Z", "observed_utc": "2026-11-15T06:00:53.232193Z", "sport_key": "boxing_boxing"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-15T12:00:53.232193Z", "observed_utc": "2026-11-15T06:00:53.232193Z", "sport_key": "icehockey_mestis"}
+{"commence_utc": "2026-11-15T08:00:00Z", "event_id": "3c3332478f03445e05c4936f42a92359", "kind": "phase", "observed_utc": "2026-11-15T06:00:53.232193Z", "phase": "t2h", "rows": 8, "sport_key": "cricket_test_match"}
+{"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T06:00:53.232193Z", "regions": ["au"], "rows": 23, "sport_key": "cricket_test_match", "stored": 14}
+{"call_kind": "inplay", "credits": 1, "events": 28, "events_live": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T06:00:53.232193Z", "regions": ["us"], "rows": 91, "sport_key": "americanfootball_ncaaf", "stored": 33}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T06:00:53.232193Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_odi", "stored": 12}
