@@ -1,0 +1,23 @@
+{
+  "sport": "nfl",
+  "game_id": "2026_10_PIT_CIN",
+  "date": "2026-11-15",
+  "away": "PIT",
+  "home": "CIN",
+  "kickoff_utc": "2026-11-16T01:20:00Z",
+  "built_at": "2026-11-15T21:42:26Z",
+  "packet_hash": "c34c3973554250c64dcc810d163312fe445354a5747d6e350ea2f5d293407388",
+  "prompt_version": "analyst_prompt_nfl_v1",
+  "prompt_hash": "8b80fc0cc2622da7497bed03b851d3934b8d687a6ca9c5a17d3eeb2d1c56ea7b",
+  "token_estimate": 9603,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "spread",
+    "total"
+  ],
+  "missing_items": 2,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "nfl_store+odds_multibook"
+}
