@@ -28224,3 +28224,10 @@
 {"call_kind": "inplay", "credits": 1, "events": 28, "events_live": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T06:00:53.232193Z", "regions": ["us"], "rows": 91, "sport_key": "americanfootball_ncaaf", "stored": 33}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T06:00:53.232193Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_odi", "stored": 12}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T06:11:06.126924Z", "regions": ["us"], "rows": 0, "sport_key": "basketball_nbl", "stored": 0}
+{"events": 15, "kind": "peek", "next_check_utc": "2026-11-15T12:37:37.042690Z", "observed_utc": "2026-11-15T06:37:37.042690Z", "sport_key": "basketball_euroleague"}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-11-15T12:37:37.042690Z", "observed_utc": "2026-11-15T06:37:37.042690Z", "sport_key": "rugbyleague_nrl"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-15T12:37:37.042690Z", "observed_utc": "2026-11-15T06:37:37.042690Z", "sport_key": "soccer_korea_kleague1"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-15T12:37:37.042690Z", "observed_utc": "2026-11-15T06:37:37.042690Z", "sport_key": "soccer_spain_copa_del_rey"}
+{"call_kind": "inplay", "credits": 1, "events": 26, "events_live": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T06:37:37.042690Z", "regions": ["us"], "rows": 84, "sport_key": "americanfootball_ncaaf", "stored": 26}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T06:37:37.042690Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_odi", "stored": 12}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T06:37:37.042690Z", "regions": ["au"], "rows": 19, "sport_key": "cricket_test_match", "stored": 10}
