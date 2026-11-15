@@ -28258,3 +28258,5 @@
 {"call_kind": "pregame", "credits": 2, "events": 27, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-15T08:05:49.511082Z", "regions": ["us"], "rows": 425, "sport_key": "soccer_uefa_nations_league", "stored": 305}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T08:15:53.814601Z", "regions": ["au"], "rows": 18, "sport_key": "cricket_test_match", "stored": 9}
 {"events": 1, "kind": "peek", "next_check_utc": "2026-11-15T14:23:56.174353Z", "observed_utc": "2026-11-15T08:23:56.174353Z", "sport_key": "soccer_england_efl_trophy"}
+{"events": 0, "kind": "peek", "next_check_utc": "2026-11-15T14:35:20.150835Z", "observed_utc": "2026-11-15T08:35:20.150835Z", "sport_key": "basketball_nbl"}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T08:35:20.150835Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_odi", "stored": 12}
