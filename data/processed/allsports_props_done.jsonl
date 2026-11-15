@@ -4232,3 +4232,5 @@
 {"commence_utc": "2026-11-15T14:30:00Z", "event_id": "b8c10fdf1e0ac4e13deee7f7c0af0b0b", "kind": "phase", "observed_utc": "2026-11-15T08:35:26.411978Z", "phase": "t6h", "rows": 598, "sport_key": "americanfootball_nfl", "status": "done"}
 {"books": 8, "credits": 6, "event_id": "b8c10fdf1e0ac4e13deee7f7c0af0b0b", "family": "NFL", "kind": "call", "markets": ["player_pass_yds", "player_pass_tds", "player_rush_yds", "player_receptions", "player_reception_yds", "player_anytime_td"], "observed_utc": "2026-11-15T08:35:26.411978Z", "phase": "t6h", "regions": ["us"], "remaining": 81775, "sport_key": "americanfootball_nfl", "stored": 598}
 {"events": 5, "kind": "peek", "next_check_utc": "2026-11-15T12:39:47.124268Z", "observed_utc": "2026-11-15T09:39:47.124268Z", "sport_key": "icehockey_nhl"}
+{"events": 37, "kind": "peek", "next_check_utc": "2026-11-15T11:14:14.986838Z", "observed_utc": "2026-11-15T10:44:14.986838Z", "sport_key": "americanfootball_ncaaf"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-15T11:14:14.986838Z", "observed_utc": "2026-11-15T10:44:14.986838Z", "sport_key": "basketball_nba"}
