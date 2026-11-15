@@ -28329,3 +28329,5 @@
 {"commence_utc": "2026-11-15T17:30:00Z", "event_id": "976d20d0bdfd5ebae5800d5ec4f8dedf", "kind": "phase", "observed_utc": "2026-11-15T11:39:20.681473Z", "phase": "t6h", "rows": 9, "sport_key": "soccer_spain_segunda_division"}
 {"commence_utc": "2026-11-15T17:30:00Z", "event_id": "12b34c0f22c4208647c5a5472269b735", "kind": "phase", "observed_utc": "2026-11-15T11:39:20.681473Z", "phase": "t6h", "rows": 11, "sport_key": "soccer_spain_segunda_division"}
 {"call_kind": "pregame", "credits": 2, "events": 10, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-15T11:39:20.681473Z", "regions": ["us"], "rows": 79, "sport_key": "soccer_spain_segunda_division", "stored": 51}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-15T17:52:13.348183Z", "observed_utc": "2026-11-15T11:52:13.348183Z", "sport_key": "soccer_uefa_champs_league_women"}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T11:52:13.348183Z", "regions": ["au"], "rows": 18, "sport_key": "cricket_test_match", "stored": 7}
