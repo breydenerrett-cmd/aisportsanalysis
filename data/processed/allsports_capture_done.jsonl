@@ -28937,3 +28937,10 @@
 {"commence_utc": "2026-11-16T02:10:00Z", "event_id": "e52a5926735bcff42d3d0ce052a21938", "kind": "phase", "observed_utc": "2026-11-15T23:27:58.782832Z", "phase": "lock120", "rows": 33, "sport_key": "icehockey_nhl"}
 {"commence_utc": "2026-11-16T02:10:00Z", "event_id": "c4ac537963707b247ad9e4eab06c15de", "kind": "phase", "observed_utc": "2026-11-15T23:27:58.782832Z", "phase": "lock120", "rows": 33, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 7, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-15T23:27:58.782832Z", "regions": ["us"], "rows": 219, "sport_key": "icehockey_nhl", "stored": 219}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-11-16T05:38:34.026985Z", "observed_utc": "2026-11-15T23:38:34.026985Z", "sport_key": "soccer_england_league1"}
+{"commence_utc": "2026-11-16T00:00:00Z", "event_id": "6686ea0341f1ed3c65adcf204f26af47", "kind": "phase", "observed_utc": "2026-11-15T23:38:34.026985Z", "phase": "t30m", "rows": 19, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-16T00:00:00Z", "event_id": "582afe6b3fd7ef51b57ac7c6fc777820", "kind": "phase", "observed_utc": "2026-11-15T23:38:34.026985Z", "phase": "t30m", "rows": 29, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-16T23:30:00Z", "event_id": "8ebaad54ff349cdb9448bc3d6587f13a", "kind": "phase", "observed_utc": "2026-11-15T23:38:34.026985Z", "phase": "t24h", "rows": 10, "sport_key": "basketball_ncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 33, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-15T23:38:34.026985Z", "regions": ["us"], "rows": 519, "sport_key": "basketball_ncaab", "stored": 519}
+{"commence_utc": "2026-11-16T00:00:00Z", "event_id": "9293917d61a9b30f91ad56a7f8882e7b", "kind": "phase", "observed_utc": "2026-11-15T23:38:34.026985Z", "phase": "t30m", "rows": 7, "sport_key": "basketball_wncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 8, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-15T23:38:34.026985Z", "regions": ["us"], "rows": 47, "sport_key": "basketball_wncaab", "stored": 47}
