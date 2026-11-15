@@ -131,10 +131,10 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-11-15 (8:30 am PT run): three NFL briefs published for 10:00 am PT games: KC@ATL, MIN@GB, BUF@NYJ (each clean on attempt 2).",
-    "No MLB games through 11-30. Grading found nothing new (NFL 11-12 already complete).",
-    "Production timed out at 16:41Z, answered at 16:44Z on a fresh process (up 53 s); /health 200, billing ok.",
-    "Daily-loop on cowork-session-migration: 10:10Z failed, 16:39Z cancelled. Tests green on the newest finished run.",
+    "2026-11-15 (1:30 pm PT run): NFL brief published for SNF PIT@CIN (all three markets PASS, clean on attempt 1).",
+    "Morning briefs KC@ATL, MIN@GB, BUF@NYJ graded; the public sample now shows KC@ATL.",
+    "Production restarted at 21:31Z with no deploy near it (20th unexplained); /health 200, memory 334 MB, billing ok.",
+    "Tests green on the newest finished run. Daily-loop on cowork-session-migration: newest run cancelled, prior failed.",
     "Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at."
   ],
   "next_customer_action": "Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.",
