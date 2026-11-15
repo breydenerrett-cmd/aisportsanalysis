@@ -28231,3 +28231,4 @@
 {"call_kind": "inplay", "credits": 1, "events": 26, "events_live": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T06:37:37.042690Z", "regions": ["us"], "rows": 84, "sport_key": "americanfootball_ncaaf", "stored": 26}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T06:37:37.042690Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_odi", "stored": 12}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T06:37:37.042690Z", "regions": ["au"], "rows": 19, "sport_key": "cricket_test_match", "stored": 10}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T06:48:45.889449Z", "regions": ["us"], "rows": 0, "sport_key": "basketball_nbl", "stored": 0}
