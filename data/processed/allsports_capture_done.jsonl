@@ -28910,3 +28910,10 @@
 {"commence_utc": "2026-11-16T02:10:00Z", "event_id": "e52a5926735bcff42d3d0ce052a21938", "kind": "phase", "observed_utc": "2026-11-15T22:35:38.575511Z", "phase": "lock180", "rows": 33, "sport_key": "icehockey_nhl"}
 {"commence_utc": "2026-11-16T02:10:00Z", "event_id": "c4ac537963707b247ad9e4eab06c15de", "kind": "phase", "observed_utc": "2026-11-15T22:35:38.575511Z", "phase": "lock180", "rows": 33, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 7, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-15T22:35:38.575511Z", "regions": ["us"], "rows": 213, "sport_key": "icehockey_nhl", "stored": 213}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-11-16T04:46:29.862108Z", "observed_utc": "2026-11-15T22:46:29.862108Z", "sport_key": "aussierules_aflw"}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-11-16T04:46:29.862108Z", "observed_utc": "2026-11-15T22:46:29.862108Z", "sport_key": "soccer_brazil_serie_b"}
+{"commence_utc": "2026-11-15T23:10:00Z", "event_id": "956532b58659658093d93e24e83f5213", "kind": "phase", "observed_utc": "2026-11-15T22:46:29.862108Z", "phase": "t30m", "rows": 33, "sport_key": "basketball_nba"}
+{"commence_utc": "2026-11-15T23:10:00Z", "event_id": "78f61a78b70b9d79f38eb7648eac1a08", "kind": "phase", "observed_utc": "2026-11-15T22:46:29.862108Z", "phase": "t30m", "rows": 33, "sport_key": "basketball_nba"}
+{"call_kind": "pregame", "credits": 3, "events": 8, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-15T22:46:29.862108Z", "regions": ["us"], "rows": 234, "sport_key": "basketball_nba", "stored": 234}
+{"commence_utc": "2026-11-16T00:40:00Z", "event_id": "d2834086e817eeb75c1ea2cd312f62c5", "kind": "phase", "observed_utc": "2026-11-15T22:46:29.862108Z", "phase": "t2h", "rows": 33, "sport_key": "icehockey_nhl"}
+{"call_kind": "pregame", "credits": 3, "events": 7, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-15T22:46:29.862108Z", "regions": ["us"], "rows": 213, "sport_key": "icehockey_nhl", "stored": 213}
