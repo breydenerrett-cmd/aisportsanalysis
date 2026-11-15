@@ -28445,3 +28445,6 @@
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T14:13:34.249895Z", "regions": ["eu"], "rows": 34, "sport_key": "soccer_france_coupe_de_france", "stored": 31}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T14:13:34.249895Z", "regions": ["au"], "rows": 21, "sport_key": "cricket_test_match", "stored": 10}
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T14:13:34.249895Z", "regions": ["us"], "rows": 30, "sport_key": "tennis_atp_finals", "stored": 30}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-15T20:25:33.615440Z", "observed_utc": "2026-11-15T14:25:33.615440Z", "sport_key": "soccer_england_efl_trophy"}
+{"call_kind": "inplay", "credits": 1, "events": 26, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T14:25:33.615440Z", "regions": ["us"], "rows": 245, "sport_key": "soccer_uefa_nations_league", "stored": 172}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T14:25:33.615440Z", "regions": ["us"], "rows": 2, "sport_key": "icehockey_liiga", "stored": 2}
