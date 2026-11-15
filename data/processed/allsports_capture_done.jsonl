@@ -28286,3 +28286,4 @@
 {"commence_utc": "2026-11-15T15:00:00Z", "event_id": "81fa502a09faf261c1aaf2a33eb7db07", "kind": "phase", "observed_utc": "2026-11-15T09:03:02.329945Z", "phase": "t6h", "rows": 12, "sport_key": "soccer_germany_bundesliga_women"}
 {"commence_utc": "2026-11-15T15:00:00Z", "event_id": "1e879d7fe8b2eb96c629486e8b9b0e6d", "kind": "phase", "observed_utc": "2026-11-15T09:03:02.329945Z", "phase": "t6h", "rows": 14, "sport_key": "soccer_germany_bundesliga_women"}
 {"call_kind": "pregame", "credits": 2, "events": 3, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-15T09:03:02.329945Z", "regions": ["eu"], "rows": 40, "sport_key": "soccer_germany_bundesliga_women", "stored": 40}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T09:13:40.944071Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_odi", "stored": 12}
