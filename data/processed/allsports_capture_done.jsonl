@@ -28241,3 +28241,6 @@
 {"call_kind": "pregame", "credits": 2, "events": 10, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-15T07:03:33.148376Z", "regions": ["us"], "rows": 62, "sport_key": "soccer_spain_segunda_division", "stored": 42}
 {"commence_utc": "2026-11-15T13:00:00Z", "event_id": "a09dfd51fadc5c32dd0adb4f799b8628", "kind": "phase", "observed_utc": "2026-11-15T07:03:33.148376Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_finals"}
 {"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T07:03:33.148376Z", "regions": ["us"], "rows": 32, "sport_key": "tennis_atp_finals", "stored": 24}
+{"call_kind": "inplay", "credits": 1, "events": 24, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T07:19:10.271224Z", "regions": ["us"], "rows": 77, "sport_key": "americanfootball_ncaaf", "stored": 19}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T07:19:10.271224Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_odi", "stored": 12}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T07:19:10.271224Z", "regions": ["au"], "rows": 19, "sport_key": "cricket_test_match", "stored": 10}
