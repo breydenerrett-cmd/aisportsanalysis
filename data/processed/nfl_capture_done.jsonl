@@ -727,3 +727,5 @@
 {"game_id": "2026_10_JAX_TEN", "observed_utc": "2026-11-15T17:35:18.106001Z", "phase": "t30m"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-15T18:04:24.467157Z", "phase": "refresh"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-15T18:35:30.925093Z", "phase": "refresh"}
+{"game_id": "2026_10_LA_ARI", "observed_utc": "2026-11-15T19:14:52.930977Z", "phase": "t2h"}
+{"game_id": "2026_10_SEA_LV", "observed_utc": "2026-11-15T19:14:52.930977Z", "phase": "t2h"}
