@@ -1,0 +1,146 @@
+{
+  "summary": "Kansas City is the better team on every window we have. They are 6-2 with a points margin of 7.3750 per game, while Atlanta is 3-6 at -3.8889 per game, has lost two straight and gives the ball away more than it takes it. The books agree, with Kansas City a field-goal favourite, and the number has not moved since it was first captured. I lean Kansas City on the spread at -3 because the gap in the data is wider than a field goal, but the cushion is thin: the number sits on 3, one of the key numbers, so a push is live, Kansas City lost by 17 at Seattle three games back, and the team travels one time zone east. I pass on the moneyline because -172 already prices most of the quality difference. I pass on the total at 47.5 because it has moved up from 46.5, the two sides pull in different directions on scoring and defence, and we cannot see the weather or whether the roof is closed. Injuries are modest on both sides, but the data does not measure how much any one player matters.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "KC",
+      "verdict": "PASS",
+      "price": -172,
+      "book": "fanduel",
+      "fair_estimate": 0.63,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Kansas City is the stronger side, but the books already price that. Their de-vigged win chance is 0.6206, and my own view is close to it, so there is no gap to bet.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.6206},
+            {"path": "markets.moneyline.options[0].best.price", "value": -172}
+          ],
+          "derived": [
+            {
+              "value": 0.6324,
+              "unit": "probability",
+              "op": "implied_probability",
+              "inputs": ["markets.moneyline.options[0].best.price"],
+              "note": "chance implied by the best Kansas City price of -172 before the books' margin is removed"
+            }
+          ]
+        },
+        {
+          "claim": "Season margin per game favours Kansas City over Atlanta, and Atlanta also trails on turnover margin, which fits the favourite price rather than beating it.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 7.375},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": -3.8889},
+            {"path": "sections.home.values.form.season_to_date.turnover_margin.value", "value": -0.7778}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "For Atlanta to be worth taking at its best price of +164, I would need to believe its win chance is above the books' de-vigged 0.3794, and nothing in the data says that.",
+          "evidence": [
+            {"path": "markets.moneyline.options[1].best.price", "value": 164},
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.3794}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -170,
+      "what_would_change_it": "A price on Kansas City of -170 or better, or news that Patrick Mahomes will not start, would change the call.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "KC -3",
+      "verdict": "TAKE",
+      "price": -114,
+      "book": "williamhill_us",
+      "fair_estimate": 0.56,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Over the season the margin gap between the teams is larger than the field goal Kansas City lays: the data holds a difference of -11.2639 points per game, home minus away, in Kansas City's favour.",
+          "evidence": [
+            {"path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": -11.2639},
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 7.375},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": -3.8889}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Kansas City gains more per play and gives up fewer, and Atlanta has the worse turnover margin, so the gap is not just results.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.yards_per_play.value", "value": 6.2587},
+            {"path": "sections.home.values.form.season_to_date.yards_per_play.value", "value": 5.4792},
+            {"path": "sections.away.values.form.season_to_date.yards_per_play_allowed.value", "value": 4.8772},
+            {"path": "sections.home.values.form.season_to_date.yards_per_play_allowed.value", "value": 5.381}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number has not moved from where it was first captured, and it sits on 3, a field goal, so the line is a fair one to lean into but a push is live.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": -3.0},
+            {"path": "markets.spread.options[0].line", "value": -3.0},
+            {"path": "sections.reference.values.scoring.field_goal", "value": 3}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -127,
+      "what_would_change_it": "Patrick Mahomes being ruled out, or the price on Kansas City -3 moving past -127, would flip this to a pass.",
+      "case_against": {
+        "claim": "Kansas City's recent form is much weaker than its season: over the last three games the margin is only 0.6667 per game, and it lost by 17 at Seattle, so the season gap may overstate the true gap.",
+        "evidence": [
+          {"path": "sections.away.values.form.last_3.margin_per_game", "value": 0.6667},
+          {"path": "sections.away.values.last_three[2].margin", "value": -17}
+        ],
+        "derived": []
+      }
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 47.5",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "williamhill_us",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books have this as a coin flip, and the number has moved up since it was first captured, so the price has absorbed what is in the data.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5018},
+            {"path": "markets.total.context.number_first_captured", "value": 46.5},
+            {"path": "markets.total.options[0].line", "value": 47.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The scoring and defence figures point both ways: Kansas City scores more and allows less than Atlanta, so there is no clear lean toward Over or Under.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 25.25},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 17.875},
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 20.8889},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 24.7778}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We cannot see the weather or the roof for this stadium, and both can move a total, so I would not lean on this number.",
+          "evidence": [
+            {"path": "sections.schedule.values.venue.roof", "value": null},
+            {"path": "missing[2].item", "value": "weather"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed forecast showing wind or rain, or a quarterback change for either team, would give a reason to take a side of the total.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

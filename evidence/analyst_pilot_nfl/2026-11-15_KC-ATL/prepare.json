@@ -1,0 +1,23 @@
+{
+  "sport": "nfl",
+  "game_id": "2026_10_KC_ATL",
+  "date": "2026-11-15",
+  "away": "KC",
+  "home": "ATL",
+  "kickoff_utc": "2026-11-15T18:00:00Z",
+  "built_at": "2026-11-15T16:43:59Z",
+  "packet_hash": "a33495cf97d4e3f20a9e5b30bd9af8ee3ab0f85e5d6ac6c6c32b5d815ed43593",
+  "prompt_version": "analyst_prompt_nfl_v1",
+  "prompt_hash": "8b80fc0cc2622da7497bed03b851d3934b8d687a6ca9c5a17d3eeb2d1c56ea7b",
+  "token_estimate": 9616,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "spread",
+    "total"
+  ],
+  "missing_items": 3,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "nfl_store+odds_multibook"
+}

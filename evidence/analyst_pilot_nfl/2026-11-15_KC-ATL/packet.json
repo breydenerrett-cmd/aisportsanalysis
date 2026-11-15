@@ -1,0 +1,1124 @@
+{
+  "packet_version": "analyst_nfl_packet_v1",
+  "built_at": "2026-11-15T16:43:59Z",
+  "game": {
+    "game_id": "2026_10_KC_ATL",
+    "date": "2026-11-15",
+    "season": 2026,
+    "week": 10,
+    "game_type": "REG",
+    "away": "KC",
+    "home": "ATL",
+    "away_name": "Kansas City Chiefs",
+    "home_name": "Atlanta Falcons",
+    "kickoff_utc": "2026-11-15T18:00:00Z",
+    "state": "pending",
+    "stadium": "Mercedes-Benz Stadium",
+    "neutral_site": false
+  },
+  "figure_units": {
+    "days_since_last_game": "days",
+    "listed": "players on the report",
+    "margin_per_game": "points margin per game",
+    "miles_from_home_base": "miles",
+    "out": "players out",
+    "points_against_per_game": "points allowed per game",
+    "points_for_per_game": "points per game",
+    "time_zones_crossed": "hours",
+    "turnover_margin": "takeaways - giveaways per game",
+    "yards_per_play": "net yards per play",
+    "yards_per_play_allowed": "net yards per play allowed"
+  },
+  "sections": {
+    "away": {
+      "as_of": "2026-11-15T16:43:59Z",
+      "as_of_basis": "games the data store holds as finished before this packet was built",
+      "values": {
+        "form": {
+          "last_3": {
+            "games": 3,
+            "losses": 2,
+            "margin_per_game": 0.6667,
+            "points_against": 60,
+            "points_against_per_game": 20,
+            "points_for": 62,
+            "points_for_per_game": 20.6667,
+            "ties": 0,
+            "turnover_margin": {
+              "games": 3,
+              "total": -1,
+              "value": -0.3333
+            },
+            "wins": 1,
+            "yards_per_play": {
+              "games": 3,
+              "value": 5.511
+            },
+            "yards_per_play_allowed": {
+              "games": 3,
+              "value": 4.9893
+            }
+          },
+          "last_5": {
+            "games": 5,
+            "losses": 2,
+            "margin_per_game": 4.2,
+            "points_against": 93,
+            "points_against_per_game": 18.6,
+            "points_for": 114,
+            "points_for_per_game": 22.8,
+            "ties": 0,
+            "turnover_margin": {
+              "games": 5,
+              "total": 1,
+              "value": 0.2
+            },
+            "wins": 3,
+            "yards_per_play": {
+              "games": 5,
+              "value": 6.1414
+            },
+            "yards_per_play_allowed": {
+              "games": 5,
+              "value": 4.9665
+            }
+          },
+          "season_to_date": {
+            "games": 8,
+            "losses": 2,
+            "margin_per_game": 7.375,
+            "points_against": 143,
+            "points_against_per_game": 17.875,
+            "points_for": 202,
+            "points_for_per_game": 25.25,
+            "ties": 0,
+            "turnover_margin": {
+              "games": 8,
+              "total": 4,
+              "value": 0.5
+            },
+            "wins": 6,
+            "yards_per_play": {
+              "games": 8,
+              "value": 6.2587
+            },
+            "yards_per_play_allowed": {
+              "games": 8,
+              "value": 4.8772
+            }
+          }
+        },
+        "injuries": {
+          "assumption": "a row without date_modified is the week's final report, taken as published 24 hours before kickoff",
+          "by_position_group": {
+            "DB": {
+              "dnp": 0,
+              "doubtful": 0,
+              "limited": 0,
+              "listed": 1,
+              "out": 0,
+              "questionable": 1
+            },
+            "DL": {
+              "dnp": 1,
+              "doubtful": 0,
+              "limited": 1,
+              "listed": 2,
+              "out": 2,
+              "questionable": 0
+            },
+            "OL": {
+              "dnp": 1,
+              "doubtful": 0,
+              "limited": 0,
+              "listed": 1,
+              "out": 1,
+              "questionable": 0
+            },
+            "RB": {
+              "dnp": 1,
+              "doubtful": 0,
+              "limited": 1,
+              "listed": 2,
+              "out": 0,
+              "questionable": 2
+            }
+          },
+          "newest_report_utc": null,
+          "players_listed": 6,
+          "report_week": 10,
+          "skill_players_listed": [
+            {
+              "injury": "Hamstring",
+              "name": "Jaydn Ott",
+              "position": "RB",
+              "practice_status": "limited",
+              "report_status": "questionable"
+            },
+            {
+              "injury": "Groin",
+              "name": "Kenneth Walker III",
+              "position": "RB",
+              "practice_status": "dnp",
+              "report_status": "questionable"
+            }
+          ],
+          "totals": {
+            "dnp": 3,
+            "doubtful": 0,
+            "limited": 2,
+            "listed": 6,
+            "out": 3,
+            "questionable": 3
+          }
+        },
+        "last_three": [
+          {
+            "kickoff_utc": "2026-11-08T18:00:00Z",
+            "margin": 23,
+            "opponent": "NYJ",
+            "points_against": 12,
+            "points_for": 35,
+            "result": "W",
+            "site": "home",
+            "week": 9
+          },
+          {
+            "kickoff_utc": "2026-11-01T21:25:00Z",
+            "margin": -4,
+            "opponent": "DEN",
+            "points_against": 28,
+            "points_for": 24,
+            "result": "L",
+            "site": "away",
+            "week": 8
+          },
+          {
+            "kickoff_utc": "2026-10-26T00:20:00Z",
+            "margin": -17,
+            "opponent": "SEA",
+            "points_against": 20,
+            "points_for": 3,
+            "result": "L",
+            "site": "away",
+            "week": 7
+          }
+        ],
+        "name": "Kansas City Chiefs",
+        "qb": {
+          "last_game_starter": "Patrick Mahomes",
+          "listed_for_this_game": {
+            "changed_since_last_game": false,
+            "listed_as_of_utc": "2026-11-15T16:42:40Z",
+            "name": "Patrick Mahomes",
+            "prior_starts_in_store": 101,
+            "prior_starts_with_team": 101,
+            "projected": true
+          }
+        },
+        "record": {
+          "season": {
+            "games": 8,
+            "losses": 2,
+            "ties": 0,
+            "wins": 6
+          }
+        },
+        "rest": {
+          "coming_off_bye": false,
+          "days_since_last_game": 7,
+          "season_opener": false,
+          "short_week": false,
+          "week_gap": 1
+        },
+        "side": "away",
+        "streak": {
+          "length": 1,
+          "type": "W"
+        },
+        "team": "KC",
+        "travel": {
+          "direction": "east",
+          "kickoff_home_base_clock": "12:00",
+          "miles_from_home_base": 668.8,
+          "time_zones_crossed": 1
+        }
+      }
+    },
+    "home": {
+      "as_of": "2026-11-15T16:43:59Z",
+      "as_of_basis": "games the data store holds as finished before this packet was built",
+      "values": {
+        "form": {
+          "last_3": {
+            "games": 3,
+            "losses": 2,
+            "margin_per_game": -8,
+            "points_against": 70,
+            "points_against_per_game": 23.3333,
+            "points_for": 46,
+            "points_for_per_game": 15.3333,
+            "ties": 0,
+            "turnover_margin": {
+              "games": 3,
+              "total": 0,
+              "value": 0
+            },
+            "wins": 1,
+            "yards_per_play": {
+              "games": 3,
+              "value": 4.9294
+            },
+            "yards_per_play_allowed": {
+              "games": 3,
+              "value": 6.1667
+            }
+          },
+          "last_5": {
+            "games": 5,
+            "losses": 4,
+            "margin_per_game": -7.8,
+            "points_against": 131,
+            "points_against_per_game": 26.2,
+            "points_for": 92,
+            "points_for_per_game": 18.4,
+            "ties": 0,
+            "turnover_margin": {
+              "games": 5,
+              "total": -2,
+              "value": -0.4
+            },
+            "wins": 1,
+            "yards_per_play": {
+              "games": 5,
+              "value": 5.1479
+            },
+            "yards_per_play_allowed": {
+              "games": 5,
+              "value": 5.7685
+            }
+          },
+          "season_to_date": {
+            "games": 9,
+            "losses": 6,
+            "margin_per_game": -3.8889,
+            "points_against": 223,
+            "points_against_per_game": 24.7778,
+            "points_for": 188,
+            "points_for_per_game": 20.8889,
+            "ties": 0,
+            "turnover_margin": {
+              "games": 9,
+              "total": -7,
+              "value": -0.7778
+            },
+            "wins": 3,
+            "yards_per_play": {
+              "games": 9,
+              "value": 5.4792
+            },
+            "yards_per_play_allowed": {
+              "games": 9,
+              "value": 5.381
+            }
+          }
+        },
+        "injuries": {
+          "assumption": "a row without date_modified is the week's final report, taken as published 24 hours before kickoff",
+          "by_position_group": {
+            "DL": {
+              "dnp": 1,
+              "doubtful": 0,
+              "limited": 3,
+              "listed": 4,
+              "out": 0,
+              "questionable": 2
+            },
+            "LB": {
+              "dnp": 1,
+              "doubtful": 1,
+              "limited": 1,
+              "listed": 3,
+              "out": 0,
+              "questionable": 1
+            },
+            "OL": {
+              "dnp": 0,
+              "doubtful": 0,
+              "limited": 2,
+              "listed": 2,
+              "out": 0,
+              "questionable": 0
+            },
+            "ST": {
+              "dnp": 1,
+              "doubtful": 0,
+              "limited": 0,
+              "listed": 1,
+              "out": 0,
+              "questionable": 0
+            },
+            "WR": {
+              "dnp": 1,
+              "doubtful": 0,
+              "limited": 0,
+              "listed": 1,
+              "out": 1,
+              "questionable": 0
+            }
+          },
+          "newest_report_utc": null,
+          "players_listed": 11,
+          "report_week": 10,
+          "skill_players_listed": [
+            {
+              "injury": "Hamstring",
+              "name": "Zachariah Branch",
+              "position": "WR",
+              "practice_status": "dnp",
+              "report_status": "out"
+            }
+          ],
+          "totals": {
+            "dnp": 4,
+            "doubtful": 1,
+            "limited": 6,
+            "listed": 11,
+            "out": 1,
+            "questionable": 3
+          }
+        },
+        "last_three": [
+          {
+            "kickoff_utc": "2026-11-08T14:30:00Z",
+            "margin": -17,
+            "opponent": "CIN",
+            "points_against": 34,
+            "points_for": 17,
+            "result": "L",
+            "site": "neutral",
+            "week": 9
+          },
+          {
+            "kickoff_utc": "2026-11-01T18:00:00Z",
+            "margin": -16,
+            "opponent": "TB",
+            "points_against": 16,
+            "points_for": 0,
+            "result": "L",
+            "site": "away",
+            "week": 8
+          },
+          {
+            "kickoff_utc": "2026-10-25T17:00:00Z",
+            "margin": 9,
+            "opponent": "SF",
+            "points_against": 20,
+            "points_for": 29,
+            "result": "W",
+            "site": "home",
+            "week": 7
+          }
+        ],
+        "name": "Atlanta Falcons",
+        "qb": {
+          "last_game_starter": "Michael Penix Jr.",
+          "listed_for_this_game": {
+            "changed_since_last_game": false,
+            "listed_as_of_utc": "2026-11-15T16:42:40Z",
+            "name": "Michael Penix Jr.",
+            "prior_starts_in_store": 19,
+            "prior_starts_with_team": 19,
+            "projected": true
+          }
+        },
+        "record": {
+          "season": {
+            "games": 9,
+            "losses": 6,
+            "ties": 0,
+            "wins": 3
+          }
+        },
+        "rest": {
+          "coming_off_bye": false,
+          "days_since_last_game": 7,
+          "season_opener": false,
+          "short_week": false,
+          "week_gap": 1
+        },
+        "side": "home",
+        "streak": {
+          "length": 2,
+          "type": "L"
+        },
+        "team": "ATL",
+        "travel": {
+          "direction": "none",
+          "kickoff_home_base_clock": "13:00",
+          "miles_from_home_base": 0.0,
+          "time_zones_crossed": 0
+        }
+      }
+    },
+    "matchup": {
+      "as_of": "2026-11-15T16:43:59Z",
+      "as_of_basis": "the same finished games, both teams compared (home minus away)",
+      "values": {
+        "differentials": {
+          "form_last_3_margin_per_game": {
+            "away": 0.6667,
+            "diff": -8.6667,
+            "home": -8,
+            "thin_sample": false
+          },
+          "form_last_3_points_against_per_game": {
+            "away": 20,
+            "diff": 3.3333,
+            "home": 23.3333,
+            "thin_sample": false
+          },
+          "form_last_3_points_for_per_game": {
+            "away": 20.6667,
+            "diff": -5.3334,
+            "home": 15.3333,
+            "thin_sample": false
+          },
+          "form_last_3_turnover_margin": {
+            "away": -0.3333,
+            "diff": 0.3333,
+            "home": 0,
+            "thin_sample": false
+          },
+          "form_last_3_yards_per_play": {
+            "away": 5.511,
+            "diff": -0.5816,
+            "home": 4.9294,
+            "thin_sample": false
+          },
+          "form_last_3_yards_per_play_allowed": {
+            "away": 4.9893,
+            "diff": 1.1774,
+            "home": 6.1667,
+            "thin_sample": false
+          },
+          "form_last_5_margin_per_game": {
+            "away": 4.2,
+            "diff": -12.0,
+            "home": -7.8,
+            "thin_sample": false
+          },
+          "form_last_5_points_against_per_game": {
+            "away": 18.6,
+            "diff": 7.6,
+            "home": 26.2,
+            "thin_sample": false
+          },
+          "form_last_5_points_for_per_game": {
+            "away": 22.8,
+            "diff": -4.4,
+            "home": 18.4,
+            "thin_sample": false
+          },
+          "form_last_5_turnover_margin": {
+            "away": 0.2,
+            "diff": -0.6,
+            "home": -0.4,
+            "thin_sample": false
+          },
+          "form_last_5_yards_per_play": {
+            "away": 6.1414,
+            "diff": -0.9935,
+            "home": 5.1479,
+            "thin_sample": false
+          },
+          "form_last_5_yards_per_play_allowed": {
+            "away": 4.9665,
+            "diff": 0.802,
+            "home": 5.7685,
+            "thin_sample": false
+          },
+          "form_season_to_date_margin_per_game": {
+            "away": 7.375,
+            "diff": -11.2639,
+            "home": -3.8889,
+            "thin_sample": false
+          },
+          "form_season_to_date_points_against_per_game": {
+            "away": 17.875,
+            "diff": 6.9028,
+            "home": 24.7778,
+            "thin_sample": false
+          },
+          "form_season_to_date_points_for_per_game": {
+            "away": 25.25,
+            "diff": -4.3611,
+            "home": 20.8889,
+            "thin_sample": false
+          },
+          "form_season_to_date_turnover_margin": {
+            "away": 0.5,
+            "diff": -1.2778,
+            "home": -0.7778,
+            "thin_sample": false
+          },
+          "form_season_to_date_yards_per_play": {
+            "away": 6.2587,
+            "diff": -0.7795,
+            "home": 5.4792,
+            "thin_sample": false
+          },
+          "form_season_to_date_yards_per_play_allowed": {
+            "away": 4.8772,
+            "diff": 0.5038,
+            "home": 5.381,
+            "thin_sample": false
+          },
+          "injuries_listed": {
+            "away": 6,
+            "diff": 5,
+            "home": 11,
+            "thin_sample": false
+          },
+          "injuries_out": {
+            "away": 3,
+            "diff": -2,
+            "home": 1,
+            "thin_sample": false
+          },
+          "rest_days_since_last_game": {
+            "away": 7,
+            "diff": 0,
+            "home": 7,
+            "thin_sample": false
+          },
+          "travel_miles_from_home_base": {
+            "away": 668.8,
+            "diff": -668.8,
+            "home": 0.0,
+            "thin_sample": false
+          },
+          "travel_time_zones_crossed": {
+            "away": 1,
+            "diff": -1,
+            "home": 0,
+            "thin_sample": false
+          }
+        },
+        "head_to_head": {
+          "average_margin_for_home_team": -5,
+          "away_team_wins": 1,
+          "home_team_wins": 0,
+          "last_meeting": {
+            "away_score": 22,
+            "away_team": "KC",
+            "home_score": 17,
+            "home_team": "ATL",
+            "kickoff_utc": "2024-09-23T00:20:00Z",
+            "season": 2024,
+            "week": 3,
+            "winner": "KC"
+          },
+          "meetings": 1,
+          "ties": 0,
+          "window": "meetings since 2021 only"
+        }
+      }
+    },
+    "reference": {
+      "as_of": null,
+      "as_of_basis": "scoring values and the margins they add up to: a field goal is 3, a touchdown 6, an extra point 1, a two-point conversion 2 and a safety 2, so final margins pile up on 3, 6, 7, 10 and 14. These are how the game is scored; the packet states no frequency for any margin",
+      "values": {
+        "key_numbers": [
+          3,
+          6,
+          7,
+          10,
+          14
+        ],
+        "scoring": {
+          "extra_point": 1,
+          "field_goal": 3,
+          "safety": 2,
+          "touchdown": 6,
+          "two_point_conversion": 2
+        }
+      }
+    },
+    "schedule": {
+      "as_of": "2026-11-15T16:43:59Z",
+      "as_of_basis": "the published schedule, fixed before the game",
+      "values": {
+        "divisional": false,
+        "game_type": "REG",
+        "gameday": "2026-11-15",
+        "kickoff_et": "13:00",
+        "neutral_site": false,
+        "primetime": false,
+        "season": 2026,
+        "time_window": "early",
+        "venue": {
+          "neutral_site": false,
+          "roof": null,
+          "stadium": "Mercedes-Benz Stadium",
+          "surface": "fieldturf"
+        },
+        "week": 10,
+        "weekday": "Sunday"
+      }
+    }
+  },
+  "markets": {
+    "moneyline": {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "label": "KC at ATL moneyline",
+      "as_of": "2026-11-15T16:38:11Z",
+      "lean": "KC",
+      "options": [
+        {
+          "selection": "KC",
+          "side": "away",
+          "line": null,
+          "books": 11,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -185,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -185,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "betrivers",
+              "price": -177,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "betus",
+              "price": -190,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "bovada",
+              "price": -185,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -175,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "fanatics",
+              "price": -180,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "fanduel",
+              "price": -172,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "lowvig",
+              "price": -185,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -198,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -173,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            }
+          ],
+          "best": {
+            "price": -172,
+            "book": "fanduel"
+          },
+          "fair_probability": 0.6206
+        },
+        {
+          "selection": "ATL",
+          "side": "home",
+          "line": null,
+          "books": 11,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 150,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 161,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "betrivers",
+              "price": 145,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "betus",
+              "price": 163,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "bovada",
+              "price": 160,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "draftkings",
+              "price": 145,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "fanatics",
+              "price": 150,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "fanduel",
+              "price": 144,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "lowvig",
+              "price": 161,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": 164,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": 147,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            }
+          ],
+          "best": {
+            "price": 164,
+            "book": "mybookieag"
+          },
+          "fair_probability": 0.3794
+        }
+      ]
+    },
+    "spread": {
+      "slot_id": "spread",
+      "market": "spread",
+      "label": "KC at ATL point spread",
+      "as_of": "2026-11-15T16:38:11Z",
+      "lean": "KC -3",
+      "options": [
+        {
+          "selection": "KC -3",
+          "side": "away",
+          "line": -3.0,
+          "books": 8,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -118,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -115,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "betrivers",
+              "price": -120,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "betus",
+              "price": -120,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "bovada",
+              "price": -117,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -115,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "lowvig",
+              "price": -115,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -114,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            }
+          ],
+          "best": {
+            "price": -114,
+            "book": "williamhill_us"
+          },
+          "fair_probability": 0.5156
+        },
+        {
+          "selection": "ATL +3",
+          "side": "home",
+          "line": 3.0,
+          "books": 8,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -102,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -105,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "betrivers",
+              "price": -103,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "betus",
+              "price": 100,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "bovada",
+              "price": -103,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -105,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "lowvig",
+              "price": 104,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -106,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            }
+          ],
+          "best": {
+            "price": 104,
+            "book": "lowvig"
+          },
+          "fair_probability": 0.4844
+        }
+      ],
+      "context": {
+        "books_on_this_number": 8,
+        "books_on_other_numbers": 3,
+        "away_number_first_captured": -3.0,
+        "first_captured_utc": "2026-11-05T01:19:55Z",
+        "books_at_first_capture": 8
+      }
+    },
+    "total": {
+      "slot_id": "total",
+      "market": "total",
+      "label": "KC at ATL game total points",
+      "as_of": "2026-11-15T16:38:11Z",
+      "lean": "Under 47.5",
+      "options": [
+        {
+          "selection": "Under 47.5",
+          "side": "under",
+          "line": 47.5,
+          "books": 8,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -110,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "betus",
+              "price": -110,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "bovada",
+              "price": -110,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -115,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "fanatics",
+              "price": -110,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "fanduel",
+              "price": -110,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -110,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -110,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            }
+          ],
+          "best": {
+            "price": -110,
+            "book": "williamhill_us"
+          },
+          "fair_probability": 0.5018
+        },
+        {
+          "selection": "Over 47.5",
+          "side": "over",
+          "line": 47.5,
+          "books": 8,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -108,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "betus",
+              "price": -110,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "bovada",
+              "price": -110,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -105,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "fanatics",
+              "price": -110,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "fanduel",
+              "price": -110,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -110,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -109,
+              "captured_utc": "2026-11-15T16:38:11Z"
+            }
+          ],
+          "best": {
+            "price": -105,
+            "book": "draftkings"
+          },
+          "fair_probability": 0.4982
+        }
+      ],
+      "context": {
+        "books_on_this_number": 8,
+        "books_on_other_numbers": 3,
+        "number_first_captured": 46.5,
+        "first_captured_utc": "2026-11-05T01:19:55Z",
+        "books_at_first_capture": 9
+      }
+    }
+  },
+  "slots": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "label": "KC at ATL moneyline",
+      "selections": [
+        "KC",
+        "ATL"
+      ]
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "label": "KC at ATL point spread",
+      "selections": [
+        "KC -3",
+        "ATL +3"
+      ]
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "label": "KC at ATL game total points",
+      "selections": [
+        "Under 47.5",
+        "Over 47.5"
+      ]
+    }
+  ],
+  "missing": [
+    {
+      "item": "props",
+      "kind": "absent",
+      "reason": "no NFL player-prop prices are captured, so no prop is analyzed"
+    },
+    {
+      "item": "venue.roof",
+      "kind": "absent",
+      "reason": "the schedule file gives no roof type for this stadium"
+    },
+    {
+      "item": "weather",
+      "kind": "absent",
+      "reason": "no weather forecast is stored for NFL stadiums, and this game is not known to be played indoors"
+    }
+  ],
+  "limits": [
+    "Only the moneyline, the point spread and the game total are analyzed, each at its most-quoted number. Alternate numbers, team totals, half and quarter markets and player props are not.",
+    "Every quote is the newest one captured before this packet was built, with its capture time, from the books named; nothing was captured after the packet was built or after the start.",
+    "Form, rest, travel and head to head cover only the games in the data store (it begins with the 2021 season). A window holds fewer games than it names early in a season, and each figure states how many it rests on.",
+    "Weather forecasts, depth charts, snap counts, play-by-play detail, officials, coaching and scheme changes and news after the weekly injury report are not in the data.",
+    "The starting quarterback is the one the schedule lists, a projection until the game is played. The injury report is the weekly team report; a player's importance is not measured.",
+    "A neutral-site game has a nominal home team; its differentials still read home minus away."
+  ],
+  "how_to_read": [
+    "In sections.matchup.values.differentials a difference is home minus away, so a positive one means the home team has the larger number. head_to_head is written from the home team's side.",
+    "A form window says how many games it rests on (games). last_3 and last_5 are the team's most recent finished games; season_to_date is this season only. yards_per_play is net yards per play and turnover_margin is takeaways minus giveaways per game; each states the games it rests on.",
+    "A spread selection carries its own signed number: \"KC -3.5\" lays 3.5 points and \"LAC +3.5\" gets 3.5. The two selections of the spread are the two sides of one number. fair_probability is the market's probability with the bookmaker's margin divided out, averaged over the books that quoted both sides.",
+    "first_captured fields give where the market stood the first time it was captured, which is not necessarily the opening line.",
+    "A qb listed_for_this_game with projected true is the schedule's projection at listed_as_of_utc, not a confirmed starter. The injury report is the weekly team report as stored.",
+    "figure_units says what each form figure measures. sections.reference.values holds scoring facts, not statistics."
+  ]
+}

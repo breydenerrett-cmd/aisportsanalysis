@@ -1,0 +1,126 @@
+{
+  "summary": "Green Bay is the better side on recent form, but I pass on all three markets. On the moneyline the best price is -142 and the books' own fair number is 0.5734, so the market already leans home and nothing in what we have says it is wrong by enough. The spread is 2.5, half a point under the key number of 3, and it has not moved from where it was first captured. Green Bay's last five games average a margin of 11.4 against Minnesota's 0, but over the season the two sit close, 2.7778 for Green Bay and 3.75 for Minnesota, so the form gap is a short-window story. Minnesota is projected to start Kirk Cousins, a change from Carson Wentz last week, and the injury lists are long on both sides without telling us who matters. The total moved up a point from 41.5 to 42.5, and neither team's scoring profile gives a clear lean, while weather, which we cannot see for an outdoor game, could matter. The market is probably close to right everywhere.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "GB",
+      "verdict": "PASS",
+      "price": -142,
+      "book": "draftkings",
+      "fair_estimate": 0.57,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books already make Green Bay the favourite at a fair number that matches the recent-form story, so the price holds what the form shows.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].best.price", "value": -142},
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.5734}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Over the full season the two teams are close on margin per game, so the larger recent gap for Green Bay rests on a short window.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 2.7778},
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 3.75}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Minnesota's projected quarterback is a change from last game, and we cannot see how that moves the price, which is a reason for care.",
+          "evidence": [
+            {"path": "sections.away.values.qb.listed_for_this_game.name", "value": "Kirk Cousins"},
+            {"path": "sections.away.values.qb.listed_for_this_game.changed_since_last_game", "value": true}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -133,
+      "what_would_change_it": "A Green Bay price of -133 or shorter, or a confirmed change at quarterback on either side, would make me revisit it.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "GB -2.5",
+      "verdict": "PASS",
+      "price": -117,
+      "book": "lowvig",
+      "fair_estimate": 0.52,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The number is 2.5, half a point off the key number of 3, and the data shows no move from where it was first captured, so there is no sign the market is late to anything.",
+          "evidence": [
+            {"path": "markets.spread.options[0].line", "value": -2.5},
+            {"path": "markets.spread.context.away_number_first_captured", "value": 2.5},
+            {"path": "sections.reference.values.key_numbers", "value": "[3,6,7,10,14]"}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The books' fair number for Green Bay at this line is close to a coin flip, and a bet needs a reason the number is wrong in points, which the season-long margins do not give.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5225},
+            {"path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": -0.9722}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both injury lists are long, with Green Bay listing 16 players and Minnesota 12, but the data does not measure who matters, so I cannot lean on them.",
+          "evidence": [
+            {"path": "sections.home.values.injuries.totals.listed", "value": 16},
+            {"path": "sections.away.values.injuries.totals.listed", "value": 12}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -108,
+      "what_would_change_it": "Green Bay at -108 or shorter on the 2.5, or the number moving off 2.5 after a confirmed quarterback or injury change, would change it.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 42.5",
+      "verdict": "PASS",
+      "price": -108,
+      "book": "betonlineag",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books split the total almost exactly in half, and it has moved up a point from where it was first captured, so the price looks balanced.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5017},
+            {"path": "markets.total.context.number_first_captured", "value": 41.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The scoring profiles pull both ways: Green Bay scores 24 a game and allows 21.2222, while Minnesota scores 18.25 and allows 14.5, so the season numbers hold no clear lean.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 24},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 21.2222},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 18.25},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 14.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Weather is missing for an outdoor game and Minnesota's projected quarterback changed, either of which could move a total, so I stay out.",
+          "evidence": [
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"},
+            {"path": "sections.away.values.qb.listed_for_this_game.changed_since_last_game", "value": true}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A weather forecast showing a strong wind, or Under 42.5 at a price of 100 or better, would change it.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
