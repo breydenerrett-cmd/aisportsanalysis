@@ -28201,3 +28201,6 @@
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T04:43:03.322597Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_odi", "stored": 12}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T04:43:03.322597Z", "regions": ["us"], "rows": 1, "sport_key": "basketball_nbl", "stored": 1}
 {"call_kind": "inplay", "credits": 1, "events": 37, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T04:56:08.727019Z", "regions": ["us"], "rows": 108, "sport_key": "boxing_boxing", "stored": 6}
+{"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T05:09:27.878790Z", "regions": ["us"], "rows": 65, "sport_key": "icehockey_nhl", "stored": 65}
+{"call_kind": "inplay", "credits": 1, "events": 40, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T05:09:27.878790Z", "regions": ["us"], "rows": 225, "sport_key": "basketball_ncaab", "stored": 225}
+{"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-15T05:09:27.878790Z", "regions": ["us"], "rows": 9, "sport_key": "icehockey_ahl", "stored": 9}
