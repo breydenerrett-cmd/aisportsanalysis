@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-14 21:41Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-15 16:46Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-14** |
+| Days until 2026-10-31 | **-15** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-14 (1:30 pm PT run): no MLB games; no NFL game Saturday. Grading found nothing new.
-- Production up at 21:41Z: /health 200, memory peak 719.6 MB, now 570.6 (limit 850); restart 21:24Z was a deploy.
-- deploy-prod 21:01Z failed on the out-of-memory health check (second today); 21:14Z deploy succeeded.
-- Daily-loop still red on the cowork-session-migration branch (43614251106). Tests green on 4c30d82f7.
+- 2026-11-15 (8:30 am PT run): three NFL briefs published for 10:00 am PT games: KC@ATL, MIN@GB, BUF@NYJ (each clean on attempt 2).
+- No MLB games through 11-30. Grading found nothing new (NFL 11-12 already complete).
+- Production timed out at 16:41Z, answered at 16:44Z on a fresh process (up 53 s); /health 200, billing ok.
+- Daily-loop on cowork-session-migration: 10:10Z failed, 16:39Z cancelled. Tests green on the newest finished run.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
