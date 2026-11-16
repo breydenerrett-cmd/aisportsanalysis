@@ -29117,3 +29117,4 @@
 {"events": 36, "kind": "peek", "next_check_utc": "2026-11-16T12:15:40.479927Z", "observed_utc": "2026-11-16T06:15:40.479927Z", "sport_key": "boxing_boxing"}
 {"events": 1, "kind": "peek", "next_check_utc": "2026-11-16T12:15:40.479927Z", "observed_utc": "2026-11-16T06:15:40.479927Z", "sport_key": "icehockey_mestis"}
 {"events": 9, "kind": "peek", "next_check_utc": "2026-11-16T12:15:40.479927Z", "observed_utc": "2026-11-16T06:15:40.479927Z", "sport_key": "soccer_uefa_champs_league_women"}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T06:45:08.247960Z", "regions": ["au"], "rows": 20, "sport_key": "cricket_test_match", "stored": 17}
