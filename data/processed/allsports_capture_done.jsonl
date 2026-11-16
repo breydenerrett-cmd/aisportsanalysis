@@ -29128,3 +29128,4 @@
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T07:18:07.955947Z", "regions": ["au"], "rows": 20, "sport_key": "cricket_test_match", "stored": 17}
 {"commence_utc": "2026-11-16T08:00:00Z", "event_id": "e2f9156d9a8f5a47f01824d12f1250e0", "kind": "phase", "observed_utc": "2026-11-16T07:38:11.033014Z", "phase": "t30m", "rows": 7, "sport_key": "cricket_test_match"}
 {"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T07:38:11.033014Z", "regions": ["au"], "rows": 20, "sport_key": "cricket_test_match", "stored": 17}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-16T13:58:13.134486Z", "observed_utc": "2026-11-16T07:58:13.134486Z", "sport_key": "soccer_mexico_ligamx"}
