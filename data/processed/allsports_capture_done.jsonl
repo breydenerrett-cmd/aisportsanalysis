@@ -29197,3 +29197,6 @@
 {"events": 1, "kind": "peek", "next_check_utc": "2026-11-16T17:39:02.175800Z", "observed_utc": "2026-11-16T11:39:02.175800Z", "sport_key": "cricket_odi"}
 {"events": 12, "kind": "peek", "next_check_utc": "2026-11-16T17:54:38.931174Z", "observed_utc": "2026-11-16T11:54:38.931174Z", "sport_key": "soccer_england_league1"}
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T11:54:38.931174Z", "regions": ["au"], "rows": 19, "sport_key": "cricket_test_match", "stored": 14}
+{"events": 35, "kind": "peek", "next_check_utc": "2026-11-16T18:18:13.880085Z", "observed_utc": "2026-11-16T12:18:13.880085Z", "sport_key": "boxing_boxing"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-16T15:30:00Z", "observed_utc": "2026-11-16T12:18:13.880085Z", "sport_key": "icehockey_mestis"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-16T18:18:13.880085Z", "observed_utc": "2026-11-16T12:18:13.880085Z", "sport_key": "soccer_uefa_champs_league_women"}
