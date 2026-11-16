@@ -29234,3 +29234,9 @@
 {"events": 9, "kind": "peek", "next_check_utc": "2026-11-16T19:59:33.424077Z", "observed_utc": "2026-11-16T13:59:33.424077Z", "sport_key": "soccer_mexico_ligamx"}
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T13:59:33.424077Z", "regions": ["au"], "rows": 22, "sport_key": "cricket_test_match", "stored": 17}
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T14:17:34.815928Z", "regions": ["us"], "rows": 29, "sport_key": "tennis_atp_finals", "stored": 29}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-11-16T20:43:20.828106Z", "observed_utc": "2026-11-16T14:43:20.828106Z", "sport_key": "soccer_brazil_campeonato"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-11-16T20:43:20.828106Z", "observed_utc": "2026-11-16T14:43:20.828106Z", "sport_key": "soccer_england_league2"}
+{"commence_utc": "2026-11-16T15:00:00Z", "event_id": "5ae7a0b002778fc547ce96abf6bf8547", "kind": "phase", "observed_utc": "2026-11-16T14:43:20.828106Z", "phase": "t30m", "rows": 17, "sport_key": "soccer_uefa_nations_league"}
+{"commence_utc": "2026-11-16T15:00:00Z", "event_id": "624805725e5cd075b0c5d77eb755bded", "kind": "phase", "observed_utc": "2026-11-16T14:43:20.828106Z", "phase": "t30m", "rows": 17, "sport_key": "soccer_uefa_nations_league"}
+{"call_kind": "pregame", "credits": 2, "events": 18, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-16T14:43:20.828106Z", "regions": ["us"], "rows": 310, "sport_key": "soccer_uefa_nations_league", "stored": 310}
+{"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T14:43:20.828106Z", "regions": ["au"], "rows": 22, "sport_key": "cricket_test_match", "stored": 17}
