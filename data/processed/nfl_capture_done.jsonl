@@ -743,3 +743,4 @@
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-16T00:03:15.336655Z", "phase": "refresh"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-16T00:35:31.648377Z", "phase": "refresh"}
 {"game_id": "2026_10_PIT_CIN", "observed_utc": "2026-11-16T01:07:26.682826Z", "phase": "t30m"}
+{"game_id": "2026_10_LAC_BAL", "observed_utc": "2026-11-16T01:17:05.755833Z", "phase": "t24h"}
