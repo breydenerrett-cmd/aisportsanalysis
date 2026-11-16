@@ -15244,3 +15244,18 @@
 {"credits": 2, "days_from": 3, "events": 44, "kind": "poll", "observed_utc": "2026-11-16T10:40:41.321608+00:00", "sport_key": "soccer_uefa_nations_league"}
 {"errors": [], "events": 1, "family": "MMA", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-16T10:40:46.780491Z", "source": "espn_mma", "unmatched": 1, "unmatched_ids": ["5c45e5cb707c61ad4186f2480707cdb9"], "void": 0, "written": 0}
 {"errors": [], "events": 1, "family": "MMA", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-16T11:54:42.472565Z", "source": "espn_mma", "unmatched": 1, "unmatched_ids": ["5c45e5cb707c61ad4186f2480707cdb9"], "void": 0, "written": 0}
+{"away_score": null, "away_team": "Hamilton Hammers", "commence_time": "2026-11-18T00:00:00Z", "completed": false, "event_id": "e27860034c51ff293456cc4d38c003fd", "home_score": null, "home_team": "Cleveland Monsters", "kind": "score", "last_update": null, "observed_utc": "2026-11-16T12:41:29.156853+00:00", "outcome": null, "scores": null, "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 3, "kind": "poll", "observed_utc": "2026-11-16T12:41:29.156853+00:00", "sport_key": "icehockey_ahl"}
+{"away_score": null, "away_team": "Hemi Ahio", "commence_time": "2026-11-18T11:00:00Z", "completed": false, "event_id": "80841fed05cb405ae6f2f9115f5eccd8", "home_score": null, "home_team": "Teremoana Junior", "kind": "score", "last_update": null, "observed_utc": "2026-11-16T12:41:29.156853+00:00", "outcome": null, "scores": null, "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 35, "kind": "poll", "observed_utc": "2026-11-16T12:41:29.156853+00:00", "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 7, "kind": "poll", "observed_utc": "2026-11-16T12:41:29.156853+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 169, "kind": "poll", "observed_utc": "2026-11-16T12:41:29.156853+00:00", "sport_key": "basketball_ncaab"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-16T12:41:29.156853+00:00", "sport_key": "icehockey_mestis"}
+{"credits": 2, "days_from": 3, "events": 17, "kind": "poll", "observed_utc": "2026-11-16T12:41:29.156853+00:00", "sport_key": "soccer_england_league1"}
+{"away_score": null, "away_team": "India", "commence_time": "2026-11-18T22:00:00Z", "completed": false, "event_id": "6a5d182a990740229671bb8d173d35d5", "home_score": null, "home_team": "New Zealand", "kind": "score", "last_update": null, "observed_utc": "2026-11-16T12:41:29.156853+00:00", "outcome": null, "scores": null, "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 4, "kind": "poll", "observed_utc": "2026-11-16T12:41:29.156853+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-16T12:41:29.156853+00:00", "sport_key": "aussierules_aflw"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-16T12:41:29.156853+00:00", "sport_key": "cricket_odi"}
+{"credits": 2, "days_from": 3, "events": 22, "kind": "poll", "observed_utc": "2026-11-16T12:41:29.156853+00:00", "sport_key": "soccer_england_league2"}
+{"credits": 2, "days_from": 3, "events": 18, "kind": "poll", "observed_utc": "2026-11-16T12:41:29.156853+00:00", "sport_key": "soccer_france_coupe_de_france"}
+{"credits": 2, "days_from": 3, "events": 44, "kind": "poll", "observed_utc": "2026-11-16T12:41:29.156853+00:00", "sport_key": "soccer_uefa_nations_league"}
