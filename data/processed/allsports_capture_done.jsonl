@@ -29126,3 +29126,5 @@
 {"commence_utc": "2026-11-16T13:00:00Z", "event_id": "c81851847baf5e3a479993ec167a8e2a", "kind": "phase", "observed_utc": "2026-11-16T07:07:59.152595Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_finals"}
 {"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T07:07:59.152595Z", "regions": ["us"], "rows": 24, "sport_key": "tennis_atp_finals", "stored": 20}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T07:18:07.955947Z", "regions": ["au"], "rows": 20, "sport_key": "cricket_test_match", "stored": 17}
+{"commence_utc": "2026-11-16T08:00:00Z", "event_id": "e2f9156d9a8f5a47f01824d12f1250e0", "kind": "phase", "observed_utc": "2026-11-16T07:38:11.033014Z", "phase": "t30m", "rows": 7, "sport_key": "cricket_test_match"}
+{"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T07:38:11.033014Z", "regions": ["au"], "rows": 20, "sport_key": "cricket_test_match", "stored": 17}
