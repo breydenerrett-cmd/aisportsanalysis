@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-15 21:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-16 16:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-15** |
+| Days until 2026-10-31 | **-16** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -70,8 +70,8 @@ Read from `docs/sales/outreach_queue.csv`, people only. A forum thread is a publ
 - **MLB previous** (Our first card rule; 2026-09-10..2026-09-22): n=230: 151-79, +7.98u, ROI +3.5%
   - game: n=113: 73-40, +7.61u, ROI +6.7%
   - prop: n=117: 78-39, +0.38u, ROI +0.3%
-- **NFL current** (Our NFL value rule; 2026-09-27..2026-10-18): n=4: 2-2, -0.00u (too few for a rate)
-  - game: n=4: 2-2, -0.00u (too few for a rate)
+- **NFL current** (Our NFL value rule; 2026-09-27..2026-11-15): n=5: 2-3, -1.00u (too few for a rate)
+  - game: n=5: 2-3, -1.00u (too few for a rate)
 - **NFL previous** (Our first NFL rule; 2026-09-17..2026-09-21): n=10: 7-3, -0.26u (too few for a rate)
   - game: n=10: 7-3, -0.26u (too few for a rate)
 - **MMA current** (Our UFC card; 2026-09-22..2026-10-03): n=9: 8-1, +4.80u (too few for a rate)
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-15 (1:30 pm PT run): NFL brief published for SNF PIT@CIN (all three markets PASS, clean on attempt 1).
-- Morning briefs KC@ATL, MIN@GB, BUF@NYJ graded; the public sample now shows KC@ATL.
-- Production restarted at 21:31Z with no deploy near it (20th unexplained); /health 200, memory 334 MB, billing ok.
-- Tests green on the newest finished run. Daily-loop on cowork-session-migration: newest run cancelled, prior failed.
+- 2026-11-16 (8:30 am PT run): SNF PIT@CIN graded (final CIN 38, PIT 18); all four 11-15 NFL briefs complete.
+- No brief this run: MNF LAC@BAL kicks off 5:15 pm PT; no MLB games through 11-30.
+- Production /health 200, memory 485 MB (peak 807 of 850), billing ok; last restart 16:06Z was a deploy.
+- Tests green on the newest finished run. Daily-loop on cowork-session-migration failed again at 10:10Z.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
