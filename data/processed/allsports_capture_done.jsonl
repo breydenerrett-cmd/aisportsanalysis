@@ -29160,3 +29160,4 @@
 {"events": 9, "kind": "peek", "next_check_utc": "2026-11-16T15:30:43.775184Z", "observed_utc": "2026-11-16T09:30:43.775184Z", "sport_key": "soccer_turkey_super_league"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-16T15:30:43.775184Z", "observed_utc": "2026-11-16T09:30:43.775184Z", "sport_key": "soccer_uefa_champs_league"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-16T15:30:43.775184Z", "observed_utc": "2026-11-16T09:30:43.775184Z", "sport_key": "soccer_uefa_europa_conference_league"}
+{"events": 66, "kind": "peek", "next_check_utc": "2026-11-16T15:43:07.116052Z", "observed_utc": "2026-11-16T09:43:07.116052Z", "sport_key": "americanfootball_ncaaf"}
