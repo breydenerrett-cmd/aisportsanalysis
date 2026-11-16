@@ -29101,3 +29101,4 @@
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T04:02:17.733168Z", "regions": ["us"], "rows": 36, "sport_key": "icehockey_nhl", "stored": 36}
 {"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T04:02:17.733168Z", "regions": ["us"], "rows": 65, "sport_key": "basketball_nba", "stored": 65}
 {"call_kind": "inplay", "credits": 1, "events": 23, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T04:02:17.733168Z", "regions": ["us"], "rows": 116, "sport_key": "basketball_ncaab", "stored": 116}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T04:15:45.141418Z", "regions": ["us"], "rows": 1, "sport_key": "basketball_wncaab", "stored": 1}
