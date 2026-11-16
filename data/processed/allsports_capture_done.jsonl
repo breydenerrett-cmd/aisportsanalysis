@@ -29200,3 +29200,6 @@
 {"events": 35, "kind": "peek", "next_check_utc": "2026-11-16T18:18:13.880085Z", "observed_utc": "2026-11-16T12:18:13.880085Z", "sport_key": "boxing_boxing"}
 {"events": 1, "kind": "peek", "next_check_utc": "2026-11-16T15:30:00Z", "observed_utc": "2026-11-16T12:18:13.880085Z", "sport_key": "icehockey_mestis"}
 {"events": 9, "kind": "peek", "next_check_utc": "2026-11-16T18:18:13.880085Z", "observed_utc": "2026-11-16T12:18:13.880085Z", "sport_key": "soccer_uefa_champs_league_women"}
+{"commence_utc": "2026-11-16T13:00:00Z", "event_id": "c81851847baf5e3a479993ec167a8e2a", "kind": "phase", "observed_utc": "2026-11-16T12:30:14.341431Z", "phase": "t30m", "rows": 8, "sport_key": "tennis_atp_finals"}
+{"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T12:30:14.341431Z", "regions": ["us"], "rows": 28, "sport_key": "tennis_atp_finals", "stored": 28}
+{"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T12:30:14.341431Z", "regions": ["au"], "rows": 19, "sport_key": "cricket_test_match", "stored": 14}
