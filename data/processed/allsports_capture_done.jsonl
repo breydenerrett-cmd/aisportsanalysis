@@ -29130,3 +29130,5 @@
 {"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T07:38:11.033014Z", "regions": ["au"], "rows": 20, "sport_key": "cricket_test_match", "stored": 17}
 {"events": 9, "kind": "peek", "next_check_utc": "2026-11-16T13:58:13.134486Z", "observed_utc": "2026-11-16T07:58:13.134486Z", "sport_key": "soccer_mexico_ligamx"}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T08:14:15.977729Z", "regions": ["au"], "rows": 20, "sport_key": "cricket_test_match", "stored": 17}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-11-16T14:27:13.303115Z", "observed_utc": "2026-11-16T08:27:13.303115Z", "sport_key": "soccer_brazil_campeonato"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-11-16T14:27:13.303115Z", "observed_utc": "2026-11-16T08:27:13.303115Z", "sport_key": "soccer_england_league2"}
