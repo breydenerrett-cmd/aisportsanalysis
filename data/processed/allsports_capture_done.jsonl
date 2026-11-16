@@ -29221,3 +29221,7 @@
 {"call_kind": "pregame", "credits": 3, "events": 2, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-16T13:25:38.544121Z", "regions": ["us"], "rows": 4, "sport_key": "basketball_wncaab", "stored": 4}
 {"commence_utc": "2026-11-17T06:00:00Z", "event_id": "ecc8744ead7279b56eb9629ef99f43a2", "kind": "phase", "observed_utc": "2026-11-16T13:25:38.544121Z", "phase": "t24h", "rows": 3, "sport_key": "cricket_test_match"}
 {"call_kind": "pregame", "credits": 1, "events": 5, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T13:25:38.544121Z", "regions": ["au"], "rows": 23, "sport_key": "cricket_test_match", "stored": 17}
+{"commence_utc": "2026-11-16T19:30:00Z", "event_id": "c52bb6ace02b521be96df8fba8806037", "kind": "phase", "observed_utc": "2026-11-16T13:35:22.082522Z", "phase": "t6h", "rows": 9, "sport_key": "soccer_spain_segunda_division"}
+{"call_kind": "pregame", "credits": 2, "events": 12, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-16T13:35:22.082522Z", "regions": ["us"], "rows": 91, "sport_key": "soccer_spain_segunda_division", "stored": 9}
+{"commence_utc": "2026-11-16T19:30:00Z", "event_id": "7ac3bf138012785e65835d1481524d5c", "kind": "phase", "observed_utc": "2026-11-16T13:35:22.082522Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_finals"}
+{"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T13:35:22.082522Z", "regions": ["us"], "rows": 29, "sport_key": "tennis_atp_finals", "stored": 29}
