@@ -29023,3 +29023,11 @@
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T01:51:47.136630Z", "regions": ["us"], "rows": 2, "sport_key": "icehockey_ahl", "stored": 1}
 {"commence_utc": "2026-11-16T08:00:00Z", "event_id": "e2f9156d9a8f5a47f01824d12f1250e0", "kind": "phase", "observed_utc": "2026-11-16T02:04:47.340616Z", "phase": "t6h", "rows": 7, "sport_key": "cricket_test_match"}
 {"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T02:04:47.340616Z", "regions": ["au"], "rows": 25, "sport_key": "cricket_test_match", "stored": 22}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-11-16T08:22:04.908369Z", "observed_utc": "2026-11-16T02:22:04.908369Z", "sport_key": "soccer_brazil_campeonato"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-11-16T08:22:04.908369Z", "observed_utc": "2026-11-16T02:22:04.908369Z", "sport_key": "soccer_england_league2"}
+{"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 5, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T02:22:04.908369Z", "regions": ["us"], "rows": 62, "sport_key": "icehockey_nhl", "stored": 62}
+{"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T02:22:04.908369Z", "regions": ["us"], "rows": 37, "sport_key": "basketball_nba", "stored": 37}
+{"call_kind": "inplay", "credits": 1, "events": 26, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T02:22:04.908369Z", "regions": ["us"], "rows": 107, "sport_key": "basketball_ncaab", "stored": 107}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T02:22:04.908369Z", "regions": ["us"], "rows": 4, "sport_key": "basketball_wncaab", "stored": 4}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T02:22:04.908369Z", "regions": ["us"], "rows": 6, "sport_key": "americanfootball_cfl", "stored": 6}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T02:22:04.908369Z", "regions": ["us"], "rows": 2, "sport_key": "icehockey_ahl", "stored": 1}
