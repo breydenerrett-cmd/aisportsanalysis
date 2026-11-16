@@ -1,0 +1,125 @@
+{
+  "summary": "I pass on all three markets. Baltimore is a 4.5-point favourite and the best moneyline price on the Ravens is -216, which is past the -200 limit I will not bet. The Ravens have lost their last three games by an average margin of -23.6667 points per game, and the listed quarterback, Tyler Huntley, is a change from the last game's starter, so I would want to see more before backing them. Los Angeles is 0-8 with a losing streak of 11 and has crossed 3 time zones, yet it also has the longer injury list at 13 players listed, and the data does not say who matters. The books put Baltimore at 0.6652 to win and the spread at close to a coin flip, and I cannot show from what we have that the number is wrong in points. On the total of 39.5, both offences score little but both defences allow a lot, so the price already seems to hold both sides. Weather is missing for an outdoor game and the quarterback is only a projection.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "BAL",
+      "verdict": "PASS",
+      "price": -216,
+      "book": "lowvig",
+      "fair_estimate": 0.66,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books put Baltimore at 0.6652 to win after taking their margin out, and the best price on the Ravens is -216, which my rules bar me from betting.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.6652},
+            {"path": "markets.moneyline.options[0].best.price", "value": -216}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Baltimore has lost its last three games by a wide average margin and the listed quarterback is a change from last game, so the home side is not the clean favourite its price suggests.",
+          "evidence": [
+            {"path": "sections.home.values.form.last_3.margin_per_game", "value": -23.6667},
+            {"path": "sections.home.values.qb.listed_for_this_game.changed_since_last_game", "value": true}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Los Angeles has not won this season and carries a long losing streak, so the underdog price is not a bargain either.",
+          "evidence": [
+            {"path": "sections.away.values.record.season.wins", "value": 0},
+            {"path": "sections.away.values.streak.length", "value": 11}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -194,
+      "what_would_change_it": "A Baltimore price of -194 or shorter, or a report that Tyler Huntley is not the starting quarterback, would change my view.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "BAL -4.5",
+      "verdict": "PASS",
+      "price": -106,
+      "book": "williamhill_us",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books have the two sides of 4.5 at almost exactly even once their margin is removed, and the number has moved toward Baltimore since it was first captured with Los Angeles at 1.5.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5001},
+            {"path": "markets.spread.context.away_number_first_captured", "value": 1.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The season margin favours Baltimore but the last three games favour Los Angeles, so the form evidence points both ways and gives no clear reason the number is wrong in points.",
+          "evidence": [
+            {"path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": 7.0278},
+            {"path": "sections.matchup.values.differentials.form_last_3_margin_per_game.diff", "value": -6.0}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "A quarterback change for Baltimore and a long Los Angeles injury list with no measure of who matters make the number hard to move in either direction.",
+          "evidence": [
+            {"path": "sections.home.values.qb.listed_for_this_game.name", "value": "Tyler Huntley"},
+            {"path": "sections.away.values.injuries.players_listed", "value": 13}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed quarterback change or a key Los Angeles player ruled out on the injury report, or the number moving off 4.5, would make me look again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 39.5",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "williamhill_us",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Both offences score little this season, which points to Under, but both defences allow a lot, which points the other way, so the number of 39.5 already holds both.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 21},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 15.125},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 26.2222},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 27.375}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The books split almost evenly between Under and Over at 39.5, and the total was first captured lower at 38.5, so it has risen a point without showing a reason I can verify.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5031},
+            {"path": "markets.total.context.number_first_captured", "value": 38.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "A projected quarterback change for Baltimore and no weather forecast for an outdoor game are both reasons for care on a total.",
+          "evidence": [
+            {"path": "sections.home.values.qb.listed_for_this_game.projected", "value": true},
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed quarterback change or a weather forecast showing heavy wind or rain would move my view of the total.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

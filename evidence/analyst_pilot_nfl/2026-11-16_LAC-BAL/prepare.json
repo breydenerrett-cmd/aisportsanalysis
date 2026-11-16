@@ -1,0 +1,23 @@
+{
+  "sport": "nfl",
+  "game_id": "2026_10_LAC_BAL",
+  "date": "2026-11-16",
+  "away": "LAC",
+  "home": "BAL",
+  "kickoff_utc": "2026-11-17T01:15:00Z",
+  "built_at": "2026-11-16T21:41:57Z",
+  "packet_hash": "f217726e75d55337882a19ef67e992209d8cfc4d5a96122546265da9382939f8",
+  "prompt_version": "analyst_prompt_nfl_v1",
+  "prompt_hash": "8b80fc0cc2622da7497bed03b851d3934b8d687a6ca9c5a17d3eeb2d1c56ea7b",
+  "token_estimate": 9730,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "spread",
+    "total"
+  ],
+  "missing_items": 2,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "nfl_store+odds_multibook"
+}
