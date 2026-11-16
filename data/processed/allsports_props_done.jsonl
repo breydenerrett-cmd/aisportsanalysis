@@ -4402,3 +4402,4 @@
 {"books": 8, "credits": 5, "event_id": "e52a5926735bcff42d3d0ce052a21938", "family": "NHL", "kind": "call", "markets": ["player_points", "player_assists", "player_shots_on_goal", "player_goal_scorer_anytime", "player_total_saves"], "observed_utc": "2026-11-16T01:52:01.346221Z", "phase": "t30m", "regions": ["us"], "remaining": 80471, "sport_key": "icehockey_nhl", "stored": 595}
 {"events": 6, "kind": "peek", "next_check_utc": "2026-11-16T05:22:10.627179Z", "observed_utc": "2026-11-16T02:22:10.627179Z", "sport_key": "basketball_nba"}
 {"events": 7, "kind": "peek", "next_check_utc": "2026-11-16T05:22:10.627179Z", "observed_utc": "2026-11-16T02:22:10.627179Z", "sport_key": "icehockey_nhl"}
+{"events": 66, "kind": "peek", "next_check_utc": "2026-11-16T06:36:23.348598Z", "observed_utc": "2026-11-16T03:36:23.348598Z", "sport_key": "americanfootball_ncaaf"}
