@@ -29323,3 +29323,5 @@
 {"call_kind": "pregame", "credits": 3, "events": 18, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-16T17:00:03.495529Z", "regions": ["us"], "rows": 178, "sport_key": "basketball_euroleague", "stored": 131}
 {"call_kind": "inplay", "credits": 1, "events": 17, "events_live": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T17:08:19.921490Z", "regions": ["us"], "rows": 167, "sport_key": "soccer_uefa_nations_league", "stored": 167}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T17:08:19.921490Z", "regions": ["eu"], "rows": 8, "sport_key": "soccer_germany_bundesliga_women", "stored": 8}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-11-16T23:18:14.284546Z", "observed_utc": "2026-11-16T17:18:14.284546Z", "sport_key": "aussierules_aflw"}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-16T23:18:14.284546Z", "observed_utc": "2026-11-16T17:18:14.284546Z", "sport_key": "soccer_brazil_serie_b"}
