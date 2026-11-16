@@ -29125,3 +29125,4 @@
 {"events": 6, "kind": "peek", "next_check_utc": "2026-11-16T13:07:59.152595Z", "observed_utc": "2026-11-16T07:07:59.152595Z", "sport_key": "soccer_spain_copa_del_rey"}
 {"commence_utc": "2026-11-16T13:00:00Z", "event_id": "c81851847baf5e3a479993ec167a8e2a", "kind": "phase", "observed_utc": "2026-11-16T07:07:59.152595Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_finals"}
 {"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T07:07:59.152595Z", "regions": ["us"], "rows": 24, "sport_key": "tennis_atp_finals", "stored": 20}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T07:18:07.955947Z", "regions": ["au"], "rows": 20, "sport_key": "cricket_test_match", "stored": 17}
