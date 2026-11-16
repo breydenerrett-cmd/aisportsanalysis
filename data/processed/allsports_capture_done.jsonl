@@ -29182,3 +29182,4 @@
 {"events": 8, "kind": "peek", "next_check_utc": "2026-11-16T16:06:25.545297Z", "observed_utc": "2026-11-16T10:06:25.545297Z", "sport_key": "soccer_sweden_allsvenskan"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-16T16:06:25.545297Z", "observed_utc": "2026-11-16T10:06:25.545297Z", "sport_key": "soccer_uefa_europa_league"}
 {"events": 8, "kind": "peek", "next_check_utc": "2026-11-16T16:06:25.545297Z", "observed_utc": "2026-11-16T10:06:25.545297Z", "sport_key": "soccer_usa_mls"}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T10:40:37.651529Z", "regions": ["au"], "rows": 17, "sport_key": "cricket_test_match", "stored": 14}
