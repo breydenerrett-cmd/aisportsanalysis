@@ -29216,3 +29216,8 @@
 {"commence_utc": "2026-11-17T13:00:00Z", "event_id": "b347b8bd2e85f10eca7dc7160026443b", "kind": "phase", "observed_utc": "2026-11-16T13:09:15.812541Z", "phase": "t24h", "rows": 6, "sport_key": "tennis_atp_finals"}
 {"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T13:09:15.812541Z", "regions": ["us"], "rows": 28, "sport_key": "tennis_atp_finals", "stored": 28}
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T13:09:15.812541Z", "regions": ["au"], "rows": 19, "sport_key": "cricket_test_match", "stored": 14}
+{"commence_utc": "2026-11-17T01:00:00Z", "event_id": "d7fe55544761449bf32ccbbaa132cc1a", "kind": "phase", "observed_utc": "2026-11-16T13:25:38.544121Z", "phase": "t24h", "rows": 2, "sport_key": "basketball_wncaab"}
+{"commence_utc": "2026-11-17T01:00:00Z", "event_id": "83bd899fe54e217b661bcf0b54b65c76", "kind": "phase", "observed_utc": "2026-11-16T13:25:38.544121Z", "phase": "t24h", "rows": 2, "sport_key": "basketball_wncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 2, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-16T13:25:38.544121Z", "regions": ["us"], "rows": 4, "sport_key": "basketball_wncaab", "stored": 4}
+{"commence_utc": "2026-11-17T06:00:00Z", "event_id": "ecc8744ead7279b56eb9629ef99f43a2", "kind": "phase", "observed_utc": "2026-11-16T13:25:38.544121Z", "phase": "t24h", "rows": 3, "sport_key": "cricket_test_match"}
+{"call_kind": "pregame", "credits": 1, "events": 5, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T13:25:38.544121Z", "regions": ["au"], "rows": 23, "sport_key": "cricket_test_match", "stored": 17}
