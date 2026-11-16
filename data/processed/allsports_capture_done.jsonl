@@ -29112,3 +29112,5 @@
 {"commence_utc": "2026-11-16T06:00:00Z", "event_id": "fd93bb231b08a5b33398b35c17506552", "kind": "phase", "observed_utc": "2026-11-16T05:36:03.236935Z", "phase": "t30m", "rows": 7, "sport_key": "cricket_test_match"}
 {"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T05:36:03.236935Z", "regions": ["au"], "rows": 25, "sport_key": "cricket_test_match", "stored": 22}
 {"events": 12, "kind": "peek", "next_check_utc": "2026-11-16T11:48:23.237029Z", "observed_utc": "2026-11-16T05:48:23.237029Z", "sport_key": "soccer_england_league1"}
+{"commence_utc": "2026-11-16T08:00:00Z", "event_id": "e2f9156d9a8f5a47f01824d12f1250e0", "kind": "phase", "observed_utc": "2026-11-16T06:04:58.269310Z", "phase": "t2h", "rows": 7, "sport_key": "cricket_test_match"}
+{"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-16T06:04:58.269310Z", "regions": ["au"], "rows": 25, "sport_key": "cricket_test_match", "stored": 22}
