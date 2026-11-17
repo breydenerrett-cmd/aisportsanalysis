@@ -7945,3 +7945,8 @@
 {"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Josh White", "player_id": 687985, "team": "TEX", "transaction_id": 950367}
 {"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Zach Morgan", "player_id": 681439, "team": "BAL", "transaction_id": 950368}
 {"category": "signed", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Emilio Pag\u00e1n", "player_id": 641941, "team": "DET", "transaction_id": 950369}
+{"fetched_utc": "2026-11-17T21:08:35.276538+00:00", "game_date": "2026-11-17", "poll": true}
+{"category": "designated", "date": "2026-11-17", "first_seen_utc": "2026-11-17T21:08:35.276538+00:00", "player": "Joey Bart", "player_id": 663698, "team": "CWS", "transaction_id": 950370}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T21:08:35.276538+00:00", "player": "William Bergolla Jr.", "player_id": 703151, "team": "CWS", "transaction_id": 950371}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T21:08:35.276538+00:00", "player": "Jaden Woods", "player_id": 692243, "team": "CWS", "transaction_id": 950372}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T21:08:35.276538+00:00", "player": "Bryan Rincon", "player_id": 804858, "team": "PHI", "transaction_id": 950373}
