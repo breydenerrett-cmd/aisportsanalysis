@@ -62,6 +62,8 @@ CHAIN_SLEEP="${CHAIN_SLEEP:-sleep}"
 CHAIN_MIN_SPACING_MINUTES=13
 CHAIN_QUIET_SPACING_MINUTES=60
 CHAIN_QUIET_HORIZON_HOURS=26
+# Quiet-hours slots start this many minutes before the hour (chain_space).
+CHAIN_QUIET_LEAD_MINUTES=8
 # How long the gate waits for a waiting rival to start before giving up this
 # slot. A rival is only ever waiting behind something RUNNING in the group (a
 # slot, a few minutes), so 30 minutes is generous; the next chained run tries
@@ -197,17 +199,26 @@ chain_space() {
     if [ "$spacing" -lt "$CHAIN_MIN_SPACING_MINUTES" ]; then spacing=$CHAIN_MIN_SPACING_MINUTES; fi
     if [ "$spacing" -gt "$CHAIN_QUIET_SPACING_MINUTES" ]; then spacing=$CHAIN_QUIET_SPACING_MINUTES; fi
     wait=$((prev + spacing * 60 - now))
-    # Quiet hours: start on the hour, not 60 minutes after the previous slot.
-    # The staging and production refresh steps fire only in a slot whose
-    # minute is under 15; an hourly chain that drifted to :26 (2026-11-17,
-    # 01:26Z onward) never refreshed production again. Target the first top
-    # of the hour at least 13 minutes after the previous start.
+    local cap=$((spacing * 60))
+    # Quiet hours: start just before the hour, not 60 minutes after the
+    # previous slot. The dense-window widen and the staging and production
+    # refresh steps fire only in minutes 00-14; an hourly chain that drifted
+    # to :26 (2026-11-17, 01:26Z onward) never refreshed production again, and
+    # one started on the hour reached its refresh step at :15 (job setup is
+    # ~11 minutes). Target :52, the first one at least 13 minutes after the
+    # previous start: widen near :03-:08, refresh near :07-:12.
     if [ "$spacing" -ge "$CHAIN_QUIET_SPACING_MINUTES" ]; then
-        local target=$((prev + CHAIN_MIN_SPACING_MINUTES * 60))
-        target=$(( (target + 3599) / 3600 * 3600 ))
+        local lead=$((CHAIN_QUIET_LEAD_MINUTES * 60))
+        local target=$((prev + CHAIN_MIN_SPACING_MINUTES * 60 + lead))
+        target=$(( (target + 3599) / 3600 * 3600 - lead ))
         wait=$((target - now))
+        # The next :52 can be up to 73 minutes out (previous start :40-:52);
+        # bounding that wait at 60 would lock the chain to that minute.
+        if [ "$wait" -le $(( (spacing + CHAIN_MIN_SPACING_MINUTES) * 60 )) ]; then
+            cap=$(( (spacing + CHAIN_MIN_SPACING_MINUTES) * 60 ))
+        fi
     fi
-    if [ "$wait" -gt $((spacing * 60)) ]; then wait=$((spacing * 60)); fi
+    if [ "$wait" -gt "$cap" ]; then wait=$cap; fi
     if [ "$wait" -le 0 ]; then
         echo "spacing: previous slot started $((now - prev))s ago -- starting now"
     else

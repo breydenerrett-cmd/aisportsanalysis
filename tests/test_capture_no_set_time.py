@@ -404,20 +404,24 @@ class AChainedSlotIsSpaced(_ChainHarness):
         self.invoke("--space-only", PREV_SLOT_START=str(future), SPACING_MINUTES="999")
         self.assertEqual(sum(self.sleeps()), 60 * 60)
 
-    def test_quiet_hours_start_on_the_hour(self):
+    def test_quiet_hours_start_before_the_hour(self):
         """2026-11-17: an hourly chain drifted to :26 and production, which
-        refreshes only from a slot in minutes 00-14, stopped updating. Fails
-        against the pre-fix script, which waited prev + 60 minutes."""
+        refreshes only from a slot in minutes 00-14, stopped updating; one
+        started on the hour reached the refresh step at :15. Quiet-hours
+        slots now start at :52. Fails against the pre-fix script, which
+        waited prev + 60 minutes."""
         now = int(time.time())
-        prev = now - 100
-        self.invoke("--space-only", PREV_SLOT_START=str(prev), SPACING_MINUTES="60")
-        end = now + sum(self.sleeps())
-        target = (prev + 13 * 60 + 3599) // 3600 * 3600
-        # Inside the last ~13 minutes of an hour the next top of the hour is
-        # more than an hour away and the one-interval wait bound applies.
-        target = min(target, now + 60 * 60)
-        self.assertTrue(abs(end - target) <= 5, (end, target))
-        self.assertLessEqual(sum(self.sleeps()), 60 * 60)
+        last_45 = (now - 45 * 60) // 3600 * 3600 + 45 * 60
+        for prev in (now - 100, last_45):
+            with self.subTest(prev_minute=time.gmtime(prev).tm_min):
+                self.reset()
+                self.invoke("--space-only", PREV_SLOT_START=str(prev), SPACING_MINUTES="60")
+                waited = sum(self.sleeps())
+                start = now + waited
+                self.assertGreater(waited, 0)
+                self.assertLessEqual(waited, 73 * 60)
+                self.assertIn(time.gmtime(start + 5).tm_min, (52, 53), time.gmtime(start))
+                self.assertGreaterEqual(start - prev, 13 * 60 - 5)
 
     def test_spacing_below_13_minutes_is_raised_to_13(self):
         now = int(time.time())
