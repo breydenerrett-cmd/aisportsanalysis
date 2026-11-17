@@ -37682,3 +37682,9 @@
 {"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 79438, "credits_used_last": 2, "utc": "2026-11-17T09:41:06.670483Z"}
 {"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 79436, "credits_used_last": 2, "utc": "2026-11-17T09:41:06.670483Z"}
 {"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 79434, "credits_used_last": 2, "utc": "2026-11-17T09:41:06.670483Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 79434, "credits_used_last": 0, "utc": "2026-11-17T10:37:48.170109Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 79434, "credits_used_last": 0, "utc": "2026-11-17T10:37:50.013035Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 79434, "credits_used_last": 0, "utc": "2026-11-17T10:37:50.236442Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 79431, "credits_used_last": 3, "utc": "2026-11-17T10:38:34.845232Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 79428, "credits_used_last": 3, "utc": "2026-11-17T10:38:34.845232Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.inplay", "credits_remaining": 79427, "credits_used_last": 1, "utc": "2026-11-17T10:38:34.845232Z"}
