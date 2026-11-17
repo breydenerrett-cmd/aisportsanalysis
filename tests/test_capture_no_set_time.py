@@ -413,6 +413,9 @@ class AChainedSlotIsSpaced(_ChainHarness):
         self.invoke("--space-only", PREV_SLOT_START=str(prev), SPACING_MINUTES="60")
         end = now + sum(self.sleeps())
         target = (prev + 13 * 60 + 3599) // 3600 * 3600
+        # Inside the last ~13 minutes of an hour the next top of the hour is
+        # more than an hour away and the one-interval wait bound applies.
+        target = min(target, now + 60 * 60)
         self.assertTrue(abs(end - target) <= 5, (end, target))
         self.assertLessEqual(sum(self.sleeps()), 60 * 60)
 
