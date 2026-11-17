@@ -15604,3 +15604,18 @@
 {"credits": 2, "days_from": 3, "events": 34, "kind": "poll", "observed_utc": "2026-11-17T12:39:12.139801+00:00", "sport_key": "soccer_uefa_nations_league"}
 {"errors": [], "events": 1, "family": "MMA", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-17T12:39:15.799117Z", "source": "espn_mma", "unmatched": 1, "unmatched_ids": ["5c45e5cb707c61ad4186f2480707cdb9"], "void": 0, "written": 0}
 {"errors": [], "events": 1, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 1, "observed_utc": "2026-11-17T13:36:53.036058Z", "source": "espn_tennis", "unmatched": 0, "unmatched_ids": [], "void": 0, "written": 0}
+{"away_score": null, "away_team": "Coachella Valley Firebirds", "commence_time": "2026-11-19T01:00:00Z", "completed": false, "event_id": "3e71af50931b7551a71ccf1b9e4e1a6b", "home_score": null, "home_team": "Calgary Wranglers", "kind": "score", "last_update": null, "observed_utc": "2026-11-17T14:39:43.864188+00:00", "outcome": null, "scores": null, "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 9, "kind": "poll", "observed_utc": "2026-11-17T14:39:43.864188+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 35, "kind": "poll", "observed_utc": "2026-11-17T14:39:43.864188+00:00", "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 169, "kind": "poll", "observed_utc": "2026-11-17T14:39:43.864188+00:00", "sport_key": "basketball_ncaab"}
+{"away_score": null, "away_team": "Bangladesh", "commence_time": "2026-11-18T08:00:00Z", "completed": false, "event_id": "9cfbd8a559c598a2e30dcf1be3ef2912", "home_score": null, "home_team": "South Africa", "kind": "score", "last_update": null, "observed_utc": "2026-11-17T14:39:43.864188+00:00", "outcome": null, "scores": null, "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 3, "kind": "poll", "observed_utc": "2026-11-17T14:39:43.864188+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-17T14:39:43.864188+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 17, "kind": "poll", "observed_utc": "2026-11-17T14:39:43.864188+00:00", "sport_key": "soccer_england_league1"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-17T14:39:43.864188+00:00", "sport_key": "icehockey_mestis"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-17T14:39:43.864188+00:00", "sport_key": "cricket_odi"}
+{"credits": 2, "days_from": 3, "events": 21, "kind": "poll", "observed_utc": "2026-11-17T14:39:43.864188+00:00", "sport_key": "soccer_england_league2"}
+{"credits": 2, "days_from": 3, "events": 12, "kind": "poll", "observed_utc": "2026-11-17T14:39:43.864188+00:00", "sport_key": "soccer_france_coupe_de_france"}
+{"credits": 2, "days_from": 3, "events": 33, "kind": "poll", "observed_utc": "2026-11-17T14:39:43.864188+00:00", "sport_key": "soccer_uefa_nations_league"}
+{"errors": [], "events": 1, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 1, "observed_utc": "2026-11-17T14:39:47.616214Z", "source": "espn_tennis", "unmatched": 0, "unmatched_ids": [], "void": 0, "written": 0}
+{"errors": [], "events": 1, "family": "MMA", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-17T14:39:47.616214Z", "source": "espn_mma", "unmatched": 1, "unmatched_ids": ["5c45e5cb707c61ad4186f2480707cdb9"], "void": 0, "written": 0}
