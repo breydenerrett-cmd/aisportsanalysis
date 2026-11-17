@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-16 21:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-17 16:46Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-16** |
+| Days until 2026-10-31 | **-17** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-16 (1:30 pm PT run): MNF LAC@BAL brief published 21:42Z; moneyline, spread (BAL -4.5) and total (39.5) all PASS, clean on attempt 1.
-- No MLB games through 11-30. Sample stays KC@ATL 11-15 (graded).
-- Production /health 200, billing ok; memory peaked 851 MB against an 850 MB limit (now 605 MB); last restart 21:09Z was a deploy.
-- Tests green on the newest finished run. Daily-loop on cowork-session-migration failed at 19:54Z: MLB slate guard refuses with no MLB captures.
+- 2026-11-17 (8:30 am PT run): MNF LAC@BAL graded (LAC 23-20); brief was all PASS. No MLB games through 11-30; no NFL game today.
+- Production stopped refreshing after 01:04Z (odds 15.6 h old at 16:41Z): the quiet-hours capture chain drifted to :26 and the refresh fires only in minutes 00-14. Fix committed: quiet slots start on the hour.
+- Production /health 200, billing ok; memory peak 833 MB of 850; one unexplained restart at 06:04Z (21 total).
+- Tests green on the newest finished run. Daily-loop on cowork-session-migration failed again at 10:10Z.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
