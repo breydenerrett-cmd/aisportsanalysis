@@ -29763,3 +29763,9 @@
 {"commence_utc": "2026-11-18T04:00:00Z", "event_id": "107600e44a78d55aaf007aa1f18e20c7", "kind": "phase", "observed_utc": "2026-11-17T04:39:13.365571Z", "phase": "t24h", "rows": 25, "sport_key": "basketball_ncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 58, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-17T04:39:13.365571Z", "regions": ["us"], "rows": 1285, "sport_key": "basketball_ncaab", "stored": 1285}
 {"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-17T04:39:13.365571Z", "regions": ["us"], "rows": 128, "sport_key": "icehockey_nhl", "stored": 128}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-11-17T11:36:20.504156Z", "observed_utc": "2026-11-17T05:36:20.504156Z", "sport_key": "aussierules_aflw"}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-11-17T11:36:20.504156Z", "observed_utc": "2026-11-17T05:36:20.504156Z", "sport_key": "soccer_brazil_serie_b"}
+{"commence_utc": "2026-11-17T06:00:00Z", "event_id": "ecc8744ead7279b56eb9629ef99f43a2", "kind": "phase", "observed_utc": "2026-11-17T05:36:20.504156Z", "phase": "t30m", "rows": 7, "sport_key": "cricket_test_match"}
+{"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-17T05:36:20.504156Z", "regions": ["au"], "rows": 24, "sport_key": "cricket_test_match", "stored": 19}
+{"commence_utc": "2026-11-18T05:00:00Z", "event_id": "e8f832a92172e3b4111a673d4ed242d5", "kind": "phase", "observed_utc": "2026-11-17T05:36:20.504156Z", "phase": "t24h", "rows": 26, "sport_key": "basketball_ncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 54, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-17T05:36:20.504156Z", "regions": ["us"], "rows": 1243, "sport_key": "basketball_ncaab", "stored": 1243}
