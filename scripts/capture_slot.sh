@@ -197,6 +197,16 @@ chain_space() {
     if [ "$spacing" -lt "$CHAIN_MIN_SPACING_MINUTES" ]; then spacing=$CHAIN_MIN_SPACING_MINUTES; fi
     if [ "$spacing" -gt "$CHAIN_QUIET_SPACING_MINUTES" ]; then spacing=$CHAIN_QUIET_SPACING_MINUTES; fi
     wait=$((prev + spacing * 60 - now))
+    # Quiet hours: start on the hour, not 60 minutes after the previous slot.
+    # The staging and production refresh steps fire only in a slot whose
+    # minute is under 15; an hourly chain that drifted to :26 (2026-11-17,
+    # 01:26Z onward) never refreshed production again. Target the first top
+    # of the hour at least 13 minutes after the previous start.
+    if [ "$spacing" -ge "$CHAIN_QUIET_SPACING_MINUTES" ]; then
+        local target=$((prev + CHAIN_MIN_SPACING_MINUTES * 60))
+        target=$(( (target + 3599) / 3600 * 3600 ))
+        wait=$((target - now))
+    fi
     if [ "$wait" -gt $((spacing * 60)) ]; then wait=$((spacing * 60)); fi
     if [ "$wait" -le 0 ]; then
         echo "spacing: previous slot started $((now - prev))s ago -- starting now"

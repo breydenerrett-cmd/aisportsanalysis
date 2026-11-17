@@ -404,6 +404,18 @@ class AChainedSlotIsSpaced(_ChainHarness):
         self.invoke("--space-only", PREV_SLOT_START=str(future), SPACING_MINUTES="999")
         self.assertEqual(sum(self.sleeps()), 60 * 60)
 
+    def test_quiet_hours_start_on_the_hour(self):
+        """2026-11-17: an hourly chain drifted to :26 and production, which
+        refreshes only from a slot in minutes 00-14, stopped updating. Fails
+        against the pre-fix script, which waited prev + 60 minutes."""
+        now = int(time.time())
+        prev = now - 100
+        self.invoke("--space-only", PREV_SLOT_START=str(prev), SPACING_MINUTES="60")
+        end = now + sum(self.sleeps())
+        target = (prev + 13 * 60 + 3599) // 3600 * 3600
+        self.assertTrue(abs(end - target) <= 5, (end, target))
+        self.assertLessEqual(sum(self.sleeps()), 60 * 60)
+
     def test_spacing_below_13_minutes_is_raised_to_13(self):
         now = int(time.time())
         self.invoke("--space-only", PREV_SLOT_START=str(now), SPACING_MINUTES="1")
