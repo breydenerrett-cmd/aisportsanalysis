@@ -7955,3 +7955,14 @@
 {"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T22:11:19.858631+00:00", "player": "Carson Roccaforte", "player_id": 811287, "team": "KC", "transaction_id": 950378}
 {"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T22:11:19.858631+00:00", "player": "Lucas Braun", "player_id": 814351, "team": "KC", "transaction_id": 950379}
 {"category": "signed", "date": "2026-11-17", "first_seen_utc": "2026-11-17T22:11:19.858631+00:00", "player": "Ryan Jeffers", "player_id": 680777, "team": "MIN", "transaction_id": 950380}
+{"fetched_utc": "2026-11-17T23:01:01.095649+00:00", "game_date": "2026-11-17", "poll": true}
+{"category": "designated", "date": "2026-11-17", "first_seen_utc": "2026-11-17T23:01:01.095649+00:00", "player": "Dylan Ross", "player_id": 697811, "team": "NYM", "transaction_id": 950400}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T23:01:01.095649+00:00", "player": "Jefferson Rojas", "player_id": 800473, "team": "NYM", "transaction_id": 950401}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T23:01:01.095649+00:00", "player": "Joey Loperfido", "player_id": 694388, "team": "HOU", "transaction_id": 950402}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T23:01:01.095649+00:00", "player": "Jackson Nezuh", "player_id": 694545, "team": "HOU", "transaction_id": 950403}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T23:01:01.095649+00:00", "player": "Mitch Jebb", "player_id": 694991, "team": "PIT", "transaction_id": 950405}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T23:01:01.095649+00:00", "player": "Axiel Plaz", "player_id": 800208, "team": "PIT", "transaction_id": 950407}
+{"category": "signed", "date": "2026-11-17", "first_seen_utc": "2026-11-17T23:01:01.095649+00:00", "player": "David Bednar", "player_id": 670280, "team": "NYY", "transaction_id": 950408}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T23:01:01.095649+00:00", "player": "Kyle Carr", "player_id": 694805, "team": "NYY", "transaction_id": 950409}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T23:01:01.095649+00:00", "player": "Carlos Lagrange", "player_id": 801739, "team": "NYY", "transaction_id": 950410}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T23:01:01.095649+00:00", "player": "Garrett Martin", "player_id": 682003, "team": "NYY", "transaction_id": 950411}
