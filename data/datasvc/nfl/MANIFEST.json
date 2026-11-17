@@ -22,10 +22,10 @@
  },
  "files": {
   "games.jsonl": {
-   "bytes": 1788247,
-   "newest": "2026-11-16T01:20:00Z",
+   "bytes": 1788238,
+   "newest": "2026-11-17T01:15:00Z",
    "records": 1696,
-   "sha256": "840b7052d34ab883658e22c641525bbfe951ba960754e8f2f7b2eb42991e7b6c"
+   "sha256": "4b94e11527aaa020434701c37dab82b8dc178f0034b7dc287795efcd2e399ef4"
   },
   "injuries.jsonl": {
    "bytes": 9146960,
@@ -34,21 +34,21 @@
    "sha256": "f1df2580db089e09d6de2a9b1c70ba78da52f9875275f4f7b0a645144f0d1c68"
   },
   "player_games.jsonl": {
-   "bytes": 9936491,
-   "newest": "2026-11-16T01:20:00Z",
-   "records": 16085,
-   "sha256": "ab872ca5981ca081d3146321e2076db34c28135ff39f075e268549d5cb5237f2"
+   "bytes": 9948896,
+   "newest": "2026-11-17T01:15:00Z",
+   "records": 16105,
+   "sha256": "1dab78c8c05ef0e0f8f5eac283ede570589daffca490d1ae329cef5a00bf8128"
   },
   "team_games.jsonl": {
-   "bytes": 3344559,
-   "newest": "2026-11-16T01:20:00Z",
+   "bytes": 3344421,
+   "newest": "2026-11-17T01:15:00Z",
    "records": 3392,
-   "sha256": "d295d11ffb3fe7404d06a6b6a5792128e9258a31acbb01d6efe5edbd578557e6"
+   "sha256": "9b9fbffbbc1fac5ce188aea00639be97c2cc7ea0cfa8076daf820acd8f48abbe"
   }
  },
- "generated_utc": "2026-11-16T20:15:00Z",
+ "generated_utc": "2026-11-17T10:25:58Z",
  "last_run": {
-  "finished_utc": "2026-11-16T20:15:00Z",
+  "finished_utc": "2026-11-17T10:25:58Z",
   "games": 14,
   "injuries": 0,
   "kind": "update",
@@ -62,22 +62,22 @@
     },
     "player_stats": {
      "dropped_no_player_id": 10,
-     "dropped_not_offense": 6970,
-     "kept": 3396,
-     "rows": 10376
+     "dropped_not_offense": 7020,
+     "kept": 3416,
+     "rows": 10446
     },
     "team_games": 544,
-    "team_stats_rows": 298,
+    "team_stats_rows": 300,
     "team_stats_unmatched": []
    }
   },
-  "player_games": 0,
+  "player_games": 20,
   "seasons": [
    2026
   ],
-  "started_utc": "2026-11-16T20:14:58Z",
+  "started_utc": "2026-11-17T10:25:55Z",
   "stopped": null,
-  "team_games": 1
+  "team_games": 300
  },
  "last_run_errors": 0,
  "sources": {

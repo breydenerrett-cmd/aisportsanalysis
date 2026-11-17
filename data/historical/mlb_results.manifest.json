@@ -8679,6 +8679,22 @@
    "skipped_game_type": 0,
    "stored": 0,
    "total": 0
+  },
+  "2026-11-17": {
+   "cancelled": 0,
+   "final": 0,
+   "game_types": [
+    "D",
+    "F",
+    "L",
+    "P",
+    "R",
+    "W"
+   ],
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
   }
  }
 }
