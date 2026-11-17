@@ -7927,3 +7927,21 @@
 {"fetched_utc": "2026-11-17T18:00:02.269196+00:00", "game_date": "2026-11-17", "poll": true}
 {"fetched_utc": "2026-11-17T18:12:56.357972+00:00", "game_date": "2026-11-17", "poll": true}
 {"fetched_utc": "2026-11-17T19:13:45.568506+00:00", "game_date": "2026-11-17", "poll": true}
+{"fetched_utc": "2026-11-17T20:11:30.860944+00:00", "game_date": "2026-11-17", "poll": true}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Philip Abner", "player_id": 691769, "team": "WSH", "transaction_id": 950344}
+{"category": "signed", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Jake Bauers", "player_id": 641343, "team": "BOS", "transaction_id": 950346}
+{"category": "designated", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Braden Nett", "player_id": 804556, "team": "OAK", "transaction_id": 950347}
+{"category": "traded", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Kenya Huggins", "player_id": 695761, "team": "BOS", "transaction_id": 950348}
+{"category": "designated", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Josiah Gray", "player_id": 680686, "team": "WSH", "transaction_id": 950350}
+{"category": "designated", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Braxton Roxby", "player_id": 694820, "team": "WSH", "transaction_id": 950351}
+{"category": "designated", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Gus Varland", "player_id": 681402, "team": "WSH", "transaction_id": 950352}
+{"category": "designated", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Carson Palmquist", "player_id": 687223, "team": "WSH", "transaction_id": 950353}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Jarlin Susana", "player_id": 703186, "team": "WSH", "transaction_id": 950354}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Travis Sykora", "player_id": 805809, "team": "WSH", "transaction_id": 950355}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Alejandro Rosario", "player_id": 691730, "team": "WSH", "transaction_id": 950356}
+{"category": "traded", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Jack Pineda", "player_id": 801442, "team": "BOS", "transaction_id": 950357}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Cameron Foster", "player_id": 671382, "team": "ATL", "transaction_id": 950365}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Chase Hampton", "player_id": 694633, "team": "NYY", "transaction_id": 950366}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Josh White", "player_id": 687985, "team": "TEX", "transaction_id": 950367}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Zach Morgan", "player_id": 681439, "team": "BAL", "transaction_id": 950368}
+{"category": "signed", "date": "2026-11-17", "first_seen_utc": "2026-11-17T20:11:30.860944+00:00", "player": "Emilio Pag\u00e1n", "player_id": 641941, "team": "DET", "transaction_id": 950369}
