@@ -29788,3 +29788,6 @@
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-17T08:36:38.344936Z", "regions": ["au"], "rows": 10, "sport_key": "cricket_test_match", "stored": 8}
 {"events": 6, "kind": "peek", "next_check_utc": "2026-11-17T14:50:57.566827Z", "observed_utc": "2026-11-17T08:50:57.566827Z", "sport_key": "icehockey_sweden_allsvenskan"}
 {"events": 9, "kind": "peek", "next_check_utc": "2026-11-17T14:50:57.566827Z", "observed_utc": "2026-11-17T08:50:57.566827Z", "sport_key": "soccer_mexico_ligamx"}
+{"events": 21, "kind": "peek", "next_check_utc": "2026-11-17T15:41:03.937059Z", "observed_utc": "2026-11-17T09:41:03.937059Z", "sport_key": "soccer_brazil_campeonato"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-11-17T15:41:03.937059Z", "observed_utc": "2026-11-17T09:41:03.937059Z", "sport_key": "soccer_england_league2"}
+{"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-17T09:41:03.937059Z", "regions": ["au"], "rows": 10, "sport_key": "cricket_test_match", "stored": 8}

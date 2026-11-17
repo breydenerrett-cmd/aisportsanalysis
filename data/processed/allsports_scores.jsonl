@@ -15574,3 +15574,15 @@
 {"credits": 2, "days_from": 3, "events": 34, "kind": "poll", "observed_utc": "2026-11-17T07:39:31.346259+00:00", "sport_key": "soccer_uefa_nations_league"}
 {"errors": [], "events": 1, "family": "MMA", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-17T07:39:36.616063Z", "source": "espn_mma", "unmatched": 1, "unmatched_ids": ["5c45e5cb707c61ad4186f2480707cdb9"], "void": 0, "written": 0}
 {"errors": [], "events": 1, "family": "MMA", "graded": 0, "kind": "free_poll", "matched": 0, "observed_utc": "2026-11-17T08:51:03.736973Z", "source": "espn_mma", "unmatched": 1, "unmatched_ids": ["5c45e5cb707c61ad4186f2480707cdb9"], "void": 0, "written": 0}
+{"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-17T09:41:06.670483+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 35, "kind": "poll", "observed_utc": "2026-11-17T09:41:06.670483+00:00", "sport_key": "boxing_boxing"}
+{"away_score": null, "away_team": "Lamar Cardinals", "commence_time": "2026-11-18T01:00:00Z", "completed": false, "event_id": "436fbef33dd351b0ea0e838c6bfe2b96", "home_score": null, "home_team": "Omaha Mavericks", "kind": "score", "last_update": null, "observed_utc": "2026-11-17T09:41:06.670483+00:00", "outcome": null, "scores": null, "sport_key": "basketball_ncaab"}
+{"credits": 2, "days_from": 3, "events": 169, "kind": "poll", "observed_utc": "2026-11-17T09:41:06.670483+00:00", "sport_key": "basketball_ncaab"}
+{"credits": 2, "days_from": 3, "events": 4, "kind": "poll", "observed_utc": "2026-11-17T09:41:06.670483+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 7, "kind": "poll", "observed_utc": "2026-11-17T09:41:06.670483+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 17, "kind": "poll", "observed_utc": "2026-11-17T09:41:06.670483+00:00", "sport_key": "soccer_england_league1"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-17T09:41:06.670483+00:00", "sport_key": "icehockey_mestis"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-17T09:41:06.670483+00:00", "sport_key": "cricket_odi"}
+{"credits": 2, "days_from": 3, "events": 22, "kind": "poll", "observed_utc": "2026-11-17T09:41:06.670483+00:00", "sport_key": "soccer_england_league2"}
+{"credits": 2, "days_from": 3, "events": 15, "kind": "poll", "observed_utc": "2026-11-17T09:41:06.670483+00:00", "sport_key": "soccer_france_coupe_de_france"}
+{"credits": 2, "days_from": 3, "events": 34, "kind": "poll", "observed_utc": "2026-11-17T09:41:06.670483+00:00", "sport_key": "soccer_uefa_nations_league"}
