@@ -7950,3 +7950,8 @@
 {"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T21:08:35.276538+00:00", "player": "William Bergolla Jr.", "player_id": 703151, "team": "CWS", "transaction_id": 950371}
 {"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T21:08:35.276538+00:00", "player": "Jaden Woods", "player_id": 692243, "team": "CWS", "transaction_id": 950372}
 {"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T21:08:35.276538+00:00", "player": "Bryan Rincon", "player_id": 804858, "team": "PHI", "transaction_id": 950373}
+{"fetched_utc": "2026-11-17T22:11:19.858631+00:00", "game_date": "2026-11-17", "poll": true}
+{"category": "designated", "date": "2026-11-17", "first_seen_utc": "2026-11-17T22:11:19.858631+00:00", "player": "Nick Mears", "player_id": 683232, "team": "KC", "transaction_id": 950377}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T22:11:19.858631+00:00", "player": "Carson Roccaforte", "player_id": 811287, "team": "KC", "transaction_id": 950378}
+{"category": "other", "date": "2026-11-17", "first_seen_utc": "2026-11-17T22:11:19.858631+00:00", "player": "Lucas Braun", "player_id": 814351, "team": "KC", "transaction_id": 950379}
+{"category": "signed", "date": "2026-11-17", "first_seen_utc": "2026-11-17T22:11:19.858631+00:00", "player": "Ryan Jeffers", "player_id": 680777, "team": "MIN", "transaction_id": 950380}
