@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-17 16:46Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-17 21:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-17 (8:30 am PT run): MNF LAC@BAL graded (LAC 23-20); brief was all PASS. No MLB games through 11-30; no NFL game today.
-- Production stopped refreshing after 01:04Z (odds 15.6 h old at 16:41Z): the quiet-hours capture chain drifted to :26 and the refresh fires only in minutes 00-14. Fix committed: quiet slots start on the hour.
-- Production /health 200, billing ok; memory peak 833 MB of 850; one unexplained restart at 06:04Z (21 total).
-- Tests green on the newest finished run. Daily-loop on cowork-session-migration failed again at 10:10Z.
+- 2026-11-17 (1:30 pm PT run): no NFL or MLB game today; next brief is TNF Thu 11-19. MNF LAC@BAL graded this morning (all PASS).
+- Production refreshed again: deploy-prod ran 18:14Z and 21:10Z after the capture-chain fix; odds 0.5 h old at 21:41Z.
+- Production /health 200, billing ok; memory peak 689 MB of 850; one unexplained restart at 21:36Z (22 total).
+- Tests green on the newest finished run; the 21:15Z push is still running. Daily-loop on cowork-session-migration failed again at 18:49Z.
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
