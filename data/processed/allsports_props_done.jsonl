@@ -4631,3 +4631,5 @@
 {"events": 12, "kind": "peek", "next_check_utc": "2026-11-18T17:10:00Z", "observed_utc": "2026-11-18T15:04:32.750846Z", "sport_key": "basketball_nba"}
 {"events": 29, "kind": "peek", "next_check_utc": "2026-11-18T20:05:10.921913Z", "observed_utc": "2026-11-18T17:05:10.921913Z", "sport_key": "americanfootball_nfl"}
 {"events": 14, "kind": "peek", "next_check_utc": "2026-11-18T17:40:00Z", "observed_utc": "2026-11-18T17:05:10.921913Z", "sport_key": "icehockey_nhl"}
+{"commence_utc": "2026-11-19T00:00:00Z", "event_id": "ef5f5ac74b2228e8521c289fdbc6af93", "kind": "phase", "observed_utc": "2026-11-18T18:02:36.115056Z", "phase": "t6h", "rows": 146, "sport_key": "americanfootball_ncaaf", "status": "done"}
+{"books": 8, "credits": 4, "event_id": "ef5f5ac74b2228e8521c289fdbc6af93", "family": "NCAAF", "kind": "call", "markets": ["player_pass_yds", "player_rush_yds", "player_reception_yds", "player_anytime_td"], "observed_utc": "2026-11-18T18:02:36.115056Z", "phase": "t6h", "regions": ["us"], "remaining": 78463, "sport_key": "americanfootball_ncaaf", "stored": 146}
