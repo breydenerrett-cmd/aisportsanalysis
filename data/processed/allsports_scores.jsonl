@@ -16072,3 +16072,11 @@
 {"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-18T11:59:34.055840+00:00", "sport_key": "icehockey_liiga"}
 {"credits": 2, "days_from": 3, "events": 3, "kind": "poll", "observed_utc": "2026-11-18T11:59:34.055840+00:00", "sport_key": "icehockey_mestis"}
 {"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-18T13:04:56.901157+00:00", "sport_key": "cricket_odi"}
+{"credits": 2, "days_from": 3, "events": 8, "kind": "poll", "observed_utc": "2026-11-18T14:04:39.286668+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 3, "kind": "poll", "observed_utc": "2026-11-18T14:04:39.286668+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 174, "kind": "poll", "observed_utc": "2026-11-18T14:04:39.286668+00:00", "sport_key": "basketball_ncaab"}
+{"away_score": null, "away_team": "Alan Crisosto", "commence_time": "2026-11-20T22:00:00Z", "completed": false, "event_id": "348d3807dfe3e279c98a4a3ca46e48ec", "home_score": null, "home_team": "David Lopez", "kind": "score", "last_update": null, "observed_utc": "2026-11-18T14:04:39.286668+00:00", "outcome": null, "scores": null, "sport_key": "boxing_boxing"}
+{"away_score": null, "away_team": "Jean Rivera-Pacheco", "commence_time": "2026-11-20T22:00:00Z", "completed": false, "event_id": "bae624083238cf391d6d154889a533a5", "home_score": null, "home_team": "Cayden Griffiths", "kind": "score", "last_update": null, "observed_utc": "2026-11-18T14:04:39.286668+00:00", "outcome": null, "scores": null, "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 37, "kind": "poll", "observed_utc": "2026-11-18T14:04:39.286668+00:00", "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 3, "kind": "poll", "observed_utc": "2026-11-18T14:04:39.286668+00:00", "sport_key": "icehockey_mestis"}
+{"errors": [], "events": 1, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 1, "observed_utc": "2026-11-18T14:04:41.740261Z", "source": "espn_tennis", "unmatched": 0, "unmatched_ids": [], "void": 0, "written": 0}
