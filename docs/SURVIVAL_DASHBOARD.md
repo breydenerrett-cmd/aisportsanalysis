@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-17 21:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-18 16:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-17** |
+| Days until 2026-10-31 | **-18** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-17 (1:30 pm PT run): no NFL or MLB game today; next brief is TNF Thu 11-19. MNF LAC@BAL graded this morning (all PASS).
-- Production refreshed again: deploy-prod ran 18:14Z and 21:10Z after the capture-chain fix; odds 0.5 h old at 21:41Z.
-- Production /health 200, billing ok; memory peak 689 MB of 850; one unexplained restart at 21:36Z (22 total).
-- Tests green on the newest finished run; the 21:15Z push is still running. Daily-loop on cowork-session-migration failed again at 18:49Z.
+- 2026-11-18 (8:30 am PT run): no NFL or MLB game today; next brief is TNF Thu 11-19. Nothing new to grade.
+- Production odds 17.7 h old at 16:43Z: the refresh waits for green CI, and the 22:15Z tests run failed on one browser test on Python 3.10 only (docs-only change). Failed job re-run at 16:45Z.
+- Production /health 200, billing ok; memory peak 857 MB, over the 850 MB limit; one unexplained restart at 07:55Z (23 total).
+- Daily-loop on cowork-session-migration failed again at 10:10Z (MLB offseason, no captures).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
