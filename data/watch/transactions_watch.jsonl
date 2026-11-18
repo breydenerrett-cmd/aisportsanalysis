@@ -8069,3 +8069,5 @@
 {"fetched_utc": "2026-11-18T23:05:02.313988+00:00", "game_date": "2026-11-18", "poll": true}
 {"category": "signed", "date": "2026-11-18", "first_seen_utc": "2026-11-18T23:05:02.313988+00:00", "player": "Dustin May", "player_id": 669160, "team": "CWS", "transaction_id": 950619}
 {"category": "designated", "date": "2026-11-18", "first_seen_utc": "2026-11-18T23:05:02.313988+00:00", "player": "Jordan Leasure", "player_id": 673929, "team": "CWS", "transaction_id": 950620}
+{"fetched_utc": "2026-11-18T23:30:20.301235+00:00", "game_date": "2026-11-18", "poll": true}
+{"category": "designated", "date": "2026-11-18", "first_seen_utc": "2026-11-18T23:30:20.301235+00:00", "player": "Kyle Isbel", "player_id": 664728, "team": "KC", "transaction_id": 950622}
