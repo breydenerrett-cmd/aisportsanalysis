@@ -8059,3 +8059,7 @@
 {"fetched_utc": "2026-11-18T19:01:07.419822+00:00", "game_date": "2026-11-18", "poll": true}
 {"fetched_utc": "2026-11-18T20:00:38.624308+00:00", "game_date": "2026-11-18", "poll": true}
 {"category": "traded", "date": "2026-11-18", "first_seen_utc": "2026-11-18T20:00:38.624308+00:00", "player": null, "player_id": null, "team": "DET", "transaction_id": 950609}
+{"fetched_utc": "2026-11-18T21:03:21.477958+00:00", "game_date": "2026-11-18", "poll": true}
+{"category": "designated", "date": "2026-11-18", "first_seen_utc": "2026-11-18T21:03:21.477958+00:00", "player": "Connor Wong", "player_id": 657136, "team": "BOS", "transaction_id": 950611}
+{"category": "traded", "date": "2026-11-18", "first_seen_utc": "2026-11-18T21:03:21.477958+00:00", "player": "Nick Fortes", "player_id": 663743, "team": "BOS", "transaction_id": 950612}
+{"category": "signed", "date": "2026-11-18", "first_seen_utc": "2026-11-18T21:03:21.477958+00:00", "player": "Sonny Gray", "player_id": 543243, "team": "MIN", "transaction_id": 950613}
