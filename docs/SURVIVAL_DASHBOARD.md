@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-18 16:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-18 21:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-18 (8:30 am PT run): no NFL or MLB game today; next brief is TNF Thu 11-19. Nothing new to grade.
-- Production odds 17.7 h old at 16:43Z: the refresh waits for green CI, and the 22:15Z tests run failed on one browser test on Python 3.10 only (docs-only change). Failed job re-run at 16:45Z.
-- Production /health 200, billing ok; memory peak 857 MB, over the 850 MB limit; one unexplained restart at 07:55Z (23 total).
-- Daily-loop on cowork-session-migration failed again at 10:10Z (MLB offseason, no captures).
+- 2026-11-18 (1:30 pm PT run): no NFL or MLB game today; next brief is TNF Thu 11-19. Nothing new to grade.
+- CI back to green: the re-run of 44188230298 and the next push (44356772576) both passed. deploy-prod succeeded 19:04Z, 20:02Z, 21:05Z; production odds 0.6 h old at 21:41Z.
+- Production /health 200, billing ok; memory peak 694 MB (limit 850); one unexplained restart at 21:27Z (24 total).
+- Daily-loop on cowork-session-migration failed again at 18:27Z (MLB offseason, no captures).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 

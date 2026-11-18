@@ -131,10 +131,10 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-11-18 (8:30 am PT run): no NFL or MLB game today; next brief is TNF Thu 11-19. Nothing new to grade.",
-    "Production odds 17.7 h old at 16:43Z: the refresh waits for green CI, and the 22:15Z tests run failed on one browser test on Python 3.10 only (docs-only change). Failed job re-run at 16:45Z.",
-    "Production /health 200, billing ok; memory peak 857 MB, over the 850 MB limit; one unexplained restart at 07:55Z (23 total).",
-    "Daily-loop on cowork-session-migration failed again at 10:10Z (MLB offseason, no captures).",
+    "2026-11-18 (1:30 pm PT run): no NFL or MLB game today; next brief is TNF Thu 11-19. Nothing new to grade.",
+    "CI back to green: the re-run of 44188230298 and the next push (44356772576) both passed. deploy-prod succeeded 19:04Z, 20:02Z, 21:05Z; production odds 0.6 h old at 21:41Z.",
+    "Production /health 200, billing ok; memory peak 694 MB (limit 850); one unexplained restart at 21:27Z (24 total).",
+    "Daily-loop on cowork-session-migration failed again at 18:27Z (MLB offseason, no captures).",
     "Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at."
   ],
   "next_customer_action": "Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.",
