@@ -30637,3 +30637,5 @@
 {"call_kind": "pregame", "credits": 3, "events": 62, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-18T07:59:49.806604Z", "regions": ["us"], "rows": 1305, "sport_key": "basketball_ncaab", "stored": 1305}
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-18T07:59:49.806604Z", "regions": ["us"], "rows": 3, "sport_key": "basketball_nbl", "stored": 1}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-18T07:59:49.806604Z", "regions": ["au"], "rows": 7, "sport_key": "cricket_odi", "stored": 6}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-18T14:09:49.106271Z", "observed_utc": "2026-11-18T08:09:49.106271Z", "sport_key": "icehockey_mestis"}
+{"events": 15, "kind": "peek", "next_check_utc": "2026-11-18T14:09:49.106271Z", "observed_utc": "2026-11-18T08:09:49.106271Z", "sport_key": "soccer_england_league1"}
