@@ -8156,3 +8156,6 @@
 {"fetched_utc": "2026-11-19T20:19:31.405559+00:00", "game_date": "2026-11-19", "poll": true}
 {"fetched_utc": "2026-11-19T20:41:54.164692+00:00", "game_date": "2026-11-19", "poll": true}
 {"fetched_utc": "2026-11-19T21:04:13.734362+00:00", "game_date": "2026-11-19", "poll": true}
+{"fetched_utc": "2026-11-19T21:14:24.012550+00:00", "game_date": "2026-11-19", "poll": true}
+{"category": "other", "date": "2026-11-19", "first_seen_utc": "2026-11-19T21:14:24.012550+00:00", "player": "Christian Cairo", "player_id": 686551, "team": "TOR", "transaction_id": 950684}
+{"category": "designated", "date": "2026-11-19", "first_seen_utc": "2026-11-19T21:14:24.012550+00:00", "player": "Chase Lee", "player_id": 695445, "team": "TOR", "transaction_id": 950685}
