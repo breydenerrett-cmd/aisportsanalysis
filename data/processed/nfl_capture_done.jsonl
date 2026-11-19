@@ -765,3 +765,4 @@
 {"game_id": "2026_11_ARI_KC", "observed_utc": "2026-11-19T18:15:10.238885Z", "phase": "t72h"}
 {"game_id": "2026_11_JAX_NYG", "observed_utc": "2026-11-19T18:15:10.238885Z", "phase": "t72h"}
 {"game_id": "2026_11_IND_HOU", "observed_utc": "2026-11-19T19:17:27.192823Z", "phase": "t6h"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-11-19T19:48:48.285419Z", "phase": "refresh"}
