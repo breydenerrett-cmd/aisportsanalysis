@@ -1,0 +1,124 @@
+{
+  "summary": "Houston is the better team on the data, and the market knows it: the moneyline has Houston at -690 and Indianapolis at 570, and a price that heavy on a favourite is a pass for me on principle. The spread is the more interesting number. It first showed up with Indianapolis getting 10 and now asks Houston to win by 12.5, a move toward the home side. Houston's season margin is 1.5556 points per game against -6.3 for Indianapolis, and the last five games widen that gap, but Houston has played only 9 games and lost its last game at Cleveland, so I do not see a reason the number is wrong in points. I pass on the spread, with Indianapolis the nominal lean only because the two sides are close to a coin flip. On the total of 44, Houston scores 25.8889 per game and allows 24.3333, while Indianapolis scores 20.8 and allows 27.1. Those facts point both ways and the price already holds them. We cannot see the weather or the roof, and both quarterbacks are only projections, so I pass on all three markets.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "HOU",
+      "verdict": "PASS",
+      "price": null,
+      "book": null,
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Houston is the clear favourite, but the best price on it is far beyond the limit we set for backing any favourite, so there is no Houston bet at this price.",
+          "evidence": [
+            { "path": "markets.moneyline.options[0].best.price", "value": -690 },
+            { "path": "markets.moneyline.options[0].fair_probability", "value": 0.8452 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The other side pays 570 at the best book and the books' own fair number for Indianapolis is 0.1548. Indianapolis has a season margin of -6.3 and a turnover margin of -1.2, and nothing in what we have shows that price is too long, so I pass on that side as well.",
+          "evidence": [
+            { "path": "markets.moneyline.options[1].best.price", "value": 570 },
+            { "path": "markets.moneyline.options[1].fair_probability", "value": 0.1548 },
+            { "path": "sections.away.values.form.season_to_date.margin_per_game", "value": -6.3 },
+            { "path": "sections.away.values.form.season_to_date.turnover_margin.value", "value": -1.2 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed quarterback change for Houston away from the projected C.J. Stroud would reopen the question of the Indianapolis price.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "IND +12.5",
+      "verdict": "PASS",
+      "price": null,
+      "book": null,
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The number has moved toward Houston: Indianapolis first got 10 when the line was first captured and now gets 12.5. The books' fair probability for Indianapolis at 12.5 is 0.5028, so the market sees the two sides as close.",
+          "evidence": [
+            { "path": "markets.spread.context.away_number_first_captured", "value": 10.0 },
+            { "path": "markets.spread.options[0].line", "value": 12.5 },
+            { "path": "markets.spread.options[0].fair_probability", "value": 0.5028 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Houston is better on the season margin difference the data holds, and the gap is wider over the last five games. That supports Houston as the stronger side but does not show that 12.5 points is the wrong number.",
+          "evidence": [
+            { "path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": 7.8556 },
+            { "path": "sections.matchup.values.differentials.form_last_5_margin_per_game.diff", "value": 17.6 },
+            { "path": "sections.home.values.form.season_to_date.games", "value": 9 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Houston lost its last game by 3 at Cleveland, and both teams are on four days of rest, so neither side has a rest edge. Both quarterbacks are only the schedule's projection.",
+          "evidence": [
+            { "path": "sections.home.values.last_three[0].margin", "value": -3 },
+            { "path": "sections.matchup.values.differentials.rest_days_since_last_game.diff", "value": 0 },
+            { "path": "sections.home.values.qb.listed_for_this_game.projected", "value": true }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A named starter ruled out on either injury report, or a quarterback other than Daniel Jones or C.J. Stroud being listed, would be new information the number may not yet hold.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 44",
+      "verdict": "PASS",
+      "price": null,
+      "book": null,
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Houston scores more and allows fewer points than Indianapolis this season, and Indianapolis allows more points than it scores. Those facts pull in different directions for a total of 44, and the price already holds them.",
+          "evidence": [
+            { "path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 25.8889 },
+            { "path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 24.3333 },
+            { "path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 20.8 },
+            { "path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 27.1 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The total first showed at 43.5 and now sits at 44, with both sides priced almost identically, so the market has barely moved off where it began.",
+          "evidence": [
+            { "path": "markets.total.context.number_first_captured", "value": 43.5 },
+            { "path": "markets.total.options[0].line", "value": 44.0 },
+            { "path": "markets.total.options[0].fair_probability", "value": 0.5004 },
+            { "path": "markets.total.options[1].fair_probability", "value": 0.4996 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We cannot see the weather or the roof for this stadium, and the quarterbacks are projections, so a total that depends on them is a reason for care.",
+          "evidence": [
+            { "path": "missing[1].item", "value": "venue.roof" },
+            { "path": "missing[2].item", "value": "weather" }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A weather forecast showing hard wind or cold for an outdoor game, or a quarterback change from the projected starters, would move the total.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

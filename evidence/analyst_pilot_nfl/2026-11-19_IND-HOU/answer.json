@@ -1,0 +1,121 @@
+{
+  "summary": "The books make Houston a heavy favourite, with a de-vigged win chance of 0.8452, and the best Houston price is -690, which I never take. Indianapolis pays as much as 570, but that price barely covers the books' own number of 0.1548 and nothing in what we have says the books are low, so I pass on the moneyline. On the spread, Houston is better on form, yet the number has moved from 10 to 12.5 and Houston's season margin per game is 1.5556 against Indianapolis at -6.3, so the line asks for more than the season numbers show. Against that, the last 5 games favour Houston by a wider gap, both teams are on 4 days of rest, and Indianapolis won the last meeting. The signals pull in different directions, so I pass. The total of 44 sits against points scored of 25.8889 for Houston and 20.8 for Indianapolis, and points allowed of 24.3333 and 27.1, which the price already seems to hold, so I pass there too. Weather and roof type are missing, and the injury report does not say how much each name matters.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "HOU",
+      "verdict": "PASS",
+      "price": -690,
+      "book": "draftkings",
+      "fair_estimate": 0.85,
+      "confidence": "medium",
+      "reasons": [
+        {
+          "claim": "Houston at -690 is far past the -200 line this process will not bet, so the favourite is not a bet whatever its chances.",
+          "evidence": [
+            { "path": "markets.moneyline.options[0].best.price", "value": -690 },
+            { "path": "markets.moneyline.options[0].fair_probability", "value": 0.8452 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The underdog side is priced close to the books' own number, and nothing in the data shows why Indianapolis wins more often than that, so there is no reason to take the other side.",
+          "evidence": [
+            { "path": "markets.moneyline.options[1].best.price", "value": 570 },
+            { "path": "markets.moneyline.options[1].fair_probability", "value": 0.1548 },
+            { "path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": 7.8556 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed change at quarterback for Houston, or Houston's key skill players ruled out beyond the weekly report, would be a reason to revisit the underdog price.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "IND +12.5",
+      "verdict": "PASS",
+      "price": -105,
+      "book": "lowvig",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The number has moved from 10 to 12.5 and the books' de-vigged probability is a near coin flip, so the market looks balanced at this number.",
+          "evidence": [
+            { "path": "markets.spread.context.away_number_first_captured", "value": 10.0 },
+            { "path": "markets.spread.options[0].fair_probability", "value": 0.5028 },
+            { "path": "markets.spread.options[1].fair_probability", "value": 0.4972 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Houston's season margin per game is well short of the 12.5 the line asks, which points to Indianapolis, but the recent form gap is much wider and points the other way, so the numbers do not agree on whether the line is wrong.",
+          "evidence": [
+            { "path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": 7.8556 },
+            { "path": "sections.matchup.values.differentials.form_last_5_margin_per_game.diff", "value": 17.6 },
+            { "path": "sections.matchup.values.differentials.form_last_3_margin_per_game.diff", "value": 16.6666 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both teams are on a short week with the same days of rest, and Indianapolis won the last meeting, so rest does not separate them.",
+          "evidence": [
+            { "path": "sections.home.values.rest.days_since_last_game", "value": 4 },
+            { "path": "sections.away.values.rest.days_since_last_game", "value": 4 },
+            { "path": "sections.matchup.values.head_to_head.last_meeting.winner", "value": "IND" }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A quarterback change for either team, or the number moving off 12.5 to a different value, would be a reason to take another look.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 44",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The over and under are priced as an even split, and the number has barely moved from where it was first captured.",
+          "evidence": [
+            { "path": "markets.total.options[0].fair_probability", "value": 0.5004 },
+            { "path": "markets.total.options[1].fair_probability", "value": 0.4996 },
+            { "path": "markets.total.context.number_first_captured", "value": 43.5 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Houston scores and allows around the middle of the range while Indianapolis scores less and allows more, which mostly balances out against the number, so the price already seems to hold these figures.",
+          "evidence": [
+            { "path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 25.8889 },
+            { "path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 24.3333 },
+            { "path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 20.8 },
+            { "path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 27.1 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Roof type and weather are both missing for this game, so we cannot see a factor that could move the total.",
+          "evidence": [
+            { "path": "sections.schedule.values.venue.roof", "value": null }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A quarterback change for either team, or a forecast that is added to the data, would be a reason to revisit the total.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

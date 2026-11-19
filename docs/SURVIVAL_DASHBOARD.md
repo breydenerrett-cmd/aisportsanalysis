@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-19 16:41Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-19 21:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-19 (8:30 am PT run): no MLB games through 11-30; TNF IND@HOU kicks off 5:15 pm PT, brief due in the 1:30 pm PT run. Nothing new to grade.
-- CI green (push run 44409932521). deploy-prod succeeded 14:04Z, 15:00Z, 16:04Z; production odds 0.6 h old at 16:41Z.
-- Production /health 200, billing ok; memory peak 849.8 MB (limit 850, just under); no new unexplained restarts (24 total).
-- Daily-loop on cowork-session-migration failed again at 10:10Z (MLB offseason, no captures).
+- 2026-11-19 (1:30 pm PT run): TNF IND@HOU brief published 1:43 pm PT, 3 passes (moneyline, spread, total); attempt 1 rejected by the checker, attempt 2 clean.
+- Public sample moved to the newest graded brief, LAC@BAL 11-16. No MLB games through 11-30.
+- Production /health 200, billing ok, memory peak 639.6 MB (limit 850); one unexplained restart at 1:33 pm PT (25 total).
+- CI green (push run 44575201020); deploy-prod succeeded 9:05 am, 12:10 pm, 1:06 pm PT. Daily-loop on cowork-session-migration failed again 10:42 am PT (offseason).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 

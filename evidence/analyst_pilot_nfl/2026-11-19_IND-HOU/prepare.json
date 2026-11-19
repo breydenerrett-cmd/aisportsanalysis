@@ -1,0 +1,23 @@
+{
+  "sport": "nfl",
+  "game_id": "2026_11_IND_HOU",
+  "date": "2026-11-19",
+  "away": "IND",
+  "home": "HOU",
+  "kickoff_utc": "2026-11-20T01:15:00Z",
+  "built_at": "2026-11-19T21:42:05Z",
+  "packet_hash": "c5907c9e6ac9936d436436e3a8244228bcd2049a37f8789189e2bca09603904f",
+  "prompt_version": "analyst_prompt_nfl_v1",
+  "prompt_hash": "8b80fc0cc2622da7497bed03b851d3934b8d687a6ca9c5a17d3eeb2d1c56ea7b",
+  "token_estimate": 9997,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "spread",
+    "total"
+  ],
+  "missing_items": 3,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "nfl_store+odds_multibook"
+}
