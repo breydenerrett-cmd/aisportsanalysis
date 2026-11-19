@@ -31628,3 +31628,6 @@
 {"commence_utc": "2026-11-19T17:15:00Z", "event_id": "4b4d96b108c8fc648a218e196ff50814", "kind": "phase", "observed_utc": "2026-11-19T15:15:57.252600Z", "phase": "t2h", "rows": 30, "sport_key": "basketball_euroleague"}
 {"call_kind": "pregame", "credits": 3, "events": 10, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-19T15:15:57.252600Z", "regions": ["us"], "rows": 233, "sport_key": "basketball_euroleague", "stored": 233}
 {"events": 15, "kind": "peek", "next_check_utc": "2026-11-19T19:00:00Z", "observed_utc": "2026-11-19T15:38:12.321569Z", "sport_key": "soccer_england_league1"}
+{"commence_utc": "2026-11-19T17:45:00Z", "event_id": "46c323a078772696b526e9e4a4f2e7ff", "kind": "phase", "observed_utc": "2026-11-19T15:46:32.517938Z", "phase": "t2h", "rows": 7, "sport_key": "soccer_uefa_champs_league_women"}
+{"commence_utc": "2026-11-19T17:45:00Z", "event_id": "f717126e06b5b6e5166255be6f486dde", "kind": "phase", "observed_utc": "2026-11-19T15:46:32.517938Z", "phase": "t2h", "rows": 7, "sport_key": "soccer_uefa_champs_league_women"}
+{"call_kind": "pregame", "credits": 2, "events": 5, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-19T15:46:32.517938Z", "regions": ["us"], "rows": 31, "sport_key": "soccer_uefa_champs_league_women", "stored": 31}
