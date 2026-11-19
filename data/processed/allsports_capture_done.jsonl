@@ -31532,3 +31532,8 @@
 {"commence_utc": "2026-11-19T16:30:00Z", "event_id": "7628a2e77f6d6085a913f5dd37089ea7", "kind": "phase", "observed_utc": "2026-11-19T10:38:06.666957Z", "phase": "t6h", "rows": 3, "sport_key": "icehockey_mestis"}
 {"call_kind": "pregame", "credits": 3, "events": 3, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-19T10:38:06.666957Z", "regions": ["us"], "rows": 9, "sport_key": "icehockey_mestis", "stored": 9}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-19T10:38:06.666957Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_test_match", "stored": 12}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-19T17:10:58.668462Z", "observed_utc": "2026-11-19T11:10:58.668462Z", "sport_key": "rugbyleague_nrl"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-19T17:10:58.668462Z", "observed_utc": "2026-11-19T11:10:58.668462Z", "sport_key": "soccer_korea_kleague1"}
+{"commence_utc": "2026-11-19T13:00:00Z", "event_id": "91d621e106bf38d41c61739852993840", "kind": "phase", "observed_utc": "2026-11-19T11:10:58.668462Z", "phase": "t2h", "rows": 8, "sport_key": "tennis_atp_finals"}
+{"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-19T11:10:58.668462Z", "regions": ["us"], "rows": 32, "sport_key": "tennis_atp_finals", "stored": 32}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-19T11:10:58.668462Z", "regions": ["au"], "rows": 16, "sport_key": "cricket_test_match", "stored": 10}
