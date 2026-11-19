@@ -31515,3 +31515,4 @@
 {"call_kind": "pregame", "credits": 3, "events": 3, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-19T08:43:06.389344Z", "regions": ["us"], "rows": 6, "sport_key": "basketball_nbl", "stored": 3}
 {"commence_utc": "2026-11-20T08:40:00Z", "event_id": "68cfa1aec1d5f4115ca07e6237dfa6fd", "kind": "phase", "observed_utc": "2026-11-19T08:43:06.389344Z", "phase": "t24h", "rows": 10, "sport_key": "soccer_australia_aleague"}
 {"call_kind": "pregame", "credits": 2, "events": 5, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-19T08:43:06.389344Z", "regions": ["us"], "rows": 50, "sport_key": "soccer_australia_aleague", "stored": 10}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-19T08:55:20.139815Z", "regions": ["au"], "rows": 18, "sport_key": "cricket_test_match", "stored": 15}
