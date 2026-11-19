@@ -31624,3 +31624,4 @@
 {"commence_utc": "2026-11-19T16:30:00Z", "event_id": "6258541d8b4846576830440db0940ee1", "kind": "phase", "observed_utc": "2026-11-19T14:35:10.619254Z", "phase": "t2h", "rows": 3, "sport_key": "icehockey_mestis"}
 {"commence_utc": "2026-11-19T16:30:00Z", "event_id": "7628a2e77f6d6085a913f5dd37089ea7", "kind": "phase", "observed_utc": "2026-11-19T14:35:10.619254Z", "phase": "t2h", "rows": 3, "sport_key": "icehockey_mestis"}
 {"call_kind": "pregame", "credits": 3, "events": 3, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-19T14:35:10.619254Z", "regions": ["us"], "rows": 9, "sport_key": "icehockey_mestis", "stored": 9}
+{"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-19T14:50:03.534058Z", "regions": ["us"], "rows": 29, "sport_key": "tennis_atp_finals", "stored": 29}

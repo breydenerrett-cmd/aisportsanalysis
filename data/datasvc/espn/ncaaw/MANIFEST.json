@@ -2,10 +2,10 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2027.jsonl": {
-   "bytes": 1750477,
-   "newest": "2026-11-19T05:24:30Z",
-   "records": 3017,
-   "sha256": "57b0737bc7cf8d789364e151ca4f2a509cc6fae61320e25b2b59e8addcb4dd77"
+   "bytes": 1756918,
+   "newest": "2026-11-19T14:50:58Z",
+   "records": 3027,
+   "sha256": "57feedb136de6c9e228af56c0d841446cfbc6134fe1a60bdfcc2b3113287e942"
   },
   "standings_2026.jsonl": {
    "bytes": 218899,
@@ -32,8 +32,8 @@
    "sha256": "9fc64db3b51ad8a0892d5ac1c32dbe1289d9c88cf9e49a3ee1c5508b79f9f5e8"
   }
  },
- "generated_utc": "2026-11-19T11:36:20Z",
+ "generated_utc": "2026-11-19T14:51:27Z",
  "league": "ncaaw",
- "refreshed_utc": "2026-11-19T11:36:20Z",
+ "refreshed_utc": "2026-11-19T14:51:26Z",
  "title": "NCAA women's basketball (D1)"
 }
