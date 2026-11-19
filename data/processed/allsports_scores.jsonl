@@ -16574,3 +16574,11 @@
 {"away_score": 17.0, "away_team": "Panathinaikos", "commence_time": "2026-11-19T18:01:00Z", "completed": false, "event_id": "fd0b8dc548a91d28204f77e383c2b820", "home_score": 13.0, "home_team": "\u017dalgiris", "kind": "score", "last_update": "2026-11-19T18:15:14Z", "observed_utc": "2026-11-19T18:15:25.219494+00:00", "outcome": "away", "scores": [{"name": "\u017dalgiris", "score": "13"}, {"name": "Panathinaikos", "score": "17"}], "sport_key": "basketball_euroleague"}
 {"away_score": null, "away_team": "Paris Basketball", "commence_time": "2026-11-24T17:00:00Z", "completed": false, "event_id": "3e065ed32915a4afefae3a851f6df12a", "home_score": null, "home_team": "Be\u015fikta\u015f J.K.", "kind": "score", "last_update": null, "observed_utc": "2026-11-19T18:15:25.219494+00:00", "outcome": null, "scores": null, "sport_key": "basketball_euroleague"}
 {"credits": 2, "days_from": 3, "events": 21, "kind": "poll", "observed_utc": "2026-11-19T18:15:25.219494+00:00", "sport_key": "basketball_euroleague"}
+{"credits": 2, "days_from": 3, "events": 9, "kind": "poll", "observed_utc": "2026-11-19T18:41:04.667878+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-19T18:41:04.667878+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 8, "kind": "poll", "observed_utc": "2026-11-19T18:41:04.667878+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 40, "kind": "poll", "observed_utc": "2026-11-19T18:41:04.667878+00:00", "sport_key": "boxing_boxing"}
+{"away_score": null, "away_team": "Hermes", "commence_time": "2026-11-19T16:31:00Z", "completed": false, "event_id": "6258541d8b4846576830440db0940ee1", "home_score": null, "home_team": "IPK", "kind": "score", "last_update": null, "observed_utc": "2026-11-19T18:41:04.667878+00:00", "outcome": null, "scores": null, "sport_key": "icehockey_mestis"}
+{"credits": 2, "days_from": 3, "events": 3, "kind": "poll", "observed_utc": "2026-11-19T18:41:04.667878+00:00", "sport_key": "icehockey_mestis"}
+{"credits": 2, "days_from": 3, "events": 167, "kind": "poll", "observed_utc": "2026-11-19T18:41:04.667878+00:00", "sport_key": "basketball_ncaab"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-19T18:41:04.667878+00:00", "sport_key": "cricket_odi"}
