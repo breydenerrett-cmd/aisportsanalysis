@@ -768,3 +768,5 @@
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-19T19:48:48.285419Z", "phase": "refresh"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-19T20:20:25.928320Z", "phase": "refresh"}
 {"game_id": "2026_11_NYJ_LAC", "observed_utc": "2026-11-19T21:05:22.410374Z", "phase": "t72h"}
+{"game_id": "2026_11_LV_DEN", "observed_utc": "2026-11-19T21:38:33.392525Z", "phase": "t72h"}
+{"game_id": "2026_11_PIT_PHI", "observed_utc": "2026-11-19T21:38:33.392525Z", "phase": "t72h"}
