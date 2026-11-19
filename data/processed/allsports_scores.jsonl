@@ -16505,3 +16505,5 @@
 {"credits": 2, "days_from": 3, "events": 83, "kind": "poll", "observed_utc": "2026-11-19T05:23:03.382027+00:00", "sport_key": "americanfootball_ncaaf"}
 {"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-19T05:23:03.382027+00:00", "sport_key": "cricket_odi"}
 {"credits": 2, "days_from": 3, "events": 3, "kind": "poll", "observed_utc": "2026-11-19T05:23:03.382027+00:00", "sport_key": "icehockey_mestis"}
+{"away_score": 1.0, "away_team": "Colorado Avalanche", "commence_time": "2026-11-19T03:18:43Z", "completed": true, "event_id": "af8d9e2567d44dcbb4a548272d876b6b", "home_score": 4.0, "home_team": "Utah Mammoth", "kind": "score", "last_update": "2026-11-19T06:18:39Z", "observed_utc": "2026-11-19T06:18:53.525686+00:00", "outcome": "home", "scores": [{"name": "Utah Mammoth", "score": "4"}, {"name": "Colorado Avalanche", "score": "1"}], "sport_key": "icehockey_nhl"}
+{"credits": 2, "days_from": 3, "events": 28, "kind": "poll", "observed_utc": "2026-11-19T06:18:53.525686+00:00", "sport_key": "icehockey_nhl"}
