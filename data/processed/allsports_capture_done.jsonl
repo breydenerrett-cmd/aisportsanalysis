@@ -31516,3 +31516,7 @@
 {"commence_utc": "2026-11-20T08:40:00Z", "event_id": "68cfa1aec1d5f4115ca07e6237dfa6fd", "kind": "phase", "observed_utc": "2026-11-19T08:43:06.389344Z", "phase": "t24h", "rows": 10, "sport_key": "soccer_australia_aleague"}
 {"call_kind": "pregame", "credits": 2, "events": 5, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-19T08:43:06.389344Z", "regions": ["us"], "rows": 50, "sport_key": "soccer_australia_aleague", "stored": 10}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-19T08:55:20.139815Z", "regions": ["au"], "rows": 18, "sport_key": "cricket_test_match", "stored": 15}
+{"events": 15, "kind": "peek", "next_check_utc": "2026-11-19T15:24:42.676475Z", "observed_utc": "2026-11-19T09:24:42.676475Z", "sport_key": "soccer_england_league1"}
+{"commence_utc": "2026-11-20T00:00:00Z", "event_id": "54069f158a1da002d3356e5b50e57f73", "kind": "phase", "observed_utc": "2026-11-19T09:24:42.676475Z", "phase": "t24h", "rows": 2, "sport_key": "americanfootball_ncaaf_fcs"}
+{"call_kind": "pregame", "credits": 3, "events": 56, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-19T09:24:42.676475Z", "regions": ["us"], "rows": 167, "sport_key": "americanfootball_ncaaf_fcs", "stored": 2}
+{"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-19T09:24:42.676475Z", "regions": ["us"], "rows": 2, "sport_key": "basketball_nbl", "stored": 1}
