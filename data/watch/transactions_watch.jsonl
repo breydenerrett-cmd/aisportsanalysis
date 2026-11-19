@@ -8161,3 +8161,4 @@
 {"category": "designated", "date": "2026-11-19", "first_seen_utc": "2026-11-19T21:14:24.012550+00:00", "player": "Chase Lee", "player_id": 695445, "team": "TOR", "transaction_id": 950685}
 {"fetched_utc": "2026-11-19T21:37:24.457178+00:00", "game_date": "2026-11-19", "poll": true}
 {"category": "other", "date": "2026-11-19", "first_seen_utc": "2026-11-19T21:37:24.457178+00:00", "player": "Chayce McDermott", "player_id": 694646, "team": "CHC", "transaction_id": 950686}
+{"fetched_utc": "2026-11-19T22:04:51.340054+00:00", "game_date": "2026-11-19", "poll": true}
