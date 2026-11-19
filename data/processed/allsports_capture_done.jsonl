@@ -31435,3 +31435,8 @@
 {"call_kind": "inplay", "credits": 1, "events": 13, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-19T04:37:43.879987Z", "regions": ["us"], "rows": 150, "sport_key": "icehockey_nhl", "stored": 150}
 {"call_kind": "inplay", "credits": 1, "events": 33, "events_live": 6, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-19T04:58:48.000538Z", "regions": ["us"], "rows": 129, "sport_key": "basketball_ncaab", "stored": 129}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-19T04:58:48.000538Z", "regions": ["au"], "rows": 19, "sport_key": "cricket_test_match", "stored": 16}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-19T11:10:02.785256Z", "observed_utc": "2026-11-19T05:10:02.785256Z", "sport_key": "rugbyleague_nrl"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-19T11:10:02.785256Z", "observed_utc": "2026-11-19T05:10:02.785256Z", "sport_key": "soccer_korea_kleague1"}
+{"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-19T05:10:02.785256Z", "regions": ["us"], "rows": 42, "sport_key": "basketball_nba", "stored": 42}
+{"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-19T05:10:02.785256Z", "regions": ["us"], "rows": 6, "sport_key": "icehockey_ahl", "stored": 0}
+{"call_kind": "inplay", "credits": 1, "events": 13, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-19T05:10:02.785256Z", "regions": ["us"], "rows": 150, "sport_key": "icehockey_nhl", "stored": 150}
