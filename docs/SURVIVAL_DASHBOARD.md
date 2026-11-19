@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-18 21:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-19 16:41Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-18** |
+| Days until 2026-10-31 | **-19** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-18 (1:30 pm PT run): no NFL or MLB game today; next brief is TNF Thu 11-19. Nothing new to grade.
-- CI back to green: the re-run of 44188230298 and the next push (44356772576) both passed. deploy-prod succeeded 19:04Z, 20:02Z, 21:05Z; production odds 0.6 h old at 21:41Z.
-- Production /health 200, billing ok; memory peak 694 MB (limit 850); one unexplained restart at 21:27Z (24 total).
-- Daily-loop on cowork-session-migration failed again at 18:27Z (MLB offseason, no captures).
+- 2026-11-19 (8:30 am PT run): no MLB games through 11-30; TNF IND@HOU kicks off 5:15 pm PT, brief due in the 1:30 pm PT run. Nothing new to grade.
+- CI green (push run 44409932521). deploy-prod succeeded 14:04Z, 15:00Z, 16:04Z; production odds 0.6 h old at 16:41Z.
+- Production /health 200, billing ok; memory peak 849.8 MB (limit 850, just under); no new unexplained restarts (24 total).
+- Daily-loop on cowork-session-migration failed again at 10:10Z (MLB offseason, no captures).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
