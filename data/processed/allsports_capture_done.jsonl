@@ -31570,3 +31570,5 @@
 {"call_kind": "pregame", "credits": 3, "events": 29, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-19T13:42:38.257644Z", "regions": ["us"], "rows": 864, "sport_key": "basketball_ncaab", "stored": 864}
 {"commence_utc": "2026-11-19T19:30:00Z", "event_id": "66cc3b98e9e67560a34198715ee78d75", "kind": "phase", "observed_utc": "2026-11-19T13:42:38.257644Z", "phase": "t6h", "rows": 8, "sport_key": "tennis_atp_finals"}
 {"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-19T13:42:38.257644Z", "regions": ["us"], "rows": 27, "sport_key": "tennis_atp_finals", "stored": 27}
+{"commence_utc": "2026-11-19T19:45:00Z", "event_id": "9d00df6643ed2590c76cbf57c8d8b714", "kind": "phase", "observed_utc": "2026-11-19T13:50:56.082828Z", "phase": "t6h", "rows": 30, "sport_key": "basketball_euroleague"}
+{"call_kind": "pregame", "credits": 3, "events": 10, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-19T13:50:56.082828Z", "regions": ["us"], "rows": 233, "sport_key": "basketball_euroleague", "stored": 233}
