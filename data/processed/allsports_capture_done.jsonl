@@ -31553,3 +31553,8 @@
 {"commence_utc": "2026-11-19T18:00:00Z", "event_id": "b7c900779791dd5e24eca0afdf352a84", "kind": "phase", "observed_utc": "2026-11-19T12:14:17.308909Z", "phase": "t6h", "rows": 3, "sport_key": "icehockey_sweden_hockey_league"}
 {"commence_utc": "2026-11-19T18:00:00Z", "event_id": "c5f6f6a523837125733fd2032725b567", "kind": "phase", "observed_utc": "2026-11-19T12:14:17.308909Z", "phase": "t6h", "rows": 3, "sport_key": "icehockey_sweden_hockey_league"}
 {"call_kind": "pregame", "credits": 3, "events": 7, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-19T12:14:17.308909Z", "regions": ["us"], "rows": 21, "sport_key": "icehockey_sweden_hockey_league", "stored": 21}
+{"events": 39, "kind": "peek", "next_check_utc": "2026-11-19T17:00:00Z", "observed_utc": "2026-11-19T12:25:02.167808Z", "sport_key": "boxing_boxing"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-19T18:25:02.167808Z", "observed_utc": "2026-11-19T12:25:02.167808Z", "sport_key": "cricket_international_t20"}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-19T17:00:00Z", "observed_utc": "2026-11-19T12:25:02.167808Z", "sport_key": "icehockey_sweden_allsvenskan"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-11-19T18:25:02.167808Z", "observed_utc": "2026-11-19T12:25:02.167808Z", "sport_key": "soccer_england_league2"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-19T18:25:02.167808Z", "observed_utc": "2026-11-19T12:25:02.167808Z", "sport_key": "soccer_mexico_ligamx"}
