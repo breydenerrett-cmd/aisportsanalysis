@@ -31558,3 +31558,5 @@
 {"events": 7, "kind": "peek", "next_check_utc": "2026-11-19T17:00:00Z", "observed_utc": "2026-11-19T12:25:02.167808Z", "sport_key": "icehockey_sweden_allsvenskan"}
 {"events": 12, "kind": "peek", "next_check_utc": "2026-11-19T18:25:02.167808Z", "observed_utc": "2026-11-19T12:25:02.167808Z", "sport_key": "soccer_england_league2"}
 {"events": 9, "kind": "peek", "next_check_utc": "2026-11-19T18:25:02.167808Z", "observed_utc": "2026-11-19T12:25:02.167808Z", "sport_key": "soccer_mexico_ligamx"}
+{"commence_utc": "2026-11-19T13:00:00Z", "event_id": "91d621e106bf38d41c61739852993840", "kind": "phase", "observed_utc": "2026-11-19T12:37:38.119686Z", "phase": "t30m", "rows": 8, "sport_key": "tennis_atp_finals"}
+{"call_kind": "pregame", "credits": 1, "events": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-19T12:37:38.119686Z", "regions": ["us"], "rows": 30, "sport_key": "tennis_atp_finals", "stored": 30}
