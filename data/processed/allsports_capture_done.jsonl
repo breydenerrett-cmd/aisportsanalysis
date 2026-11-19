@@ -31427,3 +31427,5 @@
 {"commence_utc": "2026-11-20T04:00:00Z", "event_id": "6d51497e3276256e5dd07220b624c37f", "kind": "phase", "observed_utc": "2026-11-19T04:11:31.827771Z", "phase": "t24h", "rows": 9, "sport_key": "basketball_ncaab"}
 {"commence_utc": "2026-11-20T04:00:00Z", "event_id": "9b9dda4d07eb93b5e16e9fc62ff01ca3", "kind": "phase", "observed_utc": "2026-11-19T04:11:31.827771Z", "phase": "t24h", "rows": 24, "sport_key": "basketball_ncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 42, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-19T04:11:31.827771Z", "regions": ["us"], "rows": 803, "sport_key": "basketball_ncaab", "stored": 803}
+{"commence_utc": "2026-11-20T01:10:00Z", "event_id": "006df00e5e48650d849d1bb4cd81565d", "kind": "phase", "observed_utc": "2026-11-19T04:24:47.939405Z", "phase": "t24h", "rows": 3, "sport_key": "basketball_nba"}
+{"call_kind": "pregame", "credits": 3, "events": 6, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-19T04:24:47.939405Z", "regions": ["us"], "rows": 123, "sport_key": "basketball_nba", "stored": 123}
