@@ -31578,3 +31578,4 @@
 {"commence_utc": "2026-11-19T20:00:00Z", "event_id": "a94ea221001eb7a9816e94f5a821c169", "kind": "phase", "observed_utc": "2026-11-19T14:03:37.974870Z", "phase": "t6h", "rows": 7, "sport_key": "soccer_uefa_champs_league_women"}
 {"commence_utc": "2026-11-19T20:00:00Z", "event_id": "fa391596e09654602dc180a0c8d43e9f", "kind": "phase", "observed_utc": "2026-11-19T14:03:37.974870Z", "phase": "t6h", "rows": 3, "sport_key": "soccer_uefa_champs_league_women"}
 {"call_kind": "pregame", "credits": 2, "events": 5, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-19T14:03:37.974870Z", "regions": ["us"], "rows": 31, "sport_key": "soccer_uefa_champs_league_women", "stored": 31}
+{"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-19T14:16:32.635187Z", "regions": ["us"], "rows": 28, "sport_key": "tennis_atp_finals", "stored": 28}
