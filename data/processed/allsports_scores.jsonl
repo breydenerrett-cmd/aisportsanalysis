@@ -16559,3 +16559,4 @@
 {"credits": 2, "days_from": 3, "events": 167, "kind": "poll", "observed_utc": "2026-11-19T14:16:35.728585+00:00", "sport_key": "basketball_ncaab"}
 {"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-19T14:16:35.728585+00:00", "sport_key": "cricket_odi"}
 {"credits": 2, "days_from": 3, "events": 3, "kind": "poll", "observed_utc": "2026-11-19T14:16:35.728585+00:00", "sport_key": "icehockey_mestis"}
+{"errors": [], "events": 1, "family": "TENNIS", "graded": 0, "kind": "free_poll", "matched": 1, "observed_utc": "2026-11-19T14:35:16.411438Z", "source": "espn_tennis", "unmatched": 0, "unmatched_ids": [], "void": 0, "written": 0}
