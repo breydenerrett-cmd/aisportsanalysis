@@ -776,3 +776,4 @@
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-19T23:56:46.787779Z", "phase": "refresh"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-20T00:25:21.848229Z", "phase": "refresh"}
 {"game_id": "2026_11_IND_HOU", "observed_utc": "2026-11-20T00:58:43.384347Z", "phase": "t30m"}
+{"game_id": "2026_11_MIN_SF", "observed_utc": "2026-11-20T01:21:53.856874Z", "phase": "t72h"}
