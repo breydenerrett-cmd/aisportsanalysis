@@ -131,10 +131,10 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-11-19 (1:30 pm PT run): TNF IND@HOU brief published 1:43 pm PT, 3 passes (moneyline, spread, total); attempt 1 rejected by the checker, attempt 2 clean.",
-    "Public sample moved to the newest graded brief, LAC@BAL 11-16. No MLB games through 11-30.",
-    "Production /health 200, billing ok, memory peak 639.6 MB (limit 850); one unexplained restart at 1:33 pm PT (25 total).",
-    "CI green (push run 44575201020); deploy-prod succeeded 9:05 am, 12:10 pm, 1:06 pm PT. Daily-loop on cowork-session-migration failed again 10:42 am PT (offseason).",
+    "2026-11-20 (8:30 am PT run): TNF IND@HOU brief graded (HOU 26, IND 3; three passes). Public sample moved to IND@HOU 11-19.",
+    "No brief today: no NFL game Friday, no MLB games through 11-30. Sunday 11-22 NFL briefs due.",
+    "Production /health 200, billing ok, memory peak 651.0 MB (limit 850); restart 8:21 am PT was a deploy (25 unexplained total, none new).",
+    "CI green (push run 44626858011); deploy-prod succeeded 6:03, 7:07, 8:01 am PT. Daily-loop on cowork-session-migration failed again 2:10 am PT (offseason).",
     "Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at."
   ],
   "next_customer_action": "Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.",
