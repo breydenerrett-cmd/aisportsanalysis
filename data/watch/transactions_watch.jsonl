@@ -8171,3 +8171,5 @@
 {"fetched_utc": "2026-11-20T00:13:53.521416+00:00", "game_date": "2026-11-19", "poll": true}
 {"fetched_utc": "2026-11-20T00:24:27.887197+00:00", "game_date": "2026-11-19", "poll": true}
 {"fetched_utc": "2026-11-20T00:42:35.872661+00:00", "game_date": "2026-11-19", "poll": true}
+{"fetched_utc": "2026-11-20T00:57:48.943770+00:00", "game_date": "2026-11-19", "poll": true}
+{"category": "other", "date": "2026-11-19", "first_seen_utc": "2026-11-20T00:57:48.943770+00:00", "player": "Michael Arroyo", "player_id": 703197, "team": "SEA", "transaction_id": 950724}
