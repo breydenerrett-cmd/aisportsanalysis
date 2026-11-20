@@ -8202,3 +8202,23 @@
 {"fetched_utc": "2026-11-20T22:01:12.092678+00:00", "game_date": "2026-11-20", "poll": true}
 {"category": "designated", "date": "2026-11-20", "first_seen_utc": "2026-11-20T22:01:12.092678+00:00", "player": "Jimmy Herget", "player_id": 623474, "team": "COL", "transaction_id": 950769}
 {"category": "traded", "date": "2026-11-20", "first_seen_utc": "2026-11-20T22:01:12.092678+00:00", "player": "Chase Lee", "player_id": 695445, "team": "COL", "transaction_id": 950770}
+{"fetched_utc": "2026-11-20T23:03:40.744978+00:00", "game_date": "2026-11-20", "poll": true}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Taylor Trammell", "player_id": 666211, "team": "HOU", "transaction_id": 950771}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Nolan Gorman", "player_id": 669357, "team": "STL", "transaction_id": 950772}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Max Rajcic", "player_id": 691008, "team": "STL", "transaction_id": 950773}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "David Fry", "player_id": 681807, "team": "CLE", "transaction_id": 950774}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Jos\u00e9 Butt\u00f3", "player_id": 676130, "team": "TEX", "transaction_id": 950775}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Davis Schneider", "player_id": 676914, "team": "TOR", "transaction_id": 950776}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Fernando Cruz", "player_id": 518585, "team": "NYY", "transaction_id": 950777}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Luis Gil", "player_id": 661563, "team": "NYY", "transaction_id": 950778}
+{"category": "traded", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Jordan Leasure", "player_id": 673929, "team": "PHI", "transaction_id": 950779}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Brett Harris", "player_id": 695391, "team": "PHI", "transaction_id": 950781}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Bryan De La Cruz", "player_id": 650559, "team": "PHI", "transaction_id": 950782}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Mois\u00e9s Chace", "player_id": 691330, "team": "PHI", "transaction_id": 950783}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Andrew Hoffmann", "player_id": 694851, "team": "PHI", "transaction_id": 950784}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Christopher Morel", "player_id": 666624, "team": "NYM", "transaction_id": 950785}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Hayden Senger", "player_id": 663584, "team": "NYM", "transaction_id": 950786}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Dylan Ross", "player_id": 697811, "team": "NYM", "transaction_id": 950787}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Gus Varland", "player_id": 681402, "team": "NYM", "transaction_id": 950788}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Yunior Tur", "player_id": 814305, "team": "NYM", "transaction_id": 950789}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Luke Raley", "player_id": 670042, "team": "SEA", "transaction_id": 950790}
