@@ -8251,3 +8251,16 @@
 {"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:12:44.414626+00:00", "player": "Bailey Ober", "player_id": 641927, "team": "MIN", "transaction_id": 950839}
 {"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:12:44.414626+00:00", "player": "Rowan Wick", "player_id": 592858, "team": "SF", "transaction_id": 950840}
 {"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:12:44.414626+00:00", "player": "Victor Bericoto", "player_id": 682674, "team": "SF", "transaction_id": 950841}
+{"fetched_utc": "2026-11-21T02:02:18.561057+00:00", "game_date": "2026-11-20", "poll": true}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T02:02:18.561057+00:00", "player": "Cole Sulser", "player_id": 642121, "team": "TB", "transaction_id": 950842}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T02:02:18.561057+00:00", "player": "Michael Grove", "player_id": 675627, "team": "ATL", "transaction_id": 950843}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T02:02:18.561057+00:00", "player": "James Karinchak", "player_id": 675916, "team": "ATL", "transaction_id": 950844}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T02:02:18.561057+00:00", "player": "Leo Balcazar", "player_id": 699114, "team": "CIN", "transaction_id": 950845}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T02:02:18.561057+00:00", "player": "Jimmy Herget", "player_id": 623474, "team": "COL", "transaction_id": 950846}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T02:02:18.561057+00:00", "player": "Jake Cousins", "player_id": 664776, "team": "LAD", "transaction_id": 950847}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T02:02:18.561057+00:00", "player": "Noah Murdock", "player_id": 668716, "team": "PIT", "transaction_id": 950848}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T02:02:18.561057+00:00", "player": "Garrett Hawkins", "player_id": 678184, "team": "SD", "transaction_id": 950849}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T02:02:18.561057+00:00", "player": "JP Sears", "player_id": 676664, "team": "SD", "transaction_id": 950850}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T02:02:18.561057+00:00", "player": "Josiah Gray", "player_id": 680686, "team": "WSH", "transaction_id": 950851}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T02:02:18.561057+00:00", "player": "Carson Palmquist", "player_id": 687223, "team": "WSH", "transaction_id": 950852}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T02:02:18.561057+00:00", "player": "Jared Simpson", "player_id": 688692, "team": "WSH", "transaction_id": 950853}
