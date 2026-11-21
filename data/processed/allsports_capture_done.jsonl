@@ -34971,3 +34971,5 @@
 {"commence_utc": "2026-11-22T00:00:00Z", "event_id": "7c6930f22180d748b3c0270afe1d67b4", "kind": "phase", "observed_utc": "2026-11-21T21:25:23.787531Z", "phase": "lock120", "rows": 36, "sport_key": "icehockey_nhl"}
 {"commence_utc": "2026-11-22T00:00:00Z", "event_id": "c891a951ef4b408976f84839c3d886e2", "kind": "phase", "observed_utc": "2026-11-21T21:25:23.787531Z", "phase": "lock120", "rows": 36, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 18, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-21T21:25:23.787531Z", "regions": ["us"], "rows": 558, "sport_key": "icehockey_nhl", "stored": 558}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-22T04:13:59.753503Z", "observed_utc": "2026-11-21T22:13:59.753503Z", "sport_key": "soccer_japan_j_league"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-22T04:13:59.753503Z", "observed_utc": "2026-11-21T22:13:59.753503Z", "sport_key": "soccer_spl"}
