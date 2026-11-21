@@ -131,12 +131,12 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-11-21 (8:30 am PT run): no brief today (no NFL game Saturday, MLB offseason). Sample stays IND@HOU 11-19 (graded).",
-    "Production /health 200, billing ok, memory peak 725.7 MB (limit 850, up from 657.5 MB yesterday).",
-    "deploy-prod failed 8 of the last 10 hourly runs since 11:05 pm PT Fri: the app stops answering about 45 s after the post-deploy page check, then restarts (27 unexplained restarts). Code unchanged since Fri; only data commits.",
-    "CI green (push run 44827543702). Daily-loop failed 2:10 am PT (arsenals shrink refusal, tier-ladder escalation; offseason).",
+    "2026-11-21 (1:30 pm PT run): no brief today (no NFL game Saturday, MLB offseason). Sample stays IND@HOU 11-19 (graded).",
+    "Production /health 200, billing ok, memory peak 741.1 MB (limit 850; 725.7 MB this morning).",
+    "deploy-prod recovered: last 3 hourly runs succeeded (11:09 am, 12:14 pm, 1:12 pm PT) after 8 of 10 failed overnight. No code change.",
+    "CI green (push run 44929140712). Daily-loop failed 8:59 am PT (MLB slate refused: no price capture, offseason).",
     "Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.",
-    "Next: Sunday 11-22 NFL briefs per runbook."
+    "Next: Sunday 11-22 NFL briefs per runbook (up to three per run)."
   ],
   "next_customer_action": "Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.",
   "next_research_action": "No market shows repeatable value (docs/PERFORMANCE_MATRIX.md: 110 measured populations, 0 candidates; moneyline closing-line value negative on 26 of 26 rows). The props question cannot be answered before 2026-10-31: the best-placed family, batter total bases, reaches a minimum sample about five weeks into the 2027 season (docs/PROP_EXPERIMENT_INVENTORY.md, docs/PREREG_PROP_FAMILIES_DRAFT.md, a DRAFT with seven owner decisions). Until then: sell the public record and the price comparison, not an edge. AI critic: adds one catch over a plain rule on 8 cases and is not ready to show customers (docs/AI_CRITIC_BENCHMARK.md).",

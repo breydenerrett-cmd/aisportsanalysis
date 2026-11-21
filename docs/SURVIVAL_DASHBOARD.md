@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-21 16:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-21 21:41Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,10 +151,10 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-21 (8:30 am PT run): no brief today (no NFL game Saturday, MLB offseason). Sample stays IND@HOU 11-19 (graded).
-- Production /health 200, billing ok, memory peak 725.7 MB (limit 850, up from 657.5 MB yesterday).
-- deploy-prod failed 8 of the last 10 hourly runs since 11:05 pm PT Fri: the app stops answering about 45 s after the post-deploy page check, then restarts (27 unexplained restarts). Code unchanged since Fri; only data commits.
-- CI green (push run 44827543702). Daily-loop failed 2:10 am PT (arsenals shrink refusal, tier-ladder escalation; offseason).
+- 2026-11-21 (1:30 pm PT run): no brief today (no NFL game Saturday, MLB offseason). Sample stays IND@HOU 11-19 (graded).
+- Production /health 200, billing ok, memory peak 741.1 MB (limit 850; 725.7 MB this morning).
+- deploy-prod recovered: last 3 hourly runs succeeded (11:09 am, 12:14 pm, 1:12 pm PT) after 8 of 10 failed overnight. No code change.
+- CI green (push run 44929140712). Daily-loop failed 8:59 am PT (MLB slate refused: no price capture, offseason).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
-- Next: Sunday 11-22 NFL briefs per runbook.
+- Next: Sunday 11-22 NFL briefs per runbook (up to three per run).
 
