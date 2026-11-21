@@ -8235,3 +8235,8 @@
 {"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T00:03:30.537708+00:00", "player": "Joe Ryan", "player_id": 657746, "team": "MIN", "transaction_id": 950802}
 {"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T00:03:30.537708+00:00", "player": "Kody Clemens", "player_id": 665019, "team": "MIN", "transaction_id": 950803}
 {"category": "traded", "date": "2026-11-20", "first_seen_utc": "2026-11-21T00:03:30.537708+00:00", "player": "Luke Dotson", "player_id": 806060, "team": "BOS", "transaction_id": 950804}
+{"fetched_utc": "2026-11-21T01:01:08.630986+00:00", "game_date": "2026-11-20", "poll": true}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:01:08.630986+00:00", "player": "Joey Bart", "player_id": 663698, "team": "CHC", "transaction_id": 950816}
+{"category": "traded", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:01:08.630986+00:00", "player": "Braxton Roxby", "player_id": 694820, "team": "CHC", "transaction_id": 950817}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:01:08.630986+00:00", "player": "Gabriel Arias", "player_id": 672356, "team": "CHC", "transaction_id": 950818}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:01:08.630986+00:00", "player": "Ethan Roberts", "player_id": 681799, "team": "CHC", "transaction_id": 950819}
