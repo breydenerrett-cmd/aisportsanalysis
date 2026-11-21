@@ -8240,3 +8240,14 @@
 {"category": "traded", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:01:08.630986+00:00", "player": "Braxton Roxby", "player_id": 694820, "team": "CHC", "transaction_id": 950817}
 {"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:01:08.630986+00:00", "player": "Gabriel Arias", "player_id": 672356, "team": "CHC", "transaction_id": 950818}
 {"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:01:08.630986+00:00", "player": "Ethan Roberts", "player_id": 681799, "team": "CHC", "transaction_id": 950819}
+{"fetched_utc": "2026-11-21T01:12:44.414626+00:00", "game_date": "2026-11-20", "poll": true}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:12:44.414626+00:00", "player": "Hayden Juenger", "player_id": 696522, "team": "OAK", "transaction_id": 950832}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:12:44.414626+00:00", "player": "Connor Wong", "player_id": 657136, "team": "BOS", "transaction_id": 950833}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:12:44.414626+00:00", "player": "Anthony Gose", "player_id": 543238, "team": "KC", "transaction_id": 950834}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:12:44.414626+00:00", "player": "Nick Mears", "player_id": 683232, "team": "KC", "transaction_id": 950835}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:12:44.414626+00:00", "player": "Kyle Isbel", "player_id": 664728, "team": "KC", "transaction_id": 950836}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:12:44.414626+00:00", "player": "Trevor Larnach", "player_id": 663616, "team": "MIN", "transaction_id": 950837}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:12:44.414626+00:00", "player": "Matt Wallner", "player_id": 670242, "team": "MIN", "transaction_id": 950838}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:12:44.414626+00:00", "player": "Bailey Ober", "player_id": 641927, "team": "MIN", "transaction_id": 950839}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:12:44.414626+00:00", "player": "Rowan Wick", "player_id": 592858, "team": "SF", "transaction_id": 950840}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T01:12:44.414626+00:00", "player": "Victor Bericoto", "player_id": 682674, "team": "SF", "transaction_id": 950841}
