@@ -1,22 +1,22 @@
 {
  "files": {
   "bouts.jsonl": {
-   "bytes": 1465039,
+   "bytes": 1469164,
    "newest": "2026-11-15T02:00Z",
-   "records": 1733,
-   "sha256": "3f3159514dfd023d68bc368275c881f3af8c2ef79cedc17b8320162cf1239fcf"
+   "records": 1738,
+   "sha256": "54d5eba59bb79d953f25471393e3e75eac4a6b16e154a3d4b6a268f39ef8e486"
   },
   "events.jsonl": {
-   "bytes": 80892,
+   "bytes": 80964,
    "newest": "2026-11-14T22:00Z",
    "records": 157,
-   "sha256": "a0bce97a76707b053b5c9a228ada1ddf1c4b8922d470fb115444856caf426f4e"
+   "sha256": "e81fcc0025c2dda1efeb72581552f53bb8d59d9f2c716faf2f3dc48d44549a3e"
   },
   "fight_stats.jsonl": {
    "bytes": 5832285,
    "newest": "2026-11-15T02:00Z",
    "records": 3386,
-   "sha256": "c0b17391f8d9c2d0911a075409e477a995aebc88f8fb243f16b8e3e7c632a6b8"
+   "sha256": "0dcb0c553f3b0fbdf70eb900ddfd5d9a9af39330795d326d5d07fdc9a6693013"
   },
   "fighters.jsonl": {
    "bytes": 611576,
@@ -25,10 +25,10 @@
    "sha256": "f42af8bba4f295f9329e1323b87ce99f643a0d77195cb2b7bfe68ef8d0ea505f"
   },
   "odds.jsonl": {
-   "bytes": 6286715,
-   "newest": "2026-11-20T18:19:39Z",
-   "records": 4112,
-   "sha256": "d7a6b29cf5147cc79ca1705ede8bd91802b398567433bb38118d8be11983e345"
+   "bytes": 6289024,
+   "newest": "2026-11-21T10:25:31Z",
+   "records": 4114,
+   "sha256": "95af064cc036f9415a2d47a2e205ce821f700871dbb5cb63712398f9d8eea8f5"
   },
   "ufccom_profiles.jsonl": {
    "bytes": 1263862,
@@ -37,17 +37,17 @@
    "sha256": "f9d7f7ec8aa1bf8e6c6f556c4a324c4546537888cfff4654f15de97323098267"
   }
  },
- "generated_utc": "2026-11-20T18:19:44Z",
+ "generated_utc": "2026-11-21T10:25:34Z",
  "last_run": {
-  "bouts": 37,
-  "events": 3,
+  "bouts": 57,
+  "events": 5,
   "fight_stats": 26,
   "fighters": 0,
-  "finished_utc": "2026-11-20T18:19:44Z",
+  "finished_utc": "2026-11-21T10:25:33Z",
   "kind": "update",
-  "odds": 27,
+  "odds": 41,
   "profiles": 0,
-  "started_utc": "2026-11-20T18:18:26Z",
+  "started_utc": "2026-11-21T10:24:15Z",
   "stopped": null
  },
  "last_run_errors": 0
