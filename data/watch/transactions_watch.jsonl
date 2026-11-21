@@ -8222,3 +8222,16 @@
 {"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Gus Varland", "player_id": 681402, "team": "NYM", "transaction_id": 950788}
 {"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Yunior Tur", "player_id": 814305, "team": "NYM", "transaction_id": 950789}
 {"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-20T23:03:40.744978+00:00", "player": "Luke Raley", "player_id": 670042, "team": "SEA", "transaction_id": 950790}
+{"fetched_utc": "2026-11-21T00:03:30.537708+00:00", "game_date": "2026-11-20", "poll": true}
+{"category": "traded", "date": "2026-11-20", "first_seen_utc": "2026-11-21T00:03:30.537708+00:00", "player": "Christian Koss", "player_id": 683766, "team": "TB", "transaction_id": 950791}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T00:03:30.537708+00:00", "player": "Andrew Saalfrank", "player_id": 685314, "team": "ARI", "transaction_id": 950793}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T00:03:30.537708+00:00", "player": "Blake Walston", "player_id": 686796, "team": "ARI", "transaction_id": 950794}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T00:03:30.537708+00:00", "player": "Jake Miller", "player_id": 805725, "team": "DET", "transaction_id": 950795}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T00:03:30.537708+00:00", "player": "Trey Sweeney", "player_id": 700242, "team": "DET", "transaction_id": 950796}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T00:03:30.537708+00:00", "player": "Matt Vierling", "player_id": 663837, "team": "DET", "transaction_id": 950797}
+{"category": "traded", "date": "2026-11-20", "first_seen_utc": "2026-11-21T00:03:30.537708+00:00", "player": "Francisco Espinoza", "player_id": 821689, "team": "MIN", "transaction_id": 950798}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T00:03:30.537708+00:00", "player": "Taj Bradley", "player_id": 671737, "team": "MIN", "transaction_id": 950800}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T00:03:30.537708+00:00", "player": "Dean Kremer", "player_id": 665152, "team": "MIN", "transaction_id": 950801}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T00:03:30.537708+00:00", "player": "Joe Ryan", "player_id": 657746, "team": "MIN", "transaction_id": 950802}
+{"category": "other", "date": "2026-11-20", "first_seen_utc": "2026-11-21T00:03:30.537708+00:00", "player": "Kody Clemens", "player_id": 665019, "team": "MIN", "transaction_id": 950803}
+{"category": "traded", "date": "2026-11-20", "first_seen_utc": "2026-11-21T00:03:30.537708+00:00", "player": "Luke Dotson", "player_id": 806060, "team": "BOS", "transaction_id": 950804}
