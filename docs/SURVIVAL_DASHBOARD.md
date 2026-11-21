@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-20 21:41Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-21 16:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-20** |
+| Days until 2026-10-31 | **-21** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,10 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-20 (1:30 pm PT run): no brief today (no NFL game Friday, MLB offseason). Sample stays IND@HOU 11-19 (graded).
-- Production /health 200, billing ok, memory peak 657.5 MB (limit 850). One new unexplained restart at 1:30 pm PT (26 total).
-- CI green (push run 44791214613); deploy-prod succeeded 11:03 am, 12:03, 1:04 pm PT. Daily-loop failed 10:03 am PT (pre-slate freshness guard, offseason).
+- 2026-11-21 (8:30 am PT run): no brief today (no NFL game Saturday, MLB offseason). Sample stays IND@HOU 11-19 (graded).
+- Production /health 200, billing ok, memory peak 725.7 MB (limit 850, up from 657.5 MB yesterday).
+- deploy-prod failed 8 of the last 10 hourly runs since 11:05 pm PT Fri: the app stops answering about 45 s after the post-deploy page check, then restarts (27 unexplained restarts). Code unchanged since Fri; only data commits.
+- CI green (push run 44827543702). Daily-loop failed 2:10 am PT (arsenals shrink refusal, tier-ladder escalation; offseason).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 - Next: Sunday 11-22 NFL briefs per runbook.
 
