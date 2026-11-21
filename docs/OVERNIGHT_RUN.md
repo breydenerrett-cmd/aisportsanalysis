@@ -11816,3 +11816,6 @@ end-to-end confirmation (above).
 - 2026-11-21T18:24Z afternoon_slate: engine slate --date 2026-11-21 exit=2
 - 2026-11-21T18:24Z afternoon_slate: card publish --date 2026-11-21 exit=0
 - 2026-11-21T18:24Z afternoon_slate: engine slip --date 2026-11-21
+- 2026-11-21T18:56Z afternoon_slate: engine slate --date 2026-11-21 exit=2
+- 2026-11-21T18:56Z afternoon_slate: card publish --date 2026-11-21 exit=0
+- 2026-11-21T18:56Z afternoon_slate: engine slip --date 2026-11-21
