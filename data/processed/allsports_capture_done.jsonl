@@ -35319,3 +35319,8 @@
 {"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-22T05:52:33.366227Z", "regions": ["us"], "rows": 67, "sport_key": "icehockey_nhl", "stored": 67}
 {"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-22T05:52:33.366227Z", "regions": ["us"], "rows": 23, "sport_key": "soccer_korea_kleague1", "stored": 8}
 {"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-22T05:52:33.366227Z", "regions": ["us"], "rows": 8, "sport_key": "icehockey_ahl", "stored": 8}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-22T12:04:11.054999Z", "observed_utc": "2026-11-22T06:04:11.054999Z", "sport_key": "icehockey_liiga"}
+{"events": 16, "kind": "peek", "next_check_utc": "2026-11-22T12:04:11.054999Z", "observed_utc": "2026-11-22T06:04:11.054999Z", "sport_key": "soccer_england_league1"}
+{"events": 13, "kind": "peek", "next_check_utc": "2026-11-22T12:04:11.054999Z", "observed_utc": "2026-11-22T06:04:11.054999Z", "sport_key": "soccer_england_league2"}
+{"commence_utc": "2026-11-22T12:00:00Z", "event_id": "9176cbaec3565e688e603baec257e246", "kind": "phase", "observed_utc": "2026-11-22T06:04:11.054999Z", "phase": "t6h", "rows": 15, "sport_key": "soccer_efl_champ"}
+{"call_kind": "pregame", "credits": 2, "events": 25, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-22T06:04:11.054999Z", "regions": ["us"], "rows": 227, "sport_key": "soccer_efl_champ", "stored": 15}
