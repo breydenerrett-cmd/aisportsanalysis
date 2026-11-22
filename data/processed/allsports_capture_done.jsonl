@@ -35747,3 +35747,13 @@
 {"call_kind": "inplay", "credits": 1, "events": 13, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-22T14:14:43.029327Z", "regions": ["us"], "rows": 67, "sport_key": "soccer_greece_super_league", "stored": 45}
 {"call_kind": "inplay", "credits": 1, "events": 19, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-22T14:14:43.029327Z", "regions": ["us"], "rows": 123, "sport_key": "soccer_italy_serie_b", "stored": 17}
 {"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-22T14:14:43.029327Z", "regions": ["us"], "rows": 24, "sport_key": "soccer_switzerland_superleague", "stored": 22}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-22T20:28:43.879502Z", "observed_utc": "2026-11-22T14:28:43.879502Z", "sport_key": "aussierules_aflw"}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-11-22T20:28:43.879502Z", "observed_utc": "2026-11-22T14:28:43.879502Z", "sport_key": "icehockey_sweden_hockey_league"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-22T20:28:43.879502Z", "observed_utc": "2026-11-22T14:28:43.879502Z", "sport_key": "rugbyleague_nrl"}
+{"events": 24, "kind": "peek", "next_check_utc": "2026-11-22T20:28:43.879502Z", "observed_utc": "2026-11-22T14:28:43.879502Z", "sport_key": "soccer_efl_champ"}
+{"commence_utc": "2026-11-22T16:15:00Z", "event_id": "8e6ee05b6ac28dc2357f72b9f5a0643e", "kind": "phase", "observed_utc": "2026-11-22T14:28:43.879502Z", "phase": "t2h", "rows": 16, "sport_key": "soccer_france_ligue_one"}
+{"call_kind": "pregame", "credits": 2, "events": 12, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-22T14:28:43.879502Z", "regions": ["us"], "rows": 120, "sport_key": "soccer_france_ligue_one", "stored": 40}
+{"commence_utc": "2026-11-22T16:15:00Z", "event_id": "f4f0f11087c7acf67a389b6c505c23f1", "kind": "phase", "observed_utc": "2026-11-22T14:28:43.879502Z", "phase": "t2h", "rows": 15, "sport_key": "soccer_italy_serie_b"}
+{"call_kind": "pregame", "credits": 2, "events": 19, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-22T14:28:43.879502Z", "regions": ["us"], "rows": 197, "sport_key": "soccer_italy_serie_b", "stored": 22}
+{"call_kind": "inplay", "credits": 1, "events": 15, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-22T14:28:43.879502Z", "regions": ["us"], "rows": 115, "sport_key": "soccer_italy_serie_a", "stored": 46}
+{"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-22T14:28:43.879502Z", "regions": ["us"], "rows": 43, "sport_key": "soccer_netherlands_eredivisie", "stored": 16}
