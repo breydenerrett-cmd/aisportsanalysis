@@ -1,0 +1,119 @@
+{
+  "summary": "Detroit is the better side on the numbers: seven wins and two losses, a five-game winning streak, and 6.0957 net yards per play over the last five games against 5.0901 for Tampa Bay. The market already knows that. The moneyline has Detroit at a best price of -205, which I will not take under my own rule, and Tampa Bay at 190 sits almost exactly on the books' fair probability of 0.3449, so I pass on both sides. The spread is 3.5, and the books split it close to a coin flip. Tampa Bay has had 14 days of rest, but Baker Mayfield is listed as questionable with a foot injury and we cannot see how that resolves, so I pass there too. The total is 48.5, up from 47.5 when first captured. Both defenses have allowed few points lately, 14.4 per game for Detroit and 16.4 for Tampa Bay over five games, and the number seems to hold that, so I pass. The game is in a dome, so weather is not a factor. No player props are priced in what we have.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "DET",
+      "verdict": "PASS",
+      "price": -205,
+      "book": "bovada",
+      "fair_estimate": 0.65,
+      "confidence": "medium",
+      "reasons": [
+        {
+          "claim": "Detroit is the stronger team on form, but the best price on them is -205, a price I never take.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].best.price", "value": -205},
+            {"path": "sections.home.values.record.season.wins", "value": 7},
+            {"path": "sections.home.values.streak.length", "value": 5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The books' own fair probability for Detroit is 0.6551, and the data holds nothing that clearly says that is wrong, so the market is probably about right.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.6551},
+            {"path": "sections.matchup.values.differentials.form_last_5_yards_per_play.diff", "value": 1.0056}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -186,
+      "what_would_change_it": "Detroit's price falling to -186 or shorter would make the home side worth taking.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "DET -3.5",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "fanatics",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books' fair probability on DET -3.5 is 0.5053, essentially a coin flip, and the data gives no clear reason the number is wrong in points.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5053},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4947}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Detroit's form is better, but Tampa Bay comes off a bye with 14 days of rest, and the number was 3.5 when first captured so it has not moved.",
+          "evidence": [
+            {"path": "sections.away.values.rest.days_since_last_game", "value": 14},
+            {"path": "markets.spread.context.away_number_first_captured", "value": 3.5},
+            {"path": "sections.matchup.values.differentials.form_last_5_margin_per_game.diff", "value": 4.4}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Tampa Bay's quarterback is listed as questionable with a foot injury, and the projection is not a confirmed starter, which is a reason for care on either side.",
+          "evidence": [
+            {"path": "sections.away.values.injuries.skill_players_listed[0].report_status", "value": "questionable"},
+            {"path": "sections.away.values.qb.listed_for_this_game.projected", "value": true}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "Baker Mayfield being ruled out on the injury report would move the number and could make Detroit worth laying at 3.5.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 48.5",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books split the total evenly, with a fair probability of 0.5 on each side, and nothing in the data shows the price missing something.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5},
+            {"path": "markets.total.options[1].fair_probability", "value": 0.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Detroit scores 27.6 points per game over its last five, while both defenses have been strong lately, so the scoring signals point both ways and the number moved up from 47.5 to 48.5.",
+          "evidence": [
+            {"path": "sections.home.values.form.last_5.points_for_per_game", "value": 27.6},
+            {"path": "sections.home.values.form.last_5.points_against_per_game", "value": 14.4},
+            {"path": "sections.away.values.form.last_5.points_against_per_game", "value": 16.4},
+            {"path": "markets.total.context.number_first_captured", "value": 47.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The game is in a dome, so weather does not matter, but a Tampa Bay quarterback change could move the total and Mayfield is listed as questionable.",
+          "evidence": [
+            {"path": "sections.schedule.values.venue.roof", "value": "dome"},
+            {"path": "sections.away.values.injuries.skill_players_listed[0].report_status", "value": "questionable"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "Baker Mayfield being ruled out on the injury report, or the total moving off 48.5, would give a reason to revisit.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

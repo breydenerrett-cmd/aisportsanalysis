@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-21 21:41Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-22 16:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-21** |
+| Days until 2026-10-31 | **-22** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,10 +151,10 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-21 (1:30 pm PT run): no brief today (no NFL game Saturday, MLB offseason). Sample stays IND@HOU 11-19 (graded).
-- Production /health 200, billing ok, memory peak 741.1 MB (limit 850; 725.7 MB this morning).
-- deploy-prod recovered: last 3 hourly runs succeeded (11:09 am, 12:14 pm, 1:12 pm PT) after 8 of 10 failed overnight. No code change.
-- CI green (push run 44929140712). Daily-loop failed 8:59 am PT (MLB slate refused: no price capture, offseason).
+- 2026-11-22 (8:30 am PT run): NFL briefs published for PIT@PHI and TB@DET (10:00 am PT kickoffs), all three calls passes; ARI@KC re-answering after a length rejection.
+- Production /health 200, billing ok, memory peak 705.0 MB (limit 850). One unexplained restart 8:31 am PT (28 total).
+- deploy-prod: last 3 hourly runs succeeded (5:01, 6:07, 7:13 am PT).
+- CI green (push run 44955801762). Daily-loop failed 2:10 am PT (MLB slate refused: no price capture, offseason).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
-- Next: Sunday 11-22 NFL briefs per runbook (up to three per run).
+- Next: 1:30 pm PT run: health, grade the early games once scores are in.
 

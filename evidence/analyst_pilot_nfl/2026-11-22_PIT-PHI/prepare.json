@@ -1,0 +1,23 @@
+{
+  "sport": "nfl",
+  "game_id": "2026_11_PIT_PHI",
+  "date": "2026-11-22",
+  "away": "PIT",
+  "home": "PHI",
+  "kickoff_utc": "2026-11-22T21:25:00Z",
+  "built_at": "2026-11-22T16:41:51Z",
+  "packet_hash": "74cac949303dd9a84e152be3a58dc9a8610f45600237275535d64c82c38a779f",
+  "prompt_version": "analyst_prompt_nfl_v1",
+  "prompt_hash": "8b80fc0cc2622da7497bed03b851d3934b8d687a6ca9c5a17d3eeb2d1c56ea7b",
+  "token_estimate": 10044,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "spread",
+    "total"
+  ],
+  "missing_items": 3,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "nfl_store+odds_multibook"
+}

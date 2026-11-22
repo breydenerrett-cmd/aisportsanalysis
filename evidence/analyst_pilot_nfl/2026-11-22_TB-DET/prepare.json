@@ -1,0 +1,23 @@
+{
+  "sport": "nfl",
+  "game_id": "2026_11_TB_DET",
+  "date": "2026-11-22",
+  "away": "TB",
+  "home": "DET",
+  "kickoff_utc": "2026-11-22T18:00:00Z",
+  "built_at": "2026-11-22T16:41:54Z",
+  "packet_hash": "a6a1f754934cf856252fa985dcae1afbdcaf0863ec390f18fb6a248381f09400",
+  "prompt_version": "analyst_prompt_nfl_v1",
+  "prompt_hash": "8b80fc0cc2622da7497bed03b851d3934b8d687a6ca9c5a17d3eeb2d1c56ea7b",
+  "token_estimate": 9877,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "spread",
+    "total"
+  ],
+  "missing_items": 1,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "nfl_store+odds_multibook"
+}

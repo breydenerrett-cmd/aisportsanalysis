@@ -1,0 +1,119 @@
+{
+  "summary": "Pittsburgh is the better team on the numbers: 6 wins against 2 for Philadelphia, who have lost 7 straight and list Joe Milton III, who has 2 prior starts in the data, as the projected quarterback. But the books already know that. Pittsburgh is -197 at best on the moneyline, and the spread asks them to win by 3.5, a number that has moved toward Philadelphia since it was first captured at 4.5. Nothing in what we have shows the number is wrong in points, so I pass on the moneyline and the spread. The total sits at 37.5, down from 38.5 when first captured. Philadelphia scores 16.4444 points per game and Pittsburgh allows 20.2222, so the low number already holds two modest offences. Weather is missing for an outdoor game, and both quarterbacks are projections, not confirmed starters. Those gaps are reasons to leave the total alone too. The market looks roughly right on all three prices.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "PIT",
+      "verdict": "PASS",
+      "price": -197,
+      "book": "williamhill_us",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Pittsburgh has the better record and Philadelphia is on a long losing run, but the books price that in, with Pittsburgh at -197 at best.",
+          "evidence": [
+            {"path": "sections.away.values.record.season.wins", "value": 6},
+            {"path": "sections.home.values.record.season.wins", "value": 2},
+            {"path": "sections.home.values.streak.length", "value": 7},
+            {"path": "markets.moneyline.options[0].best.price", "value": -197}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The books' own de-vigged number for Pittsburgh is already 0.6448, and nothing in the data shows what it misses. Most books quote Pittsburgh at -200 or worse, which we never take.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.6448},
+            {"path": "markets.moneyline.options[0].quotes[0].price", "value": -210}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Philadelphia's projected quarterback being replaced by a starter with few prior starts, or Pittsburgh's quarterback being ruled out, would change how we read this price.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "PIT -3.5",
+      "verdict": "PASS",
+      "price": -105,
+      "book": "circasports",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides are close to a coin flip at this number, with Pittsburgh at 0.5028 de-vigged, and the data gives no reason to say the number is off in points.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5028},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4972}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number has already moved toward Philadelphia from 4.5 when first captured, so the market has taken in some of Philadelphia's bye and Pittsburgh's recent loss.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": -4.5},
+            {"path": "sections.home.values.rest.coming_off_bye", "value": true}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Pittsburgh's season margin per game is better than Philadelphia's, but 3.5 sits between the key numbers 3 and 6, and the data does not show that the gap in form is worth more than the price already asks.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 1.7778},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": -8.1111}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A move of the spread off 3.5 or a confirmed change of quarterback on either side would make us look at it again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 37.5",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total has come down from 38.5 when first captured to 37.5, and the two sides are priced almost evenly, so the books already hold the low scoring.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 38.5},
+            {"path": "markets.total.options[0].fair_probability", "value": 0.502}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Philadelphia scores little per game and Pittsburgh allows a modest amount, which points Under, but Pittsburgh's own scoring and Philadelphia's points allowed point the other way, so the form does not settle it.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 16.4444},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 20.2222},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 22},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 24.5556}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Weather is missing for an outdoor game, so we cannot see wind or cold, which matters most for a total.",
+          "evidence": [
+            {"path": "missing[2].item", "value": "weather"},
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A weather forecast showing hard wind or cold, or a quarterback change on either side, would be a reason to take the total.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

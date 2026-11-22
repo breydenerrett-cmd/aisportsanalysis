@@ -1,0 +1,120 @@
+{
+  "summary": "Kansas City is clearly the better team on the numbers: 7 wins and 2 losses against 3 wins and 7 losses, and a season margin of 9 points per game against minus 10.5 for Arizona. Arizona also lists Josh Johnson at quarterback, a change from last game with no prior starts for the team, and Carson Beck is questionable with a back injury. But the market already knows all of that. Kansas City is at -1400 on the moneyline, which I will not take at that price, and the underdog at 910 needs more than the books' own 0.098 to be worth it. The spread asks for 15.5, up from 14.5 when we first saw it. A number that large is close to a coin flip, and I cannot find a reason in the data that it is wrong in points, so I pass. On the total, 40.5 has come down from 42.0. Kansas City scores 26.3 and allows 17.3 per game, Arizona scores 18.4 and allows 28.9, so the pieces point in different directions, and with no weather forecast for an outdoor game I pass there too. The missing inputs that matter are weather and who actually plays quarterback for Arizona.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "ARI",
+      "verdict": "PASS",
+      "price": 910,
+      "book": "mybookieag",
+      "fair_estimate": 0.09,
+      "confidence": "medium",
+      "reasons": [
+        {
+          "claim": "Kansas City is priced at -1400 or longer across the books, so it cannot be a bet at any quote we have, and the books' own number for Arizona is 0.098. Nothing in the data shows that number is too low by enough to matter.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].best.price", "value": -1400},
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.098}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Arizona's form gives little reason to expect an upset: a 3-7 season record, a season margin of -10.5 points per game, and a projected quarterback change to Josh Johnson, who has no prior starts with the team.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": -10.5},
+            {"path": "sections.away.values.qb.listed_for_this_game.prior_starts_with_team", "value": 0},
+            {"path": "sections.away.values.record.season.wins", "value": 3}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 1011,
+      "what_would_change_it": "Arizona's quarterback or Kansas City's injury news moving the Arizona moneyline to 1011 or longer would make the underdog worth taking.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "ARI +15.5",
+      "verdict": "PASS",
+      "price": -108,
+      "book": "betmgm",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books split almost evenly on the two sides of 15.5, so the market has the number about where it thinks the game will land. It has moved from 14.5 to 15.5 toward Kansas City since it was first captured.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5081},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4919},
+            {"path": "markets.spread.context.away_number_first_captured", "value": 14.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Kansas City is much stronger on the season, with a margin of 9 points per game against -10.5 for Arizona, but the price already asks the home side to win by more than two touchdowns, and we have no reason to say that number is wrong in points.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 9},
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": -10.5},
+            {"path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": 19.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Arizona's projected quarterback is a change from last game and Carson Beck is listed as questionable, which is a reason for care on either side of the spread.",
+          "evidence": [
+            {"path": "sections.away.values.qb.listed_for_this_game.changed_since_last_game", "value": true},
+            {"path": "sections.away.values.injuries.skill_players_listed[0].report_status", "value": "questionable"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A confirmed quarterback for Arizona, or the Arizona number moving off 15.5 to a key number such as 14, would change how I see the price.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 40.5",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "mybookieag",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Kansas City scores 26.3 and allows 17.3 per game while Arizona scores 18.4 and allows 28.9, so one side of the ball points to a lower total and the other to a higher one. The price already sits between them.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 26.3333},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 17.3333},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 18.4},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 28.9}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The total has come down from 42.0 to 40.5, and the books split almost evenly between Under and Over.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 42.0},
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5045}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We cannot see weather for an outdoor game, and Arizona's quarterback is a projected change, either of which could move a total.",
+          "evidence": [
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"},
+            {"path": "sections.away.values.qb.listed_for_this_game.projected", "value": true}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A weather forecast showing strong wind or cold, or a quarterback change for either side, would give a reason to take a side of the total.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
