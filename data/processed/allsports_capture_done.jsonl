@@ -35510,3 +35510,5 @@
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-22T17:15:25.502843Z", "observed_utc": "2026-11-22T11:15:25.502843Z", "sport_key": "soccer_uefa_europa_conference_league"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-22T17:15:25.502843Z", "observed_utc": "2026-11-22T11:15:25.502843Z", "sport_key": "soccer_uefa_europa_league"}
 {"call_kind": "inplay", "credits": 1, "events": 6, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-22T11:15:25.502843Z", "regions": ["eu"], "rows": 19, "sport_key": "soccer_russia_premier_league", "stored": 10}
+{"call_kind": "inplay", "credits": 1, "events": 13, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-22T11:27:45.271297Z", "regions": ["us"], "rows": 58, "sport_key": "soccer_netherlands_eredivisie", "stored": 35}
+{"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-22T11:27:45.271297Z", "regions": ["us"], "rows": 47, "sport_key": "soccer_poland_ekstraklasa", "stored": 34}
