@@ -35389,3 +35389,8 @@
 {"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-22T08:15:03.942802Z", "regions": ["au"], "rows": 16, "sport_key": "cricket_test_match", "stored": 14}
 {"events": 1, "kind": "peek", "next_check_utc": "2026-11-22T14:28:22.250723Z", "observed_utc": "2026-11-22T08:28:22.250723Z", "sport_key": "aussierules_aflw"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-22T14:28:22.250723Z", "observed_utc": "2026-11-22T08:28:22.250723Z", "sport_key": "rugbyleague_nrl"}
+{"events": 30, "kind": "peek", "next_check_utc": "2026-11-22T14:41:36.671705Z", "observed_utc": "2026-11-22T08:41:36.671705Z", "sport_key": "boxing_boxing"}
+{"commence_utc": "2026-11-22T10:30:00Z", "event_id": "f687dcdffc83e8d365c3c00e857a5846", "kind": "phase", "observed_utc": "2026-11-22T08:41:36.671705Z", "phase": "t2h", "rows": 13, "sport_key": "soccer_turkey_super_league"}
+{"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-22T08:41:36.671705Z", "regions": ["us"], "rows": 87, "sport_key": "soccer_turkey_super_league", "stored": 65}
+{"commence_utc": "2026-11-22T14:30:00Z", "event_id": "4c2262eccc903b9b1792325d09451c0a", "kind": "phase", "observed_utc": "2026-11-22T08:41:36.671705Z", "phase": "t6h", "rows": 16, "sport_key": "soccer_germany_bundesliga"}
+{"call_kind": "pregame", "credits": 2, "events": 11, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-22T08:41:36.671705Z", "regions": ["us"], "rows": 113, "sport_key": "soccer_germany_bundesliga", "stored": 32}
