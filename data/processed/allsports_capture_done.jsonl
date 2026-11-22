@@ -35428,3 +35428,5 @@
 {"commence_utc": "2026-11-22T15:30:00Z", "event_id": "81d367b0e275d4f5d904d59af2a46bd7", "kind": "phase", "observed_utc": "2026-11-22T09:42:45.926671Z", "phase": "t6h", "rows": 15, "sport_key": "soccer_switzerland_superleague"}
 {"commence_utc": "2026-11-22T15:30:00Z", "event_id": "817d0619127140a19785bc04419e057d", "kind": "phase", "observed_utc": "2026-11-22T09:42:45.926671Z", "phase": "t6h", "rows": 15, "sport_key": "soccer_switzerland_superleague"}
 {"call_kind": "pregame", "credits": 2, "events": 5, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-22T09:42:45.926671Z", "regions": ["us"], "rows": 46, "sport_key": "soccer_switzerland_superleague", "stored": 42}
+{"commence_utc": "2026-11-22T15:45:00Z", "event_id": "f0c241457472f32fc55b90b2b95b665b", "kind": "phase", "observed_utc": "2026-11-22T09:55:43.969458Z", "phase": "t6h", "rows": 15, "sport_key": "soccer_netherlands_eredivisie"}
+{"call_kind": "pregame", "credits": 2, "events": 13, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-22T09:55:43.969458Z", "regions": ["us"], "rows": 95, "sport_key": "soccer_netherlands_eredivisie", "stored": 60}
