@@ -18822,3 +18822,15 @@
 {"credits": 2, "days_from": 3, "events": 14, "kind": "poll", "observed_utc": "2026-11-22T12:25:36.901094+00:00", "sport_key": "soccer_poland_ekstraklasa"}
 {"away_score": 0.0, "away_team": "Venezia", "commence_time": "2026-11-22T11:30:00Z", "completed": false, "event_id": "be2fcabc408be29ca01ce92ab266f8b7", "home_score": 0.0, "home_team": "Juventus", "kind": "score", "last_update": "2026-11-22T12:33:25Z", "observed_utc": "2026-11-22T12:33:39.520774+00:00", "outcome": "draw", "scores": [{"name": "Juventus", "score": "0"}, {"name": "Venezia", "score": "0"}], "sport_key": "soccer_italy_serie_a"}
 {"credits": 2, "days_from": 3, "events": 20, "kind": "poll", "observed_utc": "2026-11-22T12:33:39.520774+00:00", "sport_key": "soccer_italy_serie_a"}
+{"credits": 2, "days_from": 3, "events": 9, "kind": "poll", "observed_utc": "2026-11-22T12:45:18.974086+00:00", "sport_key": "icehockey_ahl"}
+{"away_score": null, "away_team": "Kenshin Oshima", "commence_time": "2026-11-26T09:00:00Z", "completed": false, "event_id": "9a04d8e9afe17bcb9683afc757015d80", "home_score": null, "home_team": "Yoshiki Takei", "kind": "score", "last_update": null, "observed_utc": "2026-11-22T12:45:18.974086+00:00", "outcome": null, "scores": null, "sport_key": "boxing_boxing"}
+{"away_score": null, "away_team": "Zyvyr John Medecilo", "commence_time": "2026-11-26T11:00:00Z", "completed": false, "event_id": "f427299353d39efbc9fb4ded5c551228", "home_score": null, "home_team": "Takeshi Ishii", "kind": "score", "last_update": null, "observed_utc": "2026-11-22T12:45:18.974086+00:00", "outcome": null, "scores": null, "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 32, "kind": "poll", "observed_utc": "2026-11-22T12:45:18.974086+00:00", "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 3, "kind": "poll", "observed_utc": "2026-11-22T12:45:18.974086+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-22T12:45:18.974086+00:00", "sport_key": "icehockey_mestis"}
+{"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-22T12:45:18.974086+00:00", "sport_key": "soccer_korea_kleague1"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-22T12:45:18.974086+00:00", "sport_key": "cricket_test_match"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-22T12:45:18.974086+00:00", "sport_key": "soccer_sweden_superettan"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-22T12:45:18.974086+00:00", "sport_key": "aussierules_aflw"}
+{"credits": 2, "days_from": 3, "events": 169, "kind": "poll", "observed_utc": "2026-11-22T12:45:18.974086+00:00", "sport_key": "basketball_ncaab"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-22T12:45:18.974086+00:00", "sport_key": "cricket_international_t20"}
