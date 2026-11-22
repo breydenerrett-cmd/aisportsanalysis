@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-22 16:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-22 21:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,10 +151,10 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-22 (8:30 am PT run): NFL briefs published for PIT@PHI and TB@DET (10:00 am PT kickoffs), all three calls passes; ARI@KC re-answering after a length rejection.
-- Production /health 200, billing ok, memory peak 705.0 MB (limit 850). One unexplained restart 8:31 am PT (28 total).
-- deploy-prod: last 3 hourly runs succeeded (5:01, 6:07, 7:13 am PT).
-- CI green (push run 44955801762). Daily-loop failed 2:10 am PT (MLB slate refused: no price capture, offseason).
+- 2026-11-22 (1:30 pm PT run): the three 10:00 am PT NFL briefs (PIT@PHI, TB@DET, ARI@KC) graded; all calls were passes. Public sample now PIT@PHI 11-22.
+- MIN@SF brief published for the 5:20 pm PT kickoff (first answer clean; all three calls passes).
+- Production /health 200, billing ok, memory peak 794.6 MB (limit 850). Unexplained restart 1:06 pm PT (29 total).
+- deploy-prod: 10:13 am PT run failed (Fly registry 502); 11:12 am and 12:13 pm PT succeeded. CI green (push run 45048421019).
+- Daily-loop failed 9:27 am PT (MLB slate refused: no price capture, offseason).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
-- Next: 1:30 pm PT run: health, grade the early games once scores are in.
 
