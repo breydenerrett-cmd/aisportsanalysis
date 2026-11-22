@@ -35537,3 +35537,5 @@
 {"call_kind": "pregame", "credits": 3, "events": 5, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-22T11:40:43.707163Z", "regions": ["us"], "rows": 171, "sport_key": "icehockey_nhl", "stored": 171}
 {"call_kind": "inplay", "credits": 1, "events": 16, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-22T11:40:43.707163Z", "regions": ["us"], "rows": 133, "sport_key": "soccer_italy_serie_a", "stored": 64}
 {"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-22T11:40:43.707163Z", "regions": ["us"], "rows": 53, "sport_key": "soccer_turkey_super_league", "stored": 36}
+{"commence_utc": "2026-11-22T13:45:00Z", "event_id": "8640b47d5a83c4971e699026fdfa0a55", "kind": "phase", "observed_utc": "2026-11-22T11:56:25.273522Z", "phase": "t2h", "rows": 15, "sport_key": "soccer_poland_ekstraklasa"}
+{"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-22T11:56:25.273522Z", "regions": ["us"], "rows": 74, "sport_key": "soccer_poland_ekstraklasa", "stored": 52}

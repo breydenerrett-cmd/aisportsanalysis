@@ -2,10 +2,10 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2026.jsonl": {
-   "bytes": 182870,
-   "newest": "2026-11-22T08:56:20Z",
-   "records": 310,
-   "sha256": "7094d96876da681ca11c31907a8a532196603cbcd7427f779bd5b5e300aa8088"
+   "bytes": 183450,
+   "newest": "2026-11-22T11:57:14Z",
+   "records": 311,
+   "sha256": "2700d5b85a29fa458c55af73b5707c3a8a3c61d8686150b9ca41404a5beb8020"
   },
   "player_games_2026.jsonl": {
    "bytes": 2451239,
@@ -38,8 +38,8 @@
    "sha256": "31a822285c09938918e5febc59a007bab97be4672232d2910da1b694ee3a9cc4"
   }
  },
- "generated_utc": "2026-11-22T08:56:22Z",
+ "generated_utc": "2026-11-22T11:57:15Z",
  "league": "epl",
- "refreshed_utc": "2026-11-22T08:56:22Z",
+ "refreshed_utc": "2026-11-22T11:57:15Z",
  "title": "English Premier League"
 }
