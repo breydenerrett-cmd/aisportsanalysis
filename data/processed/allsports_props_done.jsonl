@@ -5419,3 +5419,5 @@
 {"events": 5, "kind": "peek", "next_check_utc": "2026-11-22T10:40:00Z", "observed_utc": "2026-11-22T09:10:44.615401Z", "sport_key": "icehockey_nhl"}
 {"events": 7, "kind": "peek", "next_check_utc": "2026-11-22T12:21:42.807462Z", "observed_utc": "2026-11-22T09:21:42.807462Z", "sport_key": "basketball_nba"}
 {"events": 37, "kind": "peek", "next_check_utc": "2026-11-22T13:12:11.618351Z", "observed_utc": "2026-11-22T10:12:11.618351Z", "sport_key": "americanfootball_ncaaf"}
+{"commence_utc": "2026-11-22T17:40:00Z", "event_id": "95e13bf4ee868af6f8fe243270b31835", "kind": "phase", "observed_utc": "2026-11-22T11:40:53.666311Z", "phase": "t6h", "rows": 456, "sport_key": "icehockey_nhl", "status": "done"}
+{"books": 8, "credits": 4, "event_id": "95e13bf4ee868af6f8fe243270b31835", "family": "NHL", "kind": "call", "markets": ["player_points", "player_assists", "player_shots_on_goal", "player_goal_scorer_anytime", "player_total_saves"], "observed_utc": "2026-11-22T11:40:53.666311Z", "phase": "t6h", "regions": ["us"], "remaining": 73137, "sport_key": "icehockey_nhl", "stored": 456}
