@@ -41662,3 +41662,13 @@
 {"budget_band": "allsports_props", "caller": "allsports_props.t2h", "credits_remaining": 72298, "credits_used_last": 6, "utc": "2026-11-22T19:34:31.818401Z"}
 {"budget_band": "allsports_props", "caller": "allsports_props.t2h", "credits_remaining": 72292, "credits_used_last": 6, "utc": "2026-11-22T19:34:31.818401Z"}
 {"budget_band": "allsports_props", "caller": "allsports_props.t6h", "credits_remaining": 72286, "credits_used_last": 6, "utc": "2026-11-22T19:34:31.818401Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 72284, "credits_used_last": 0, "utc": "2026-11-22T19:44:33.493400Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 72284, "credits_used_last": 0, "utc": "2026-11-22T19:44:36.107135Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 72284, "credits_used_last": 0, "utc": "2026-11-22T19:44:36.552482Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 72280, "credits_used_last": 3, "utc": "2026-11-22T19:45:32.487545Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 72277, "credits_used_last": 3, "utc": "2026-11-22T19:45:32.487545Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 72274, "credits_used_last": 3, "utc": "2026-11-22T19:45:32.487545Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 72272, "credits_used_last": 2, "utc": "2026-11-22T19:45:32.487545Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 72270, "credits_used_last": 2, "utc": "2026-11-22T19:45:32.487545Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.inplay", "credits_remaining": 72269, "credits_used_last": 1, "utc": "2026-11-22T19:45:32.487545Z"}
+{"budget_band": "allsports_props", "caller": "allsports_props.t6h", "credits_remaining": 72264, "credits_used_last": 5, "utc": "2026-11-22T19:45:47.195358Z"}
