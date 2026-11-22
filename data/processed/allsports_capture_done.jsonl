@@ -35358,3 +35358,5 @@
 {"commence_utc": "2026-11-22T13:00:00Z", "event_id": "a968e1c9f7f2e05bace52a2dd77ea90a", "kind": "phase", "observed_utc": "2026-11-22T07:09:41.298492Z", "phase": "t6h", "rows": 13, "sport_key": "soccer_turkey_super_league"}
 {"commence_utc": "2026-11-22T13:00:00Z", "event_id": "1ed6ce5484f2a65ed50be17f8e06f425", "kind": "phase", "observed_utc": "2026-11-22T07:09:41.298492Z", "phase": "t6h", "rows": 13, "sport_key": "soccer_turkey_super_league"}
 {"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-22T07:09:41.298492Z", "regions": ["us"], "rows": 87, "sport_key": "soccer_turkey_super_league", "stored": 65}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-22T13:20:53.823215Z", "observed_utc": "2026-11-22T07:20:53.823215Z", "sport_key": "basketball_euroleague"}
+{"events": 4, "kind": "peek", "next_check_utc": "2026-11-22T13:20:53.823215Z", "observed_utc": "2026-11-22T07:20:53.823215Z", "sport_key": "soccer_uefa_nations_league"}
