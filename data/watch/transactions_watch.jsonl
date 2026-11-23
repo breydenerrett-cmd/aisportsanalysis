@@ -8466,3 +8466,5 @@
 {"fetched_utc": "2026-11-23T18:50:32.308662+00:00", "game_date": "2026-11-23", "poll": true}
 {"fetched_utc": "2026-11-23T19:17:25.748128+00:00", "game_date": "2026-11-23", "poll": true}
 {"category": "signed", "date": "2026-11-23", "first_seen_utc": "2026-11-23T19:17:25.748128+00:00", "player": "Jairo Iriarte", "player_id": 683568, "team": "CLE", "transaction_id": 950946}
+{"fetched_utc": "2026-11-23T19:38:37.482876+00:00", "game_date": "2026-11-23", "poll": true}
+{"category": "il_activation", "date": "2026-11-23", "first_seen_utc": "2026-11-23T19:38:37.482876+00:00", "player": "Jeff Hoffman", "player_id": 656546, "team": "MIN", "transaction_id": 950947}
