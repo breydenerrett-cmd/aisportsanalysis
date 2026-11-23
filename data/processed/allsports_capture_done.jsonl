@@ -36632,3 +36632,4 @@
 {"events": 5, "kind": "peek", "next_check_utc": "2026-11-23T17:17:13.058203Z", "observed_utc": "2026-11-23T11:17:13.058203Z", "sport_key": "soccer_australia_aleague"}
 {"events": 12, "kind": "peek", "next_check_utc": "2026-11-23T17:17:13.058203Z", "observed_utc": "2026-11-23T11:17:13.058203Z", "sport_key": "soccer_japan_j_league"}
 {"events": 8, "kind": "peek", "next_check_utc": "2026-11-23T17:17:13.058203Z", "observed_utc": "2026-11-23T11:17:13.058203Z", "sport_key": "soccer_spl"}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-23T17:25:35.930994Z", "observed_utc": "2026-11-23T11:25:35.930994Z", "sport_key": "soccer_italy_coppa_italia"}
