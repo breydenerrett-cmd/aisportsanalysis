@@ -36619,3 +36619,4 @@
 {"events": 3, "kind": "peek", "next_check_utc": "2026-11-23T15:33:09.567191Z", "observed_utc": "2026-11-23T09:33:09.567191Z", "sport_key": "handball_germany_bundesliga"}
 {"events": 19, "kind": "peek", "next_check_utc": "2026-11-23T15:46:24.660349Z", "observed_utc": "2026-11-23T09:46:24.660349Z", "sport_key": "soccer_fa_cup"}
 {"events": 1, "kind": "peek", "next_check_utc": "2026-11-23T15:46:24.660349Z", "observed_utc": "2026-11-23T09:46:24.660349Z", "sport_key": "soccer_saudi_arabia_pro_league"}
+{"events": 11, "kind": "peek", "next_check_utc": "2026-11-23T14:30:00Z", "observed_utc": "2026-11-23T09:59:13.984441Z", "sport_key": "icehockey_ahl"}
