@@ -36550,3 +36550,5 @@
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T03:35:45.506502Z", "regions": ["au"], "rows": 13, "sport_key": "cricket_test_match", "stored": 12}
 {"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T03:35:45.506502Z", "regions": ["us"], "rows": 1, "sport_key": "icehockey_ahl", "stored": 1}
 {"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T03:35:45.506502Z", "regions": ["us"], "rows": 65, "sport_key": "soccer_usa_mls", "stored": 14}
+{"events": 19, "kind": "peek", "next_check_utc": "2026-11-23T09:44:53.148020Z", "observed_utc": "2026-11-23T03:44:53.148020Z", "sport_key": "soccer_fa_cup"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-23T09:44:53.148020Z", "observed_utc": "2026-11-23T03:44:53.148020Z", "sport_key": "soccer_saudi_arabia_pro_league"}
