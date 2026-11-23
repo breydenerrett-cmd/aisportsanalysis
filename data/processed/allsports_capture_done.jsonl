@@ -36657,3 +36657,4 @@
 {"commence_utc": "2026-11-23T18:00:00Z", "event_id": "4247cf3f5ad70603706059703826171e", "kind": "phase", "observed_utc": "2026-11-23T12:01:14.665702Z", "phase": "t6h", "rows": 14, "sport_key": "soccer_sweden_allsvenskan"}
 {"commence_utc": "2026-11-23T18:00:00Z", "event_id": "83a9063e3314d3e820aabb99941483d0", "kind": "phase", "observed_utc": "2026-11-23T12:01:14.665702Z", "phase": "t6h", "rows": 14, "sport_key": "soccer_sweden_allsvenskan"}
 {"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-23T12:01:14.665702Z", "regions": ["us"], "rows": 70, "sport_key": "soccer_sweden_allsvenskan", "stored": 28}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T12:16:53.366977Z", "regions": ["au"], "rows": 10, "sport_key": "cricket_test_match", "stored": 5}
