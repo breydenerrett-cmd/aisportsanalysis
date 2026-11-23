@@ -36746,3 +36746,9 @@
 {"commence_utc": "2026-11-23T21:00:00Z", "event_id": "dd58df55a7af85441c65eee7310a71f5", "kind": "phase", "observed_utc": "2026-11-23T15:03:16.227936Z", "phase": "t6h", "rows": 33, "sport_key": "basketball_ncaab"}
 {"commence_utc": "2026-11-24T02:30:00Z", "event_id": "cac32b9a0db74c5e4ff90ebbbbcaab93", "kind": "phase", "observed_utc": "2026-11-23T15:03:16.227936Z", "phase": "t24h", "rows": 4, "sport_key": "basketball_ncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 42, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-23T15:03:16.227936Z", "regions": ["us"], "rows": 1061, "sport_key": "basketball_ncaab", "stored": 1042}
+{"events": 32, "kind": "peek", "next_check_utc": "2026-11-23T21:12:08.321615Z", "observed_utc": "2026-11-23T15:12:08.321615Z", "sport_key": "boxing_boxing"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-23T21:12:08.321615Z", "observed_utc": "2026-11-23T15:12:08.321615Z", "sport_key": "soccer_germany_bundesliga2"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-23T21:12:08.321615Z", "observed_utc": "2026-11-23T15:12:08.321615Z", "sport_key": "soccer_mexico_ligamx"}
+{"commence_utc": "2026-11-24T04:59:00Z", "event_id": "97b6bfd4b808fd6e1c2d0d35925cd0e2", "kind": "phase", "observed_utc": "2026-11-23T15:12:08.321615Z", "phase": "t24h", "rows": 4, "sport_key": "basketball_ncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 42, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-23T15:12:08.321615Z", "regions": ["us"], "rows": 1061, "sport_key": "basketball_ncaab", "stored": 1042}
+{"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T15:12:08.321615Z", "regions": ["us"], "rows": 45, "sport_key": "soccer_greece_super_league", "stored": 8}
