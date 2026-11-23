@@ -36616,3 +36616,4 @@
 {"commence_utc": "2026-11-23T15:00:00Z", "event_id": "0fb066b5cf1107b140d0aea5e6b2e682", "kind": "phase", "observed_utc": "2026-11-23T09:07:43.624789Z", "phase": "t6h", "rows": 13, "sport_key": "soccer_greece_super_league"}
 {"call_kind": "pregame", "credits": 2, "events": 8, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-23T09:07:43.624789Z", "regions": ["us"], "rows": 63, "sport_key": "soccer_greece_super_league", "stored": 13}
 {"events": 20, "kind": "peek", "next_check_utc": "2026-11-23T15:23:16.534443Z", "observed_utc": "2026-11-23T09:23:16.534443Z", "sport_key": "soccer_germany_liga3"}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-23T15:33:09.567191Z", "observed_utc": "2026-11-23T09:33:09.567191Z", "sport_key": "handball_germany_bundesliga"}
