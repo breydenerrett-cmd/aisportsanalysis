@@ -1,0 +1,109 @@
+{
+  "summary": "Cincinnati is the better team on what we have. It has won five straight, scores 30.8889 points a game this season against 21.7778 for Washington, and the season margin gap between the two sides is 12.4444 points a game in Cincinnati's favour. The books know it. The moneyline sits at -290 at the best price, too heavy to take, and the spread asks CIN -6, up from the first number we captured of -4.0. That move already holds much of the form gap, so I pass on the spread rather than chase a better team at a bigger number. The total first showed at 51.5 and now sits at 54.5, so the market has already raised its expectation of the scoring, and I see nothing in the data that argues with it either way. Weather for an outdoor night game is missing, and both quarterbacks are the schedule's projection, unchanged from last game. I pass on all three markets and think the prices are about right.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "CIN",
+      "verdict": "PASS",
+      "price": -290,
+      "book": "fanduel",
+      "fair_estimate": 0.72,
+      "confidence": "medium",
+      "reasons": [
+        {
+          "claim": "Cincinnati is clearly the stronger side on season scoring margin, and the books price that in with a fair probability near what the form suggests.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.7206},
+            {"path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": -12.4444}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The best Cincinnati price is too heavy to take, and the Washington side at the books' number is not backed by anything in the data beyond its own price.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].best.price", "value": -290},
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.2794}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Washington's price moving well above the best quote we have, or news of a quarterback change for Cincinnati, would make me revisit it.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "CIN -6",
+      "verdict": "PASS",
+      "price": -105,
+      "book": "lowvig",
+      "fair_estimate": 0.51,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books have Cincinnati and Washington close to a coin flip at this number, and the number has already moved from -4.0 to -6 as Cincinnati's form was priced in.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5096},
+            {"path": "markets.spread.context.away_number_first_captured", "value": -4.0},
+            {"path": "markets.spread.options[0].line", "value": -6.0}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Cincinnati's recent form is strong, with 38.3333 points a game over its last three, but that window is only three games and Washington's defence has allowed 17 points a game over the same stretch.",
+          "evidence": [
+            {"path": "sections.away.values.form.last_3.points_for_per_game", "value": 38.3333},
+            {"path": "sections.home.values.form.last_3.points_against_per_game", "value": 17}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A Cincinnati quarterback change or the number falling back toward the -4.0 it first showed would make me look at CIN again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 54.5",
+      "verdict": "PASS",
+      "price": -106,
+      "book": "draftkings",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total has moved from 51.5 to 54.5, and the books split it almost evenly between Over and Under at the new number.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 51.5},
+            {"path": "markets.total.options[0].line", "value": 54.5},
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5002}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Cincinnati scores freely at 30.8889 points a game, but Washington averages 21.7778 and the two teams' season defensive numbers pull the other way, so the data does not settle it.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 30.8889},
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 21.7778},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 24.7778}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Weather for an outdoor night game is missing, which matters for a total this high.",
+          "evidence": [
+            {"path": "missing[1].item", "value": "weather"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "Weather information showing a wind or cold problem, or a quarterback change for either side, would flip the call.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

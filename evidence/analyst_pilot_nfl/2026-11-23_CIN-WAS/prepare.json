@@ -1,0 +1,23 @@
+{
+  "sport": "nfl",
+  "game_id": "2026_11_CIN_WAS",
+  "date": "2026-11-23",
+  "away": "CIN",
+  "home": "WAS",
+  "kickoff_utc": "2026-11-24T01:15:00Z",
+  "built_at": "2026-11-23T21:42:15Z",
+  "packet_hash": "9466ea04d617c0d6916a9d85487cd2f48391f5430b1653aa108f4e41fc4e429d",
+  "prompt_version": "analyst_prompt_nfl_v1",
+  "prompt_hash": "8b80fc0cc2622da7497bed03b851d3934b8d687a6ca9c5a17d3eeb2d1c56ea7b",
+  "token_estimate": 9814,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "spread",
+    "total"
+  ],
+  "missing_items": 2,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "nfl_store+odds_multibook"
+}

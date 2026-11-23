@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-23 16:39Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-23 21:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,10 +151,10 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-23 (8:30 am PT run): MIN@SF brief (11-22) graded; all three calls were passes. Public sample stays PIT@PHI 11-22 (graded).
-- No MLB games remain; Monday CIN@WAS brief is due in the 1:30 pm PT run's window.
-- Production /health 200, billing ok, memory peak 145.4 MB (limit 850). Unexplained restart 8:37 am PT (30 total).
-- deploy-prod: 7:12 am and 8:03 am PT runs succeeded (7:03 am cancelled). CI green (push run 45076691003).
+- 2026-11-23 (1:30 pm PT run): CIN@WAS NFL brief published (3 calls, 0 struck, first attempt clean); kickoff 5:15 pm PT.
+- Public sample stays PIT@PHI 11-22 (graded). No MLB games remain.
+- Production /health 200, billing ok, memory peak 639.8 MB (limit 850). Unexplained restart 1:35 pm PT (31 total).
+- deploy-prod: 10:12 am, 12:12 pm and 1:13 pm PT runs succeeded. CI green (push run 45219070370).
 - Daily-loop failed 2:10 am PT (MLB slate refused: no price capture, offseason).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 

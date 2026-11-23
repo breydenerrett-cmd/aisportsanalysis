@@ -131,10 +131,10 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-11-23 (8:30 am PT run): MIN@SF brief (11-22) graded; all three calls were passes. Public sample stays PIT@PHI 11-22 (graded).",
-    "No MLB games remain; Monday CIN@WAS brief is due in the 1:30 pm PT run's window.",
-    "Production /health 200, billing ok, memory peak 145.4 MB (limit 850). Unexplained restart 8:37 am PT (30 total).",
-    "deploy-prod: 7:12 am and 8:03 am PT runs succeeded (7:03 am cancelled). CI green (push run 45076691003).",
+    "2026-11-23 (1:30 pm PT run): CIN@WAS NFL brief published (3 calls, 0 struck, first attempt clean); kickoff 5:15 pm PT.",
+    "Public sample stays PIT@PHI 11-22 (graded). No MLB games remain.",
+    "Production /health 200, billing ok, memory peak 639.8 MB (limit 850). Unexplained restart 1:35 pm PT (31 total).",
+    "deploy-prod: 10:12 am, 12:12 pm and 1:13 pm PT runs succeeded. CI green (push run 45219070370).",
     "Daily-loop failed 2:10 am PT (MLB slate refused: no price capture, offseason).",
     "Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at."
   ],
