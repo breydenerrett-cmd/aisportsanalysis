@@ -36582,3 +36582,7 @@
 {"call_kind": "pregame", "credits": 3, "events": 41, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-23T05:54:45.930579Z", "regions": ["us"], "rows": 877, "sport_key": "basketball_ncaab", "stored": 802}
 {"commence_utc": "2026-11-23T08:00:00Z", "event_id": "f9819ae8e1834658dcc03ef41f68fdd2", "kind": "phase", "observed_utc": "2026-11-23T06:08:18.930100Z", "phase": "t2h", "rows": 8, "sport_key": "cricket_test_match"}
 {"call_kind": "pregame", "credits": 1, "events": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T06:08:18.930100Z", "regions": ["au"], "rows": 9, "sport_key": "cricket_test_match", "stored": 8}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-23T12:19:22.747660Z", "observed_utc": "2026-11-23T06:19:22.747660Z", "sport_key": "soccer_austria_bundesliga"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-23T12:19:22.747660Z", "observed_utc": "2026-11-23T06:19:22.747660Z", "sport_key": "soccer_netherlands_eredivisie"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-23T12:19:22.747660Z", "observed_utc": "2026-11-23T06:19:22.747660Z", "sport_key": "soccer_russia_premier_league"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-23T12:19:22.747660Z", "observed_utc": "2026-11-23T06:19:22.747660Z", "sport_key": "soccer_switzerland_superleague"}
