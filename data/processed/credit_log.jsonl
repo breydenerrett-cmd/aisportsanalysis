@@ -42045,3 +42045,7 @@
 {"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 71552, "credits_used_last": 0, "utc": "2026-11-23T05:53:34.719271Z"}
 {"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 71552, "credits_used_last": 0, "utc": "2026-11-23T05:53:34.990968Z"}
 {"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 71549, "credits_used_last": 3, "utc": "2026-11-23T05:54:45.930579Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 71549, "credits_used_last": 0, "utc": "2026-11-23T06:07:04.635093Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 71549, "credits_used_last": 0, "utc": "2026-11-23T06:07:07.412171Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 71549, "credits_used_last": 0, "utc": "2026-11-23T06:07:07.775156Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 71548, "credits_used_last": 1, "utc": "2026-11-23T06:08:18.930100Z"}
