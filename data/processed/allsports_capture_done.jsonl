@@ -36594,3 +36594,5 @@
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-23T13:05:49.663047Z", "observed_utc": "2026-11-23T07:05:49.663047Z", "sport_key": "soccer_germany_bundesliga"}
 {"events": 19, "kind": "peek", "next_check_utc": "2026-11-23T13:05:49.663047Z", "observed_utc": "2026-11-23T07:05:49.663047Z", "sport_key": "soccer_italy_serie_b"}
 {"call_kind": "inplay", "credits": 1, "events": 41, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T07:05:49.663047Z", "regions": ["us"], "rows": 227, "sport_key": "basketball_ncaab", "stored": 212}
+{"commence_utc": "2026-11-23T08:00:00Z", "event_id": "f9819ae8e1834658dcc03ef41f68fdd2", "kind": "phase", "observed_utc": "2026-11-23T07:36:26.837376Z", "phase": "t30m", "rows": 8, "sport_key": "cricket_test_match"}
+{"call_kind": "pregame", "credits": 1, "events": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T07:36:26.837376Z", "regions": ["au"], "rows": 9, "sport_key": "cricket_test_match", "stored": 8}
