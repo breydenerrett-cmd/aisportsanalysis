@@ -36552,3 +36552,5 @@
 {"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T03:35:45.506502Z", "regions": ["us"], "rows": 65, "sport_key": "soccer_usa_mls", "stored": 14}
 {"events": 19, "kind": "peek", "next_check_utc": "2026-11-23T09:44:53.148020Z", "observed_utc": "2026-11-23T03:44:53.148020Z", "sport_key": "soccer_fa_cup"}
 {"events": 1, "kind": "peek", "next_check_utc": "2026-11-23T09:44:53.148020Z", "observed_utc": "2026-11-23T03:44:53.148020Z", "sport_key": "soccer_saudi_arabia_pro_league"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-23T09:58:42.216342Z", "observed_utc": "2026-11-23T03:58:42.216342Z", "sport_key": "icehockey_ahl"}
+{"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T03:58:42.216342Z", "regions": ["us"], "rows": 103, "sport_key": "basketball_nba", "stored": 103}
