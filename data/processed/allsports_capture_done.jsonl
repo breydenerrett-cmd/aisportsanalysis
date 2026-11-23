@@ -36629,3 +36629,6 @@
 {"call_kind": "pregame", "credits": 2, "events": 1, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-23T11:06:09.307239Z", "regions": ["eu"], "rows": 14, "sport_key": "soccer_germany_bundesliga_women", "stored": 14}
 {"commence_utc": "2026-11-23T17:00:00Z", "event_id": "c1958a1dcd4f8228f4d09148fd6ea216", "kind": "phase", "observed_utc": "2026-11-23T11:06:09.307239Z", "phase": "t6h", "rows": 13, "sport_key": "soccer_turkey_super_league"}
 {"call_kind": "pregame", "credits": 2, "events": 8, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-23T11:06:09.307239Z", "regions": ["us"], "rows": 72, "sport_key": "soccer_turkey_super_league", "stored": 13}
+{"events": 5, "kind": "peek", "next_check_utc": "2026-11-23T17:17:13.058203Z", "observed_utc": "2026-11-23T11:17:13.058203Z", "sport_key": "soccer_australia_aleague"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-11-23T17:17:13.058203Z", "observed_utc": "2026-11-23T11:17:13.058203Z", "sport_key": "soccer_japan_j_league"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-23T17:17:13.058203Z", "observed_utc": "2026-11-23T11:17:13.058203Z", "sport_key": "soccer_spl"}
