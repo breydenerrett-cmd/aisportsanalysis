@@ -36779,3 +36779,11 @@
 {"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-23T16:01:06.710260Z", "regions": ["us"], "rows": 78, "sport_key": "soccer_sweden_allsvenskan", "stored": 28}
 {"commence_utc": "2026-11-23T22:00:00Z", "event_id": "33bdfb711e4edfd26eaaba0e3713da7b", "kind": "phase", "observed_utc": "2026-11-23T16:01:06.710260Z", "phase": "t6h", "rows": 16, "sport_key": "basketball_wncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 10, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-23T16:01:06.710260Z", "regions": ["us"], "rows": 110, "sport_key": "basketball_wncaab", "stored": 110}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-23T22:21:58.259430Z", "observed_utc": "2026-11-23T16:21:58.259430Z", "sport_key": "icehockey_sweden_allsvenskan"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-23T22:21:58.259430Z", "observed_utc": "2026-11-23T16:21:58.259430Z", "sport_key": "soccer_france_ligue_one"}
+{"commence_utc": "2026-11-23T19:30:00Z", "event_id": "44b995c2760fd0343f13dec05e3b903e", "kind": "phase", "observed_utc": "2026-11-23T16:21:58.259430Z", "phase": "t24h", "rows": 2, "sport_key": "basketball_wncaab"}
+{"commence_utc": "2026-11-23T19:30:00Z", "event_id": "44b995c2760fd0343f13dec05e3b903e", "kind": "phase", "observed_utc": "2026-11-23T16:21:58.259430Z", "phase": "t6h", "rows": 2, "sport_key": "basketball_wncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 11, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-23T16:21:58.259430Z", "regions": ["us"], "rows": 115, "sport_key": "basketball_wncaab", "stored": 115}
+{"commence_utc": "2026-11-24T08:00:00Z", "event_id": "9c2d4afaa294a6a11069e9821dbcaad5", "kind": "phase", "observed_utc": "2026-11-23T16:21:58.259430Z", "phase": "t24h", "rows": 3, "sport_key": "cricket_test_match"}
+{"call_kind": "pregame", "credits": 1, "events": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T16:21:58.259430Z", "regions": ["au"], "rows": 14, "sport_key": "cricket_test_match", "stored": 6}
+{"call_kind": "inplay", "credits": 1, "events": 8, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T16:21:58.259430Z", "regions": ["us"], "rows": 45, "sport_key": "soccer_greece_super_league", "stored": 5}
