@@ -36565,3 +36565,14 @@
 {"events": 8, "kind": "peek", "next_check_utc": "2026-11-23T11:14:28.750363Z", "observed_utc": "2026-11-23T05:14:28.750363Z", "sport_key": "soccer_japan_j_league"}
 {"events": 8, "kind": "peek", "next_check_utc": "2026-11-23T11:14:28.750363Z", "observed_utc": "2026-11-23T05:14:28.750363Z", "sport_key": "soccer_spl"}
 {"call_kind": "inplay", "credits": 1, "events": 39, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T05:14:28.750363Z", "regions": ["us"], "rows": 228, "sport_key": "basketball_ncaab", "stored": 217}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-23T11:41:12.624927Z", "observed_utc": "2026-11-23T05:41:12.624927Z", "sport_key": "aussierules_afl"}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-23T11:41:12.624927Z", "observed_utc": "2026-11-23T05:41:12.624927Z", "sport_key": "cricket_big_bash"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-23T11:41:12.624927Z", "observed_utc": "2026-11-23T05:41:12.624927Z", "sport_key": "icehockey_mestis"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-23T11:41:12.624927Z", "observed_utc": "2026-11-23T05:41:12.624927Z", "sport_key": "soccer_conmebol_copa_libertadores"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-23T11:41:12.624927Z", "observed_utc": "2026-11-23T05:41:12.624927Z", "sport_key": "soccer_england_efl_cup"}
+{"events": 4, "kind": "peek", "next_check_utc": "2026-11-23T11:41:12.624927Z", "observed_utc": "2026-11-23T05:41:12.624927Z", "sport_key": "soccer_england_efl_trophy"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-23T11:41:12.624927Z", "observed_utc": "2026-11-23T05:41:12.624927Z", "sport_key": "soccer_germany_dfb_pokal"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-23T11:41:12.624927Z", "observed_utc": "2026-11-23T05:41:12.624927Z", "sport_key": "soccer_portugal_primeira_liga"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-23T11:41:12.624927Z", "observed_utc": "2026-11-23T05:41:12.624927Z", "sport_key": "soccer_uefa_champs_league"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-23T11:41:12.624927Z", "observed_utc": "2026-11-23T05:41:12.624927Z", "sport_key": "soccer_uefa_europa_conference_league"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-23T11:41:12.624927Z", "observed_utc": "2026-11-23T05:41:12.624927Z", "sport_key": "soccer_uefa_europa_league"}
