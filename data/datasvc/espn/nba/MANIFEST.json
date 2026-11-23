@@ -2,22 +2,22 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2027.jsonl": {
-   "bytes": 1386503,
-   "newest": "2026-11-23T00:14:51Z",
-   "records": 2291,
-   "sha256": "256bacfb418f68063c1f734d29f42bc04ddeaadae0c8b902974e7abb6fe77eef"
+   "bytes": 1396305,
+   "newest": "2026-11-23T03:19:23Z",
+   "records": 2307,
+   "sha256": "976e4a1be5a87952a61853268134315f0930edd650503b8f35cb7964e1bba8c7"
   },
   "injuries.jsonl": {
-   "bytes": 942232,
-   "newest": "2026-11-23T00:14:53Z",
-   "records": 2497,
-   "sha256": "c59fc5b91a1475cf7ebaa1bd7a59f02cebfd08a9846eda9c8d1cb2f3402d089d"
+   "bytes": 944830,
+   "newest": "2026-11-23T03:19:30Z",
+   "records": 2504,
+   "sha256": "c32b83da539203edaaedff367ef8290b65118d10967a85b8e686ba5563036c39"
   },
   "player_games_2027.jsonl": {
-   "bytes": 5129018,
-   "newest": "2026-11-23T00:14:52Z",
-   "records": 9062,
-   "sha256": "06c0fe34490651283bc040be6ef1a929145ab7fdfc11de74100ccd6237fa0c77"
+   "bytes": 5187681,
+   "newest": "2026-11-23T03:19:29Z",
+   "records": 9166,
+   "sha256": "3f0c6455a394817c0291b553274db32d35ea3f0ab93c493ac0f741ac0e806624"
   },
   "players.jsonl": {
    "bytes": 174185,
@@ -26,16 +26,16 @@
    "sha256": "f7a992846115236060fa4d03a415e1a418d255d6499f1abbd58b8702bc16f10e"
   },
   "standings_2027.jsonl": {
-   "bytes": 708467,
-   "newest": "2026-11-23T00:14:53Z",
-   "records": 1088,
-   "sha256": "b7230aa4831c4dcaecb23736e4849535e9e45645c962cd59252508be7f43eebe"
+   "bytes": 715685,
+   "newest": "2026-11-23T03:19:30Z",
+   "records": 1099,
+   "sha256": "e8244b380886b016a7d16b568b35ae5cfe07dc188409859e857776265d4c6ab5"
   },
   "team_games_2027.jsonl": {
-   "bytes": 629307,
-   "newest": "2026-11-23T00:14:52Z",
-   "records": 706,
-   "sha256": "4dd5247da77fc33fd4d3038396b7b4f9e0f7af8078769d59f20299d051f014cc"
+   "bytes": 636438,
+   "newest": "2026-11-23T03:19:29Z",
+   "records": 714,
+   "sha256": "8654c51371dbf6fc57f4e1081d325004bd894e2b64c32b9704a76606dcc28fcf"
   },
   "teams.jsonl": {
    "bytes": 9682,
@@ -44,8 +44,8 @@
    "sha256": "210055491d204c7264f1b4fe5f75f1c2a00cb1652af9064317e2e8c4aed0a016"
   }
  },
- "generated_utc": "2026-11-23T00:14:53Z",
+ "generated_utc": "2026-11-23T03:19:31Z",
  "league": "nba",
- "refreshed_utc": "2026-11-23T00:14:53Z",
+ "refreshed_utc": "2026-11-23T03:19:30Z",
  "title": "NBA"
 }
