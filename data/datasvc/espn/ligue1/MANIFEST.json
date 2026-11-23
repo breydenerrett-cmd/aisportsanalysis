@@ -14,10 +14,10 @@
    "sha256": "c0a66214f1855e966ee38384bca64616172754e8761371eae752fabf732a780c"
   },
   "team_games_2026.jsonl": {
-   "bytes": 70084,
-   "newest": "2026-11-23T00:17:31Z",
-   "records": 82,
-   "sha256": "6d224ec470fcded79d01794f1713139bd1223dbb2dd56923874766e3a77b1716"
+   "bytes": 71795,
+   "newest": "2026-11-23T19:22:24Z",
+   "records": 84,
+   "sha256": "44bff97ca68883290880e0bfa10835327c6391d6bcdf6314a27396945b1ae298"
   },
   "teams.jsonl": {
    "bytes": 5840,
@@ -26,8 +26,8 @@
    "sha256": "ca00410ccb3ed6fe7d987ec9eec7751148b99c6f09298290642c8dc2aa235e60"
   }
  },
- "generated_utc": "2026-11-23T16:03:23Z",
+ "generated_utc": "2026-11-23T19:22:24Z",
  "league": "ligue1",
- "refreshed_utc": "2026-11-23T16:03:23Z",
+ "refreshed_utc": "2026-11-23T19:22:24Z",
  "title": "Ligue 1"
 }
