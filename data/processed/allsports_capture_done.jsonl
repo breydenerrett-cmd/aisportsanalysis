@@ -36726,3 +36726,11 @@
 {"commence_utc": "2026-11-23T20:30:00Z", "event_id": "b1abd9ff77f5dc5c376c08041fae20ea", "kind": "phase", "observed_utc": "2026-11-23T14:35:47.963560Z", "phase": "t6h", "rows": 33, "sport_key": "basketball_ncaab"}
 {"commence_utc": "2026-11-23T20:30:00Z", "event_id": "aee64daab1ceefa09aaf0260ed750d53", "kind": "phase", "observed_utc": "2026-11-23T14:35:47.963560Z", "phase": "t6h", "rows": 33, "sport_key": "basketball_ncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 40, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-23T14:35:47.963560Z", "regions": ["us"], "rows": 1051, "sport_key": "basketball_ncaab", "stored": 1022}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-23T20:49:26.543957Z", "observed_utc": "2026-11-23T14:49:26.543957Z", "sport_key": "americanfootball_ncaaf_fcs"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-23T20:49:26.543957Z", "observed_utc": "2026-11-23T14:49:26.543957Z", "sport_key": "aussierules_aflw"}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-11-23T17:00:00Z", "observed_utc": "2026-11-23T14:49:26.543957Z", "sport_key": "icehockey_sweden_hockey_league"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-23T20:49:26.543957Z", "observed_utc": "2026-11-23T14:49:26.543957Z", "sport_key": "rugbyleague_nrl"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-23T20:49:26.543957Z", "observed_utc": "2026-11-23T14:49:26.543957Z", "sport_key": "soccer_belgium_first_div"}
+{"events": 24, "kind": "peek", "next_check_utc": "2026-11-23T18:45:00Z", "observed_utc": "2026-11-23T14:49:26.543957Z", "sport_key": "soccer_efl_champ"}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-23T20:49:26.543957Z", "observed_utc": "2026-11-23T14:49:26.543957Z", "sport_key": "soccer_norway_eliteserien"}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T14:49:26.543957Z", "regions": ["au"], "rows": 10, "sport_key": "cricket_test_match", "stored": 3}
