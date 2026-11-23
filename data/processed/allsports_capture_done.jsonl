@@ -37094,3 +37094,6 @@
 {"call_kind": "inplay", "credits": 1, "events": 21, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T21:33:52.605242Z", "regions": ["us"], "rows": 136, "sport_key": "soccer_italy_serie_a", "stored": 3}
 {"call_kind": "inplay", "credits": 1, "events": 23, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T21:33:52.605242Z", "regions": ["us"], "rows": 138, "sport_key": "soccer_spain_la_liga", "stored": 5}
 {"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T21:33:52.605242Z", "regions": ["us"], "rows": 70, "sport_key": "soccer_spain_segunda_division", "stored": 5}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-24T03:44:27.892854Z", "observed_utc": "2026-11-23T21:44:27.892854Z", "sport_key": "handball_germany_bundesliga"}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-11-24T03:44:27.892854Z", "observed_utc": "2026-11-23T21:44:27.892854Z", "sport_key": "soccer_germany_liga3"}
+{"events": 11, "kind": "peek", "next_check_utc": "2026-11-24T03:44:27.892854Z", "observed_utc": "2026-11-23T21:44:27.892854Z", "sport_key": "soccer_spain_segunda_division"}
