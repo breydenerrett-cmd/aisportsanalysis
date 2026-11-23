@@ -36554,3 +36554,6 @@
 {"events": 1, "kind": "peek", "next_check_utc": "2026-11-23T09:44:53.148020Z", "observed_utc": "2026-11-23T03:44:53.148020Z", "sport_key": "soccer_saudi_arabia_pro_league"}
 {"events": 10, "kind": "peek", "next_check_utc": "2026-11-23T09:58:42.216342Z", "observed_utc": "2026-11-23T03:58:42.216342Z", "sport_key": "icehockey_ahl"}
 {"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T03:58:42.216342Z", "regions": ["us"], "rows": 103, "sport_key": "basketball_nba", "stored": 103}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-23T10:12:27.876656Z", "observed_utc": "2026-11-23T04:12:27.876656Z", "sport_key": "soccer_france_ligue_one"}
+{"call_kind": "inplay", "credits": 1, "events": 40, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T04:12:27.876656Z", "regions": ["us"], "rows": 211, "sport_key": "basketball_ncaab", "stored": 203}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-23T04:12:27.876656Z", "regions": ["au"], "rows": 13, "sport_key": "cricket_test_match", "stored": 12}
