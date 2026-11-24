@@ -37382,3 +37382,11 @@
 {"call_kind": "pregame", "credits": 3, "events": 80, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-24T05:02:46.972258Z", "regions": ["us"], "rows": 1838, "sport_key": "basketball_ncaab", "stored": 1838}
 {"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-24T05:02:46.972258Z", "regions": ["us"], "rows": 48, "sport_key": "basketball_nba", "stored": 48}
 {"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-24T05:02:46.972258Z", "regions": ["us"], "rows": 26, "sport_key": "icehockey_nhl", "stored": 26}
+{"events": 5, "kind": "peek", "next_check_utc": "2026-11-24T12:02:06.009286Z", "observed_utc": "2026-11-24T06:02:06.009286Z", "sport_key": "soccer_australia_aleague"}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-24T12:02:06.009286Z", "observed_utc": "2026-11-24T06:02:06.009286Z", "sport_key": "soccer_greece_super_league"}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-24T12:02:06.009286Z", "observed_utc": "2026-11-24T06:02:06.009286Z", "sport_key": "soccer_italy_coppa_italia"}
+{"events": 15, "kind": "peek", "next_check_utc": "2026-11-24T09:00:00Z", "observed_utc": "2026-11-24T06:02:06.009286Z", "sport_key": "soccer_japan_j_league"}
+{"commence_utc": "2026-11-24T08:00:00Z", "event_id": "9c2d4afaa294a6a11069e9821dbcaad5", "kind": "phase", "observed_utc": "2026-11-24T06:02:06.009286Z", "phase": "t2h", "rows": 4, "sport_key": "cricket_test_match"}
+{"call_kind": "pregame", "credits": 1, "events": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-24T06:02:06.009286Z", "regions": ["au"], "rows": 12, "sport_key": "cricket_test_match", "stored": 4}
+{"commence_utc": "2026-11-25T05:30:00Z", "event_id": "62f11de81607e09d5edea5c4e1b26feb", "kind": "phase", "observed_utc": "2026-11-24T06:02:06.009286Z", "phase": "t24h", "rows": 23, "sport_key": "basketball_ncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 78, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-24T06:02:06.009286Z", "regions": ["us"], "rows": 1898, "sport_key": "basketball_ncaab", "stored": 1898}
