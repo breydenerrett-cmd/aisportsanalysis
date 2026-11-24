@@ -2,10 +2,10 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2027.jsonl": {
-   "bytes": 2138866,
-   "newest": "2026-11-24T01:35:54Z",
-   "records": 3678,
-   "sha256": "4d012c2436c0ca12e3ecc26fd26df3a0b3cf81e795c5acee7a510ab04bc6e8ee"
+   "bytes": 2152004,
+   "newest": "2026-11-24T05:04:09Z",
+   "records": 3699,
+   "sha256": "80df601b3a8ee9870c5cdbf44ae36f45f51d1b06f3354048098b72c86ca71ce8"
   },
   "standings_2026.jsonl": {
    "bytes": 218899,
@@ -14,16 +14,16 @@
    "sha256": "2cda4d2cc1055b8d82bcc940221995477c7669eaf5ddb78853f9585074beee67"
   },
   "standings_2027.jsonl": {
-   "bytes": 1520365,
-   "newest": "2026-11-24T01:36:29Z",
-   "records": 2593,
-   "sha256": "15991c24b6202891b73a092d72204e7a3653cb739900cdbd30f7813633b5d74a"
+   "bytes": 1540871,
+   "newest": "2026-11-24T05:04:51Z",
+   "records": 2628,
+   "sha256": "9c1f5bebc9ee7b27f75ef634eb7af2d187097ea2a197b3927c1356645ce6612d"
   },
   "team_games_2027.jsonl": {
-   "bytes": 2185028,
-   "newest": "2026-11-24T01:36:29Z",
-   "records": 2531,
-   "sha256": "4968a03f5d6c6184f7b18194bafb374575f8e65167bce9c04d2509bb279d01e6"
+   "bytes": 2221571,
+   "newest": "2026-11-24T05:04:51Z",
+   "records": 2573,
+   "sha256": "2f5371bf0ceea71c60284aafba5066d97e399dc3eeacee2ec82275e4d17a9f52"
   },
   "teams.jsonl": {
    "bytes": 122447,
@@ -32,8 +32,8 @@
    "sha256": "9fc64db3b51ad8a0892d5ac1c32dbe1289d9c88cf9e49a3ee1c5508b79f9f5e8"
   }
  },
- "generated_utc": "2026-11-24T01:36:30Z",
+ "generated_utc": "2026-11-24T05:04:51Z",
  "league": "ncaaw",
- "refreshed_utc": "2026-11-24T01:36:30Z",
+ "refreshed_utc": "2026-11-24T05:04:51Z",
  "title": "NCAA women's basketball (D1)"
 }

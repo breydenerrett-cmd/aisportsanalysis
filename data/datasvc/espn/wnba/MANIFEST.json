@@ -8,10 +8,10 @@
    "sha256": "5eb11ebf3e872365b5012de2d167f3987004dd12545376db89e7049fc2ed8df1"
   },
   "injuries.jsonl": {
-   "bytes": 89576,
-   "newest": "2026-11-24T01:35:52Z",
-   "records": 300,
-   "sha256": "7aafccba7a0f432fca2603c7f65f22c7a8e9f0d082a0eff62caf1bafad5bfb43"
+   "bytes": 89857,
+   "newest": "2026-11-24T05:04:08Z",
+   "records": 301,
+   "sha256": "f15459b91ed9cd842e1e79774f0cf0a6aba5f8d086cfbf795283af6404181ee9"
   },
   "player_games_2026.jsonl": {
    "bytes": 81962,
@@ -44,8 +44,8 @@
    "sha256": "a9d0da1b9f10af673b6ad17ff20691ff7858a69e839624ff09be46db6f9eeeb0"
   }
  },
- "generated_utc": "2026-11-24T01:35:52Z",
+ "generated_utc": "2026-11-24T05:04:08Z",
  "league": "wnba",
- "refreshed_utc": "2026-11-24T01:35:52Z",
+ "refreshed_utc": "2026-11-24T05:04:08Z",
  "title": "WNBA"
 }
