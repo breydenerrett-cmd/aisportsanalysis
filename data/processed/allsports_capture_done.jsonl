@@ -37351,3 +37351,21 @@
 {"commence_utc": "2026-11-25T03:00:00Z", "event_id": "8149dd94fc35019447c45a6a00b246f0", "kind": "phase", "observed_utc": "2026-11-24T03:01:57.056538Z", "phase": "t24h", "rows": 17, "sport_key": "soccer_usa_mls"}
 {"call_kind": "pregame", "credits": 2, "events": 10, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-24T03:01:57.056538Z", "regions": ["us"], "rows": 117, "sport_key": "soccer_usa_mls", "stored": 27}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-24T03:01:57.056538Z", "regions": ["us"], "rows": 0, "sport_key": "basketball_wncaab", "stored": 0}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-24T10:05:13.730760Z", "observed_utc": "2026-11-24T04:05:13.730760Z", "sport_key": "americanfootball_ncaaf_fcs"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-24T10:05:13.730760Z", "observed_utc": "2026-11-24T04:05:13.730760Z", "sport_key": "aussierules_aflw"}
+{"events": 31, "kind": "peek", "next_check_utc": "2026-11-24T10:05:13.730760Z", "observed_utc": "2026-11-24T04:05:13.730760Z", "sport_key": "boxing_boxing"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-24T10:05:13.730760Z", "observed_utc": "2026-11-24T04:05:13.730760Z", "sport_key": "handball_germany_bundesliga"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-24T10:05:13.730760Z", "observed_utc": "2026-11-24T04:05:13.730760Z", "sport_key": "rugbyleague_nrl"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-24T10:05:13.730760Z", "observed_utc": "2026-11-24T04:05:13.730760Z", "sport_key": "soccer_belgium_first_div"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-24T10:05:13.730760Z", "observed_utc": "2026-11-24T04:05:13.730760Z", "sport_key": "soccer_germany_bundesliga2"}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-11-24T10:05:13.730760Z", "observed_utc": "2026-11-24T04:05:13.730760Z", "sport_key": "soccer_germany_liga3"}
+{"events": 5, "kind": "peek", "next_check_utc": "2026-11-24T10:05:13.730760Z", "observed_utc": "2026-11-24T04:05:13.730760Z", "sport_key": "soccer_mexico_ligamx"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-24T10:05:13.730760Z", "observed_utc": "2026-11-24T04:05:13.730760Z", "sport_key": "soccer_norway_eliteserien"}
+{"events": 11, "kind": "peek", "next_check_utc": "2026-11-24T10:05:13.730760Z", "observed_utc": "2026-11-24T04:05:13.730760Z", "sport_key": "soccer_spain_segunda_division"}
+{"commence_utc": "2026-11-24T04:30:00Z", "event_id": "b45e9d96ab3298d614e74c19902f3998", "kind": "phase", "observed_utc": "2026-11-24T04:05:13.730760Z", "phase": "t30m", "rows": 32, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-25T03:30:00Z", "event_id": "4b220aa94adc3b0fd23d9d892a130646", "kind": "phase", "observed_utc": "2026-11-24T04:05:13.730760Z", "phase": "t24h", "rows": 26, "sport_key": "basketball_ncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 83, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-24T04:05:13.730760Z", "regions": ["us"], "rows": 1838, "sport_key": "basketball_ncaab", "stored": 1838}
+{"commence_utc": "2026-11-25T03:10:00Z", "event_id": "6bfadbd22ed8a054cf82ec1b12b78243", "kind": "phase", "observed_utc": "2026-11-24T04:05:13.730760Z", "phase": "t24h", "rows": 36, "sport_key": "basketball_nba"}
+{"call_kind": "pregame", "credits": 3, "events": 6, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-24T04:05:13.730760Z", "regions": ["us"], "rows": 159, "sport_key": "basketball_nba", "stored": 159}
+{"call_kind": "inplay", "credits": 1, "events": 3, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-24T04:05:13.730760Z", "regions": ["us"], "rows": 26, "sport_key": "icehockey_nhl", "stored": 26}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-24T04:05:13.730760Z", "regions": ["us"], "rows": 0, "sport_key": "basketball_wncaab", "stored": 0}
