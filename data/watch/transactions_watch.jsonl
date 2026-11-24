@@ -8505,3 +8505,6 @@
 {"fetched_utc": "2026-11-24T14:06:09.192813+00:00", "game_date": "2026-11-24", "poll": true}
 {"fetched_utc": "2026-11-24T14:59:40.592075+00:00", "game_date": "2026-11-24", "poll": true}
 {"fetched_utc": "2026-11-24T16:06:07.999856+00:00", "game_date": "2026-11-24", "poll": true}
+{"fetched_utc": "2026-11-24T17:02:00.401493+00:00", "game_date": "2026-11-24", "poll": true}
+{"category": "signed", "date": "2026-11-24", "first_seen_utc": "2026-11-24T17:02:00.401493+00:00", "player": "Tim Hill", "player_id": 657612, "team": "NYY", "transaction_id": 950957}
+{"category": "signed", "date": "2026-11-24", "first_seen_utc": "2026-11-24T17:02:00.401493+00:00", "player": "Brent Suter", "player_id": 608718, "team": "NYY", "transaction_id": 950958}
