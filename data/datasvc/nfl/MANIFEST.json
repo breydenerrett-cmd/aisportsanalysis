@@ -22,10 +22,10 @@
  },
  "files": {
   "games.jsonl": {
-   "bytes": 1788705,
-   "newest": "2026-11-23T01:20:00Z",
+   "bytes": 1788693,
+   "newest": "2026-11-24T01:15:00Z",
    "records": 1696,
-   "sha256": "71d0141c00bd06e79be93ec7bd4e275eb6359e2b2904d03a570791138d60453b"
+   "sha256": "77510ddea1fb34eb8b9f47c93356d726c7bf32f4f01853ddf906226ba58817a8"
   },
   "injuries.jsonl": {
    "bytes": 9256681,
@@ -34,22 +34,22 @@
    "sha256": "cd802c7b3177c37d627cf3df6f9f30ee35cc5013f1c6531cfbb166d572f87568"
   },
   "player_games.jsonl": {
-   "bytes": 10120812,
-   "newest": "2026-11-23T01:20:00Z",
-   "records": 16383,
-   "sha256": "fbf3cf8ac76e0934c260903ec6cc6c7491a284eeea19852116a1f7b6040472be"
+   "bytes": 10135039,
+   "newest": "2026-11-24T01:15:00Z",
+   "records": 16406,
+   "sha256": "23dca56319410acd54440742e5901bb19d18ef4def7612a14abb13ee4aecc510"
   },
   "team_games.jsonl": {
-   "bytes": 3344074,
-   "newest": "2026-11-23T01:20:00Z",
+   "bytes": 3343995,
+   "newest": "2026-11-24T01:15:00Z",
    "records": 3392,
-   "sha256": "fee803bf832d32b826e6342627d57bba9adfa9030bd1cd1e70906727ae53c5d5"
+   "sha256": "d657e14afdd11c6fa483ad04203fa3d484fa3b8019edea8dfc9b204b754e66a3"
   }
  },
- "generated_utc": "2026-11-23T22:09:48Z",
+ "generated_utc": "2026-11-24T10:22:31Z",
  "last_run": {
-  "finished_utc": "2026-11-23T22:09:48Z",
-  "games": 16,
+  "finished_utc": "2026-11-24T10:22:31Z",
+  "games": 13,
   "injuries": 0,
   "kind": "update",
   "missing_files": [],
@@ -62,22 +62,22 @@
     },
     "player_stats": {
      "dropped_no_player_id": 11,
-     "dropped_not_offense": 7564,
-     "kept": 3694,
-     "rows": 11269
+     "dropped_not_offense": 7611,
+     "kept": 3717,
+     "rows": 11339
     },
     "team_games": 544,
-    "team_stats_rows": 324,
+    "team_stats_rows": 326,
     "team_stats_unmatched": []
    }
   },
-  "player_games": 0,
+  "player_games": 23,
   "seasons": [
    2026
   ],
-  "started_utc": "2026-11-23T22:09:46Z",
+  "started_utc": "2026-11-24T10:22:29Z",
   "stopped": null,
-  "team_games": 324
+  "team_games": 2
  },
  "last_run_errors": 0,
  "sources": {
