@@ -19776,3 +19776,16 @@
 {"away_score": null, "away_team": "San Diego St Aztecs", "commence_time": "2026-11-24T22:30:00Z", "completed": false, "event_id": "0dbbfc6c0ffe4c7d2c9b65eb8ab96cb3", "home_score": null, "home_team": "Iowa State Cyclones", "kind": "score", "last_update": null, "observed_utc": "2026-11-24T10:02:53.827760+00:00", "outcome": null, "scores": null, "sport_key": "basketball_ncaab"}
 {"credits": 2, "days_from": 3, "events": 201, "kind": "poll", "observed_utc": "2026-11-24T10:02:53.827760+00:00", "sport_key": "basketball_ncaab"}
 {"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-24T10:02:53.827760+00:00", "sport_key": "cricket_international_t20"}
+{"credits": 2, "days_from": 3, "events": 11, "kind": "poll", "observed_utc": "2026-11-24T12:05:49.257260+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 7, "kind": "poll", "observed_utc": "2026-11-24T12:05:49.257260+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-24T12:05:49.257260+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-24T12:05:49.257260+00:00", "sport_key": "icehockey_mestis"}
+{"away_score": null, "away_team": "Skye Falzon", "commence_time": "2027-01-10T03:00:00Z", "completed": false, "event_id": "e7ff7a5df78db2a84a99ca2bbebbc567", "home_score": null, "home_team": "Amanda Serrano", "kind": "score", "last_update": null, "observed_utc": "2026-11-24T12:05:49.257260+00:00", "outcome": null, "scores": null, "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 32, "kind": "poll", "observed_utc": "2026-11-24T12:05:49.257260+00:00", "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-24T12:05:49.257260+00:00", "sport_key": "soccer_brazil_serie_b"}
+{"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-24T12:05:49.257260+00:00", "sport_key": "soccer_korea_kleague1"}
+{"credits": 2, "days_from": 3, "events": 201, "kind": "poll", "observed_utc": "2026-11-24T12:05:49.257260+00:00", "sport_key": "basketball_ncaab"}
+{"away_score": null, "away_team": "England", "commence_time": "2026-11-27T08:15:00Z", "completed": false, "event_id": "0d80ad8d9a13dd3db51a952c7e2d19f4", "home_score": null, "home_team": "Australia", "kind": "score", "last_update": null, "observed_utc": "2026-11-24T12:05:49.257260+00:00", "outcome": null, "scores": null, "sport_key": "cricket_international_t20"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-24T12:05:49.257260+00:00", "sport_key": "cricket_international_t20"}
+{"away_score": null, "away_team": "\u00d6stersunds FK", "commence_time": "2026-11-28T12:00:00Z", "completed": false, "event_id": "60eaf4b69f444336ea8d4b17b8a9c439", "home_score": null, "home_team": "Varbergs BoIS", "kind": "score", "last_update": null, "observed_utc": "2026-11-24T12:05:49.257260+00:00", "outcome": null, "scores": null, "sport_key": "soccer_sweden_superettan"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-24T12:05:49.257260+00:00", "sport_key": "soccer_sweden_superettan"}
