@@ -19789,3 +19789,14 @@
 {"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-24T12:05:49.257260+00:00", "sport_key": "cricket_international_t20"}
 {"away_score": null, "away_team": "\u00d6stersunds FK", "commence_time": "2026-11-28T12:00:00Z", "completed": false, "event_id": "60eaf4b69f444336ea8d4b17b8a9c439", "home_score": null, "home_team": "Varbergs BoIS", "kind": "score", "last_update": null, "observed_utc": "2026-11-24T12:05:49.257260+00:00", "outcome": null, "scores": null, "sport_key": "soccer_sweden_superettan"}
 {"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-24T12:05:49.257260+00:00", "sport_key": "soccer_sweden_superettan"}
+{"away_score": null, "away_team": "Grand Rapids Griffins", "commence_time": "2026-11-26T01:00:00Z", "completed": false, "event_id": "259ddba03e5dc3a97e89b3d9699d674d", "home_score": null, "home_team": "Manitoba Moose", "kind": "score", "last_update": null, "observed_utc": "2026-11-24T14:07:34.680684+00:00", "outcome": null, "scores": null, "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 12, "kind": "poll", "observed_utc": "2026-11-24T14:07:34.680684+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 7, "kind": "poll", "observed_utc": "2026-11-24T14:07:34.680684+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-24T14:07:34.680684+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-24T14:07:34.680684+00:00", "sport_key": "icehockey_mestis"}
+{"credits": 2, "days_from": 3, "events": 32, "kind": "poll", "observed_utc": "2026-11-24T14:07:34.680684+00:00", "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-24T14:07:34.680684+00:00", "sport_key": "soccer_brazil_serie_b"}
+{"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-24T14:07:34.680684+00:00", "sport_key": "soccer_korea_kleague1"}
+{"away_score": null, "away_team": "Clemson Tigers", "commence_time": "2026-11-25T01:00:18Z", "completed": false, "event_id": "59e3968ce2b702ee8df02da575a47778", "home_score": null, "home_team": "Washington Huskies", "kind": "score", "last_update": null, "observed_utc": "2026-11-24T14:07:34.680684+00:00", "outcome": null, "scores": null, "sport_key": "basketball_ncaab"}
+{"credits": 2, "days_from": 3, "events": 201, "kind": "poll", "observed_utc": "2026-11-24T14:07:34.680684+00:00", "sport_key": "basketball_ncaab"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-24T14:07:34.680684+00:00", "sport_key": "cricket_international_t20"}
