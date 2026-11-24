@@ -131,11 +131,11 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-11-23 (1:30 pm PT run): CIN@WAS NFL brief published (3 calls, 0 struck, first attempt clean); kickoff 5:15 pm PT.",
-    "Public sample stays PIT@PHI 11-22 (graded). No MLB games remain.",
-    "Production /health 200, billing ok, memory peak 639.8 MB (limit 850). Unexplained restart 1:35 pm PT (31 total).",
-    "deploy-prod: 10:12 am, 12:12 pm and 1:13 pm PT runs succeeded. CI green (push run 45219070370).",
-    "Daily-loop failed 2:10 am PT (MLB slate refused: no price capture, offseason).",
+    "2026-11-24 (8:30 am PT run): CIN@WAS 11-23 graded (final WAS 22, CIN 20; all three calls passes). No game today.",
+    "Public sample repointed to CIN@WAS 11-23 (graded). No MLB games remain.",
+    "Production /health 200, billing ok. Memory peak 853.9 MB, over the 850 limit; restart 8:11 am PT was a deploy (31 unexplained total).",
+    "deploy-prod: 6:08, 7:01 and 8:09 am PT runs succeeded. CI green (push run 45278199212).",
+    "Daily-loop failed 2:10 am PT: batter arsenal file would shrink 322 bytes, refused (runs from another branch).",
     "Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at."
   ],
   "next_customer_action": "Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.",

@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-23 21:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-24 16:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-23** |
+| Days until 2026-10-31 | **-24** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,10 +151,10 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-23 (1:30 pm PT run): CIN@WAS NFL brief published (3 calls, 0 struck, first attempt clean); kickoff 5:15 pm PT.
-- Public sample stays PIT@PHI 11-22 (graded). No MLB games remain.
-- Production /health 200, billing ok, memory peak 639.8 MB (limit 850). Unexplained restart 1:35 pm PT (31 total).
-- deploy-prod: 10:12 am, 12:12 pm and 1:13 pm PT runs succeeded. CI green (push run 45219070370).
-- Daily-loop failed 2:10 am PT (MLB slate refused: no price capture, offseason).
+- 2026-11-24 (8:30 am PT run): CIN@WAS 11-23 graded (final WAS 22, CIN 20; all three calls passes). No game today.
+- Public sample repointed to CIN@WAS 11-23 (graded). No MLB games remain.
+- Production /health 200, billing ok. Memory peak 853.9 MB, over the 850 limit; restart 8:11 am PT was a deploy (31 unexplained total).
+- deploy-prod: 6:08, 7:01 and 8:09 am PT runs succeeded. CI green (push run 45278199212).
+- Daily-loop failed 2:10 am PT: batter arsenal file would shrink 322 bytes, refused (runs from another branch).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
