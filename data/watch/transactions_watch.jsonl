@@ -8513,3 +8513,6 @@
 {"fetched_utc": "2026-11-24T19:15:32.171445+00:00", "game_date": "2026-11-24", "poll": true}
 {"fetched_utc": "2026-11-24T20:04:55.208999+00:00", "game_date": "2026-11-24", "poll": true}
 {"category": "signed", "date": "2026-11-24", "first_seen_utc": "2026-11-24T20:04:55.208999+00:00", "player": "Freddy Peralta", "player_id": 642547, "team": "BAL", "transaction_id": 950970}
+{"fetched_utc": "2026-11-24T21:10:05.754862+00:00", "game_date": "2026-11-24", "poll": true}
+{"category": "other", "date": "2026-11-24", "first_seen_utc": "2026-11-24T21:10:05.754862+00:00", "player": "BJ Murray Jr.", "player_id": 681230, "team": "CHC", "transaction_id": 950971}
+{"category": "other", "date": "2026-11-24", "first_seen_utc": "2026-11-24T21:10:05.754862+00:00", "player": "Pedro Ram\u00edrez", "player_id": 699393, "team": "CHC", "transaction_id": 950973}
