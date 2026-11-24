@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-24 16:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-24 21:51Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,10 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-24 (8:30 am PT run): CIN@WAS 11-23 graded (final WAS 22, CIN 20; all three calls passes). No game today.
-- Public sample repointed to CIN@WAS 11-23 (graded). No MLB games remain.
-- Production /health 200, billing ok. Memory peak 853.9 MB, over the 850 limit; restart 8:11 am PT was a deploy (31 unexplained total).
-- deploy-prod: 6:08, 7:01 and 8:09 am PT runs succeeded. CI green (push run 45278199212).
-- Daily-loop failed 2:10 am PT: batter arsenal file would shrink 322 bytes, refused (runs from another branch).
+- 2026-11-24 (1:30 pm PT run): no game today; CIN@WAS 11-23 remains the newest graded brief and the public sample.
+- Production DOWN at this run: linehound.app returned HTTP 503 on every probe 1:41 to 1:52 pm PT; the 1:12 pm PT deploy had passed its health check at 1:22 pm PT.
+- deploy-prod: 10:03 am, 12:07 pm and 1:12 pm PT runs succeeded. CI green (push run 45446519368).
+- Daily-loop failed 12:24 pm PT: batter arsenal file would shrink 322 bytes, refused (runs from another branch).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
