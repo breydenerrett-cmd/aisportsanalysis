@@ -2,10 +2,10 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2026.jsonl": {
-   "bytes": 161345,
-   "newest": "2026-11-24T16:09:05Z",
-   "records": 286,
-   "sha256": "2626eaecebd46c7d77b115ec70f31c1e36d57ac75ff71bc26e6e3c02ce138e17"
+   "bytes": 166473,
+   "newest": "2026-11-24T19:19:17Z",
+   "records": 295,
+   "sha256": "badba3d7204107d4d93c385f1d85dc1a711e52df8e014c7edb4262b550de69ad"
   },
   "standings_2026.jsonl": {
    "bytes": 80528,
@@ -26,8 +26,8 @@
    "sha256": "54ed546f3d23c7dc4f0fc708dfbab22e517d69558269031c016e2081bd1957e6"
   }
  },
- "generated_utc": "2026-11-24T16:09:06Z",
+ "generated_utc": "2026-11-24T19:19:18Z",
  "league": "ucl",
- "refreshed_utc": "2026-11-24T16:09:06Z",
+ "refreshed_utc": "2026-11-24T19:19:18Z",
  "title": "UEFA Champions League"
 }
