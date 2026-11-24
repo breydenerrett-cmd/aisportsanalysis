@@ -19765,3 +19765,14 @@
 {"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-24T07:12:40.942546+00:00", "sport_key": "soccer_sweden_superettan"}
 {"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-24T07:12:40.942546+00:00", "sport_key": "soccer_brazil_serie_b"}
 {"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-24T07:12:40.942546+00:00", "sport_key": "cricket_international_t20"}
+{"credits": 2, "days_from": 3, "events": 11, "kind": "poll", "observed_utc": "2026-11-24T10:02:53.827760+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 7, "kind": "poll", "observed_utc": "2026-11-24T10:02:53.827760+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-24T10:02:53.827760+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-24T10:02:53.827760+00:00", "sport_key": "icehockey_mestis"}
+{"credits": 0, "days_from": 3, "events": 0, "kind": "poll", "observed_utc": "2026-11-24T10:02:53.827760+00:00", "sport_key": "soccer_sweden_superettan"}
+{"credits": 2, "days_from": 3, "events": 31, "kind": "poll", "observed_utc": "2026-11-24T10:02:53.827760+00:00", "sport_key": "boxing_boxing"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-24T10:02:53.827760+00:00", "sport_key": "soccer_brazil_serie_b"}
+{"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-24T10:02:53.827760+00:00", "sport_key": "soccer_korea_kleague1"}
+{"away_score": null, "away_team": "San Diego St Aztecs", "commence_time": "2026-11-24T22:30:00Z", "completed": false, "event_id": "0dbbfc6c0ffe4c7d2c9b65eb8ab96cb3", "home_score": null, "home_team": "Iowa State Cyclones", "kind": "score", "last_update": null, "observed_utc": "2026-11-24T10:02:53.827760+00:00", "outcome": null, "scores": null, "sport_key": "basketball_ncaab"}
+{"credits": 2, "days_from": 3, "events": 201, "kind": "poll", "observed_utc": "2026-11-24T10:02:53.827760+00:00", "sport_key": "basketball_ncaab"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-24T10:02:53.827760+00:00", "sport_key": "cricket_international_t20"}
