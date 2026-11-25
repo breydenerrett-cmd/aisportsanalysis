@@ -38275,3 +38275,4 @@
 {"events": 6, "kind": "peek", "next_check_utc": "2026-11-25T13:46:23.007688Z", "observed_utc": "2026-11-25T07:46:23.007688Z", "sport_key": "soccer_switzerland_superleague"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-25T13:46:23.007688Z", "observed_utc": "2026-11-25T07:46:23.007688Z", "sport_key": "soccer_uefa_europa_conference_league"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-25T13:46:23.007688Z", "observed_utc": "2026-11-25T07:46:23.007688Z", "sport_key": "soccer_uefa_europa_league"}
+{"call_kind": "inplay", "credits": 1, "events": 63, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-25T07:55:57.532794Z", "regions": ["us"], "rows": 406, "sport_key": "basketball_ncaab", "stored": 396}
