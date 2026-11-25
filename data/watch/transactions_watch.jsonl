@@ -8612,3 +8612,8 @@
 {"fetched_utc": "2026-11-25T22:13:16.361685+00:00", "game_date": "2026-11-25", "poll": true}
 {"fetched_utc": "2026-11-25T22:36:52.003100+00:00", "game_date": "2026-11-25", "poll": true}
 {"fetched_utc": "2026-11-25T22:47:20.279210+00:00", "game_date": "2026-11-25", "poll": true}
+{"fetched_utc": "2026-11-25T23:11:53.785992+00:00", "game_date": "2026-11-25", "poll": true}
+{"category": "signed", "date": "2026-11-25", "first_seen_utc": "2026-11-25T23:11:53.785992+00:00", "player": "Jonathan Lo\u00e1isiga", "player_id": 642528, "team": "NYY", "transaction_id": 951125}
+{"category": "signed", "date": "2026-11-25", "first_seen_utc": "2026-11-25T23:11:53.785992+00:00", "player": "Trevor Rogers", "player_id": 669432, "team": "CHC", "transaction_id": 951126}
+{"category": "signed", "date": "2026-11-25", "first_seen_utc": "2026-11-25T23:11:53.785992+00:00", "player": "Teruaki Sato", "player_id": 831664, "team": "CHC", "transaction_id": 951127}
+{"category": "signed", "date": "2026-11-25", "first_seen_utc": "2026-11-25T23:11:53.785992+00:00", "player": "Tarik Skubal", "player_id": 669373, "team": "NYM", "transaction_id": 951128}
