@@ -848,3 +848,4 @@
 {"game_id": "2026_12_CHI_DET", "observed_utc": "2026-11-25T18:06:16.772892Z", "phase": "t24h"}
 {"game_id": "2026_12_GB_LA", "observed_utc": "2026-11-25T19:04:22.458568Z", "phase": "t6h"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-25T19:43:07.011921Z", "phase": "refresh"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-11-25T20:14:03.279962Z", "phase": "refresh"}
