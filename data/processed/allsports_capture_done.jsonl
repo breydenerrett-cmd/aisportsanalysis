@@ -38315,3 +38315,13 @@
 {"call_kind": "pregame", "credits": 3, "events": 12, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-25T10:01:43.255447Z", "regions": ["us"], "rows": 30, "sport_key": "icehockey_ahl", "stored": 30}
 {"events": 24, "kind": "peek", "next_check_utc": "2026-11-25T16:16:43.506889Z", "observed_utc": "2026-11-25T10:16:43.506889Z", "sport_key": "soccer_england_league1"}
 {"events": 12, "kind": "peek", "next_check_utc": "2026-11-25T16:16:43.506889Z", "observed_utc": "2026-11-25T10:16:43.506889Z", "sport_key": "soccer_england_league2"}
+{"commence_utc": "2026-11-25T16:30:00Z", "event_id": "ed88c790ce4d9123c6d0b02e2bfd0f9d", "kind": "phase", "observed_utc": "2026-11-25T10:38:53.723444Z", "phase": "t6h", "rows": 6, "sport_key": "icehockey_liiga"}
+{"commence_utc": "2026-11-25T16:30:00Z", "event_id": "2946924b3ecf4b762332fb72674a5278", "kind": "phase", "observed_utc": "2026-11-25T10:38:53.723444Z", "phase": "t6h", "rows": 6, "sport_key": "icehockey_liiga"}
+{"commence_utc": "2026-11-25T16:30:00Z", "event_id": "393ccfc3f52cae0d03bc73ac065c6fae", "kind": "phase", "observed_utc": "2026-11-25T10:38:53.723444Z", "phase": "t6h", "rows": 6, "sport_key": "icehockey_liiga"}
+{"commence_utc": "2026-11-25T16:30:00Z", "event_id": "f6bb2632227406e9820ff9b21de9a468", "kind": "phase", "observed_utc": "2026-11-25T10:38:53.723444Z", "phase": "t6h", "rows": 6, "sport_key": "icehockey_liiga"}
+{"call_kind": "pregame", "credits": 3, "events": 6, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-25T10:38:53.723444Z", "regions": ["us"], "rows": 36, "sport_key": "icehockey_liiga", "stored": 30}
+{"commence_utc": "2026-11-25T16:30:00Z", "event_id": "f3d396806662d7bf48796bd599e3c6a4", "kind": "phase", "observed_utc": "2026-11-25T10:38:53.723444Z", "phase": "t6h", "rows": 3, "sport_key": "icehockey_mestis"}
+{"call_kind": "pregame", "credits": 3, "events": 3, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-25T10:38:53.723444Z", "regions": ["us"], "rows": 3, "sport_key": "icehockey_mestis", "stored": 3}
+{"commence_utc": "2026-11-26T10:30:00Z", "event_id": "4260f7557b6c1031ee1098f435482b8d", "kind": "phase", "observed_utc": "2026-11-25T10:38:53.723444Z", "phase": "t24h", "rows": 5, "sport_key": "boxing_boxing"}
+{"call_kind": "pregame", "credits": 1, "events": 35, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-25T10:38:53.723444Z", "regions": ["us"], "rows": 94, "sport_key": "boxing_boxing", "stored": 10}
+{"call_kind": "inplay", "credits": 1, "events": 17, "events_live": 7, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-25T10:38:53.723444Z", "regions": ["us"], "rows": 85, "sport_key": "soccer_japan_j_league", "stored": 35}
