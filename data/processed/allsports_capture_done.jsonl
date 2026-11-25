@@ -38303,3 +38303,4 @@
 {"call_kind": "pregame", "credits": 3, "events": 12, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-25T09:39:07.883207Z", "regions": ["us"], "rows": 30, "sport_key": "icehockey_ahl", "stored": 30}
 {"commence_utc": "2026-11-26T09:30:00Z", "event_id": "f427299353d39efbc9fb4ded5c551228", "kind": "phase", "observed_utc": "2026-11-25T09:39:07.883207Z", "phase": "t24h", "rows": 5, "sport_key": "boxing_boxing"}
 {"call_kind": "pregame", "credits": 1, "events": 35, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-25T09:39:07.883207Z", "regions": ["us"], "rows": 94, "sport_key": "boxing_boxing", "stored": 10}
+{"events": 69, "kind": "peek", "next_check_utc": "2026-11-25T15:53:08.770952Z", "observed_utc": "2026-11-25T09:53:08.770952Z", "sport_key": "americanfootball_ncaaf"}
