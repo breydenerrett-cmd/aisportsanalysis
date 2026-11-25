@@ -38292,3 +38292,14 @@
 {"events": 6, "kind": "peek", "next_check_utc": "2026-11-25T15:25:18.572106Z", "observed_utc": "2026-11-25T09:25:18.572106Z", "sport_key": "icehockey_sweden_hockey_league"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-25T15:25:18.572106Z", "observed_utc": "2026-11-25T09:25:18.572106Z", "sport_key": "soccer_germany_bundesliga"}
 {"events": 9, "kind": "peek", "next_check_utc": "2026-11-25T15:25:18.572106Z", "observed_utc": "2026-11-25T09:25:18.572106Z", "sport_key": "soccer_turkey_super_league"}
+{"commence_utc": "2026-11-25T10:00:00Z", "event_id": "454c104860f5430572b1d2ce372694c6", "kind": "phase", "observed_utc": "2026-11-25T09:39:07.883207Z", "phase": "t30m", "rows": 13, "sport_key": "soccer_japan_j_league"}
+{"commence_utc": "2026-11-25T10:00:00Z", "event_id": "e82083c75de6b9266b27142b9e045087", "kind": "phase", "observed_utc": "2026-11-25T09:39:07.883207Z", "phase": "t30m", "rows": 13, "sport_key": "soccer_japan_j_league"}
+{"commence_utc": "2026-11-25T10:00:00Z", "event_id": "fadcd788d19ce04ae2ac8f56edf60336", "kind": "phase", "observed_utc": "2026-11-25T09:39:07.883207Z", "phase": "t30m", "rows": 13, "sport_key": "soccer_japan_j_league"}
+{"commence_utc": "2026-11-25T10:00:00Z", "event_id": "56ce614c797d9691f61a0aab5a4fdc7a", "kind": "phase", "observed_utc": "2026-11-25T09:39:07.883207Z", "phase": "t30m", "rows": 13, "sport_key": "soccer_japan_j_league"}
+{"commence_utc": "2026-11-25T10:00:00Z", "event_id": "4d82f7110972d4f230cdfd5ca9a0d0dd", "kind": "phase", "observed_utc": "2026-11-25T09:39:07.883207Z", "phase": "t30m", "rows": 13, "sport_key": "soccer_japan_j_league"}
+{"commence_utc": "2026-11-25T10:00:00Z", "event_id": "2dfc5bec2d2449a9ee62d85ae92c8a2e", "kind": "phase", "observed_utc": "2026-11-25T09:39:07.883207Z", "phase": "t30m", "rows": 13, "sport_key": "soccer_japan_j_league"}
+{"call_kind": "pregame", "credits": 2, "events": 17, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-25T09:39:07.883207Z", "regions": ["us"], "rows": 111, "sport_key": "soccer_japan_j_league", "stored": 91}
+{"commence_utc": "2026-11-25T15:30:00Z", "event_id": "28276fb1617a6962a5623f38864957f0", "kind": "phase", "observed_utc": "2026-11-25T09:39:07.883207Z", "phase": "t6h", "rows": 3, "sport_key": "icehockey_ahl"}
+{"call_kind": "pregame", "credits": 3, "events": 12, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-25T09:39:07.883207Z", "regions": ["us"], "rows": 30, "sport_key": "icehockey_ahl", "stored": 30}
+{"commence_utc": "2026-11-26T09:30:00Z", "event_id": "f427299353d39efbc9fb4ded5c551228", "kind": "phase", "observed_utc": "2026-11-25T09:39:07.883207Z", "phase": "t24h", "rows": 5, "sport_key": "boxing_boxing"}
+{"call_kind": "pregame", "credits": 1, "events": 35, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-25T09:39:07.883207Z", "regions": ["us"], "rows": 94, "sport_key": "boxing_boxing", "stored": 10}
