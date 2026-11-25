@@ -38276,3 +38276,11 @@
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-25T13:46:23.007688Z", "observed_utc": "2026-11-25T07:46:23.007688Z", "sport_key": "soccer_uefa_europa_conference_league"}
 {"events": 18, "kind": "peek", "next_check_utc": "2026-11-25T13:46:23.007688Z", "observed_utc": "2026-11-25T07:46:23.007688Z", "sport_key": "soccer_uefa_europa_league"}
 {"call_kind": "inplay", "credits": 1, "events": 63, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-25T07:55:57.532794Z", "regions": ["us"], "rows": 406, "sport_key": "basketball_ncaab", "stored": 396}
+{"commence_utc": "2026-11-25T10:00:00Z", "event_id": "454c104860f5430572b1d2ce372694c6", "kind": "phase", "observed_utc": "2026-11-25T08:07:18.853076Z", "phase": "t2h", "rows": 13, "sport_key": "soccer_japan_j_league"}
+{"commence_utc": "2026-11-25T10:00:00Z", "event_id": "e82083c75de6b9266b27142b9e045087", "kind": "phase", "observed_utc": "2026-11-25T08:07:18.853076Z", "phase": "t2h", "rows": 13, "sport_key": "soccer_japan_j_league"}
+{"commence_utc": "2026-11-25T10:00:00Z", "event_id": "fadcd788d19ce04ae2ac8f56edf60336", "kind": "phase", "observed_utc": "2026-11-25T08:07:18.853076Z", "phase": "t2h", "rows": 13, "sport_key": "soccer_japan_j_league"}
+{"commence_utc": "2026-11-25T10:00:00Z", "event_id": "56ce614c797d9691f61a0aab5a4fdc7a", "kind": "phase", "observed_utc": "2026-11-25T08:07:18.853076Z", "phase": "t2h", "rows": 13, "sport_key": "soccer_japan_j_league"}
+{"commence_utc": "2026-11-25T10:00:00Z", "event_id": "4d82f7110972d4f230cdfd5ca9a0d0dd", "kind": "phase", "observed_utc": "2026-11-25T08:07:18.853076Z", "phase": "t2h", "rows": 13, "sport_key": "soccer_japan_j_league"}
+{"commence_utc": "2026-11-25T10:00:00Z", "event_id": "2dfc5bec2d2449a9ee62d85ae92c8a2e", "kind": "phase", "observed_utc": "2026-11-25T08:07:18.853076Z", "phase": "t2h", "rows": 13, "sport_key": "soccer_japan_j_league"}
+{"call_kind": "pregame", "credits": 2, "events": 17, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-25T08:07:18.853076Z", "regions": ["us"], "rows": 111, "sport_key": "soccer_japan_j_league", "stored": 91}
+{"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-25T08:07:18.853076Z", "regions": ["au"], "rows": 13, "sport_key": "cricket_test_match", "stored": 3}
