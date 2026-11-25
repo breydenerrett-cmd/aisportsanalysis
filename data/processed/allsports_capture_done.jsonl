@@ -38313,3 +38313,5 @@
 {"call_kind": "pregame", "credits": 3, "events": 62, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-25T10:01:43.255447Z", "regions": ["us"], "rows": 1522, "sport_key": "basketball_ncaab", "stored": 1504}
 {"commence_utc": "2026-11-25T16:00:00Z", "event_id": "5901cb03e047afb7c22309d0f09a5693", "kind": "phase", "observed_utc": "2026-11-25T10:01:43.255447Z", "phase": "t6h", "rows": 3, "sport_key": "icehockey_ahl"}
 {"call_kind": "pregame", "credits": 3, "events": 12, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-25T10:01:43.255447Z", "regions": ["us"], "rows": 30, "sport_key": "icehockey_ahl", "stored": 30}
+{"events": 24, "kind": "peek", "next_check_utc": "2026-11-25T16:16:43.506889Z", "observed_utc": "2026-11-25T10:16:43.506889Z", "sport_key": "soccer_england_league1"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-11-25T16:16:43.506889Z", "observed_utc": "2026-11-25T10:16:43.506889Z", "sport_key": "soccer_england_league2"}
