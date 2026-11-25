@@ -1,0 +1,108 @@
+{
+  "summary": "The Rams are the better team on the season numbers, a margin of 6.1 points per game against 0.5 for Green Bay, and they arrive on a four-game winning streak. The books agree, making Los Angeles a small favourite at 2.5 points. I pass on all three markets. The spread has moved from 3.5 to 2.5 for Green Bay, and nothing in the data shows the new number is wrong. Recent form rests on three to five games, and Green Bay has the better yards per play over the last three. Green Bay won all four meetings since 2021, a small sample. Both teams have had ten days of rest and the game is in a dome, so neither rest nor weather separates them. The Rams list three players out, including two on the offensive line and a tight end, but the data does not say how much that matters. The total has dropped from 45.5 to 43.5, and I cannot show the price misses anything in the scoring figures. Props are not covered and both quarterbacks are projections.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "LA",
+      "verdict": "PASS",
+      "price": -137,
+      "book": "bovada",
+      "fair_estimate": 0.56,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books already make the Rams the favourite, and the season margins point the same way, so the price looks about right.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.5614},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 6.1},
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 0.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Green Bay is the underdog at the books' number of 0.4386, and nothing in the data shows it should be higher, including a head-to-head record of four Green Bay wins in four meetings that is a small sample.",
+          "evidence": [
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.4386},
+            {"path": "markets.moneyline.options[1].best.price", "value": 120},
+            {"path": "sections.matchup.values.head_to_head.away_team_wins", "value": 4}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -127,
+      "what_would_change_it": "A quarterback change for either team before the game, or a key player ruled out on the injury report, would make me look at this again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "LA -2.5",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides of this number are almost exactly even in the books' own figures, and the line has shortened from 3.5 for Green Bay to 2.5, which crosses the key number of 3.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5068},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4932},
+            {"path": "markets.spread.context.away_number_first_captured", "value": 3.5},
+            {"path": "sections.reference.values.key_numbers[0]", "value": 3}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The Rams have the stronger recent margin, but Green Bay has the better yards per play over the last three games, so the data does not show a reason in points that the number is wrong.",
+          "evidence": [
+            {"path": "sections.home.values.form.last_3.margin_per_game", "value": 16.6667},
+            {"path": "sections.away.values.form.last_3.yards_per_play.value", "value": 5.6865},
+            {"path": "sections.home.values.form.last_3.yards_per_play.value", "value": 5.3}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "The spread moving onto the key number of 3 or a quarterback change for either team would make me reconsider.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 43.5",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "draftkings",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total has come down from 45.5 to 43.5, and the books now split the two sides almost evenly, so the market has already moved toward the lean.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 45.5},
+            {"path": "markets.total.options[0].line", "value": 43.5},
+            {"path": "markets.total.options[0].fair_probability", "value": 0.507}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The season scoring figures for both teams give no clear push either way, and the game is in a dome, so weather cannot be an argument.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 24.8},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 18.7},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 22.6},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 22.1},
+            {"path": "sections.schedule.values.venue.roof", "value": "dome"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A quarterback change for either team, or the total moving off 43.5, would make me look at this again.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
