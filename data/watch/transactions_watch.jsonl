@@ -8604,3 +8604,5 @@
 {"fetched_utc": "2026-11-25T20:13:12.372043+00:00", "game_date": "2026-11-25", "poll": true}
 {"fetched_utc": "2026-11-25T20:38:13.730856+00:00", "game_date": "2026-11-25", "poll": true}
 {"fetched_utc": "2026-11-25T20:52:01.012638+00:00", "game_date": "2026-11-25", "poll": true}
+{"fetched_utc": "2026-11-25T21:19:45.258466+00:00", "game_date": "2026-11-25", "poll": true}
+{"category": "signed", "date": "2026-11-25", "first_seen_utc": "2026-11-25T21:19:45.258466+00:00", "player": "Tyler Stephenson", "player_id": 663886, "team": "CIN", "transaction_id": 951124}
