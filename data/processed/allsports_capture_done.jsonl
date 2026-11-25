@@ -38218,3 +38218,12 @@
 {"commence_utc": "2026-11-26T04:59:00Z", "event_id": "a191391394bd171f41ee90ed9e9b010a", "kind": "phase", "observed_utc": "2026-11-25T05:00:29.448597Z", "phase": "t24h", "rows": 14, "sport_key": "basketball_ncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 64, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-25T05:00:29.448597Z", "regions": ["us"], "rows": 1338, "sport_key": "basketball_ncaab", "stored": 1320}
 {"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-25T05:00:29.448597Z", "regions": ["us"], "rows": 11, "sport_key": "icehockey_ahl", "stored": 11}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-25T11:14:30.504761Z", "observed_utc": "2026-11-25T05:14:30.504761Z", "sport_key": "soccer_chile_campeonato"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-25T11:14:30.504761Z", "observed_utc": "2026-11-25T05:14:30.504761Z", "sport_key": "soccer_denmark_superliga"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-25T11:14:30.504761Z", "observed_utc": "2026-11-25T05:14:30.504761Z", "sport_key": "soccer_korea_kleague1"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-25T11:14:30.504761Z", "observed_utc": "2026-11-25T05:14:30.504761Z", "sport_key": "soccer_poland_ekstraklasa"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-25T11:14:30.504761Z", "observed_utc": "2026-11-25T05:14:30.504761Z", "sport_key": "soccer_spl"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-25T11:14:30.504761Z", "observed_utc": "2026-11-25T05:14:30.504761Z", "sport_key": "soccer_sweden_allsvenskan"}
+{"events": 4, "kind": "peek", "next_check_utc": "2026-11-25T11:14:30.504761Z", "observed_utc": "2026-11-25T05:14:30.504761Z", "sport_key": "soccer_uefa_nations_league"}
+{"call_kind": "inplay", "credits": 1, "events": 10, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-25T05:14:30.504761Z", "regions": ["us"], "rows": 111, "sport_key": "basketball_nba", "stored": 111}
+{"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-25T05:14:30.504761Z", "regions": ["us"], "rows": 81, "sport_key": "soccer_usa_mls", "stored": 7}
