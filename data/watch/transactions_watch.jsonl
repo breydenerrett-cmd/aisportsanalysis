@@ -8597,3 +8597,6 @@
 {"fetched_utc": "2026-11-25T19:03:08.768766+00:00", "game_date": "2026-11-25", "poll": true}
 {"category": "signed", "date": "2026-11-25", "first_seen_utc": "2026-11-25T19:03:08.768766+00:00", "player": "Kris Bubic", "player_id": 663460, "team": "CLE", "transaction_id": 951121}
 {"fetched_utc": "2026-11-25T19:17:21.330248+00:00", "game_date": "2026-11-25", "poll": true}
+{"fetched_utc": "2026-11-25T19:42:15.202284+00:00", "game_date": "2026-11-25", "poll": true}
+{"category": "signed", "date": "2026-11-25", "first_seen_utc": "2026-11-25T19:42:15.202284+00:00", "player": "Antonio Senzatela", "player_id": 622608, "team": "MIL", "transaction_id": 951122}
+{"category": "designated", "date": "2026-11-25", "first_seen_utc": "2026-11-25T19:42:15.202284+00:00", "player": "Tyler Black", "player_id": 672012, "team": "MIL", "transaction_id": 951123}
