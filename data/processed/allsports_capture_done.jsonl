@@ -38335,3 +38335,10 @@
 {"events": 8, "kind": "peek", "next_check_utc": "2026-11-25T17:20:53.351693Z", "observed_utc": "2026-11-25T11:20:53.351693Z", "sport_key": "soccer_sweden_allsvenskan"}
 {"events": 4, "kind": "peek", "next_check_utc": "2026-11-25T17:20:53.351693Z", "observed_utc": "2026-11-25T11:20:53.351693Z", "sport_key": "soccer_uefa_nations_league"}
 {"call_kind": "inplay", "credits": 1, "events": 17, "events_live": 7, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-25T11:20:53.351693Z", "regions": ["us"], "rows": 105, "sport_key": "soccer_japan_j_league", "stored": 35}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-25T17:47:34.085378Z", "observed_utc": "2026-11-25T11:47:34.085378Z", "sport_key": "soccer_usa_mls"}
+{"commence_utc": "2026-11-25T17:30:00Z", "event_id": "ec01b07ca0266d4bba14bda0f9ede21c", "kind": "phase", "observed_utc": "2026-11-25T11:47:34.085378Z", "phase": "t6h", "rows": 29, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-25T17:30:00Z", "event_id": "ed380fcc7e826f9e50517775dcff967e", "kind": "phase", "observed_utc": "2026-11-25T11:47:34.085378Z", "phase": "t6h", "rows": 32, "sport_key": "basketball_ncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 62, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-25T11:47:34.085378Z", "regions": ["us"], "rows": 1542, "sport_key": "basketball_ncaab", "stored": 1530}
+{"commence_utc": "2026-11-25T17:45:00Z", "event_id": "e6fa007f93e0cef004be920f96ee95ba", "kind": "phase", "observed_utc": "2026-11-25T11:47:34.085378Z", "phase": "t6h", "rows": 18, "sport_key": "soccer_uefa_champs_league"}
+{"commence_utc": "2026-11-25T17:45:00Z", "event_id": "a7c87fac9e9cbcfc02ad0e0b29ca89e2", "kind": "phase", "observed_utc": "2026-11-25T11:47:34.085378Z", "phase": "t6h", "rows": 18, "sport_key": "soccer_uefa_champs_league"}
+{"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-25T11:47:34.085378Z", "regions": ["us"], "rows": 160, "sport_key": "soccer_uefa_champs_league", "stored": 160}
