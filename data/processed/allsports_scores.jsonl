@@ -20367,3 +20367,5 @@
 {"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-25T13:21:38.090250+00:00", "sport_key": "cricket_test_match"}
 {"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-25T13:21:38.090250+00:00", "sport_key": "soccer_brazil_serie_b"}
 {"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-25T13:21:38.090250+00:00", "sport_key": "cricket_international_t20"}
+{"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-25T13:56:36.153931+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 4, "kind": "poll", "observed_utc": "2026-11-25T13:56:36.153931+00:00", "sport_key": "soccer_england_efl_trophy"}
