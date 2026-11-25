@@ -20544,3 +20544,6 @@
 {"away_score": 2.0, "away_team": "Montana St Bobcats", "commence_time": "2026-11-25T21:09:00Z", "completed": false, "event_id": "eda67fec6a5394f60a8ec9627216178d", "home_score": 3.0, "home_team": "Middle Tennessee Blue Raiders", "kind": "score", "last_update": "2026-11-25T21:20:49Z", "observed_utc": "2026-11-25T21:20:59.134400+00:00", "outcome": "home", "scores": [{"name": "Montana St Bobcats", "score": "2"}, {"name": "Middle Tennessee Blue Raiders", "score": "3"}], "sport_key": "basketball_wncaab"}
 {"credits": 2, "days_from": 3, "events": 56, "kind": "poll", "observed_utc": "2026-11-25T21:20:59.134400+00:00", "sport_key": "basketball_wncaab"}
 {"credits": 2, "days_from": 3, "events": 4, "kind": "poll", "observed_utc": "2026-11-25T21:44:01.449746+00:00", "sport_key": "icehockey_mestis"}
+{"credits": 2, "days_from": 3, "events": 12, "kind": "poll", "observed_utc": "2026-11-25T22:37:49.136519+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-25T22:37:49.136519+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-25T22:37:49.136519+00:00", "sport_key": "cricket_international_t20"}
