@@ -38285,3 +38285,5 @@
 {"call_kind": "pregame", "credits": 2, "events": 17, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-25T08:07:18.853076Z", "regions": ["us"], "rows": 111, "sport_key": "soccer_japan_j_league", "stored": 91}
 {"call_kind": "inplay", "credits": 1, "events": 2, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-25T08:07:18.853076Z", "regions": ["au"], "rows": 13, "sport_key": "cricket_test_match", "stored": 3}
 {"events": 1, "kind": "peek", "next_check_utc": "2026-11-25T14:19:32.983780Z", "observed_utc": "2026-11-25T08:19:32.983780Z", "sport_key": "cricket_test_match"}
+{"commence_utc": "2026-11-25T10:30:00Z", "event_id": "c6b1486b9f3863fd4debf1f3727d0a1c", "kind": "phase", "observed_utc": "2026-11-25T08:33:22.411413Z", "phase": "t2h", "rows": 13, "sport_key": "soccer_japan_j_league"}
+{"call_kind": "pregame", "credits": 2, "events": 17, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-25T08:33:22.411413Z", "regions": ["us"], "rows": 111, "sport_key": "soccer_japan_j_league", "stored": 91}
