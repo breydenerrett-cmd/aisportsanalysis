@@ -8586,3 +8586,5 @@
 {"fetched_utc": "2026-11-25T15:19:54.922035+00:00", "game_date": "2026-11-25", "poll": true}
 {"fetched_utc": "2026-11-25T15:44:24.559791+00:00", "game_date": "2026-11-25", "poll": true}
 {"fetched_utc": "2026-11-25T16:09:50.023441+00:00", "game_date": "2026-11-25", "poll": true}
+{"fetched_utc": "2026-11-25T17:03:12.447863+00:00", "game_date": "2026-11-25", "poll": true}
+{"category": "signed", "date": "2026-11-25", "first_seen_utc": "2026-11-25T17:03:12.447863+00:00", "player": "Alan Rambalde", "player_id": 827271, "team": "SD", "transaction_id": 951115}
