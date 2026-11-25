@@ -38287,3 +38287,5 @@
 {"events": 1, "kind": "peek", "next_check_utc": "2026-11-25T14:19:32.983780Z", "observed_utc": "2026-11-25T08:19:32.983780Z", "sport_key": "cricket_test_match"}
 {"commence_utc": "2026-11-25T10:30:00Z", "event_id": "c6b1486b9f3863fd4debf1f3727d0a1c", "kind": "phase", "observed_utc": "2026-11-25T08:33:22.411413Z", "phase": "t2h", "rows": 13, "sport_key": "soccer_japan_j_league"}
 {"call_kind": "pregame", "credits": 2, "events": 17, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-25T08:33:22.411413Z", "regions": ["us"], "rows": 111, "sport_key": "soccer_japan_j_league", "stored": 91}
+{"commence_utc": "2026-11-25T15:00:00Z", "event_id": "38d1af886179efb99270618ed4702a3d", "kind": "phase", "observed_utc": "2026-11-25T09:02:47.682843Z", "phase": "t6h", "rows": 32, "sport_key": "basketball_ncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 62, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-25T09:02:47.682843Z", "regions": ["us"], "rows": 1501, "sport_key": "basketball_ncaab", "stored": 1483}
