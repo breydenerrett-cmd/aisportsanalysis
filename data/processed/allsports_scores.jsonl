@@ -20349,3 +20349,7 @@
 {"away_score": null, "away_team": "Gamba Osaka", "commence_time": "2026-11-29T06:00:00Z", "completed": false, "event_id": "74f6bfe1913aec3422567b45b17529ee", "home_score": null, "home_team": "Kawasaki Frontale", "kind": "score", "last_update": null, "observed_utc": "2026-11-25T11:07:11.596102+00:00", "outcome": null, "scores": null, "sport_key": "soccer_japan_j_league"}
 {"away_score": null, "away_team": "Tokyo Verdy", "commence_time": "2026-11-29T07:00:00Z", "completed": false, "event_id": "ed8d8a36e0aa7792f9fd2b41b40ba6c6", "home_score": null, "home_team": "FC Machida Zelvia", "kind": "score", "last_update": null, "observed_utc": "2026-11-25T11:07:11.596102+00:00", "outcome": null, "scores": null, "sport_key": "soccer_japan_j_league"}
 {"credits": 2, "days_from": 3, "events": 17, "kind": "poll", "observed_utc": "2026-11-25T11:07:11.596102+00:00", "sport_key": "soccer_japan_j_league"}
+{"credits": 2, "days_from": 3, "events": 12, "kind": "poll", "observed_utc": "2026-11-25T11:20:57.841393+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-25T11:20:57.841393+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 2, "kind": "poll", "observed_utc": "2026-11-25T11:20:57.841393+00:00", "sport_key": "soccer_brazil_serie_b"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-25T11:20:57.841393+00:00", "sport_key": "cricket_international_t20"}
