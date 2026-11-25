@@ -20616,3 +20616,4 @@
 {"away_score": 8.0, "away_team": "Vanderbilt Commodores", "commence_time": "2026-11-25T23:34:47Z", "completed": false, "event_id": "3f9a3e7e763034257282bd65f119583c", "home_score": 11.0, "home_team": "Oregon St Beavers", "kind": "score", "last_update": "2026-11-25T23:38:19Z", "observed_utc": "2026-11-25T23:38:26.484159+00:00", "outcome": "home", "scores": [{"name": "Oregon St Beavers", "score": "11"}, {"name": "Vanderbilt Commodores", "score": "8"}], "sport_key": "basketball_wncaab"}
 {"credits": 2, "days_from": 3, "events": 53, "kind": "poll", "observed_utc": "2026-11-25T23:38:26.484159+00:00", "sport_key": "basketball_wncaab"}
 {"credits": 2, "days_from": 3, "events": 5, "kind": "poll", "observed_utc": "2026-11-25T23:38:26.484159+00:00", "sport_key": "icehockey_sweden_allsvenskan"}
+{"credits": 2, "days_from": 3, "events": 4, "kind": "poll", "observed_utc": "2026-11-25T23:48:42.635575+00:00", "sport_key": "icehockey_mestis"}
