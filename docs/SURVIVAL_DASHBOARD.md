@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-25 16:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-25 21:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-25 (8:30 am PT run): no game today (MLB offseason, no NFL Wednesday); CIN@WAS 11-23 stays the newest graded brief and the public sample.
-- Production up: /health 200, billing ok, memory peak 633.8 MB of 850. One unexplained process restart at 8:38 am PT (32 total).
-- deploy-prod: 6:11 am, 7:07 am and 8:11 am PT runs succeeded. CI green (push run 45499400511).
-- Daily-loop failed 2:10 am PT: batter arsenal file would shrink 322 bytes, refused; no price capture for today (runs from another branch).
+- 2026-11-25 (1:30 pm PT run): no game today (MLB offseason, no NFL Wednesday); CIN@WAS 11-23 stays the newest graded brief and the public sample.
+- Production up: /health 200, billing ok, memory peak 700.0 MB of 850. Another unexplained process restart at 1:20 pm PT (33 total).
+- deploy-prod: 11:05 am, 12:03 pm and 12:14 pm PT runs succeeded. CI green (push run 45663012895).
+- Daily-loop 11:38 am PT run was cancelled after 2 minutes; the 2:10 am PT run failed (runs from another branch).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
