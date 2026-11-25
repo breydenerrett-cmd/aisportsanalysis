@@ -38112,3 +38112,33 @@
 {"commence_utc": "2026-11-26T01:10:00Z", "event_id": "696cf3d8787917f769a8d9a18560e2f0", "kind": "phase", "observed_utc": "2026-11-25T01:15:45.938872Z", "phase": "t24h", "rows": 36, "sport_key": "icehockey_nhl"}
 {"call_kind": "pregame", "credits": 3, "events": 15, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-25T01:15:45.938872Z", "regions": ["us"], "rows": 534, "sport_key": "icehockey_nhl", "stored": 534}
 {"call_kind": "inplay", "credits": 1, "events": 71, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-25T01:15:45.938872Z", "regions": ["us"], "rows": 813, "sport_key": "americanfootball_ncaaf", "stored": 13}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-25T07:37:30.596445Z", "observed_utc": "2026-11-25T01:37:30.596445Z", "sport_key": "aussierules_afl"}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-25T07:37:30.596445Z", "observed_utc": "2026-11-25T01:37:30.596445Z", "sport_key": "cricket_big_bash"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-25T07:37:30.596445Z", "observed_utc": "2026-11-25T01:37:30.596445Z", "sport_key": "soccer_austria_bundesliga"}
+{"events": 2, "kind": "peek", "next_check_utc": "2026-11-25T07:37:30.596445Z", "observed_utc": "2026-11-25T01:37:30.596445Z", "sport_key": "soccer_brazil_serie_b"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-25T07:37:30.596445Z", "observed_utc": "2026-11-25T01:37:30.596445Z", "sport_key": "soccer_conmebol_copa_libertadores"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-25T07:37:30.596445Z", "observed_utc": "2026-11-25T01:37:30.596445Z", "sport_key": "soccer_england_efl_cup"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-25T07:37:30.596445Z", "observed_utc": "2026-11-25T01:37:30.596445Z", "sport_key": "soccer_germany_dfb_pokal"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-25T07:37:30.596445Z", "observed_utc": "2026-11-25T01:37:30.596445Z", "sport_key": "soccer_netherlands_eredivisie"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-25T07:37:30.596445Z", "observed_utc": "2026-11-25T01:37:30.596445Z", "sport_key": "soccer_portugal_primeira_liga"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-25T07:37:30.596445Z", "observed_utc": "2026-11-25T01:37:30.596445Z", "sport_key": "soccer_russia_premier_league"}
+{"events": 6, "kind": "peek", "next_check_utc": "2026-11-25T07:37:30.596445Z", "observed_utc": "2026-11-25T01:37:30.596445Z", "sport_key": "soccer_switzerland_superleague"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-25T07:37:30.596445Z", "observed_utc": "2026-11-25T01:37:30.596445Z", "sport_key": "soccer_uefa_europa_conference_league"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-25T07:37:30.596445Z", "observed_utc": "2026-11-25T01:37:30.596445Z", "sport_key": "soccer_uefa_europa_league"}
+{"commence_utc": "2026-11-25T02:00:00Z", "event_id": "90f5cee824c1dc80d48319e38587b75b", "kind": "phase", "observed_utc": "2026-11-25T01:37:30.596445Z", "phase": "t30m", "rows": 31, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-25T02:00:00Z", "event_id": "4dc8cb6a7648e8a24132baf3563d8887", "kind": "phase", "observed_utc": "2026-11-25T01:37:30.596445Z", "phase": "t30m", "rows": 24, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-25T02:00:00Z", "event_id": "43f1834ce15a8fa15990477292bbd923", "kind": "phase", "observed_utc": "2026-11-25T01:37:30.596445Z", "phase": "t30m", "rows": 22, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-25T02:00:00Z", "event_id": "fd33c89fab911d3dd09da769140c7f5f", "kind": "phase", "observed_utc": "2026-11-25T01:37:30.596445Z", "phase": "t30m", "rows": 33, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-25T02:00:00Z", "event_id": "427e125509d4fb46d23c30b52a010699", "kind": "phase", "observed_utc": "2026-11-25T01:37:30.596445Z", "phase": "t30m", "rows": 32, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-25T03:30:00Z", "event_id": "3765877faa0c50d3b04fa96abdbb3568", "kind": "phase", "observed_utc": "2026-11-25T01:37:30.596445Z", "phase": "t2h", "rows": 33, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-25T03:30:00Z", "event_id": "4b220aa94adc3b0fd23d9d892a130646", "kind": "phase", "observed_utc": "2026-11-25T01:37:30.596445Z", "phase": "t2h", "rows": 32, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-25T19:00:00Z", "event_id": "d493eae11aafe56f0c7dd6ba33cd5c7a", "kind": "phase", "observed_utc": "2026-11-25T01:37:30.596445Z", "phase": "t24h", "rows": 10, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-25T19:00:00Z", "event_id": "d5c1b591e907d1c36a45342828f833df", "kind": "phase", "observed_utc": "2026-11-25T01:37:30.596445Z", "phase": "t24h", "rows": 11, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-25T20:00:00Z", "event_id": "85499376173e989c80df07ac68e7ce5f", "kind": "phase", "observed_utc": "2026-11-25T01:37:30.596445Z", "phase": "t24h", "rows": 10, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-25T21:00:00Z", "event_id": "40b82f25322f12117b8fd0b3cb7be9fd", "kind": "phase", "observed_utc": "2026-11-25T01:37:30.596445Z", "phase": "t24h", "rows": 10, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-25T21:00:00Z", "event_id": "435e247e4cbee5255718ebb5b00dd014", "kind": "phase", "observed_utc": "2026-11-25T01:37:30.596445Z", "phase": "t24h", "rows": 9, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-25T23:00:00Z", "event_id": "7d634711ef483a1dd9f38dfaa54f6ac3", "kind": "phase", "observed_utc": "2026-11-25T01:37:30.596445Z", "phase": "t24h", "rows": 4, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-25T23:00:00Z", "event_id": "f0f0b454eef63dd1b844b600289ef264", "kind": "phase", "observed_utc": "2026-11-25T01:37:30.596445Z", "phase": "t24h", "rows": 4, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-26T00:00:00Z", "event_id": "958410c2d9ff2a33dac7eef047ddb857", "kind": "phase", "observed_utc": "2026-11-25T01:37:30.596445Z", "phase": "t24h", "rows": 4, "sport_key": "basketball_ncaab"}
+{"commence_utc": "2026-11-26T00:00:00Z", "event_id": "47afd1035c7a612b40883776528fff6c", "kind": "phase", "observed_utc": "2026-11-25T01:37:30.596445Z", "phase": "t24h", "rows": 4, "sport_key": "basketball_ncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 104, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-25T01:37:30.596445Z", "regions": ["us"], "rows": 1796, "sport_key": "basketball_ncaab", "stored": 1790}
