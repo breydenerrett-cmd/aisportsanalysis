@@ -38446,3 +38446,4 @@
 {"commence_utc": "2026-11-25T20:00:00Z", "event_id": "e7e64568f6af00d395a3fdfc27de8ae3", "kind": "phase", "observed_utc": "2026-11-25T14:10:58.256013Z", "phase": "t6h", "rows": 17, "sport_key": "soccer_uefa_champs_league"}
 {"commence_utc": "2026-11-25T20:00:00Z", "event_id": "01a61442fe04f8751b62eb251f234079", "kind": "phase", "observed_utc": "2026-11-25T14:10:58.256013Z", "phase": "t6h", "rows": 18, "sport_key": "soccer_uefa_champs_league"}
 {"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-25T14:10:58.256013Z", "regions": ["us"], "rows": 160, "sport_key": "soccer_uefa_champs_league", "stored": 160}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-11-25T20:25:01.320368Z", "observed_utc": "2026-11-25T14:25:01.320368Z", "sport_key": "cricket_test_match"}
