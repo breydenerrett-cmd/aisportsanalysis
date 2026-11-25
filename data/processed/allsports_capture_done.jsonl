@@ -38396,3 +38396,5 @@
 {"commence_utc": "2026-11-25T19:00:00Z", "event_id": "8cf80807dee1ee73aefb295b560dc78e", "kind": "phase", "observed_utc": "2026-11-25T13:07:26.194650Z", "phase": "t6h", "rows": 15, "sport_key": "soccer_italy_serie_b"}
 {"commence_utc": "2026-11-25T19:00:00Z", "event_id": "30fb25fc45cd386b33e223302ff98f4d", "kind": "phase", "observed_utc": "2026-11-25T13:07:26.194650Z", "phase": "t6h", "rows": 15, "sport_key": "soccer_italy_serie_b"}
 {"call_kind": "pregame", "credits": 2, "events": 14, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-25T13:07:26.194650Z", "regions": ["us"], "rows": 183, "sport_key": "soccer_italy_serie_b", "stored": 60}
+{"commence_utc": "2026-11-25T19:15:00Z", "event_id": "a1ee21718811e522957cf904fb3ec31f", "kind": "phase", "observed_utc": "2026-11-25T13:21:34.124935Z", "phase": "t6h", "rows": 27, "sport_key": "basketball_euroleague"}
+{"call_kind": "pregame", "credits": 3, "events": 4, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-25T13:21:34.124935Z", "regions": ["us"], "rows": 105, "sport_key": "basketball_euroleague", "stored": 105}
