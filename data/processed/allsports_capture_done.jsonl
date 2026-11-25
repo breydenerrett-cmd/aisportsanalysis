@@ -38257,3 +38257,4 @@
 {"events": 7, "kind": "peek", "next_check_utc": "2026-11-25T13:06:42.039167Z", "observed_utc": "2026-11-25T07:06:42.039167Z", "sport_key": "soccer_greece_super_league"}
 {"events": 3, "kind": "peek", "next_check_utc": "2026-11-25T13:06:42.039167Z", "observed_utc": "2026-11-25T07:06:42.039167Z", "sport_key": "soccer_italy_coppa_italia"}
 {"events": 1, "kind": "peek", "next_check_utc": "2026-11-25T13:06:42.039167Z", "observed_utc": "2026-11-25T07:06:42.039167Z", "sport_key": "soccer_sweden_superettan"}
+{"call_kind": "inplay", "credits": 1, "events": 62, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-25T07:20:44.493203Z", "regions": ["us"], "rows": 403, "sport_key": "basketball_ncaab", "stored": 395}
