@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-24 22:16Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-25 16:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-24** |
+| Days until 2026-10-31 | **-25** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-24 (1:30 pm PT run): no game today; CIN@WAS 11-23 remains the newest graded brief and the public sample.
-- Production outage: linehound.app returned HTTP 503 from at least 1:41 to 2:07 pm PT; back at 2:08 pm PT with billing ok. Cause not yet read.
-- deploy-prod: 10:03 am, 12:07 pm and 1:12 pm PT runs succeeded. CI green (push run 45446519368).
-- Daily-loop failed 12:24 pm PT: batter arsenal file would shrink 322 bytes, refused (runs from another branch).
+- 2026-11-25 (8:30 am PT run): no game today (MLB offseason, no NFL Wednesday); CIN@WAS 11-23 stays the newest graded brief and the public sample.
+- Production up: /health 200, billing ok, memory peak 633.8 MB of 850. One unexplained process restart at 8:38 am PT (32 total).
+- deploy-prod: 6:11 am, 7:07 am and 8:11 am PT runs succeeded. CI green (push run 45499400511).
+- Daily-loop failed 2:10 am PT: batter arsenal file would shrink 322 bytes, refused; no price capture for today (runs from another branch).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
