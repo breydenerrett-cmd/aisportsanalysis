@@ -2,10 +2,10 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2027.jsonl": {
-   "bytes": 1506461,
-   "newest": "2026-11-26T09:45:02Z",
-   "records": 2484,
-   "sha256": "2bbcefa3763c01f9907eb26eabdc61b73267cd15e87bf01d8210771d2c0a1974"
+   "bytes": 1509696,
+   "newest": "2026-11-26T12:59:16Z",
+   "records": 2489,
+   "sha256": "435fabf49022c02fc9c47d9cbe8e37127a8185736752dbf8373b94a7e9b69f72"
   },
   "injuries.jsonl": {
    "bytes": 1004085,
@@ -44,8 +44,8 @@
    "sha256": "210055491d204c7264f1b4fe5f75f1c2a00cb1652af9064317e2e8c4aed0a016"
   }
  },
- "generated_utc": "2026-11-26T09:45:05Z",
+ "generated_utc": "2026-11-26T12:59:18Z",
  "league": "nba",
- "refreshed_utc": "2026-11-26T09:45:05Z",
+ "refreshed_utc": "2026-11-26T12:59:18Z",
  "title": "NBA"
 }
