@@ -2,22 +2,22 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2027.jsonl": {
-   "bytes": 1484769,
-   "newest": "2026-11-25T21:21:06Z",
-   "records": 2449,
-   "sha256": "db21222843893083846c1fcd58afa0a38535369b6e63d15f5a088d1382787532"
+   "bytes": 1493072,
+   "newest": "2026-11-26T00:30:20Z",
+   "records": 2463,
+   "sha256": "eb6429a7ced018f932debae7eca71935ce25d317482ceab2e98d64ba03f514b7"
   },
   "injuries.jsonl": {
-   "bytes": 993292,
-   "newest": "2026-11-25T21:21:11Z",
-   "records": 2633,
-   "sha256": "edb12df672e126dd561ae5dc79caff4346b6adb39e7b67f19498209dcf7c4eb8"
+   "bytes": 996136,
+   "newest": "2026-11-26T00:30:21Z",
+   "records": 2642,
+   "sha256": "421c75f4b3c909bcd9e58abc92c66609ec0c2048cdeb75b08ae5100dee15b708"
   },
   "player_games_2027.jsonl": {
-   "bytes": 5417852,
-   "newest": "2026-11-25T08:33:38Z",
-   "records": 9567,
-   "sha256": "9e141189c74ff009f94c843a92f348626f7cba4eba1d3117ec814f15af28a046"
+   "bytes": 5419085,
+   "newest": "2026-11-26T00:30:20Z",
+   "records": 9569,
+   "sha256": "55de70d790c0b1168f4d3af40996b05321e1c85a47c861156f50d7c81514c53d"
   },
   "players.jsonl": {
    "bytes": 178913,
@@ -44,8 +44,8 @@
    "sha256": "210055491d204c7264f1b4fe5f75f1c2a00cb1652af9064317e2e8c4aed0a016"
   }
  },
- "generated_utc": "2026-11-25T21:21:11Z",
+ "generated_utc": "2026-11-26T00:30:21Z",
  "league": "nba",
- "refreshed_utc": "2026-11-25T21:21:11Z",
+ "refreshed_utc": "2026-11-26T00:30:21Z",
  "title": "NBA"
 }
