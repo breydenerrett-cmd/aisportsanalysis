@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-26 17:32Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-26 21:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-26 (8:30 am PT run): NFL briefs published for CHI@DET (10:00 am PT) and PHI@DAL (1:30 pm PT): both pass on all three markets. No MLB.
-- GB@LA 11-25 graded (final LA 26, GB 13); the public sample now points at it.
-- Production up: /health 200, billing ok, memory peak 644.6 MB of 850. Another unexplained process restart at 8:39 am PT (34 total).
-- deploy-prod: 6:07, 7:01 and 8:10 am PT runs succeeded. CI green (push run 45711659397). Daily-loop 2:10 am PT run failed (no MLB price capture; runs from another branch).
+- 2026-11-26 (1:30 pm PT run): NFL brief published for KC@BUF (5:20 pm PT): passes on all three markets. Earlier today CHI@DET and PHI@DAL also published. No MLB.
+- CHI@DET 11-26 graded (final CHI 39, DET 35); the public sample now points at it.
+- Production up: /health 200, billing ok, memory peak 652.4 MB of 850. Another unexplained process restart at 1:32 pm PT (35 total).
+- deploy-prod: 9:04 am, 12:10 pm and 1:01 pm PT runs succeeded. CI green (push run 45868613028). Daily-loop 11:18 am PT run failed (no MLB price capture; runs from another branch).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
