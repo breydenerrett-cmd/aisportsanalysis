@@ -8622,3 +8622,4 @@
 {"category": "designated", "date": "2026-11-25", "first_seen_utc": "2026-11-25T23:36:56.350695+00:00", "player": "Jack Anderson", "player_id": 681252, "team": "NYM", "transaction_id": 951130}
 {"category": "designated", "date": "2026-11-25", "first_seen_utc": "2026-11-25T23:36:56.350695+00:00", "player": "Yunior Tur", "player_id": 814305, "team": "NYM", "transaction_id": 951131}
 {"fetched_utc": "2026-11-25T23:47:25.599172+00:00", "game_date": "2026-11-25", "poll": true}
+{"fetched_utc": "2026-11-26T00:07:36.793635+00:00", "game_date": "2026-11-25", "poll": true}
