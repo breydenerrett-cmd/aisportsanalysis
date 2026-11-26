@@ -39265,3 +39265,5 @@
 {"call_kind": "pregame", "credits": 1, "events": 37, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-26T08:43:23.378284Z", "regions": ["us"], "rows": 105, "sport_key": "boxing_boxing", "stored": 13}
 {"commence_utc": "2026-11-27T08:40:00Z", "event_id": "acbf7c0545986cd60dd4e4cb0152bd41", "kind": "phase", "observed_utc": "2026-11-26T08:43:23.378284Z", "phase": "t24h", "rows": 10, "sport_key": "soccer_australia_aleague"}
 {"call_kind": "pregame", "credits": 2, "events": 5, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-26T08:43:23.378284Z", "regions": ["us"], "rows": 31, "sport_key": "soccer_australia_aleague", "stored": 10}
+{"commence_utc": "2026-11-27T08:45:00Z", "event_id": "3a2a41d0cfd4e384cf91a5fef7d67547", "kind": "phase", "observed_utc": "2026-11-26T08:54:01.331593Z", "phase": "t24h", "rows": 19, "sport_key": "aussierules_aflw"}
+{"call_kind": "pregame", "credits": 3, "events": 1, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-26T08:54:01.331593Z", "regions": ["au"], "rows": 20, "sport_key": "aussierules_aflw", "stored": 19}
