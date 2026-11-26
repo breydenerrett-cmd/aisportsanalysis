@@ -39242,3 +39242,4 @@
 {"events": 3, "kind": "peek", "next_check_utc": "2026-11-26T13:23:56.409529Z", "observed_utc": "2026-11-26T07:23:56.409529Z", "sport_key": "soccer_sweden_superettan"}
 {"commence_utc": "2026-11-26T08:00:00Z", "event_id": "9a04d8e9afe17bcb9683afc757015d80", "kind": "phase", "observed_utc": "2026-11-26T07:34:38.429985Z", "phase": "t30m", "rows": 0, "sport_key": "boxing_boxing"}
 {"call_kind": "pregame", "credits": 1, "events": 38, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-26T07:34:38.429985Z", "regions": ["us"], "rows": 105, "sport_key": "boxing_boxing", "stored": 13}
+{"call_kind": "inplay", "credits": 1, "events": 24, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-26T07:47:10.177296Z", "regions": ["us"], "rows": 177, "sport_key": "basketball_ncaab", "stored": 177}
