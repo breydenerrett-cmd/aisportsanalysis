@@ -39355,3 +39355,7 @@
 {"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-26T13:16:05.763816Z", "regions": ["eu"], "rows": 198, "sport_key": "soccer_saudi_arabia_pro_league", "stored": 126}
 {"commence_utc": "2026-11-26T19:00:00Z", "event_id": "b71753c18ee4bb20584550465299033b", "kind": "phase", "observed_utc": "2026-11-26T13:16:05.763816Z", "phase": "t6h", "rows": 32, "sport_key": "basketball_ncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 21, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-26T13:16:05.763816Z", "regions": ["us"], "rows": 648, "sport_key": "basketball_ncaab", "stored": 648}
+{"events": 7, "kind": "peek", "next_check_utc": "2026-11-26T19:26:47.840882Z", "observed_utc": "2026-11-26T13:26:47.840882Z", "sport_key": "soccer_greece_super_league"}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-26T19:26:47.840882Z", "observed_utc": "2026-11-26T13:26:47.840882Z", "sport_key": "soccer_italy_coppa_italia"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-26T19:26:47.840882Z", "observed_utc": "2026-11-26T13:26:47.840882Z", "sport_key": "soccer_japan_j_league"}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-26T19:26:47.840882Z", "observed_utc": "2026-11-26T13:26:47.840882Z", "sport_key": "soccer_sweden_superettan"}
