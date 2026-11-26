@@ -1,0 +1,102 @@
+{
+  "summary": "This looks like a coin flip priced as one, so I pass on all three markets. The books have Chicago as a slight moneyline favourite with a fair probability of 0.5204, and the spread sits at CHI -1 with the two sides almost exactly even. Both teams have eight wins and two losses, and both are on a short week, so rest does not separate them. Detroit has the better recent numbers, with 6.2842 yards per play over its last three games to Chicago's 5.4415, and it allowed fewer points per game in that window. Chicago has won five straight, though, so the two things pull in opposite directions and the price already sits in the middle. The total is 56, up from 54.5 when first captured, and both offences score at a good clip, but the number appears to hold that. The game is indoors at Ford Field, so weather does not matter. What we are missing: any news after the weekly injury report, depth charts, and which players are actually out. The data does not measure how important any listed player is.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "CHI",
+      "verdict": "PASS",
+      "price": -112,
+      "book": "williamhill_us",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books' own fair probability for Chicago is barely above a coin flip, and nothing we have says the market is wrong.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.5204},
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.4796}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both teams have the same season record, so the season-long numbers do not split them.",
+          "evidence": [
+            {"path": "sections.away.values.record.season.wins", "value": 8},
+            {"path": "sections.home.values.record.season.wins", "value": 8}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A quarterback change for either team or a key player ruled out on an updated injury report would make me look again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "CHI -1",
+      "verdict": "PASS",
+      "price": -105,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides of the spread are priced as essentially even, so the number gives no reason to lean either way.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.501},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.499}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Detroit has the stronger last three games on yards per play, but Chicago has won five straight, so the form points both ways.",
+          "evidence": [
+            {"path": "sections.home.values.form.last_3.yards_per_play.value", "value": 6.2842},
+            {"path": "sections.away.values.form.last_3.yards_per_play.value", "value": 5.4415},
+            {"path": "sections.away.values.streak.length", "value": 5}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "The number moving off the current one toward a key number such as 3, or a quarterback change, would make me reconsider.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 56",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "mybookieag",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total has moved up from where it was first captured, and it is priced evenly between over and under, so the market has already absorbed the scoring numbers.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 54.5},
+            {"path": "markets.total.options[0].line", "value": 56.0},
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5023}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both offences score well, but Detroit's defence has been allowing few points lately, which cuts against the higher number.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 28.8},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 26.2},
+            {"path": "sections.home.values.form.last_3.points_against_per_game", "value": 13.3333}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A quarterback change or a major skill player ruled out on an updated injury report would change how I read the total.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

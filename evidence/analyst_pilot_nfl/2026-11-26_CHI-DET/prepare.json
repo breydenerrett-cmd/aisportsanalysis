@@ -1,0 +1,23 @@
+{
+  "sport": "nfl",
+  "game_id": "2026_12_CHI_DET",
+  "date": "2026-11-26",
+  "away": "CHI",
+  "home": "DET",
+  "kickoff_utc": "2026-11-26T18:00:00Z",
+  "built_at": "2026-11-26T16:42:22Z",
+  "packet_hash": "ad92907964e6f45c4a311b219b9a9855ed773b1713c31861ff83049722145c5e",
+  "prompt_version": "analyst_prompt_nfl_v1",
+  "prompt_hash": "8b80fc0cc2622da7497bed03b851d3934b8d687a6ca9c5a17d3eeb2d1c56ea7b",
+  "token_estimate": 9324,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "spread",
+    "total"
+  ],
+  "missing_items": 1,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "nfl_store+odds_multibook"
+}
