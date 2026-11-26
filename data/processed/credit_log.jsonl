@@ -43959,3 +43959,13 @@
 {"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 68498, "credits_used_last": 0, "utc": "2026-11-26T09:21:07.998375Z"}
 {"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 68498, "credits_used_last": 0, "utc": "2026-11-26T09:21:10.578558Z"}
 {"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 68498, "credits_used_last": 0, "utc": "2026-11-26T09:21:11.040060Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 68498, "credits_used_last": 0, "utc": "2026-11-26T09:32:53.491085Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 68498, "credits_used_last": 0, "utc": "2026-11-26T09:32:56.449127Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 68498, "credits_used_last": 0, "utc": "2026-11-26T09:32:57.075253Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 68497, "credits_used_last": 1, "utc": "2026-11-26T09:33:59.242319Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_capture.pregame", "credits_remaining": 68495, "credits_used_last": 2, "utc": "2026-11-26T09:33:59.242319Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 68493, "credits_used_last": 2, "utc": "2026-11-26T09:34:03.967509Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 68491, "credits_used_last": 2, "utc": "2026-11-26T09:34:03.967509Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 68489, "credits_used_last": 2, "utc": "2026-11-26T09:34:03.967509Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 68487, "credits_used_last": 2, "utc": "2026-11-26T09:34:03.967509Z"}
+{"budget_band": "allsports_capture", "caller": "allsports_scores.poll", "credits_remaining": 68485, "credits_used_last": 2, "utc": "2026-11-26T09:34:03.967509Z"}
