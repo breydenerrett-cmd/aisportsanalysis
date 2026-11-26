@@ -39463,3 +39463,5 @@
 {"call_kind": "pregame", "credits": 3, "events": 6, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-26T16:07:21.133641Z", "regions": ["us"], "rows": 18, "sport_key": "icehockey_sweden_hockey_league", "stored": 18}
 {"commence_utc": "2026-11-26T22:00:00Z", "event_id": "b7adb0aa06320363df4bfe6b6c90bc72", "kind": "phase", "observed_utc": "2026-11-26T16:07:21.133641Z", "phase": "t6h", "rows": 8, "sport_key": "cricket_test_match"}
 {"call_kind": "pregame", "credits": 1, "events": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-26T16:07:21.133641Z", "regions": ["au"], "rows": 9, "sport_key": "cricket_test_match", "stored": 8}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-26T18:30:00Z", "observed_utc": "2026-11-26T16:18:48.265946Z", "sport_key": "soccer_germany_bundesliga"}
+{"call_kind": "inplay", "credits": 1, "events": 11, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-26T16:18:48.265946Z", "regions": ["eu"], "rows": 149, "sport_key": "soccer_saudi_arabia_pro_league", "stored": 79}
