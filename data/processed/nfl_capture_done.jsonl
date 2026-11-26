@@ -858,3 +858,4 @@
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-25T23:38:15.786005Z", "phase": "refresh"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-26T00:08:56.540954Z", "phase": "refresh"}
 {"game_id": "2026_12_GB_LA", "observed_utc": "2026-11-26T00:56:50.540131Z", "phase": "t30m"}
+{"game_id": "2026_12_KC_BUF", "observed_utc": "2026-11-26T01:29:59.556441Z", "phase": "t24h"}
