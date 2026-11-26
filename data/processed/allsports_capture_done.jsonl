@@ -39173,3 +39173,5 @@
 {"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 5, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-26T03:34:00.497648Z", "regions": ["us"], "rows": 24, "sport_key": "basketball_nba", "stored": 24}
 {"call_kind": "inplay", "credits": 1, "events": 20, "events_live": 5, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-26T03:34:00.497648Z", "regions": ["us"], "rows": 62, "sport_key": "icehockey_nhl", "stored": 33}
 {"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 4, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-26T03:34:00.497648Z", "regions": ["us"], "rows": 2, "sport_key": "icehockey_ahl", "stored": 2}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-26T09:58:54.915128Z", "observed_utc": "2026-11-26T03:58:54.915128Z", "sport_key": "soccer_germany_bundesliga"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-26T09:58:54.915128Z", "observed_utc": "2026-11-26T03:58:54.915128Z", "sport_key": "soccer_turkey_super_league"}
