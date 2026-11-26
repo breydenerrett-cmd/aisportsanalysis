@@ -1,0 +1,102 @@
+{
+  "summary": "Buffalo is the favourite at home, and the books give them a fair probability of 0.5903 to win, which fits a team with 9 wins and 1 loss on a streak of 6. Kansas City is 8 and 2 and has won its last 3 games, so the market is pricing two good teams with a small gap, and the spread of 3 sits on a key number. Both teams are on a short week. Kansas City travels 857.6 miles across 1 time zone and lists 3 players out, including running back Kenneth Walker III, while Buffalo lists none out. That helps Buffalo a little, but the price already has it, and the data does not say how much any of those players matter. I pass on the moneyline, because nothing here shows Buffalo is better than the price says. I pass on the spread, because I see no reason in points that the number is wrong. I pass on the total of 46, which has come down from 50.5 when first captured. Weather is missing for an outdoor game, and that matters most for the total.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "BUF",
+      "verdict": "PASS",
+      "price": -153,
+      "book": "mybookieag",
+      "fair_estimate": 0.59,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books' own fair probability for Buffalo is already close to what the form suggests, so the price looks about right.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.5903},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 10.5},
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 10.8}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Kansas City has 3 players out and Buffalo has none, which leans Buffalo, but the data does not measure how much those players matter.",
+          "evidence": [
+            {"path": "sections.matchup.values.differentials.injuries_out.away", "value": 3},
+            {"path": "sections.matchup.values.differentials.injuries_out.home", "value": 0}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -144,
+      "what_would_change_it": "Buffalo at -144 or better would be worth taking on my fair estimate, and so would a confirmed quarterback change for Kansas City.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "KC +3",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "lowvig",
+      "fair_estimate": 0.5145,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides of the spread are close to even by the books' own numbers, and the number sits on a key number, so the market is probably right.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5145},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4855},
+            {"path": "sections.reference.values.key_numbers", "value": "3,6,7,10,14"}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both teams are on a short week with the same days of rest, and season margins per game are close, so the data does not show why the number is wrong in points.",
+          "evidence": [
+            {"path": "sections.home.values.rest.days_since_last_game", "value": 4},
+            {"path": "sections.away.values.rest.days_since_last_game", "value": 4},
+            {"path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": -0.3}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -106,
+      "what_would_change_it": "Kansas City at +3 for -106 or better would be worth taking on my fair estimate, and a quarterback change for either team would move the number.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 46",
+      "verdict": "PASS",
+      "price": -108,
+      "book": "betmgm",
+      "fair_estimate": 0.5017,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books split Under and Over almost evenly at 46, and the number has already come down from where it was first captured, so the price holds the scoring and defence numbers.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5017},
+            {"path": "markets.total.context.number_first_captured", "value": 50.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Weather for an outdoor game is not in the data, so I cannot judge wind or cold, and that is the input that matters most for a total.",
+          "evidence": [
+            {"path": "missing[1].item", "value": "weather"},
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -101,
+      "what_would_change_it": "Under 46 at -101 or better would be worth taking on my fair estimate, and a forecast showing strong wind would also change it.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

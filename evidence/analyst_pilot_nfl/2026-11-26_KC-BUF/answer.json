@@ -1,0 +1,118 @@
+{
+  "summary": "Buffalo is the favourite at home and the numbers say the market is about right. Both teams have won all of their recent games, both are on a short week, and the spread of 3 sits on a key number, with Kansas City getting the points at the same number it was first captured at. Nothing in the data shows me that 3 is wrong, so I pass on the spread. The moneyline on Buffalo is priced close to what the books' own de-vigged number says, and the Kansas City side does not pay enough for me to argue with the books, so I pass there too. On the total, 46 has come down from 50.5 when it was first captured, and the data has no weather forecast for an outdoor game, which matters for a number that has already moved. Both defences have allowed few points lately, but the market has seen that too. Missing weather, and an injury report where Kansas City lists more players out than Buffalo without telling us how much they matter, keep me from taking a side anywhere, so all three markets are a pass.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "BUF",
+      "verdict": "PASS",
+      "price": -153,
+      "book": "mybookieag",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books' de-vigged number already makes Buffalo the clear favourite, and the data gives me nothing about this market beyond its own price that would move me off it.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.5903},
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.4097}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both teams are on the same short rest and both start the quarterback they started last time, so there is no rest or quarterback gap to separate them.",
+          "evidence": [
+            {"path": "sections.away.values.rest.days_since_last_game", "value": 4},
+            {"path": "sections.home.values.rest.days_since_last_game", "value": 4},
+            {"path": "sections.home.values.qb.listed_for_this_game.changed_since_last_game", "value": false}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A quarterback change on either side or a Kansas City price that moves well above the current best quote would make me look again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "KC +3",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The spread of 3 is a near coin flip by the books' own de-vigged number, and Kansas City is getting the same number it was first captured at, so the market has not moved.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5145},
+            {"path": "markets.spread.options[0].line", "value": 3.0},
+            {"path": "markets.spread.context.away_number_first_captured", "value": 3.0}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number sits on 3, one of the key numbers from how the game is scored, which is the reason not to argue with it without a clear case that it is wrong in points.",
+          "evidence": [
+            {"path": "sections.reference.values.key_numbers[0]", "value": 3},
+            {"path": "sections.reference.values.scoring.field_goal", "value": 3}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Season margins per game are almost level for the two teams, which fits a number this tight.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 10.8},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 10.5}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "The spread moving off 3 to a different number, or word of a quarterback change, would make me reconsider.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 46",
+      "verdict": "PASS",
+      "price": -108,
+      "book": "betmgm",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides of 46 are priced as an even split by the books' own de-vigged number, and the total has come down from where it was first captured.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5017},
+            {"path": "markets.total.options[1].fair_probability", "value": 0.4983},
+            {"path": "markets.total.context.number_first_captured", "value": 50.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both defences have allowed few points per game over the recent stretch, but that is already in a number that has dropped.",
+          "evidence": [
+            {"path": "sections.away.values.form.last_5.points_against_per_game", "value": 16},
+            {"path": "sections.home.values.form.last_5.points_against_per_game", "value": 13.4}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We cannot see the weather for an outdoor game, so a total that has already moved is a reason for care.",
+          "evidence": [
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"},
+            {"path": "missing[1].item", "value": "weather"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A weather forecast for the stadium, or the total moving off 46, would be the new fact that could change this.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
