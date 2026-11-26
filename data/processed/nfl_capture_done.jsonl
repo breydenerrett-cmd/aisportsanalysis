@@ -886,3 +886,4 @@
 {"game_id": "2026_12_NE_LAC", "observed_utc": "2026-11-26T21:15:56.674850Z", "phase": "t72h"}
 {"game_id": "2026_12_WAS_ARI", "observed_utc": "2026-11-26T21:44:09.679597Z", "phase": "t72h"}
 {"game_id": "2026_12_SEA_SF", "observed_utc": "2026-11-26T21:44:09.679597Z", "phase": "t72h"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-11-26T22:18:16.015566Z", "phase": "refresh"}

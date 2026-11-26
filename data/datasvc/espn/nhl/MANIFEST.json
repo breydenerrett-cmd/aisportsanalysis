@@ -2,16 +2,16 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2027.jsonl": {
-   "bytes": 1498006,
-   "newest": "2026-11-26T19:13:55Z",
-   "records": 2499,
-   "sha256": "db5e0e5ee97b0ee8199bd8d72b77ef55e1a687fab55724cf9b4a214304f280c3"
+   "bytes": 1507242,
+   "newest": "2026-11-26T22:18:33Z",
+   "records": 2514,
+   "sha256": "b04bfbf7d6fe4eabeffa794e7648262b8b1c495bbb99280b9c9201905639895e"
   },
   "injuries.jsonl": {
-   "bytes": 498148,
-   "newest": "2026-11-26T19:13:57Z",
-   "records": 1557,
-   "sha256": "cd1ee0b7b5fd01105f1dfc1863a16b3efed57efc2222000f01c568fe584498df"
+   "bytes": 499143,
+   "newest": "2026-11-26T22:18:34Z",
+   "records": 1561,
+   "sha256": "b28ae64e8922cad2f4508e636a77e34b35cd73f59a9be1b2b1323a0a80c220c3"
   },
   "player_games_2027.jsonl": {
    "bytes": 10484807,
@@ -44,8 +44,8 @@
    "sha256": "1928b4b55c69e86bf9792f0aed91f29809a2b352a10785add1ef223599ec7cf6"
   }
  },
- "generated_utc": "2026-11-26T19:13:57Z",
+ "generated_utc": "2026-11-26T22:18:35Z",
  "league": "nhl",
- "refreshed_utc": "2026-11-26T19:13:57Z",
+ "refreshed_utc": "2026-11-26T22:18:34Z",
  "title": "NHL"
 }
