@@ -39182,3 +39182,5 @@
 {"call_kind": "inplay", "credits": 1, "events": 18, "events_live": 3, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-26T04:10:13.260359Z", "regions": ["us"], "rows": 50, "sport_key": "icehockey_nhl", "stored": 20}
 {"call_kind": "inplay", "credits": 1, "events": 12, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-26T04:10:13.260359Z", "regions": ["us"], "rows": 1, "sport_key": "icehockey_ahl", "stored": 1}
 {"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-26T04:10:13.260359Z", "regions": ["us"], "rows": 25, "sport_key": "soccer_mexico_ligamx", "stored": 20}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-11-26T10:24:32.579679Z", "observed_utc": "2026-11-26T04:24:32.579679Z", "sport_key": "soccer_efl_champ"}
+{"events": 17, "kind": "peek", "next_check_utc": "2026-11-26T10:24:32.579679Z", "observed_utc": "2026-11-26T04:24:32.579679Z", "sport_key": "soccer_uefa_champs_league"}
