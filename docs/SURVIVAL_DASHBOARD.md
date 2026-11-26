@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-25 21:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-26 16:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-25** |
+| Days until 2026-10-31 | **-26** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-25 (1:30 pm PT run): NFL brief published for tonight's GB@LA (Wed, 5:00 pm PT kickoff); no MLB. CIN@WAS 11-23 stays the public sample until GB@LA is graded.
-- Production up: /health 200, billing ok, memory peak 700.0 MB of 850. Another unexplained process restart at 1:20 pm PT (33 total).
-- deploy-prod: 11:05 am, 12:03 pm and 12:14 pm PT runs succeeded. CI green (push run 45663012895).
-- Daily-loop 11:38 am PT run was cancelled after 2 minutes; the 2:10 am PT run failed (runs from another branch).
+- 2026-11-26 (8:30 am PT run): NFL brief published for CHI@DET (Thanksgiving, 10:00 am PT kickoff): passes on all three markets. No MLB.
+- GB@LA 11-25 graded (final LA 26, GB 13); the public sample now points at it.
+- Production up: /health 200, billing ok, memory peak 644.6 MB of 850. Another unexplained process restart at 8:39 am PT (34 total).
+- deploy-prod: 6:07, 7:01 and 8:10 am PT runs succeeded. CI green (push run 45711659397). Daily-loop 2:10 am PT run failed (no MLB price capture; runs from another branch).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
