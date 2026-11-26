@@ -21074,3 +21074,7 @@
 {"credits": 2, "days_from": 3, "events": 36, "kind": "poll", "observed_utc": "2026-11-26T21:16:09.057680+00:00", "sport_key": "boxing_boxing"}
 {"away_score": 28.0, "away_team": "TBV Lemgo", "commence_time": "2026-11-26T18:00:00Z", "completed": true, "event_id": "e1c373bcfd3fd9f5700c3ab230e97ff3", "home_score": 27.0, "home_team": "HBW Balingen-Weilstetten", "kind": "score", "last_update": "2026-11-26T21:15:51Z", "observed_utc": "2026-11-26T21:16:09.057680+00:00", "outcome": "away", "scores": [{"name": "HBW Balingen-Weilstetten", "score": "27"}, {"name": "TBV Lemgo", "score": "28"}], "sport_key": "handball_germany_bundesliga"}
 {"credits": 2, "days_from": 3, "events": 9, "kind": "poll", "observed_utc": "2026-11-26T21:16:09.057680+00:00", "sport_key": "handball_germany_bundesliga"}
+{"credits": 2, "days_from": 3, "events": 15, "kind": "poll", "observed_utc": "2026-11-26T22:49:31.774977+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-26T22:49:31.774977+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-26T22:49:31.774977+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-26T22:49:31.774977+00:00", "sport_key": "cricket_international_t20"}
