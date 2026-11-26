@@ -39363,3 +39363,5 @@
 {"call_kind": "pregame", "credits": 2, "events": 18, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-26T13:35:15.114576Z", "regions": ["us"], "rows": 180, "sport_key": "soccer_uefa_europa_conference_league", "stored": 180}
 {"commence_utc": "2026-11-26T19:30:00Z", "event_id": "1ea8ceedbe8d577ba3c6ed8239137c4c", "kind": "phase", "observed_utc": "2026-11-26T13:35:15.114576Z", "phase": "t6h", "rows": 33, "sport_key": "basketball_ncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 21, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-26T13:35:15.114576Z", "regions": ["us"], "rows": 661, "sport_key": "basketball_ncaab", "stored": 661}
+{"commence_utc": "2026-11-26T14:25:00Z", "event_id": "69b4603433d0eed91383cbee4456157b", "kind": "phase", "observed_utc": "2026-11-26T13:55:50.731330Z", "phase": "t30m", "rows": 21, "sport_key": "soccer_saudi_arabia_pro_league"}
+{"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-26T13:55:50.731330Z", "regions": ["eu"], "rows": 198, "sport_key": "soccer_saudi_arabia_pro_league", "stored": 126}
