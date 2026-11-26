@@ -20981,3 +20981,7 @@
 {"credits": 2, "days_from": 3, "events": 9, "kind": "poll", "observed_utc": "2026-11-26T19:13:44.180725+00:00", "sport_key": "handball_germany_bundesliga"}
 {"away_score": 2.0, "away_team": "Diriyah Club", "commence_time": "2026-11-26T17:31:00Z", "completed": true, "event_id": "d5a117bed84a37bc36e3f68a7396ec4e", "home_score": 2.0, "home_team": "Al-Faisaly KSA FC", "kind": "score", "last_update": "2026-11-26T20:10:00Z", "observed_utc": "2026-11-26T20:10:00.892795+00:00", "outcome": "draw", "scores": [{"name": "Al-Faisaly KSA FC", "score": "2"}, {"name": "Diriyah Club", "score": "2"}], "sport_key": "soccer_saudi_arabia_pro_league"}
 {"credits": 2, "days_from": 3, "events": 12, "kind": "poll", "observed_utc": "2026-11-26T20:10:00.892795+00:00", "sport_key": "soccer_saudi_arabia_pro_league"}
+{"credits": 2, "days_from": 3, "events": 15, "kind": "poll", "observed_utc": "2026-11-26T20:36:04.655291+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-26T20:36:04.655291+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-26T20:36:04.655291+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-26T20:36:04.655291+00:00", "sport_key": "cricket_international_t20"}
