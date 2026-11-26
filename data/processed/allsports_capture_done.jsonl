@@ -39289,3 +39289,4 @@
 {"commence_utc": "2026-11-26T17:00:00Z", "event_id": "1e866ef633893abc2acc46b7f71e6486", "kind": "phase", "observed_utc": "2026-11-26T11:05:06.524712Z", "phase": "t6h", "rows": 31, "sport_key": "basketball_ncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 21, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-26T11:05:06.524712Z", "regions": ["us"], "rows": 629, "sport_key": "basketball_ncaab", "stored": 629}
 {"call_kind": "inplay", "credits": 1, "events": 36, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-26T11:05:06.524712Z", "regions": ["us"], "rows": 99, "sport_key": "boxing_boxing", "stored": 6}
+{"events": 35, "kind": "peek", "next_check_utc": "2026-11-26T17:00:00Z", "observed_utc": "2026-11-26T11:19:35.788933Z", "sport_key": "boxing_boxing"}
