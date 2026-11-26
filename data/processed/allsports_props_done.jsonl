@@ -5921,3 +5921,4 @@
 {"books": 9, "credits": 6, "event_id": "9b825e6518156008da499be041975fdd", "family": "NFL", "kind": "call", "markets": ["player_pass_yds", "player_pass_tds", "player_rush_yds", "player_receptions", "player_reception_yds", "player_anytime_td"], "observed_utc": "2026-11-26T12:04:46.307982Z", "phase": "t6h", "regions": ["us"], "remaining": 68436, "sport_key": "americanfootball_nfl", "stored": 815}
 {"events": 5, "kind": "peek", "next_check_utc": "2026-11-26T15:59:13.101298Z", "observed_utc": "2026-11-26T12:59:13.101298Z", "sport_key": "basketball_nba"}
 {"events": 15, "kind": "peek", "next_check_utc": "2026-11-26T15:59:13.101298Z", "observed_utc": "2026-11-26T12:59:13.101298Z", "sport_key": "icehockey_nhl"}
+{"events": 69, "kind": "peek", "next_check_utc": "2026-11-26T17:33:25.612582Z", "observed_utc": "2026-11-26T14:33:25.612582Z", "sport_key": "americanfootball_ncaaf"}
