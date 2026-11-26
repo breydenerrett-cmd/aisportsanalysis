@@ -39771,3 +39771,5 @@
 {"commence_utc": "2026-11-27T00:00:00Z", "event_id": "8cdf0f9df5b4480c117a9455b60b067b", "kind": "phase", "observed_utc": "2026-11-26T23:36:21.518059Z", "phase": "t30m", "rows": 33, "sport_key": "basketball_ncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 37, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-26T23:36:21.518059Z", "regions": ["us"], "rows": 736, "sport_key": "basketball_ncaab", "stored": 736}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-26T23:36:21.518059Z", "regions": ["au"], "rows": 6, "sport_key": "cricket_test_match", "stored": 5}
+{"events": 23, "kind": "peek", "next_check_utc": "2026-11-27T05:52:11.592770Z", "observed_utc": "2026-11-26T23:52:11.592770Z", "sport_key": "soccer_england_league2"}
+{"call_kind": "inplay", "credits": 1, "events": 9, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-26T23:52:11.592770Z", "regions": ["us"], "rows": 83, "sport_key": "soccer_brazil_campeonato", "stored": 16}
