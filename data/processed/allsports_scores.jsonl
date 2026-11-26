@@ -20836,3 +20836,5 @@
 {"credits": 2, "days_from": 3, "events": 191, "kind": "poll", "observed_utc": "2026-11-26T07:24:01.545212+00:00", "sport_key": "basketball_ncaab"}
 {"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-26T07:24:01.545212+00:00", "sport_key": "cricket_test_match"}
 {"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-26T07:24:01.545212+00:00", "sport_key": "cricket_international_t20"}
+{"credits": 2, "days_from": 3, "events": 4, "kind": "poll", "observed_utc": "2026-11-26T08:13:08.258967+00:00", "sport_key": "icehockey_mestis"}
+{"credits": 2, "days_from": 3, "events": 12, "kind": "poll", "observed_utc": "2026-11-26T08:13:08.258967+00:00", "sport_key": "icehockey_sweden_allsvenskan"}
