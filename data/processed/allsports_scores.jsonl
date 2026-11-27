@@ -21237,3 +21237,13 @@
 {"credits": 2, "days_from": 3, "events": 5, "kind": "poll", "observed_utc": "2026-11-27T09:44:23.281383+00:00", "sport_key": "soccer_australia_aleague"}
 {"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-27T09:55:10.898125+00:00", "sport_key": "aussierules_aflw"}
 {"credits": 2, "days_from": 3, "events": 36, "kind": "poll", "observed_utc": "2026-11-27T10:11:04.215969+00:00", "sport_key": "boxing_boxing"}
+{"away_score": null, "away_team": "Utica Comets", "commence_time": "2026-11-28T23:05:00Z", "completed": false, "event_id": "8e7ada8c2902e4e07362d00350238251", "home_score": null, "home_team": "Springfield Thunderbirds", "kind": "score", "last_update": null, "observed_utc": "2026-11-27T11:47:17.208235+00:00", "outcome": null, "scores": null, "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 17, "kind": "poll", "observed_utc": "2026-11-27T11:47:17.208235+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-27T11:47:17.208235+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-27T11:47:17.208235+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 4, "kind": "poll", "observed_utc": "2026-11-27T11:47:17.208235+00:00", "sport_key": "icehockey_mestis"}
+{"away_score": null, "away_team": "England", "commence_time": "2026-11-29T08:15:00Z", "completed": false, "event_id": "c6ad5040eb7d5db1032da7fda936b0e7", "home_score": null, "home_team": "Australia", "kind": "score", "last_update": null, "observed_utc": "2026-11-27T11:47:17.208235+00:00", "outcome": null, "scores": null, "sport_key": "cricket_international_t20"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-27T11:47:17.208235+00:00", "sport_key": "cricket_international_t20"}
+{"credits": 2, "days_from": 3, "events": 12, "kind": "poll", "observed_utc": "2026-11-27T11:47:17.208235+00:00", "sport_key": "icehockey_sweden_allsvenskan"}
+{"away_score": 0.0, "away_team": "Melbourne City", "commence_time": "2026-11-27T08:40:00Z", "completed": true, "event_id": "acbf7c0545986cd60dd4e4cb0152bd41", "home_score": 2.0, "home_team": "Macarthur FC", "kind": "score", "last_update": "2026-11-27T11:47:05Z", "observed_utc": "2026-11-27T11:47:17.208235+00:00", "outcome": "home", "scores": [{"name": "Macarthur FC", "score": "2"}, {"name": "Melbourne City", "score": "0"}], "sport_key": "soccer_australia_aleague"}
+{"credits": 2, "days_from": 3, "events": 5, "kind": "poll", "observed_utc": "2026-11-27T11:47:17.208235+00:00", "sport_key": "soccer_australia_aleague"}
