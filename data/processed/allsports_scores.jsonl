@@ -21114,3 +21114,7 @@
 {"credits": 2, "days_from": 3, "events": 36, "kind": "poll", "observed_utc": "2026-11-26T23:36:28.511355+00:00", "sport_key": "boxing_boxing"}
 {"away_score": 1.0, "away_team": "Remo", "commence_time": "2026-11-26T23:00:00Z", "completed": false, "event_id": "908ac2d3341c0dd5d86e300affa06f15", "home_score": 1.0, "home_team": "Sao Paulo", "kind": "score", "last_update": "2026-11-27T00:32:07Z", "observed_utc": "2026-11-27T00:32:08.209581+00:00", "outcome": "draw", "scores": [{"name": "Sao Paulo", "score": "1"}, {"name": "Remo", "score": "1"}], "sport_key": "soccer_brazil_campeonato"}
 {"credits": 2, "days_from": 3, "events": 11, "kind": "poll", "observed_utc": "2026-11-27T00:32:08.209581+00:00", "sport_key": "soccer_brazil_campeonato"}
+{"credits": 2, "days_from": 3, "events": 15, "kind": "poll", "observed_utc": "2026-11-27T01:04:34.790541+00:00", "sport_key": "icehockey_ahl"}
+{"credits": 2, "days_from": 3, "events": 6, "kind": "poll", "observed_utc": "2026-11-27T01:04:34.790541+00:00", "sport_key": "icehockey_liiga"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-27T01:04:34.790541+00:00", "sport_key": "cricket_test_match"}
+{"credits": 2, "days_from": 3, "events": 1, "kind": "poll", "observed_utc": "2026-11-27T01:04:34.790541+00:00", "sport_key": "cricket_international_t20"}
