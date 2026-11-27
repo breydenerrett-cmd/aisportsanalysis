@@ -8779,3 +8779,6 @@
 {"fetched_utc": "2026-11-27T16:46:34.889970+00:00", "game_date": "2026-11-27", "poll": true}
 {"fetched_utc": "2026-11-27T17:04:02.440142+00:00", "game_date": "2026-11-27", "poll": true}
 {"fetched_utc": "2026-11-27T17:17:59.644416+00:00", "game_date": "2026-11-27", "poll": true}
+{"fetched_utc": "2026-11-27T17:45:26.860494+00:00", "game_date": "2026-11-27", "poll": true}
+{"category": "signed", "date": "2026-11-27", "first_seen_utc": "2026-11-27T17:45:26.860494+00:00", "player": "Alec Bohm", "player_id": 664761, "team": "KC", "transaction_id": 951257}
+{"category": "designated", "date": "2026-11-27", "first_seen_utc": "2026-11-27T17:45:26.860494+00:00", "player": "Mitch Spence", "player_id": 687765, "team": "KC", "transaction_id": 951258}
