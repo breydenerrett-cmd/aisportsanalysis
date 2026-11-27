@@ -8792,3 +8792,4 @@
 {"category": "traded", "date": "2026-11-27", "first_seen_utc": "2026-11-27T20:18:09.449549+00:00", "player": "Henry Davis", "player_id": 680779, "team": "ARI", "transaction_id": 951271}
 {"fetched_utc": "2026-11-27T21:05:40.112677+00:00", "game_date": "2026-11-27", "poll": true}
 {"category": "other", "date": "2026-11-27", "first_seen_utc": "2026-11-27T21:05:40.112677+00:00", "player": "Gabriel Hughes", "player_id": 687312, "team": "COL", "transaction_id": 951273}
+{"fetched_utc": "2026-11-27T22:00:21.670570+00:00", "game_date": "2026-11-27", "poll": true}
