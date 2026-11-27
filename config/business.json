@@ -131,10 +131,10 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-11-27 (8:30 am PT run): NFL brief published for DEN@PIT (12:00 pm PT): passes on all three markets. No MLB (off-season).",
-    "PHI@DAL and KC@BUF 11-26 graded (PHI 39, DAL 38; BUF 13, KC 10); the public sample now points at KC@BUF.",
-    "Production up: /health 200, billing ok, memory peak 737.1 MB of 850. Another unexplained process restart at 8:19 am PT (36 total).",
-    "deploy-prod: 5:05 am and 7:12 am PT runs succeeded; 6:03 am PT run failed (deploy step hit its 9-minute limit). CI green. Daily-loop 2:10 am PT run failed (arsenals shrink refusal; runs from another branch).",
+    "2026-11-27 (1:30 pm PT run): no new brief; the only game today (DEN@PIT, 12:00 pm PT) was briefed this morning and is not final yet. No MLB (off-season).",
+    "Public sample still points at KC@BUF 11-26 (graded); DEN@PIT grades on the next run.",
+    "Production up: /health 200, billing ok, memory peak 758.6 MB of 850. No new unexplained restart since 8:19 am PT (36 total); the 1:26 pm PT restart was a deploy.",
+    "deploy-prod: 10:14 am, 11:11 am and 1:10 pm PT runs succeeded. CI green. Daily-loop 11:13 am PT run failed (no MLB price capture to slate, plus the arsenals shrink refusal; runs from another branch).",
     "Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at."
   ],
   "next_customer_action": "Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.",

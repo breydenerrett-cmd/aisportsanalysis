@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-11-27 16:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-27 21:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-27 (8:30 am PT run): NFL brief published for DEN@PIT (12:00 pm PT): passes on all three markets. No MLB (off-season).
-- PHI@DAL and KC@BUF 11-26 graded (PHI 39, DAL 38; BUF 13, KC 10); the public sample now points at KC@BUF.
-- Production up: /health 200, billing ok, memory peak 737.1 MB of 850. Another unexplained process restart at 8:19 am PT (36 total).
-- deploy-prod: 5:05 am and 7:12 am PT runs succeeded; 6:03 am PT run failed (deploy step hit its 9-minute limit). CI green. Daily-loop 2:10 am PT run failed (arsenals shrink refusal; runs from another branch).
+- 2026-11-27 (1:30 pm PT run): no new brief; the only game today (DEN@PIT, 12:00 pm PT) was briefed this morning and is not final yet. No MLB (off-season).
+- Public sample still points at KC@BUF 11-26 (graded); DEN@PIT grades on the next run.
+- Production up: /health 200, billing ok, memory peak 758.6 MB of 850. No new unexplained restart since 8:19 am PT (36 total); the 1:26 pm PT restart was a deploy.
+- deploy-prod: 10:14 am, 11:11 am and 1:10 pm PT runs succeeded. CI green. Daily-loop 11:13 am PT run failed (no MLB price capture to slate, plus the arsenals shrink refusal; runs from another branch).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
