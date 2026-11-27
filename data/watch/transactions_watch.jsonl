@@ -8788,3 +8788,5 @@
 {"fetched_utc": "2026-11-27T19:09:44.860622+00:00", "game_date": "2026-11-27", "poll": true}
 {"fetched_utc": "2026-11-27T19:48:31.120920+00:00", "game_date": "2026-11-27", "poll": true}
 {"category": "signed", "date": "2026-11-27", "first_seen_utc": "2026-11-27T19:48:31.120920+00:00", "player": "Kaima Taira", "player_id": 838343, "team": "TOR", "transaction_id": 951269}
+{"fetched_utc": "2026-11-27T20:18:09.449549+00:00", "game_date": "2026-11-27", "poll": true}
+{"category": "traded", "date": "2026-11-27", "first_seen_utc": "2026-11-27T20:18:09.449549+00:00", "player": "Henry Davis", "player_id": 680779, "team": "ARI", "transaction_id": 951271}
