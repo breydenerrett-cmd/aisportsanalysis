@@ -39981,3 +39981,5 @@
 {"call_kind": "pregame", "credits": 2, "events": 6, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-27T07:39:14.073873Z", "regions": ["us"], "rows": 72, "sport_key": "soccer_korea_kleague1", "stored": 48}
 {"commence_utc": "2026-11-27T08:15:00Z", "event_id": "0d80ad8d9a13dd3db51a952c7e2d19f4", "kind": "phase", "observed_utc": "2026-11-27T07:50:17.476259Z", "phase": "t30m", "rows": 3, "sport_key": "cricket_international_t20"}
 {"call_kind": "pregame", "credits": 1, "events": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-27T07:50:17.476259Z", "regions": ["us"], "rows": 3, "sport_key": "cricket_international_t20", "stored": 3}
+{"commence_utc": "2026-11-27T08:40:00Z", "event_id": "acbf7c0545986cd60dd4e4cb0152bd41", "kind": "phase", "observed_utc": "2026-11-27T08:14:05.448742Z", "phase": "t30m", "rows": 10, "sport_key": "soccer_australia_aleague"}
+{"call_kind": "pregame", "credits": 2, "events": 5, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-27T08:14:05.448742Z", "regions": ["us"], "rows": 31, "sport_key": "soccer_australia_aleague", "stored": 20}
