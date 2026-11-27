@@ -39957,3 +39957,8 @@
 {"call_kind": "pregame", "credits": 1, "events": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-27T06:23:53.621607Z", "regions": ["us"], "rows": 3, "sport_key": "cricket_international_t20", "stored": 3}
 {"commence_utc": "2026-11-27T12:15:00Z", "event_id": "0e9d20640e5fb6d772ef9c7d8bd7b233", "kind": "phase", "observed_utc": "2026-11-27T06:23:53.621607Z", "phase": "t6h", "rows": 21, "sport_key": "soccer_saudi_arabia_pro_league"}
 {"call_kind": "pregame", "credits": 2, "events": 9, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-27T06:23:53.621607Z", "regions": ["eu"], "rows": 175, "sport_key": "soccer_saudi_arabia_pro_league", "stored": 126}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-27T12:34:41.694744Z", "observed_utc": "2026-11-27T06:34:41.694744Z", "sport_key": "soccer_chile_campeonato"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-11-27T12:34:41.694744Z", "observed_utc": "2026-11-27T06:34:41.694744Z", "sport_key": "soccer_spl"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-27T12:34:41.694744Z", "observed_utc": "2026-11-27T06:34:41.694744Z", "sport_key": "soccer_sweden_allsvenskan"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-27T12:34:41.694744Z", "observed_utc": "2026-11-27T06:34:41.694744Z", "sport_key": "soccer_uefa_nations_league"}
+{"call_kind": "inplay", "credits": 1, "events": 47, "events_live": 2, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-27T06:34:41.694744Z", "regions": ["us"], "rows": 323, "sport_key": "basketball_ncaab", "stored": 323}
