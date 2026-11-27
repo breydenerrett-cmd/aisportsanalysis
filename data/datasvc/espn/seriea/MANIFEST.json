@@ -2,10 +2,10 @@
  "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
  "files": {
   "games_2026.jsonl": {
-   "bytes": 188010,
-   "newest": "2026-11-27T11:09:05Z",
-   "records": 331,
-   "sha256": "9c45ba86489f552c005b5ca18eaf92151e0e89f6deb484d11529ea4fe77b859c"
+   "bytes": 188582,
+   "newest": "2026-11-27T14:15:37Z",
+   "records": 332,
+   "sha256": "62eb0d352c2223f9fbdd4fd27bb8bc05f48ea9a8646735c00de61fa99cb12965"
   },
   "standings_2026.jsonl": {
    "bytes": 77952,
@@ -26,8 +26,8 @@
    "sha256": "22183a30ac9a10b2605edf12056f3c4bdbdb4f3f72daf08a0bac3eb8ac3a953f"
   }
  },
- "generated_utc": "2026-11-27T11:09:06Z",
+ "generated_utc": "2026-11-27T14:15:38Z",
  "league": "seriea",
- "refreshed_utc": "2026-11-27T11:09:06Z",
+ "refreshed_utc": "2026-11-27T14:15:38Z",
  "title": "Serie A"
 }
