@@ -40216,3 +40216,4 @@
 {"commence_utc": "2026-11-28T14:30:00Z", "event_id": "f84a9da7eedd0ca11a28a1a7a8edddc7", "kind": "phase", "observed_utc": "2026-11-27T14:30:01.978632Z", "phase": "t24h", "rows": 16, "sport_key": "soccer_germany_bundesliga"}
 {"commence_utc": "2026-11-28T14:30:00Z", "event_id": "365e1a00908ab1cd5a51a53ede2b86b2", "kind": "phase", "observed_utc": "2026-11-27T14:30:01.978632Z", "phase": "t24h", "rows": 16, "sport_key": "soccer_germany_bundesliga"}
 {"call_kind": "pregame", "credits": 2, "events": 18, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-27T14:30:01.978632Z", "regions": ["us"], "rows": 224, "sport_key": "soccer_germany_bundesliga", "stored": 96}
+{"events": 3, "kind": "peek", "next_check_utc": "2026-11-27T20:46:12.007192Z", "observed_utc": "2026-11-27T14:46:12.007192Z", "sport_key": "soccer_italy_coppa_italia"}
