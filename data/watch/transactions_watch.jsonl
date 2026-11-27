@@ -8793,3 +8793,8 @@
 {"fetched_utc": "2026-11-27T21:05:40.112677+00:00", "game_date": "2026-11-27", "poll": true}
 {"category": "other", "date": "2026-11-27", "first_seen_utc": "2026-11-27T21:05:40.112677+00:00", "player": "Gabriel Hughes", "player_id": 687312, "team": "COL", "transaction_id": 951273}
 {"fetched_utc": "2026-11-27T22:00:21.670570+00:00", "game_date": "2026-11-27", "poll": true}
+{"fetched_utc": "2026-11-27T23:06:16.674548+00:00", "game_date": "2026-11-27", "poll": true}
+{"category": "signed", "date": "2026-11-27", "first_seen_utc": "2026-11-27T23:06:16.674548+00:00", "player": "Ha-Seong Kim", "player_id": 673490, "team": "DET", "transaction_id": 951280}
+{"category": "signed", "date": "2026-11-27", "first_seen_utc": "2026-11-27T23:06:16.674548+00:00", "player": "Luis Gil", "player_id": 661563, "team": "DET", "transaction_id": 951281}
+{"category": "designated", "date": "2026-11-27", "first_seen_utc": "2026-11-27T23:06:16.674548+00:00", "player": "Beau Brieske", "player_id": 689225, "team": "DET", "transaction_id": 951282}
+{"category": "designated", "date": "2026-11-27", "first_seen_utc": "2026-11-27T23:06:16.674548+00:00", "player": "Tsung-Che Cheng", "player_id": 691907, "team": "DET", "transaction_id": 951283}
