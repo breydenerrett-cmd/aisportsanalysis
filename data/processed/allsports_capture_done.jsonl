@@ -40105,3 +40105,7 @@
 {"commence_utc": "2026-11-28T12:30:00Z", "event_id": "7a332a2eaa2bf0b790a3432a4fa07d57", "kind": "phase", "observed_utc": "2026-11-27T12:39:48.272466Z", "phase": "t24h", "rows": 17, "sport_key": "soccer_england_league2"}
 {"commence_utc": "2026-11-28T12:30:00Z", "event_id": "8b4a6773598a5ab325ea4108c30ad7e4", "kind": "phase", "observed_utc": "2026-11-27T12:39:48.272466Z", "phase": "t24h", "rows": 17, "sport_key": "soccer_england_league2"}
 {"call_kind": "pregame", "credits": 2, "events": 23, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-27T12:39:48.272466Z", "regions": ["us"], "rows": 226, "sport_key": "soccer_england_league2", "stored": 204}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-27T16:01:00Z", "observed_utc": "2026-11-27T12:50:38.967665Z", "sport_key": "americanfootball_ncaaf_fcs"}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-27T18:50:38.967665Z", "observed_utc": "2026-11-27T12:50:38.967665Z", "sport_key": "rugbyleague_nrl"}
+{"events": 20, "kind": "peek", "next_check_utc": "2026-11-27T18:50:38.967665Z", "observed_utc": "2026-11-27T12:50:38.967665Z", "sport_key": "soccer_fa_cup"}
+{"events": 8, "kind": "peek", "next_check_utc": "2026-11-27T14:00:00Z", "observed_utc": "2026-11-27T12:50:38.967665Z", "sport_key": "soccer_norway_eliteserien"}
