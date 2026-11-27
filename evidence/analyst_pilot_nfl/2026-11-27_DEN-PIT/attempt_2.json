@@ -1,0 +1,60 @@
+{
+"summary": "Denver is the better side on recent form, with a six-game winning streak, and the books price it that way: the moneyline sits at -230, too steep to bet under the house rule, and the books' own fair probability for Denver is 0.6792. Pittsburgh's listed quarterback has changed since last game to Mason Rudolph, and Aaron Rodgers is listed as not practicing for a personal matter, but the data does not measure what that is worth, so I put no number on it. I pass on the spread at DEN -4.5: the books see it as close to a coin flip at 0.5059 and I find nothing in the data showing the number is wrong in points. I also pass on the total of 37, which has come down from 40.5 when first captured; the books' fair probability is 0.5002 for the Under and the weather is missing for an outdoor game. The missing weather and the unconfirmed quarterback are the inputs that matter most here, and both argue for staying out.",
+"summary_derived": [],
+"calls": [
+{
+"slot_id": "moneyline",
+"market": "moneyline",
+"selection": "DEN",
+"verdict": "PASS",
+"price": -230,
+"book": "fanduel",
+"fair_estimate": 0.68,
+"confidence": "low",
+"reasons": [
+{"claim": "The books already treat Denver as the clear favourite, and at -230 the price is past the limit where I will bet a favourite.", "evidence": [{"path": "markets.moneyline.options[0].best.price", "value": -230}, {"path": "markets.moneyline.options[0].fair_probability", "value": 0.6792}], "derived": []},
+{"claim": "Pittsburgh has a quarterback change from last game, which is a reason for care, but the data does not say how much it moves the price.", "evidence": [{"path": "sections.home.values.qb.listed_for_this_game.name", "value": "Mason Rudolph"}, {"path": "sections.home.values.qb.listed_for_this_game.changed_since_last_game", "value": true}], "derived": []},
+{"claim": "Denver comes in on a winning streak, which fits the price and gives me no reason to think the market is wrong.", "evidence": [{"path": "sections.away.values.streak.length", "value": 6}, {"path": "sections.away.values.form.last_5.margin_per_game", "value": 8}], "derived": []}
+],
+"pass_price": null,
+"what_would_change_it": "A confirmed change at quarterback for either team, or a Denver price shorter than -200 appearing at a book, would change how I read this market.",
+"case_against": null
+},
+{
+"slot_id": "spread",
+"market": "spread",
+"selection": "DEN -4.5",
+"verdict": "PASS",
+"price": -110,
+"book": "fanduel",
+"fair_estimate": 0.5,
+"confidence": "low",
+"reasons": [
+{"claim": "The books make this a near coin flip at the current number, and nothing in the data shows the number is off in points.", "evidence": [{"path": "markets.spread.options[0].fair_probability", "value": 0.5059}, {"path": "markets.spread.options[1].fair_probability", "value": 0.4941}], "derived": []},
+{"claim": "The number has moved toward Denver being laid more points since it was first captured, which says the market has already taken in Denver's form and Pittsburgh's quarterback change.", "evidence": [{"path": "markets.spread.context.away_number_first_captured", "value": -1.5}, {"path": "markets.spread.options[0].line", "value": -4.5}], "derived": []},
+{"claim": "Season-long figures are close between the teams, while Denver's recent games are stronger; the recent window rests on only a few games.", "evidence": [{"path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": -1.3}, {"path": "sections.matchup.values.differentials.form_last_5_margin_per_game.diff", "value": -5.8}], "derived": []}
+],
+"pass_price": null,
+"what_would_change_it": "A confirmed starting quarterback for Pittsburgh, or the number moving off 4.5, would make me look at this again.",
+"case_against": null
+},
+{
+"slot_id": "total",
+"market": "total",
+"selection": "Under 37",
+"verdict": "PASS",
+"price": -107,
+"book": "lowvig",
+"fair_estimate": 0.5,
+"confidence": "low",
+"reasons": [
+{"claim": "The total was first captured at 40.5 and now sits at 37, so the market has already moved down a long way and the two sides are priced evenly.", "evidence": [{"path": "markets.total.context.number_first_captured", "value": 40.5}, {"path": "markets.total.options[0].line", "value": 37.0}, {"path": "markets.total.options[0].fair_probability", "value": 0.5002}], "derived": []},
+{"claim": "Scoring figures point both ways: Denver has scored more in its recent games, while Pittsburgh's recent yards per play is the lower of the two.", "evidence": [{"path": "sections.away.values.form.last_5.points_for_per_game", "value": 27.8}, {"path": "sections.home.values.form.last_5.points_for_per_game", "value": 20.6}, {"path": "sections.home.values.form.last_5.yards_per_play.value", "value": 4.5569}], "derived": []},
+{"claim": "We cannot see weather for an outdoor game, and the quarterback change for Pittsburgh could move this number.", "evidence": [{"path": "sections.schedule.values.venue.roof", "value": "outdoors"}, {"path": "sections.home.values.qb.listed_for_this_game.name", "value": "Mason Rudolph"}], "derived": []}
+],
+"pass_price": null,
+"what_would_change_it": "A weather forecast for this outdoor game, or a confirmed quarterback for Pittsburgh, could move my view of the total.",
+"case_against": null
+}
+]
+}

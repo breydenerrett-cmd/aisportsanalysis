@@ -1,0 +1,1164 @@
+{
+  "packet_version": "analyst_nfl_packet_v1",
+  "built_at": "2026-11-27T16:42:19Z",
+  "game": {
+    "game_id": "2026_12_DEN_PIT",
+    "date": "2026-11-27",
+    "season": 2026,
+    "week": 12,
+    "game_type": "REG",
+    "away": "DEN",
+    "home": "PIT",
+    "away_name": "Denver Broncos",
+    "home_name": "Pittsburgh Steelers",
+    "kickoff_utc": "2026-11-27T20:00:00Z",
+    "state": "pending",
+    "stadium": "Acrisure Stadium",
+    "neutral_site": false
+  },
+  "figure_units": {
+    "days_since_last_game": "days",
+    "listed": "players on the report",
+    "margin_per_game": "points margin per game",
+    "miles_from_home_base": "miles",
+    "out": "players out",
+    "points_against_per_game": "points allowed per game",
+    "points_for_per_game": "points per game",
+    "time_zones_crossed": "hours",
+    "turnover_margin": "takeaways - giveaways per game",
+    "yards_per_play": "net yards per play",
+    "yards_per_play_allowed": "net yards per play allowed"
+  },
+  "sections": {
+    "away": {
+      "as_of": "2026-11-27T16:42:19Z",
+      "as_of_basis": "games the data store holds as finished before this packet was built",
+      "values": {
+        "form": {
+          "last_3": {
+            "games": 3,
+            "losses": 0,
+            "margin_per_game": 7.6667,
+            "points_against": 69,
+            "points_against_per_game": 23,
+            "points_for": 92,
+            "points_for_per_game": 30.6667,
+            "ties": 0,
+            "turnover_margin": {
+              "games": 3,
+              "total": 1,
+              "value": 0.3333
+            },
+            "wins": 3,
+            "yards_per_play": {
+              "games": 3,
+              "value": 5.0105
+            },
+            "yards_per_play_allowed": {
+              "games": 3,
+              "value": 5.7538
+            }
+          },
+          "last_5": {
+            "games": 5,
+            "losses": 0,
+            "margin_per_game": 8,
+            "points_against": 99,
+            "points_against_per_game": 19.8,
+            "points_for": 139,
+            "points_for_per_game": 27.8,
+            "ties": 0,
+            "turnover_margin": {
+              "games": 5,
+              "total": 4,
+              "value": 0.8
+            },
+            "wins": 5,
+            "yards_per_play": {
+              "games": 5,
+              "value": 4.9408
+            },
+            "yards_per_play_allowed": {
+              "games": 5,
+              "value": 5.1932
+            }
+          },
+          "season_to_date": {
+            "games": 10,
+            "losses": 2,
+            "margin_per_game": 2.6,
+            "points_against": 210,
+            "points_against_per_game": 21,
+            "points_for": 236,
+            "points_for_per_game": 23.6,
+            "ties": 0,
+            "turnover_margin": {
+              "games": 10,
+              "total": 5,
+              "value": 0.5
+            },
+            "wins": 8,
+            "yards_per_play": {
+              "games": 10,
+              "value": 4.8173
+            },
+            "yards_per_play_allowed": {
+              "games": 10,
+              "value": 5.212
+            }
+          }
+        },
+        "injuries": {
+          "assumption": "a row without date_modified is the week's final report, taken as published 24 hours before kickoff",
+          "by_position_group": {
+            "DB": {
+              "dnp": 1,
+              "doubtful": 0,
+              "limited": 0,
+              "listed": 1,
+              "out": 1,
+              "questionable": 0
+            },
+            "DL": {
+              "dnp": 1,
+              "doubtful": 0,
+              "limited": 0,
+              "listed": 1,
+              "out": 1,
+              "questionable": 0
+            },
+            "RB": {
+              "dnp": 1,
+              "doubtful": 0,
+              "limited": 0,
+              "listed": 2,
+              "out": 0,
+              "questionable": 1
+            },
+            "TE": {
+              "dnp": 0,
+              "doubtful": 0,
+              "limited": 0,
+              "listed": 1,
+              "out": 1,
+              "questionable": 0
+            }
+          },
+          "newest_report_utc": null,
+          "players_listed": 5,
+          "report_week": 12,
+          "skill_players_listed": [
+            {
+              "injury": "Thumb",
+              "name": "Tyler Badie",
+              "position": "RB",
+              "practice_status": "full",
+              "report_status": "questionable"
+            },
+            {
+              "injury": "Foot",
+              "name": "Caleb Lohner",
+              "position": "TE",
+              "practice_status": "full",
+              "report_status": "out"
+            }
+          ],
+          "totals": {
+            "dnp": 3,
+            "doubtful": 0,
+            "limited": 0,
+            "listed": 5,
+            "out": 3,
+            "questionable": 1
+          }
+        },
+        "last_three": [
+          {
+            "kickoff_utc": "2026-11-22T21:25:00Z",
+            "margin": 14,
+            "opponent": "LV",
+            "points_against": 24,
+            "points_for": 38,
+            "result": "W",
+            "site": "home",
+            "week": 11
+          },
+          {
+            "kickoff_utc": "2026-11-08T18:00:00Z",
+            "margin": 5,
+            "opponent": "CAR",
+            "points_against": 21,
+            "points_for": 26,
+            "result": "W",
+            "site": "away",
+            "week": 9
+          },
+          {
+            "kickoff_utc": "2026-11-01T21:25:00Z",
+            "margin": 4,
+            "opponent": "KC",
+            "points_against": 24,
+            "points_for": 28,
+            "result": "W",
+            "site": "home",
+            "week": 8
+          }
+        ],
+        "name": "Denver Broncos",
+        "qb": {
+          "last_game_starter": "Bo Nix",
+          "listed_for_this_game": {
+            "changed_since_last_game": false,
+            "listed_as_of_utc": "2026-11-27T16:41:34Z",
+            "name": "Bo Nix",
+            "prior_starts_in_store": 46,
+            "prior_starts_with_team": 46,
+            "projected": true
+          }
+        },
+        "record": {
+          "season": {
+            "games": 10,
+            "losses": 2,
+            "ties": 0,
+            "wins": 8
+          }
+        },
+        "rest": {
+          "coming_off_bye": false,
+          "days_since_last_game": 5,
+          "season_opener": false,
+          "short_week": true,
+          "week_gap": 1
+        },
+        "side": "away",
+        "streak": {
+          "length": 6,
+          "type": "W"
+        },
+        "team": "DEN",
+        "travel": {
+          "direction": "east",
+          "kickoff_home_base_clock": "13:00",
+          "miles_from_home_base": 1318.1,
+          "time_zones_crossed": 2
+        }
+      }
+    },
+    "home": {
+      "as_of": "2026-11-27T16:42:19Z",
+      "as_of_basis": "games the data store holds as finished before this packet was built",
+      "values": {
+        "form": {
+          "last_3": {
+            "games": 3,
+            "losses": 2,
+            "margin_per_game": -0.6667,
+            "points_against": 63,
+            "points_against_per_game": 21,
+            "points_for": 61,
+            "points_for_per_game": 20.3333,
+            "ties": 0,
+            "turnover_margin": {
+              "games": 3,
+              "total": 2,
+              "value": 0.6667
+            },
+            "wins": 1,
+            "yards_per_play": {
+              "games": 3,
+              "value": 4.5054
+            },
+            "yards_per_play_allowed": {
+              "games": 3,
+              "value": 5.6816
+            }
+          },
+          "last_5": {
+            "games": 5,
+            "losses": 2,
+            "margin_per_game": 2.2,
+            "points_against": 92,
+            "points_against_per_game": 18.4,
+            "points_for": 103,
+            "points_for_per_game": 20.6,
+            "ties": 0,
+            "turnover_margin": {
+              "games": 5,
+              "total": 4,
+              "value": 0.8
+            },
+            "wins": 3,
+            "yards_per_play": {
+              "games": 5,
+              "value": 4.5569
+            },
+            "yards_per_play_allowed": {
+              "games": 5,
+              "value": 4.9256
+            }
+          },
+          "season_to_date": {
+            "games": 10,
+            "losses": 4,
+            "margin_per_game": 1.3,
+            "points_against": 201,
+            "points_against_per_game": 20.1,
+            "points_for": 214,
+            "points_for_per_game": 21.4,
+            "ties": 0,
+            "turnover_margin": {
+              "games": 10,
+              "total": 6,
+              "value": 0.6
+            },
+            "wins": 6,
+            "yards_per_play": {
+              "games": 10,
+              "value": 4.9036
+            },
+            "yards_per_play_allowed": {
+              "games": 10,
+              "value": 5.1865
+            }
+          }
+        },
+        "injuries": {
+          "assumption": "a row without date_modified is the week's final report, taken as published 24 hours before kickoff",
+          "by_position_group": {
+            "DB": {
+              "dnp": 0,
+              "doubtful": 0,
+              "limited": 1,
+              "listed": 1,
+              "out": 0,
+              "questionable": 0
+            },
+            "DL": {
+              "dnp": 1,
+              "doubtful": 0,
+              "limited": 0,
+              "listed": 1,
+              "out": 0,
+              "questionable": 0
+            },
+            "LB": {
+              "dnp": 1,
+              "doubtful": 0,
+              "limited": 2,
+              "listed": 3,
+              "out": 1,
+              "questionable": 1
+            },
+            "OL": {
+              "dnp": 0,
+              "doubtful": 0,
+              "limited": 0,
+              "listed": 1,
+              "out": 1,
+              "questionable": 0
+            },
+            "QB": {
+              "dnp": 1,
+              "doubtful": 0,
+              "limited": 0,
+              "listed": 1,
+              "out": 0,
+              "questionable": 0
+            },
+            "WR": {
+              "dnp": 1,
+              "doubtful": 0,
+              "limited": 0,
+              "listed": 1,
+              "out": 1,
+              "questionable": 0
+            }
+          },
+          "newest_report_utc": null,
+          "players_listed": 8,
+          "report_week": 12,
+          "skill_players_listed": [
+            {
+              "injury": "Not injury related - personal matter",
+              "name": "Aaron Rodgers",
+              "position": "QB",
+              "practice_status": "dnp",
+              "report_status": null
+            },
+            {
+              "injury": "Calf",
+              "name": "Ben Skowronek",
+              "position": "WR",
+              "practice_status": "dnp",
+              "report_status": "out"
+            }
+          ],
+          "totals": {
+            "dnp": 4,
+            "doubtful": 0,
+            "limited": 3,
+            "listed": 8,
+            "out": 3,
+            "questionable": 1
+          }
+        },
+        "last_three": [
+          {
+            "kickoff_utc": "2026-11-22T18:00:00Z",
+            "margin": -3,
+            "opponent": "PHI",
+            "points_against": 19,
+            "points_for": 16,
+            "result": "L",
+            "site": "away",
+            "week": 11
+          },
+          {
+            "kickoff_utc": "2026-11-16T01:20:00Z",
+            "margin": -20,
+            "opponent": "CIN",
+            "points_against": 38,
+            "points_for": 18,
+            "result": "L",
+            "site": "away",
+            "week": 10
+          },
+          {
+            "kickoff_utc": "2026-11-01T18:00:00Z",
+            "margin": 21,
+            "opponent": "CLE",
+            "points_against": 6,
+            "points_for": 27,
+            "result": "W",
+            "site": "home",
+            "week": 8
+          }
+        ],
+        "name": "Pittsburgh Steelers",
+        "qb": {
+          "last_game_starter": "Aaron Rodgers",
+          "listed_for_this_game": {
+            "changed_since_last_game": true,
+            "listed_as_of_utc": "2026-11-27T16:41:34Z",
+            "name": "Mason Rudolph",
+            "prior_starts_in_store": 17,
+            "prior_starts_with_team": 6,
+            "projected": true
+          }
+        },
+        "record": {
+          "season": {
+            "games": 10,
+            "losses": 4,
+            "ties": 0,
+            "wins": 6
+          }
+        },
+        "rest": {
+          "coming_off_bye": false,
+          "days_since_last_game": 5,
+          "season_opener": false,
+          "short_week": true,
+          "week_gap": 1
+        },
+        "side": "home",
+        "streak": {
+          "length": 2,
+          "type": "L"
+        },
+        "team": "PIT",
+        "travel": {
+          "direction": "none",
+          "kickoff_home_base_clock": "15:00",
+          "miles_from_home_base": 0.0,
+          "time_zones_crossed": 0
+        }
+      }
+    },
+    "matchup": {
+      "as_of": "2026-11-27T16:42:19Z",
+      "as_of_basis": "the same finished games, both teams compared (home minus away)",
+      "values": {
+        "differentials": {
+          "form_last_3_margin_per_game": {
+            "away": 7.6667,
+            "diff": -8.3334,
+            "home": -0.6667,
+            "thin_sample": false
+          },
+          "form_last_3_points_against_per_game": {
+            "away": 23,
+            "diff": -2,
+            "home": 21,
+            "thin_sample": false
+          },
+          "form_last_3_points_for_per_game": {
+            "away": 30.6667,
+            "diff": -10.3334,
+            "home": 20.3333,
+            "thin_sample": false
+          },
+          "form_last_3_turnover_margin": {
+            "away": 0.3333,
+            "diff": 0.3334,
+            "home": 0.6667,
+            "thin_sample": false
+          },
+          "form_last_3_yards_per_play": {
+            "away": 5.0105,
+            "diff": -0.5051,
+            "home": 4.5054,
+            "thin_sample": false
+          },
+          "form_last_3_yards_per_play_allowed": {
+            "away": 5.7538,
+            "diff": -0.0722,
+            "home": 5.6816,
+            "thin_sample": false
+          },
+          "form_last_5_margin_per_game": {
+            "away": 8,
+            "diff": -5.8,
+            "home": 2.2,
+            "thin_sample": false
+          },
+          "form_last_5_points_against_per_game": {
+            "away": 19.8,
+            "diff": -1.4,
+            "home": 18.4,
+            "thin_sample": false
+          },
+          "form_last_5_points_for_per_game": {
+            "away": 27.8,
+            "diff": -7.2,
+            "home": 20.6,
+            "thin_sample": false
+          },
+          "form_last_5_turnover_margin": {
+            "away": 0.8,
+            "diff": 0.0,
+            "home": 0.8,
+            "thin_sample": false
+          },
+          "form_last_5_yards_per_play": {
+            "away": 4.9408,
+            "diff": -0.3839,
+            "home": 4.5569,
+            "thin_sample": false
+          },
+          "form_last_5_yards_per_play_allowed": {
+            "away": 5.1932,
+            "diff": -0.2676,
+            "home": 4.9256,
+            "thin_sample": false
+          },
+          "form_season_to_date_margin_per_game": {
+            "away": 2.6,
+            "diff": -1.3,
+            "home": 1.3,
+            "thin_sample": false
+          },
+          "form_season_to_date_points_against_per_game": {
+            "away": 21,
+            "diff": -0.9,
+            "home": 20.1,
+            "thin_sample": false
+          },
+          "form_season_to_date_points_for_per_game": {
+            "away": 23.6,
+            "diff": -2.2,
+            "home": 21.4,
+            "thin_sample": false
+          },
+          "form_season_to_date_turnover_margin": {
+            "away": 0.5,
+            "diff": 0.1,
+            "home": 0.6,
+            "thin_sample": false
+          },
+          "form_season_to_date_yards_per_play": {
+            "away": 4.8173,
+            "diff": 0.0863,
+            "home": 4.9036,
+            "thin_sample": false
+          },
+          "form_season_to_date_yards_per_play_allowed": {
+            "away": 5.212,
+            "diff": -0.0255,
+            "home": 5.1865,
+            "thin_sample": false
+          },
+          "injuries_listed": {
+            "away": 5,
+            "diff": 3,
+            "home": 8,
+            "thin_sample": false
+          },
+          "injuries_out": {
+            "away": 3,
+            "diff": 0,
+            "home": 3,
+            "thin_sample": false
+          },
+          "rest_days_since_last_game": {
+            "away": 5,
+            "diff": 0,
+            "home": 5,
+            "thin_sample": false
+          },
+          "travel_miles_from_home_base": {
+            "away": 1318.1,
+            "diff": -1318.1,
+            "home": 0.0,
+            "thin_sample": false
+          },
+          "travel_time_zones_crossed": {
+            "away": 2,
+            "diff": -2,
+            "home": 0,
+            "thin_sample": false
+          }
+        },
+        "head_to_head": {
+          "average_margin_for_home_team": 7.5,
+          "away_team_wins": 0,
+          "home_team_wins": 2,
+          "last_meeting": {
+            "away_score": 13,
+            "away_team": "PIT",
+            "home_score": 6,
+            "home_team": "DEN",
+            "kickoff_utc": "2024-09-15T20:25:00Z",
+            "season": 2024,
+            "week": 2,
+            "winner": "PIT"
+          },
+          "meetings": 2,
+          "ties": 0,
+          "window": "meetings since 2021 only"
+        }
+      }
+    },
+    "reference": {
+      "as_of": null,
+      "as_of_basis": "scoring values and the margins they add up to: a field goal is 3, a touchdown 6, an extra point 1, a two-point conversion 2 and a safety 2, so final margins pile up on 3, 6, 7, 10 and 14. These are how the game is scored; the packet states no frequency for any margin",
+      "values": {
+        "key_numbers": [
+          3,
+          6,
+          7,
+          10,
+          14
+        ],
+        "scoring": {
+          "extra_point": 1,
+          "field_goal": 3,
+          "safety": 2,
+          "touchdown": 6,
+          "two_point_conversion": 2
+        }
+      }
+    },
+    "schedule": {
+      "as_of": "2026-11-27T16:42:19Z",
+      "as_of_basis": "the published schedule, fixed before the game",
+      "values": {
+        "divisional": false,
+        "game_type": "REG",
+        "gameday": "2026-11-27",
+        "kickoff_et": "15:00",
+        "neutral_site": false,
+        "primetime": false,
+        "season": 2026,
+        "time_window": "late_afternoon",
+        "venue": {
+          "neutral_site": false,
+          "roof": "outdoors",
+          "stadium": "Acrisure Stadium",
+          "surface": "grass"
+        },
+        "week": 12,
+        "weekday": "Friday"
+      }
+    }
+  },
+  "markets": {
+    "moneyline": {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "label": "DEN at PIT moneyline",
+      "as_of": "2026-11-27T16:15:30Z",
+      "lean": "DEN",
+      "options": [
+        {
+          "selection": "DEN",
+          "side": "away",
+          "line": null,
+          "books": 12,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -235,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -237,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "betrivers",
+              "price": -250,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "betus",
+              "price": -240,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "bovada",
+              "price": -245,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "circasports",
+              "price": -250,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -236,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "fanatics",
+              "price": -245,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "fanduel",
+              "price": -230,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "lowvig",
+              "price": -237,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -248,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -235,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            }
+          ],
+          "best": {
+            "price": -230,
+            "book": "fanduel"
+          },
+          "fair_probability": 0.6792
+        },
+        {
+          "selection": "PIT",
+          "side": "home",
+          "line": null,
+          "books": 12,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 195,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 197,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "betrivers",
+              "price": 200,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "betus",
+              "price": 203,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "bovada",
+              "price": 205,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "circasports",
+              "price": 215,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "draftkings",
+              "price": 196,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "fanatics",
+              "price": 200,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "fanduel",
+              "price": 190,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "lowvig",
+              "price": 197,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": 207,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": 193,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            }
+          ],
+          "best": {
+            "price": 215,
+            "book": "circasports"
+          },
+          "fair_probability": 0.3208
+        }
+      ]
+    },
+    "spread": {
+      "slot_id": "spread",
+      "market": "spread",
+      "label": "DEN at PIT point spread",
+      "as_of": "2026-11-27T16:15:30Z",
+      "lean": "DEN -4.5",
+      "options": [
+        {
+          "selection": "DEN -4.5",
+          "side": "away",
+          "line": -4.5,
+          "books": 9,
+          "quotes": [
+            {
+              "book": "betonlineag",
+              "price": -112,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "betus",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "bovada",
+              "price": -112,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "circasports",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -114,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "fanduel",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "lowvig",
+              "price": -112,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -115,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -114,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            }
+          ],
+          "best": {
+            "price": -110,
+            "book": "fanduel"
+          },
+          "fair_probability": 0.5059
+        },
+        {
+          "selection": "PIT +4.5",
+          "side": "home",
+          "line": 4.5,
+          "books": 9,
+          "quotes": [
+            {
+              "book": "betonlineag",
+              "price": -108,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "betus",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "bovada",
+              "price": -108,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "circasports",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -105,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "fanduel",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "lowvig",
+              "price": 101,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -105,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -106,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            }
+          ],
+          "best": {
+            "price": 101,
+            "book": "lowvig"
+          },
+          "fair_probability": 0.4941
+        }
+      ],
+      "context": {
+        "books_on_this_number": 9,
+        "books_on_other_numbers": 3,
+        "away_number_first_captured": -1.5,
+        "first_captured_utc": "2026-11-19T01:20:17Z",
+        "books_at_first_capture": 8
+      }
+    },
+    "total": {
+      "slot_id": "total",
+      "market": "total",
+      "label": "DEN at PIT game total points",
+      "as_of": "2026-11-27T16:15:30Z",
+      "lean": "Under 37",
+      "options": [
+        {
+          "selection": "Under 37",
+          "side": "under",
+          "line": 37.0,
+          "books": 9,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "betus",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "bovada",
+              "price": -108,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "circasports",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "fanatics",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "lowvig",
+              "price": -107,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -112,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            }
+          ],
+          "best": {
+            "price": -107,
+            "book": "lowvig"
+          },
+          "fair_probability": 0.5002
+        },
+        {
+          "selection": "Over 37",
+          "side": "over",
+          "line": 37.0,
+          "books": 9,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -108,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "betus",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "bovada",
+              "price": -112,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "circasports",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "fanatics",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "lowvig",
+              "price": -107,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -110,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -108,
+              "captured_utc": "2026-11-27T16:15:30Z"
+            }
+          ],
+          "best": {
+            "price": -107,
+            "book": "lowvig"
+          },
+          "fair_probability": 0.4998
+        }
+      ],
+      "context": {
+        "books_on_this_number": 9,
+        "books_on_other_numbers": 3,
+        "number_first_captured": 40.5,
+        "first_captured_utc": "2026-11-19T01:20:17Z",
+        "books_at_first_capture": 5
+      }
+    }
+  },
+  "slots": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "label": "DEN at PIT moneyline",
+      "selections": [
+        "DEN",
+        "PIT"
+      ]
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "label": "DEN at PIT point spread",
+      "selections": [
+        "DEN -4.5",
+        "PIT +4.5"
+      ]
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "label": "DEN at PIT game total points",
+      "selections": [
+        "Under 37",
+        "Over 37"
+      ]
+    }
+  ],
+  "missing": [
+    {
+      "item": "props",
+      "kind": "absent",
+      "reason": "no NFL player-prop prices are captured, so no prop is analyzed"
+    },
+    {
+      "item": "weather",
+      "kind": "absent",
+      "reason": "no weather forecast is stored for NFL stadiums, and this game is not known to be played indoors"
+    }
+  ],
+  "limits": [
+    "Only the moneyline, the point spread and the game total are analyzed, each at its most-quoted number. Alternate numbers, team totals, half and quarter markets and player props are not.",
+    "Every quote is the newest one captured before this packet was built, with its capture time, from the books named; nothing was captured after the packet was built or after the start.",
+    "Form, rest, travel and head to head cover only the games in the data store (it begins with the 2021 season). A window holds fewer games than it names early in a season, and each figure states how many it rests on.",
+    "Weather forecasts, depth charts, snap counts, play-by-play detail, officials, coaching and scheme changes and news after the weekly injury report are not in the data.",
+    "The starting quarterback is the one the schedule lists, a projection until the game is played. The injury report is the weekly team report; a player's importance is not measured.",
+    "A neutral-site game has a nominal home team; its differentials still read home minus away."
+  ],
+  "how_to_read": [
+    "In sections.matchup.values.differentials a difference is home minus away, so a positive one means the home team has the larger number. head_to_head is written from the home team's side.",
+    "A form window says how many games it rests on (games). last_3 and last_5 are the team's most recent finished games; season_to_date is this season only. yards_per_play is net yards per play and turnover_margin is takeaways minus giveaways per game; each states the games it rests on.",
+    "A spread selection carries its own signed number: \"KC -3.5\" lays 3.5 points and \"LAC +3.5\" gets 3.5. The two selections of the spread are the two sides of one number. fair_probability is the market's probability with the bookmaker's margin divided out, averaged over the books that quoted both sides.",
+    "first_captured fields give where the market stood the first time it was captured, which is not necessarily the opening line.",
+    "A qb listed_for_this_game with projected true is the schedule's projection at listed_as_of_utc, not a confirmed starter. The injury report is the weekly team report as stored.",
+    "figure_units says what each form figure measures. sections.reference.values holds scoring facts, not statistics."
+  ]
+}

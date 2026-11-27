@@ -1,0 +1,115 @@
+{
+  "summary": "Denver is the better side on recent form, with six straight wins and a last-five margin of 8 points per game, while Pittsburgh lists Mason Rudolph at quarterback after Aaron Rodgers was listed as not practicing for a personal matter. The books have clearly reacted: the spread was first captured at Denver -1.5 and now sits at DEN -4.5, so the market already prices much of the quarterback change. Season-long numbers are close, with Pittsburgh at 1.3 points of margin per game and Denver at 2.6, and both teams are on a short week. I pass on the spread because nothing we have shows that 4.5 is the wrong number. The moneyline favorite is -230 at best, which is past our price limit, and Pittsburgh at 215 is priced close to the books' own number, so I pass there too. The total fell from 40.5 to 37 and the data cannot see weather for an outdoor game, so I pass on it as well. Nothing here is strong enough to bet, and the quarterback news is the missing input that matters most.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "DEN",
+      "verdict": "PASS",
+      "price": -230,
+      "book": "fanduel",
+      "fair_estimate": 0.68,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Denver's best price is -230, which is past the -200 limit, so it cannot be a bet at any quoted book.",
+          "evidence": [
+            { "path": "markets.moneyline.options[0].best.price", "value": -230 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Pittsburgh at 215 is priced close to the books' own de-vigged number, and the quarterback change is already in that price, so the underdog side shows no clear gap.",
+          "evidence": [
+            { "path": "markets.moneyline.options[1].fair_probability", "value": 0.3208 },
+            { "path": "markets.moneyline.options[1].best.price", "value": 215 },
+            { "path": "sections.home.values.qb.listed_for_this_game.changed_since_last_game", "value": true }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed Pittsburgh quarterback different from the projected Mason Rudolph, or a Denver price better than -200, would change the picture.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "DEN -4.5",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "fanduel",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The number has already moved toward Denver from where it was first captured, which fits the quarterback change on Pittsburgh's side, so the market has absorbed the main news.",
+          "evidence": [
+            { "path": "markets.spread.context.away_number_first_captured", "value": -1.5 },
+            { "path": "sections.home.values.qb.listed_for_this_game.name", "value": "Mason Rudolph" },
+            { "path": "sections.home.values.qb.listed_for_this_game.changed_since_last_game", "value": true }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Denver has the better recent run, with six straight wins, but the season-long margin gap between the teams is small, so recent form alone does not show 4.5 is wrong.",
+          "evidence": [
+            { "path": "sections.away.values.streak.length", "value": 6 },
+            { "path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": -1.3 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The books' de-vigged number is essentially a coin flip on this side, and nothing we have measures how much Rudolph changes Pittsburgh's offense.",
+          "evidence": [
+            { "path": "markets.spread.options[0].fair_probability", "value": 0.5059 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A report that Rodgers will start, or the number moving to PIT +3.5, would change how I read this spread.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 37",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total has already dropped from where it was first captured, so the price holds the low-scoring picture, including the quarterback change.",
+          "evidence": [
+            { "path": "markets.total.context.number_first_captured", "value": 40.5 },
+            { "path": "markets.total.options[0].line", "value": 37.0 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both teams' season scoring and points allowed are modest and fairly even, so there is no scoring or pace signal pointing away from the books' number.",
+          "evidence": [
+            { "path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 23.6 },
+            { "path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 20.1 },
+            { "path": "markets.total.options[0].fair_probability", "value": 0.5002 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We cannot see weather for an outdoor game, which matters most for a total this low.",
+          "evidence": [
+            { "path": "missing[1].item", "value": "weather" }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A weather forecast showing strong wind or a confirmed Pittsburgh quarterback change would give a real reason to move off this pass.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
