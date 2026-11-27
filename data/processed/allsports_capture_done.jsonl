@@ -39932,3 +39932,4 @@
 {"call_kind": "pregame", "credits": 3, "events": 46, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-27T04:46:57.292899Z", "regions": ["us"], "rows": 1171, "sport_key": "basketball_ncaab", "stored": 1171}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-27T04:46:57.292899Z", "regions": ["au"], "rows": 6, "sport_key": "cricket_test_match", "stored": 5}
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-27T04:46:57.292899Z", "regions": ["us"], "rows": 15, "sport_key": "soccer_mexico_ligamx", "stored": 3}
+{"events": 18, "kind": "peek", "next_check_utc": "2026-11-27T10:58:50.801111Z", "observed_utc": "2026-11-27T04:58:50.801111Z", "sport_key": "soccer_uefa_champs_league"}
