@@ -902,3 +902,4 @@
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-27T17:46:35.237883Z", "phase": "refresh"}
 {"game_id": "2026_12_DEN_PIT", "observed_utc": "2026-11-27T18:13:02.994027Z", "phase": "t2h"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-11-27T18:45:52.754321Z", "phase": "refresh"}
+{"game_id": "2026_12_DEN_PIT", "observed_utc": "2026-11-27T19:49:20.967167Z", "phase": "t30m"}
