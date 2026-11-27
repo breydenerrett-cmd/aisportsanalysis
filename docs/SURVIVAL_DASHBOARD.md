@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-11-26 21:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-11-27 16:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **-26** |
+| Days until 2026-10-31 | **-27** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -70,8 +70,8 @@ Read from `docs/sales/outreach_queue.csv`, people only. A forum thread is a publ
 - **MLB previous** (Our first card rule; 2026-09-10..2026-09-22): n=230: 151-79, +7.98u, ROI +3.5%
   - game: n=113: 73-40, +7.61u, ROI +6.7%
   - prop: n=117: 78-39, +0.38u, ROI +0.3%
-- **NFL current** (Our NFL value rule; 2026-09-27..2026-11-22): n=6: 3-3, +0.65u (too few for a rate)
-  - game: n=6: 3-3, +0.65u (too few for a rate)
+- **NFL current** (Our NFL value rule; 2026-09-27..2026-11-26): n=7: 3-4, -0.35u (too few for a rate)
+  - game: n=7: 3-4, -0.35u (too few for a rate)
 - **NFL previous** (Our first NFL rule; 2026-09-17..2026-09-21): n=10: 7-3, -0.26u (too few for a rate)
   - game: n=10: 7-3, -0.26u (too few for a rate)
 - **MMA current** (Our UFC card; 2026-09-22..2026-10-03): n=9: 8-1, +4.80u (too few for a rate)
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-11-26 (1:30 pm PT run): NFL brief published for KC@BUF (5:20 pm PT): passes on all three markets. Earlier today CHI@DET and PHI@DAL also published. No MLB.
-- CHI@DET 11-26 graded (final CHI 39, DET 35); the public sample now points at it.
-- Production up: /health 200, billing ok, memory peak 652.4 MB of 850. Another unexplained process restart at 1:32 pm PT (35 total).
-- deploy-prod: 9:04 am, 12:10 pm and 1:01 pm PT runs succeeded. CI green (push run 45868613028). Daily-loop 11:18 am PT run failed (no MLB price capture; runs from another branch).
+- 2026-11-27 (8:30 am PT run): NFL brief published for DEN@PIT (12:00 pm PT): passes on all three markets. No MLB (off-season).
+- PHI@DAL and KC@BUF 11-26 graded (PHI 39, DAL 38; BUF 13, KC 10); the public sample now points at KC@BUF.
+- Production up: /health 200, billing ok, memory peak 737.1 MB of 850. Another unexplained process restart at 8:19 am PT (36 total).
+- deploy-prod: 5:05 am and 7:12 am PT runs succeeded; 6:03 am PT run failed (deploy step hit its 9-minute limit). CI green. Daily-loop 2:10 am PT run failed (arsenals shrink refusal; runs from another branch).
 - Sends 0, replies 0, testers 0, paid 0. Nothing in the outreach queue has a sent_at.
 
