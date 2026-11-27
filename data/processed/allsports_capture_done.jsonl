@@ -39976,3 +39976,6 @@
 {"commence_utc": "2026-11-27T20:00:00Z", "event_id": "48544c5d39a7714765227b6f3636ff63", "kind": "phase", "observed_utc": "2026-11-27T07:27:09.000189Z", "phase": "t24h", "rows": 2, "sport_key": "basketball_ncaab"}
 {"commence_utc": "2026-11-28T04:00:00Z", "event_id": "fd6efd7dbe43547477817d434e740852", "kind": "phase", "observed_utc": "2026-11-27T07:27:09.000189Z", "phase": "t24h", "rows": 2, "sport_key": "basketball_ncaab"}
 {"call_kind": "pregame", "credits": 3, "events": 47, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-27T07:27:09.000189Z", "regions": ["us"], "rows": 1177, "sport_key": "basketball_ncaab", "stored": 1177}
+{"commence_utc": "2026-11-28T07:30:00Z", "event_id": "45ed715bc5e53a6e07713feba31ca7f5", "kind": "phase", "observed_utc": "2026-11-27T07:39:14.073873Z", "phase": "t24h", "rows": 12, "sport_key": "soccer_korea_kleague1"}
+{"commence_utc": "2026-11-28T07:30:00Z", "event_id": "38ed9925ee2dc1a525bf22e9782e6802", "kind": "phase", "observed_utc": "2026-11-27T07:39:14.073873Z", "phase": "t24h", "rows": 12, "sport_key": "soccer_korea_kleague1"}
+{"call_kind": "pregame", "credits": 2, "events": 6, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-27T07:39:14.073873Z", "regions": ["us"], "rows": 72, "sport_key": "soccer_korea_kleague1", "stored": 48}
