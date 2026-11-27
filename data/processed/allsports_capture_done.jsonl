@@ -39941,3 +39941,8 @@
 {"commence_utc": "2026-11-28T05:00:00Z", "event_id": "457a2a9c7ea2501d26eeecd467e7c5c7", "kind": "phase", "observed_utc": "2026-11-27T05:15:03.783394Z", "phase": "t24h", "rows": 12, "sport_key": "soccer_korea_kleague1"}
 {"commence_utc": "2026-11-28T05:00:00Z", "event_id": "4878eb4ee217c436a4e2d75ac6efd94d", "kind": "phase", "observed_utc": "2026-11-27T05:15:03.783394Z", "phase": "t24h", "rows": 12, "sport_key": "soccer_korea_kleague1"}
 {"call_kind": "pregame", "credits": 2, "events": 6, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-11-27T05:15:03.783394Z", "regions": ["us"], "rows": 72, "sport_key": "soccer_korea_kleague1", "stored": 48}
+{"events": 4, "kind": "peek", "next_check_utc": "2026-11-27T11:29:44.503073Z", "observed_utc": "2026-11-27T05:29:44.503073Z", "sport_key": "soccer_mexico_ligamx"}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-11-27T11:29:44.503073Z", "observed_utc": "2026-11-27T05:29:44.503073Z", "sport_key": "soccer_uefa_europa_league"}
+{"commence_utc": "2026-11-28T01:30:00Z", "event_id": "692fbccb2725151453aade80cc1002a4", "kind": "phase", "observed_utc": "2026-11-27T05:29:44.503073Z", "phase": "t24h", "rows": 8, "sport_key": "basketball_ncaab"}
+{"call_kind": "pregame", "credits": 3, "events": 47, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-11-27T05:29:44.503073Z", "regions": ["us"], "rows": 1157, "sport_key": "basketball_ncaab", "stored": 1157}
+{"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-27T05:29:44.503073Z", "regions": ["au"], "rows": 6, "sport_key": "cricket_test_match", "stored": 5}
