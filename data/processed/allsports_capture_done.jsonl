@@ -39924,3 +39924,6 @@
 {"call_kind": "inplay", "credits": 1, "events": 69, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-27T04:10:49.522718Z", "regions": ["us"], "rows": 793, "sport_key": "americanfootball_ncaaf", "stored": 153}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-27T04:10:49.522718Z", "regions": ["au"], "rows": 6, "sport_key": "cricket_test_match", "stored": 5}
 {"call_kind": "inplay", "credits": 1, "events": 4, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-11-27T04:10:49.522718Z", "regions": ["us"], "rows": 16, "sport_key": "soccer_mexico_ligamx", "stored": 4}
+{"events": 0, "kind": "peek", "next_check_utc": "2026-11-27T10:21:41.905657Z", "observed_utc": "2026-11-27T04:21:41.905657Z", "sport_key": "basketball_wncaab"}
+{"events": 23, "kind": "peek", "next_check_utc": "2026-11-27T10:21:41.905657Z", "observed_utc": "2026-11-27T04:21:41.905657Z", "sport_key": "soccer_england_league1"}
+{"events": 10, "kind": "peek", "next_check_utc": "2026-11-27T10:21:41.905657Z", "observed_utc": "2026-11-27T04:21:41.905657Z", "sport_key": "soccer_italy_serie_b"}
