@@ -22,62 +22,62 @@
  },
  "files": {
   "games.jsonl": {
-   "bytes": 1789182,
-   "newest": "2026-11-27T01:20:00Z",
+   "bytes": 1789170,
+   "newest": "2026-11-27T20:00:00Z",
    "records": 1696,
-   "sha256": "600072a0be4b10f1622ad4b5e7b19c40fec1f044a21ef02fc161af91f06554c8"
+   "sha256": "3243e7086a65e25d1d9ae6f8f3d6fb00fab76ded7bbd6c5adbd69688330cb8e8"
   },
   "injuries.jsonl": {
-   "bytes": 9362669,
-   "newest": "2026-11-27T10:27:44Z",
-   "records": 20197,
-   "sha256": "d94e6f9e6e3a06dec7e7b1febdcc96c5be7ee811cb38238777b90a1eaed34a26"
+   "bytes": 9372895,
+   "newest": "2026-11-28T10:27:12Z",
+   "records": 20218,
+   "sha256": "b04828a7137d61cd675cbebedb3ce00452a9ec7d0382d90c4b78a5396b29439a"
   },
   "player_games.jsonl": {
-   "bytes": 10189385,
-   "newest": "2026-11-27T01:20:00Z",
-   "records": 16494,
-   "sha256": "d35a003c5ad3380732f3fcfe846cd723646b3f86918fbe6a444b47009598ae08"
+   "bytes": 10204209,
+   "newest": "2026-11-27T20:00:00Z",
+   "records": 16518,
+   "sha256": "cf6a7e625c9a6f94428fd870ac08c1c5976ca4db248edab69a63cea16be52fd7"
   },
   "team_games.jsonl": {
-   "bytes": 3344184,
-   "newest": "2026-11-27T01:20:00Z",
+   "bytes": 3344102,
+   "newest": "2026-11-27T20:00:00Z",
    "records": 3392,
-   "sha256": "60059b265701ccb81a1243117a78135eac06246247a05356331e9dc416d044af"
+   "sha256": "f15fdad1b67aab24d266510e48c8151cde6185a99257dfb385920aabb3de047e"
   }
  },
- "generated_utc": "2026-11-27T21:41:32Z",
+ "generated_utc": "2026-11-28T10:27:13Z",
  "last_run": {
-  "finished_utc": "2026-11-27T21:41:32Z",
-  "games": 18,
-  "injuries": 0,
+  "finished_utc": "2026-11-28T10:27:13Z",
+  "games": 15,
+  "injuries": 110,
   "kind": "update",
   "missing_files": [],
   "per_season": {
    "2026": {
     "injuries": {
-     "dropped_full_participation_only": 1700,
-     "kept": 2124,
-     "rows": 3824
+     "dropped_full_participation_only": 1724,
+     "kept": 2109,
+     "rows": 3833
     },
     "player_stats": {
      "dropped_no_player_id": 12,
-     "dropped_not_offense": 7795,
-     "kept": 3805,
-     "rows": 11612
+     "dropped_not_offense": 7843,
+     "kept": 3829,
+     "rows": 11684
     },
     "team_games": 544,
-    "team_stats_rows": 334,
+    "team_stats_rows": 336,
     "team_stats_unmatched": []
    }
   },
-  "player_games": 0,
+  "player_games": 24,
   "seasons": [
    2026
   ],
-  "started_utc": "2026-11-27T21:41:27Z",
+  "started_utc": "2026-11-28T10:27:10Z",
   "stopped": null,
-  "team_games": 0
+  "team_games": 4
  },
  "last_run_errors": 0,
  "sources": {
